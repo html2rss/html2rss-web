@@ -1,0 +1,33 @@
+# This is config is for demonstration only.
+# FYI: Github provides an atom feed for releases of every project.
+# You should directly subscribe to that feed. :)
+---
+headers:
+  'User-Agent': "Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 (KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1"
+feeds:
+  nuxt-releases:
+    channel:
+      name: 'Nuxt.js Github Releases'
+      url: https://github.com/nuxt/nuxt.js/releases
+      ttl: 60
+    selectors:
+      items:
+        selector: '.release'
+      title:
+        selector: '.release-title > a'
+      author:
+        selector: '.avatar'
+        extractor: 'attribute'
+        attribute: 'alt'
+      link:
+        selector: '.release-title > a'
+        extractor: 'href'
+      description:
+        selector: '.markdown-body'
+        extractor: 'html'
+      # categories:
+      #   selector: '.Label'
+      updated:
+        selector: 'relative-time'
+        extractor: 'attribute'
+        attribute: 'datetime'
