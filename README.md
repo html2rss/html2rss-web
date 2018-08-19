@@ -31,5 +31,5 @@ Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. 
 Websites often change their markup. To get notified when one of your feeds breaks,
 monitor the `/health_check.txt` endpoint.
 
-It will return `success` if all feeds can be generated without any error.
-Otherwise it will not state success, but print the information which feed is broken.
+It will print `success` if all feeds can be generated without any error.
+Otherwise it will not print success, but the information which feed is broken.
