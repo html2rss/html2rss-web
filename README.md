@@ -16,7 +16,7 @@ For development, you can use `foreman` to start the application:
 
 `html2rss-web` now listens on port 3000 for your requests.
 
-# Usage with Docker
+### with Docker
 
 Find the official docker image [on Docker Hub](https://hub.docker.com/r/gilcreator/html2rss-web/).
 
@@ -25,3 +25,11 @@ docker run -d --name html2rss-web --mount type=bind,source="/path/to/your/config
 ```
 
 Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. `http://localhost:3000/nuxt-releases.rss`.
+
+## Runtime health checks of your feeds
+
+Websites often change their markup. To get notified when one of your feeds breaks,
+monitor the `/health_check.txt` endpoint.
+
+It will return `success` if all feeds can be generated without any error.
+Otherwise it will not state success, but print the information which feed is broken.

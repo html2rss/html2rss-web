@@ -12,4 +12,20 @@ class App < Sinatra::Base
       Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
     end
   end
+
+  get '/health_check.txt' do
+    content_type 'text/plain'
+
+    errors = []
+
+    FEED_NAMES.each do |feed_name|
+      begin
+        Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
+      rescue => error
+        errors << "#{feed_name}: #{error.message}"
+      end
+    end
+
+    errors.count > 0 ? errors.join("\n") : 'success'
+  end
 end
