@@ -27,12 +27,20 @@ class App < Sinatra::Base
     FEED_NAMES.each do |feed_name|
       begin
         Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
-      rescue StandardError => error
+      rescue error
         errors << "#{feed_name}: #{error.message}"
       end
     end
 
-    errors.count > 0 ? errors.join("\n") : 'success'
+    if errors.count > 0
+      status 500
+      errors.join("\n")
+    else
+      status 200
+      'success'
+    end
+  end
+
   private
 
   def json_from_feed(feed)
