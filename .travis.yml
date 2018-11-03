@@ -1,0 +1,15 @@
+sudo: required
+
+language: ruby
+
+services:
+  - docker
+
+before_install:
+  - bash docker/build
+
+deploy:
+  provider: script
+  script: bash docker/push
+  on:
+    branch: master
