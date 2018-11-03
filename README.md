@@ -24,7 +24,10 @@ Find the official docker image [on Docker Hub](https://hub.docker.com/r/gilcreat
 docker run -d --name html2rss-web --mount type=bind,source="/path/to/your/config/folder,target=/app/config" -p 3000:3000 gilcreator/html2rss-web
 ```
 
-Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. `http://localhost:3000/nuxt-releases.rss`.
+Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. as
+
+- rss: `http://localhost:3000/nuxt-releases.rss`
+- [jsonfeed](https://jsonfeed.org/): `http://localhost:3000/nuxt-releases.json`.
 
 ## Runtime health checks of your feeds
 
