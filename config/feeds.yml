@@ -14,13 +14,13 @@ feeds:
       items:
         selector: '.release'
       title:
-        selector: '.release-title > a'
+        selector: '.release-header a'
       author:
         selector: '.avatar'
         extractor: 'attribute'
         attribute: 'alt'
       link:
-        selector: '.release-title > a'
+        selector: '.release-header a'
         extractor: 'href'
       description:
         selector: '.markdown-body'
