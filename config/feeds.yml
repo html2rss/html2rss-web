@@ -7,27 +7,43 @@ headers:
 feeds:
   nuxt-releases:
     channel:
-      name: 'Nuxt.js Github Releases'
+      title: 'Nuxt.js Github Releases'
       url: https://github.com/nuxt/nuxt.js/releases
       ttl: 60
+      description: 'An example config.'
     selectors:
       items:
         selector: '.release'
       title:
-        selector: '.release-header a'
+        selector: '.release-header .text-normal a'
+        post_process:
+          name: 'template'
+          string: '%s (%s)'
+          methods:
+            - self
+            - author
       author:
         selector: '.avatar'
         extractor: 'attribute'
         attribute: 'alt'
+        post_process:
+          name: substring
+          start: 1
       link:
         selector: '.release-header a'
         extractor: 'href'
+        post_process:
+          name: 'parse_uri'
       description:
         selector: '.markdown-body'
         extractor: 'html'
+        post_process:
+          name: 'sanitize_html'
       # categories:
       #   selector: '.Label'
       updated:
         selector: 'relative-time'
         extractor: 'attribute'
         attribute: 'datetime'
+        post_process:
+          name: 'parse_time'
