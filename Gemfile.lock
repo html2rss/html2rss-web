@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 6f2a32a6304ef9956577711173de681daf93f55f
+  revision: 46e5a2832d1f2fe1353dcc2a8d82a9786f15f6bd
   specs:
     html2rss (0.0.1)
       faraday (~> 0.15)
@@ -11,29 +11,29 @@ GEM
   remote: https://rubygems.org/
   specs:
     crass (1.0.4)
-    faraday (0.15.2)
+    faraday (0.15.3)
       multipart-post (>= 1.2, < 3)
     foreman (0.85.0)
       thor (~> 0.19.1)
     mini_portile2 (2.3.0)
     multipart-post (2.0.0)
     mustermann (1.0.3)
-    nokogiri (1.8.4)
+    nokogiri (1.8.5)
       mini_portile2 (~> 2.3.0)
     nokogumbo (1.5.0)
       nokogiri
     puma (3.12.0)
     rack (2.0.5)
-    rack-protection (2.0.3)
+    rack-protection (2.0.4)
       rack
     sanitize (4.6.6)
       crass (~> 1.0.2)
       nokogiri (>= 1.4.4)
       nokogumbo (~> 1.4)
-    sinatra (2.0.3)
+    sinatra (2.0.4)
       mustermann (~> 1.0)
       rack (~> 2.0)
-      rack-protection (= 2.0.3)
+      rack-protection (= 2.0.4)
       tilt (~> 2.0)
     thor (0.19.4)
     tilt (2.0.8)
@@ -48,4 +48,4 @@ DEPENDENCIES
   sinatra (~> 2.0)
 
 BUNDLED WITH
-   1.16.3
+   1.16.6
