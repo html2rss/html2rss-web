@@ -11,7 +11,7 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
-RUN gem install --no-ri --no-rdoc bundler rake
+RUN gem install --no-ri --no-rdoc bundler
 RUN bundle config --global frozen 1
 RUN bundle install --binstubs --retry=5 --jobs=7 --without development test
 

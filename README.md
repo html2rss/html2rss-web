@@ -1,4 +1,4 @@
-# html2rss-web
+# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web)
 
 A minimal Sinatra based web application to demo the use of the
 [html2rss  gem](https://github.com/gildesmarais/html2rss).
