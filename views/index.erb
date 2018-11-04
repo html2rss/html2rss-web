@@ -94,7 +94,7 @@
           var self = this
 
           this.feedNames.forEach(function(feedName) {
-            fetch('/' + feedName + '.json')
+            fetch('./' + feedName + '.json')
             .then(function(response) { return response.json() })
             .then(function(feed) { self.feeds.push(feed) })
           })
