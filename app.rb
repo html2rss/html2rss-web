@@ -5,7 +5,7 @@ require 'json'
 
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
-  FEED_NAMES = YAML.load(File.open(CONFIG_FILE))['feeds'].keys.freeze
+  FEED_NAMES = YAML.safe_load(File.open(CONFIG_FILE))['feeds'].keys.freeze
 
   FEED_NAMES.each do |feed_name|
     get "/#{feed_name}.rss" do
@@ -17,6 +17,10 @@ class App < Sinatra::Base
       content_type 'application/json'
       json_from_feed Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
     end
+  end
+
+  get '/' do
+    erb :index, locals: { feed_names: FEED_NAMES }
   end
 
   get '/health_check.txt' do
@@ -32,7 +36,7 @@ class App < Sinatra::Base
       end
     end
 
-    if errors.count > 0
+    if errors.count.positive?
       status 500
       errors.join("\n")
     else

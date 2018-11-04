@@ -29,6 +29,8 @@ Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. 
 - rss: `http://localhost:3000/nuxt-releases.rss`
 - [jsonfeed](https://jsonfeed.org/): `http://localhost:3000/nuxt-releases.json`.
 
+You'll can get an overview of all feeds from your config at http://localhost:3000/.
+
 ## Runtime health checks of your feeds
 
 Websites often change their markup. To get notified when one of your feeds breaks,
