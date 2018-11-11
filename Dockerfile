@@ -1,4 +1,4 @@
-FROM ruby:2.5-stretch
+FROM ruby:2.5-alpine
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -9,6 +9,8 @@ ENV RACK_ENV=production
 
 HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
   CMD curl -f http://localhost:3000/ || exit 1
+
+RUN apk add --no-cache git libffi-dev make gcc libc-dev
 
 RUN mkdir /app
 WORKDIR /app
