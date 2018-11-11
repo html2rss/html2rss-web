@@ -1,7 +1,5 @@
 sudo: required
 
-language: ruby
-
 services:
   - docker
 
@@ -11,7 +9,11 @@ addons:
       - docker-ce
 
 before_install:
+  - gem install rake
   - bash docker/build
+
+script:
+  - rake
 
 deploy:
   provider: script
