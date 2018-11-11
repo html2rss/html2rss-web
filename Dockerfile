@@ -7,6 +7,9 @@ EXPOSE 3000
 ENV PORT=3000
 ENV RACK_ENV=production
 
+HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
+  CMD curl -f http://localhost:3000/ || exit 1
+
 RUN mkdir /app
 WORKDIR /app
 
