@@ -3,13 +3,14 @@ sudo: required
 services:
   - docker
 
-addons:
-  apt:
-    packages:
-      - docker-ce
-
-before_install:
+install:
   - bash docker/build
+
+before_script:
+  - gem install rake
+
+script:
+  - rake
 
 deploy:
   provider: script
