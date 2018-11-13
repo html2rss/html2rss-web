@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 0bf614f6b97ed2d7e2b8b0bbd77752db0778e9cf
+  revision: 382ddaad3f415294187f1d0826cc37933a5e48c7
   specs:
-    html2rss (0.1.0)
+    html2rss (0.2.0)
       faraday (~> 0.15)
       nokogiri (~> 1.8)
       sanitize (~> 5.0)
@@ -25,7 +25,7 @@ GEM
     mustermann (1.0.3)
     nokogiri (1.8.5)
       mini_portile2 (~> 2.3.0)
-    nokogumbo (2.0.0)
+    nokogumbo (2.0.1)
       nokogiri (~> 1.8, >= 1.8.4)
     puma (3.12.0)
     rack (2.0.6)
