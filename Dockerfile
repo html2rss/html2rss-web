@@ -1,4 +1,4 @@
-FROM ruby:2.5-alpine
+FROM ruby:2.6-alpine
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -16,7 +16,6 @@ RUN mkdir /app
 WORKDIR /app
 
 COPY Gemfile Gemfile.lock ./
-RUN gem install --no-ri --no-rdoc bundler
 RUN bundle config --global frozen 1
 RUN bundle install --binstubs --retry=5 --jobs=7 --without development test
 
