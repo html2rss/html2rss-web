@@ -10,12 +10,16 @@ class App < Sinatra::Base
   FEED_NAMES.each do |feed_name|
     get "/#{feed_name}.rss" do
       content_type 'text/xml'
-      Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
+      feed = Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
+
+      items?(feed.items) ? feed.to_s : status(500)
     end
 
     get "/#{feed_name}.json" do
       content_type 'application/json'
-      json_from_feed Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
+      feed = Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
+
+      items?(feed.items) ? json_from_feed(feed) : status(500)
     end
   end
 
@@ -31,7 +35,7 @@ class App < Sinatra::Base
     FEED_NAMES.each do |feed_name|
       begin
         Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
-      rescue error
+      rescue e
         errors << "#{feed_name}: #{error.message}"
       end
     end
@@ -46,6 +50,10 @@ class App < Sinatra::Base
   end
 
   private
+
+  def items?(items)
+    items.count.positive?
+  end
 
   def json_from_feed(feed)
     JSON.generate(
