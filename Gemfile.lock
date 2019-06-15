@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/gildesmarais/html2rss-configs.git
-  revision: 9c1cf48e83380b32a91d65dbc7e98d9f31730c5f
+  revision: b6341eebca80abcca9ca1b4615cd28c3afcc87da
   specs:
     html2rss-configs (0.1.0)
 
