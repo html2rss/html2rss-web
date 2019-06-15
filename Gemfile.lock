@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: d5ca3bbad954ad14180b940a8a4205276bd83a37
+  revision: 1d45e694daa1f30f4a83d6719535434a6c74dce7
   specs:
     html2rss (0.2.2)
       faraday (~> 0.15)
@@ -16,7 +16,7 @@ GEM
       multipart-post (>= 1.2, < 3)
     faraday_middleware (0.13.1)
       faraday (>= 0.7.4, < 1.0)
-    ffi (1.10.0)
+    ffi (1.11.1)
     foreman (0.85.0)
       thor (~> 0.19.1)
     listen (3.1.5)
@@ -24,7 +24,7 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.7)
       ruby_dep (~> 1.2)
     mini_portile2 (2.4.0)
-    multipart-post (2.0.0)
+    multipart-post (2.1.1)
     mustermann (1.0.3)
     nokogiri (1.10.3)
       mini_portile2 (~> 2.4.0)
