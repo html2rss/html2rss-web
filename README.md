@@ -3,7 +3,7 @@
 A minimal Sinatra based web application to demo the use of the
 [html2rss  gem](https://github.com/gildesmarais/html2rss).
 
-This application exposes HTTP-endpoints of the configured feeds.
+This application exposes HTTP-endpoints of the configured (or [provided](https://github.com/gildesmarais/html2rss-configs)) feeds.
 
 ## Usage
 
@@ -29,7 +29,7 @@ Now you can request your feeds at `http://localhost:3000/*feed_name*.rss`, e.g. 
 - rss: `http://localhost:3000/nuxt-releases.rss`
 - [jsonfeed](https://jsonfeed.org/): `http://localhost:3000/nuxt-releases.json`.
 
-You'll can get an overview of all feeds from your config at http://localhost:3000/.
+You'll can get an overview of all feeds from *your* config at http://localhost:3000/.
 
 ## Runtime health checks of your feeds
 

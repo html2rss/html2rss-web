@@ -1,4 +1,4 @@
-task default: %w(test)
+task default: %w[test]
 
 task :test do
   begin

@@ -1,11 +1,13 @@
 require 'sinatra'
-require 'yaml'
 require 'html2rss'
+require 'html2rss/configs'
+require 'yaml'
 require 'json'
 
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
-  FEED_NAMES = YAML.safe_load(File.open(CONFIG_FILE))['feeds'].keys.freeze
+  CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
+  FEED_NAMES = CONFIG_YAML['feeds'].keys.freeze
 
   FEED_NAMES.each do |feed_name|
     get "/#{feed_name}.rss" do
@@ -47,6 +49,21 @@ class App < Sinatra::Base
       status 200
       'success'
     end
+  end
+
+  get '/*.rss' do
+    content_type 'text/xml'
+    feed_name = params[:splat].first
+
+    global_config = CONFIG_YAML.reject { |key| key == 'feeds' }
+    global_config['feeds'] = {
+      feed_name => Html2rss::Configs.find_by_name(feed_name)
+    }
+
+    config = Html2rss::Config.new(global_config, feed_name)
+    feed = Html2rss.feed(config)
+
+    items?(feed.items) ? feed.to_s : status(500)
   end
 
   private

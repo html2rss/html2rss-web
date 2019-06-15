@@ -1,4 +1,10 @@
 GIT
+  remote: https://github.com/gildesmarais/html2rss-configs.git
+  revision: ab0752e33f41b2b77a3b5e4e72efdd57a5eb1032
+  specs:
+    html2rss-configs (0.1.0)
+
+GIT
   remote: https://github.com/gildesmarais/html2rss.git
   revision: 1d45e694daa1f30f4a83d6719535434a6c74dce7
   specs:
@@ -59,10 +65,11 @@ PLATFORMS
 DEPENDENCIES
   foreman
   html2rss!
+  html2rss-configs!
   puma
   rake
   rerun
-  sinatra (~> 2.0, >= 2.0.4)
+  sinatra (~> 2.0)
 
 BUNDLED WITH
    1.17.2
