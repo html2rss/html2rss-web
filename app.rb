@@ -36,7 +36,7 @@ class App < Sinatra::Base
       begin
         Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
       rescue e
-        errors << "#{feed_name}: #{error.message}"
+        errors << "#{feed_name}: #{e.message}"
       end
     end
 
