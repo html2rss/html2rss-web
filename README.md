@@ -1,6 +1,6 @@
 ![html2rss logo](https://github.com/gildesmarais/html2rss/raw/master/support/logo.png)
 
-# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/gilcreator/html2rss-web)
+# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)
 
 This is a tiny web application to expose HTTP endpoints which deliver RSS feeds
 built by the [html2rss gem](https://github.com/gildesmarais/html2rss).
