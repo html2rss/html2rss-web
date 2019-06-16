@@ -7,7 +7,7 @@ require 'json'
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
   CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
-  FEED_NAMES = CONFIG_YAML['feeds'].keys.freeze
+  FEED_NAMES = (CONFIG_YAML['feeds']&.keys || []).freeze
 
   FEED_NAMES.each do |feed_name|
     get "/#{feed_name}.rss" do
