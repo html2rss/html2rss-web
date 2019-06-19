@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-echo update-git-repo
-
 # https://docs.travis-ci.com/user/best-practices-security/#recommendations-on-how-to-avoid-leaking-secrets-to-build-logs
 
+git config --global user.email "travis@travis-ci.org"
+git config --global user.name "Travis CI"
+
+git remote add real-origin "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" > /dev/null 2>&1
+
 git add Gemfile.lock
-echo 'would comit and push now'
+
+git commit --message "chore: auto-update html2rss-configs [Travis $TRAVIS_BUILD_NUMBER)]"
+git push --quiet --force-with-lease --set-upstream real-origin master
