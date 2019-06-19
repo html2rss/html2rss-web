@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+echo update-html2rss-configs
