@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
-
+set -e
 echo update-html2rss-configs
+
+bundle update --source html2rss-configs
