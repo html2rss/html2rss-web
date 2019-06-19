@@ -9,6 +9,7 @@ git config --global user.name "Travis CI"
 git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" work > /dev/null 2>&1
 
 cd work || exit 1
+export BUNDLE_GEMFILE="$TRAVIS_BUILD_DIR/work/Gemfile"
 bundle env
 grep revision Gemfile.lock
 # bundle update --gemfile 'work/Gemfile'
