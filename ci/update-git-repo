@@ -9,8 +9,11 @@ git config --global user.name "Travis CI"
 git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" work > /dev/null 2>&1
 
 cd work || exit 1
+bundle env
 grep revision Gemfile.lock
 # bundle update --gemfile 'work/Gemfile'
+bundle
+grep revision Gemfile.lock
 bundle pristine html2rss-configs
 grep revision Gemfile.lock
 grep revision ../Gemfile.lock
