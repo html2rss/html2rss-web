@@ -12,12 +12,12 @@ cd work || exit 1
 export BUNDLE_GEMFILE="$TRAVIS_BUILD_DIR/work/Gemfile"
 bundle env
 grep revision Gemfile.lock
-# bundle update --gemfile 'work/Gemfile'
 bundle
 grep revision Gemfile.lock
-bundle pristine html2rss-configs
+bundle update html2rss-configs
 grep revision Gemfile.lock
-grep revision ../Gemfile.lock
+bundle update
+grep revision Gemfile.lock
 git status
 git diff
 git add Gemfile.lock
