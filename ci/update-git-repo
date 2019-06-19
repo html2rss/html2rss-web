@@ -7,10 +7,11 @@ git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
 git remote add real-origin "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" > /dev/null 2>&1
-git checkout -b master
+git checkout real-origin/master
+git pull
 
 bundle update --source html2rss-configs
 git add Gemfile.lock
 
-git commit --message "chore: auto-update html2rss-configs [Travis Build# $TRAVIS_BUILD_NUMBER]"
+git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
 git push --quiet --force-with-lease --set-upstream real-origin master
