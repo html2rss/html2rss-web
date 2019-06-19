@@ -9,7 +9,7 @@ git config --global user.name "Travis CI"
 git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" work > /dev/null 2>&1
 (
   cd work || exit
-  bundle update --source html2rss-configs
+  bundle update html2rss-configs
   git add Gemfile.lock
 
   git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
