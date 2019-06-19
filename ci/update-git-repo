@@ -7,14 +7,15 @@ git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
 git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" work > /dev/null 2>&1
-(
-  cd work || exit
-  bundle update html2rss-configs
-  git status
-  git diff
-  git add Gemfile.lock
 
-  git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
-  git push --quiet -u origin master
-  cd ..
-)
+cd work || exit 1
+grep revision Gemfile.lock
+bundle update html2rss-configs
+grep revision Gemfile.lock
+git status
+git diff
+git add Gemfile.lock
+
+git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
+git push --quiet -u origin master
+cd ..
