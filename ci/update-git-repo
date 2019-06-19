@@ -6,13 +6,13 @@ set -e
 git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
-git remote set-url origin "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" > /dev/null 2>&1
-git fetch
-git checkout -b master
-git pull
+git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" work > /dev/null 2>&1
+(
+  cd work || exit
+  bundle update --source html2rss-configs
+  git add Gemfile.lock
 
-bundle update --source html2rss-configs
-git add Gemfile.lock
-
-git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
-git push --quiet -u origin master
+  git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
+  git push --quiet -u origin master
+  cd ..
+)
