@@ -12,5 +12,5 @@ git checkout -b master
 bundle update --source html2rss-configs
 git add Gemfile.lock
 
-git commit --message "chore: auto-update html2rss-configs [Travis $TRAVIS_BUILD_NUMBER)]"
+git commit --message "chore: auto-update html2rss-configs [Travis Build# $TRAVIS_BUILD_NUMBER]"
 git push --quiet --force-with-lease --set-upstream real-origin master
