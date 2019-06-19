@@ -10,6 +10,8 @@ git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" wor
 (
   cd work || exit
   bundle update html2rss-configs
+  git status
+  git diff
   git add Gemfile.lock
 
   git commit --message "chore: auto-update html2rss-configs [Travis Build # $TRAVIS_BUILD_NUMBER]"
