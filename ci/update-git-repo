@@ -7,6 +7,7 @@ git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
 
 git remote set-url origin "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" > /dev/null 2>&1
+git fetch
 git checkout -b master
 git pull
 
