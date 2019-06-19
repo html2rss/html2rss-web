@@ -10,8 +10,10 @@ git clone "https://${GITHUB_TOKEN}@github.com/gildesmarais/html2rss-web.git" wor
 
 cd work || exit 1
 grep revision Gemfile.lock
-bundle update --gemfile 'work/Gemfile' html2rss-configs
+# bundle update --gemfile 'work/Gemfile'
+bundle pristine html2rss-configs
 grep revision Gemfile.lock
+grep revision ../Gemfile.lock
 git status
 git diff
 git add Gemfile.lock
