@@ -48,11 +48,8 @@ class App < Sinatra::Base
     feed_name = params[:splat].first
 
     global_config = CONFIG_YAML.reject { |key| key == 'feeds' }
-    global_config['feeds'] = {
-      feed_name => Html2rss::Configs.find_by_name(feed_name)
-    }
-
-    config = Html2rss::Config.new(global_config, feed_name)
+    feed_config = Html2rss::Configs.find_by_name(feed_name)
+    config = Html2rss::Config.new(feed_config, global_config)
     feed = Html2rss.feed(config)
 
     items?(feed.items) ? feed.to_s : status(500)
