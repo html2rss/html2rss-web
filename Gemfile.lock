@@ -6,9 +6,9 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: d6d78ea0a04638358525e071ced252149e9070f8
+  revision: 2458377152502da813bd23cfeeb4c5a6c89282a4
   specs:
-    html2rss (0.2.2)
+    html2rss (0.3.0)
       faraday (~> 0.15)
       faraday_middleware (~> 0.13)
       nokogiri (>= 1.10)
