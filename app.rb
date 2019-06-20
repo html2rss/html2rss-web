@@ -2,7 +2,6 @@ require 'sinatra'
 require 'html2rss'
 require 'html2rss/configs'
 require 'yaml'
-require 'json'
 
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
@@ -15,13 +14,6 @@ class App < Sinatra::Base
       feed = Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
 
       items?(feed.items) ? feed.to_s : status(500)
-    end
-
-    get "/#{feed_name}.json" do
-      content_type 'application/json'
-      feed = Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
-
-      items?(feed.items) ? json_from_feed(feed) : status(500)
     end
   end
 
@@ -70,25 +62,5 @@ class App < Sinatra::Base
 
   def items?(items)
     items.count.positive?
-  end
-
-  def json_from_feed(feed)
-    JSON.generate(
-      version: 'https://jsonfeed.org/version/1',
-      title: feed.channel.title,
-      items: json_items_from_feed_items(feed.items)
-    )
-  end
-
-  def json_items_from_feed_items(items)
-    items.map { |item|
-      {
-        id: item.guid.content,
-        url: item.link,
-        title: item.title,
-        content_html: item.description,
-        author: { name: item.author }
-      }
-    }
   end
 end
