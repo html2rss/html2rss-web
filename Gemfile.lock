@@ -38,6 +38,8 @@ GEM
       nokogiri (~> 1.8, >= 1.8.4)
     puma (3.12.1)
     rack (2.0.7)
+    rack-cache (1.9.0)
+      rack (>= 0.4)
     rack-protection (2.0.5)
       rack
     rake (12.3.2)
@@ -67,6 +69,7 @@ DEPENDENCIES
   html2rss!
   html2rss-configs!
   puma
+  rack-cache
   rake
   rerun
   sinatra (~> 2.0)

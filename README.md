@@ -47,8 +47,6 @@ feeds:
 
 The URL of your RSS feed is: http://localhost:3000/myfeed.rss
 
-You can get an overview of all feeds of *your* feeds at http://localhost:3000/.
-
 ### Runtime health checks of your feeds
 
 Websites often change their markup. To get notified when one of your configs
@@ -66,4 +64,4 @@ Fork this project, add your `config/feeds.yml` and deploy it.
 For development, you can use `foreman` to start the application:
 `bundle exec foreman start`
 
-`html2rss-web` now listens on port 3000 for your requests.
+`html2rss-web` now listens on port **5**000 for your requests.

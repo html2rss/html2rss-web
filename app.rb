@@ -6,27 +6,13 @@ require 'yaml'
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
   CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
-  FEED_NAMES = (CONFIG_YAML['feeds']&.keys || []).freeze
-
-  FEED_NAMES.each do |feed_name|
-    get "/#{feed_name}.rss" do
-      content_type 'text/xml'
-      feed = Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name)
-
-      items?(feed.items) ? feed.to_s : status(500)
-    end
-  end
-
-  get '/' do
-    erb :index, locals: { feed_names: FEED_NAMES }
-  end
 
   get '/health_check.txt' do
     content_type 'text/plain'
 
     errors = []
 
-    FEED_NAMES.each do |feed_name|
+    yaml_feed_names.each do |feed_name|
       begin
         Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
       rescue e
@@ -44,20 +30,37 @@ class App < Sinatra::Base
   end
 
   get '/*.rss' do
-    content_type 'text/xml'
     feed_name = params[:splat].first
 
-    global_config = CONFIG_YAML.reject { |key| key == 'feeds' }
-    feed_config = Html2rss::Configs.find_by_name(feed_name)
-    config = Html2rss::Config.new(feed_config, global_config)
-    feed = Html2rss.feed(config)
+    feed_config = yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name)
 
-    items?(feed.items) ? feed.to_s : status(500)
+    respond_with_feed(feed_config)
   end
 
   private
 
+  def respond_with_feed(feed_config)
+    config = Html2rss::Config.new(feed_config, global_config)
+    feed = Html2rss.feed(config)
+
+    content_type 'text/xml'
+    expires config.ttl, :public, :must_revalidate
+    items?(feed.items) ? feed.to_s : status(500)
+  end
+
   def items?(items)
     items.count.positive?
+  end
+
+  def global_config
+    @global_config ||= CONFIG_YAML.reject { |key| key == 'feeds' }
+  end
+
+  def yaml_feeds
+    CONFIG_YAML.fetch('feeds') || {}
+  end
+
+  def yaml_feed_names
+    yaml_feeds.keys
   end
 end
