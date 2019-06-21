@@ -6,14 +6,13 @@ require 'yaml'
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
   CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
-  FEED_NAMES = (CONFIG_YAML['feeds']&.keys || []).freeze
 
   get '/health_check.txt' do
     content_type 'text/plain'
 
     errors = []
 
-    FEED_NAMES.each do |feed_name|
+    yaml_feed_names.each do |feed_name|
       begin
         Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
       rescue e
@@ -33,7 +32,7 @@ class App < Sinatra::Base
   get '/*.rss' do
     feed_name = params[:splat].first
 
-    feed_config = CONFIG_YAML['feeds'][feed_name] || Html2rss::Configs.find_by_name(feed_name)
+    feed_config = yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name)
 
     respond_with_feed(feed_config)
   end
@@ -49,11 +48,19 @@ class App < Sinatra::Base
     items?(feed.items) ? feed.to_s : status(500)
   end
 
+  def items?(items)
+    items.count.positive?
+  end
+
   def global_config
     @global_config ||= CONFIG_YAML.reject { |key| key == 'feeds' }
   end
 
-  def items?(items)
-    items.count.positive?
+  def yaml_feeds
+    CONFIG_YAML.fetch('feeds') || {}
+  end
+
+  def yaml_feed_names
+    yaml_feeds.keys
   end
 end
