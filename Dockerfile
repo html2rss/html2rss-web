@@ -13,12 +13,30 @@ HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
 RUN apk add --no-cache git libffi-dev make gcc libc-dev
 
 RUN mkdir /app
+
+ARG USER=html2rss
+ARG UID=991
+ARG GID=991
+
+RUN addgroup --gid "$GID" "$USER" \
+    && adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/app" \
+    --ingroup "$USER" \
+    --no-create-home \
+    --uid "$UID" \
+    "$USER"
+
+RUN chown html2rss:html2rss -R /app
 WORKDIR /app
 
-COPY Gemfile Gemfile.lock ./
+USER html2rss
+
+COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
 RUN bundle config --global frozen 1
 RUN bundle install --binstubs --retry=5 --jobs=7 --without development test
 
-COPY . .
+COPY --chown=html2rss:html2rss . .
 
 CMD bundle exec foreman start
