@@ -10,6 +10,7 @@ before_script:
   - gem install rake
 
 script:
+  - docker run --rm -i hadolint/hadolint < Dockerfile
   - rake
 
 deploy:
