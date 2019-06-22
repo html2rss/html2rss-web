@@ -1,3 +1,7 @@
 docker/
 ci/
 work/
+.git/
+.bundle/
+.travis.yml
+.DS_Store
