@@ -6,12 +6,13 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 2458377152502da813bd23cfeeb4c5a6c89282a4
+  revision: dbdbbf1db5bc551106ce8e263e161b340e234e47
   specs:
-    html2rss (0.3.0)
+    html2rss (0.3.1)
       faraday (~> 0.15)
       faraday_middleware (~> 0.13)
-      nokogiri (>= 1.10)
+      hashie (~> 3.6)
+      nokogiri (>= 1.10, < 2.0)
       sanitize (~> 5.0)
 
 GEM
@@ -25,6 +26,7 @@ GEM
     ffi (1.11.1)
     foreman (0.85.0)
       thor (~> 0.19.1)
+    hashie (3.6.0)
     listen (3.1.5)
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
