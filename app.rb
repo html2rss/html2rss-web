@@ -32,7 +32,7 @@ class App < Sinatra::Base
   get '/*.rss' do
     feed_name = params[:splat].first
 
-    feed_config = yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name)
+    feed_config = yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name, params)
 
     respond_with_feed(feed_config)
   end
