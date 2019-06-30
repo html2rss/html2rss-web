@@ -13,7 +13,7 @@ task :test do
     sleep 5
     sh 'docker ps | grep html2rss-web-test'
 
-    sh 'curl -f http://127.0.0.1:3000/github.com/nuxt.js_releases.rss || exit 1'
+    sh 'curl -f http://127.0.0.1:3000/github.com/releases.rss\?username=nuxt\&repository=nuxt.js || exit 1'
     sh 'curl -f http://127.0.0.1:3000/health_check.txt || exit 1'
   ensure
     sh 'docker logs html2rss-web-test'
