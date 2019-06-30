@@ -16,7 +16,7 @@ You can - optionally - create your own configs and keep them private.
 Now, how to use the configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs)? The URL is build like this:
 
 The config you want to use:  
-`lib/html2rss/configs/domainname.tld/whatever.yml`
+`lib/html2rss/configs/domainname.tld/whatever.yml`  
 `                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 The corresponding URL:  
