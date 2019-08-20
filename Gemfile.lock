@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 1b7d929f2d19d27a138621882bdca0fc1a793bbe
+  revision: a3b1d18cc0eb4ff9c359d591357ed631e44c8dd8
   specs:
     html2rss (0.3.3)
       faraday (~> 0.15)
@@ -39,14 +39,14 @@ GEM
       mini_portile2 (~> 2.4.0)
     nokogumbo (2.0.1)
       nokogiri (~> 1.8, >= 1.8.4)
-    puma (4.0.0)
+    puma (4.1.0)
       nio4r (~> 2.0)
     rack (2.0.7)
     rack-cache (1.9.0)
       rack (>= 0.4)
     rack-protection (2.0.5)
       rack
-    rake (12.3.2)
+    rake (12.3.3)
     rb-fsevent (0.10.3)
     rb-inotify (0.10.0)
       ffi (~> 1.0)
