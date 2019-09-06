@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: a3b1d18cc0eb4ff9c359d591357ed631e44c8dd8
+  revision: caf4e80f342d32ec193868ebeacc5db989947594
   specs:
     html2rss (0.3.3)
       faraday (~> 0.15)
@@ -34,7 +34,7 @@ GEM
     mini_portile2 (2.4.0)
     multipart-post (2.1.1)
     mustermann (1.0.3)
-    nio4r (2.3.1)
+    nio4r (2.5.1)
     nokogiri (1.10.4)
       mini_portile2 (~> 2.4.0)
     nokogumbo (2.0.1)
@@ -44,7 +44,7 @@ GEM
     rack (2.0.7)
     rack-cache (1.9.0)
       rack (>= 0.4)
-    rack-protection (2.0.5)
+    rack-protection (2.0.7)
       rack
     rake (12.3.3)
     rb-fsevent (0.10.3)
@@ -57,10 +57,10 @@ GEM
       crass (~> 1.0.2)
       nokogiri (>= 1.8.0)
       nokogumbo (~> 2.0)
-    sinatra (2.0.5)
+    sinatra (2.0.7)
       mustermann (~> 1.0)
       rack (~> 2.0)
-      rack-protection (= 2.0.5)
+      rack-protection (= 2.0.7)
       tilt (~> 2.0)
     thor (0.19.4)
     tilt (2.0.9)
