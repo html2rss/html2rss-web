@@ -6,10 +6,11 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 6abfcfaadcc9695f303c4d2ab05c626302650356
+  revision: d258f73f30587e48f5854013fa0e67c88bb23a52
   specs:
     html2rss (0.4.1)
       activesupport (~> 5.0)
+      builder
       faraday (~> 0.15)
       faraday_middleware (~> 0.13)
       hashie (~> 3.6)
@@ -25,6 +26,7 @@ GEM
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
+    builder (3.2.3)
     concurrent-ruby (1.1.5)
     crass (1.0.4)
     faraday (0.15.4)
