@@ -14,7 +14,8 @@ RUN apk add --no-cache \
   'git=~2' \
   'make=~4' \
   'gcc=~8' \
-  'libc-dev=~0'
+  'libc-dev=~0' \
+  'tzdata>=2019b'
 
 ARG USER=html2rss
 ARG UID=991
