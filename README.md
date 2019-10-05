@@ -8,7 +8,13 @@ built by the [html2rss gem](https://github.com/gildesmarais/html2rss).
 Out of the box you'll get all configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs).
 You can - optionally - create your own configs and keep them private.
 
-## Quickstart
+## Deployment
+
+### Heroku one-click
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
+
+### with Docker
 
 1. Install Docker CE.
 2. `docker run -d -p 3000:3000 gilcreator/html2rss-web`
@@ -23,7 +29,7 @@ The corresponding URL:
 `http://localhost:3000/domainname.tld/whatever.rss`  
 `                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-## Use your own configs
+#### Use your own configs
 
 To use your private configs, mount a `feed.xml` into the `/app/config/` folder.
 
@@ -38,7 +44,7 @@ When your `feeds.xml` looks like this:
 
 ```yml
 headers:
-  foobar: 'baz'
+  foobar: "baz"
 feeds:
   myfeed:
     channel: …
@@ -47,15 +53,7 @@ feeds:
 
 The URL of your RSS feed is: http://localhost:3000/myfeed.rss
 
-### Runtime health checks of your feeds
-
-Websites often change their markup. To get notified when one of your configs
-break, monitor the `/health_check.txt` endpoint.
-
-It will respond with `success` if all feeds can be generated without any error.
-Otherwise it will not print success, but the information which config is broken.
-
-## Usage without Docker
+### None of the above
 
 E.g. in development mode or with your own deployment method.
 
@@ -65,3 +63,11 @@ For development, you can use `foreman` to start the application:
 `bundle exec foreman start`
 
 `html2rss-web` now listens on port **5**000 for your requests.
+
+## Runtime health checks of your feeds
+
+Websites often change their markup. To get notified when one of _your own_ configs
+break, monitor the `/health_check.txt` endpoint.
+
+It will respond with `success` if all feeds can be generated without any error.
+Otherwise it will not print success, but the information which config is broken.
