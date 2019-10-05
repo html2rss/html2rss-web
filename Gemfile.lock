@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: f4ec8d15681c8a232dbad6a933f7877aec33cc4f
+  revision: a7aca11a708c4f3a3a5f9f6511c0c1e86ec63595
   specs:
     html2rss (0.5.2)
       activesupport (~> 5.0)
@@ -37,7 +37,7 @@ GEM
     foreman (0.85.0)
       thor (~> 0.19.1)
     hashie (3.6.0)
-    i18n (1.6.0)
+    i18n (1.7.0)
       concurrent-ruby (~> 1.0)
     listen (3.2.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
