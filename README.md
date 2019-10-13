@@ -4,22 +4,14 @@
 
 This is a tiny web application to expose HTTP endpoints which deliver RSS feeds
 built by the [html2rss gem](https://github.com/gildesmarais/html2rss).
+This app is versioned as "rolling release" and thus latest master branch should be used.
 
 Out of the box you'll get all configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs).
 You can - optionally - create your own configs and keep them private.
 
-## Deployment
+## Usage of `html2rss-configs` configs
 
-### Heroku one-click
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
-
-### with Docker
-
-1. Install Docker CE.
-2. `docker run -d -p 3000:3000 gilcreator/html2rss-web`
-
-Now, how to use the configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs)? The URL is build like this:
+To use the configs from [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) build the URL like this:
 
 The config you want to use:  
 `lib/html2rss/configs/domainname.tld/whatever.yml`  
@@ -28,6 +20,20 @@ The config you want to use:
 The corresponding URL:  
 `http://localhost:3000/domainname.tld/whatever.rss`  
 `                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+
+## Deployment
+
+### Heroku one-click
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
+
+Since this repository receives updates quiet often, you'd need to update your
+instance manually.
+
+### with Docker
+
+1. Install Docker CE.
+2. `docker run -d -p 3000:3000 gilcreator/html2rss-web`
 
 #### Use your own configs
 
@@ -52,6 +58,27 @@ feeds:
 ```
 
 The URL of your RSS feed is: http://localhost:3000/myfeed.rss
+
+#### Automatic updating
+
+A primitive way to automatically update your Docker instance is to set up this
+script as a cronjob:
+
+```bash
+#!/bin/bash
+set -e
+docker pull -q gilcreator/html2rss-web
+docker stop html2rss-web && docker rm html2rss-web || :
+docker run -d --name html2rss-web --restart=always -p 3000:3000 \
+  --mount type=bind,source="/home/deploy/html2rss-web/config,target=/app/config" \
+  gilcreator/html2rss-web
+```
+
+For updates every 30 minutes your cronjob could look like this:
+
+```
+*/30 *  * * * /home/deploy/html2rss/update > /dev/null 2>&1
+```
 
 ### None of the above
 
