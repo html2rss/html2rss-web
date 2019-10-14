@@ -77,7 +77,7 @@ docker run -d --name html2rss-web --restart=always -p 3000:3000 \
 For updates every 30 minutes your cronjob could look like this:
 
 ```
-*/30 *  * * * /home/deploy/html2rss/update > /dev/null 2>&1
+*/30 *  * * * /home/deploy/html2rss-web/update > /dev/null 2>&1
 ```
 
 ### None of the above
