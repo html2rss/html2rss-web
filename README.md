@@ -4,7 +4,7 @@
 
 This is a compact web application to expose HTTP endpoints which deliver RSS feeds
 built by the [html2rss gem](https://github.com/gildesmarais/html2rss).
-It's distributed in a [_rolling release_](https://en.wikipedia.org/wiki/Rolling_release) fashion and thus the master branch is the one to use.
+It's distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release) fashion and thus the master branch is the one to use.
 
 Out of the box the app comes with all configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs) included. You can - optionally - create your own configs and keep them private.
 
