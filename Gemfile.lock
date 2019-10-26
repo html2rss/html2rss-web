@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 2f0fe576d74c5adf0e2e735914194c6caf4fe221
+  revision: 6c7fb88c9c87fb977645b21a7b13e70367b10608
   specs:
     html2rss (0.6.0)
       activesupport (~> 5.0)
@@ -29,7 +29,7 @@ GEM
       tzinfo (~> 1.1)
     builder (3.2.3)
     concurrent-ruby (1.1.5)
-    crass (1.0.4)
+    crass (1.0.5)
     faraday (0.17.0)
       multipart-post (>= 1.2, < 3)
     faraday_middleware (0.13.1)
