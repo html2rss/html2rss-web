@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 20b607ac8838d0229550030a12fe18f208eb1a62
+  revision: 4e1dcbf0fbd5f303bf99e69edc7f9fd157390730
   specs:
     html2rss (0.7.0)
       activesupport (~> 5.0)
@@ -14,6 +14,7 @@ GIT
       faraday (~> 0.15)
       faraday_middleware (~> 0.13)
       hashie (~> 3.6)
+      kramdown
       mime-types (> 3.0)
       nokogiri (>= 1.10, < 2.0)
       reverse_markdown (~> 1.3)
@@ -41,6 +42,7 @@ GEM
     hashie (3.6.0)
     i18n (1.7.0)
       concurrent-ruby (~> 1.0)
+    kramdown (2.1.0)
     listen (3.2.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
