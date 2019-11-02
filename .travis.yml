@@ -3,13 +3,17 @@ sudo: required
 services:
   - docker
 
+cache: bundler
+
 install:
   - bash docker/build
 
 before_script:
   - gem install rake
+  - bundle
 
 script:
+  - bundle exec rubocop -F
   - docker run --rm -i hadolint/hadolint < Dockerfile
   - rake
 

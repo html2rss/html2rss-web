@@ -8,3 +8,8 @@ gem 'rack-cache'
 gem 'rake'
 gem 'rerun'
 gem 'sinatra', '~> 2.0'
+
+group :development do
+  gem 'rubocop'
+  gem 'rubocop-performance'
+end
