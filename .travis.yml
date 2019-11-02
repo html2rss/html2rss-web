@@ -8,6 +8,7 @@ install:
 
 before_script:
   - gem install rake
+  - bundle
 
 script:
   - bundle exec rubocop -F
