@@ -2,41 +2,35 @@
 
 # html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)
 
-This is a compact web application to expose HTTP endpoints which deliver RSS feeds
-built by the [html2rss gem](https://github.com/gildesmarais/html2rss).
-It's distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release) fashion and thus the master branch is the one to use.
+This is a small web application delivering RSS feeds
+built by [`html2rss`](https://github.com/gildesmarais/html2rss) via HTTP.
 
-Out of the box the app comes with all configs from [html2rss-configs](https://github.com/gildesmarais/html2rss-configs) included. You can - optionally - create your own configs and keep them private.
+It comes with all [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) included.
+It also serves your own feeds: set up your _feed configs_ in a YAML file. The [`html2rss`' README](https://github.com/gildesmarais/html2rss/blob/master/README.md#usage-with-a-yaml-config-file)
+explains what goes in that file.
 
-## Use the baked-in `html2rss-configs`
+This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release)
+fashion from the `master` branch.
 
-To use the configs from [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) build the URL like this:
+## Using the included `html2rss-configs`
 
-The feed config you'd like to use:  
+Build the URL like this:
+
+The _feed config_ you'd like to use:  
 `lib/html2rss/configs/domainname.tld/whatever.yml`  
-`                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+`                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 The corresponding URL:  
 `http://localhost:3000/domainname.tld/whatever.rss`  
-`                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+`                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-## Deployment
+👉 [Find all `html2rss-configs` here.](https://github.com/gildesmarais/html2rss-configs/lib/html2rss/configs)
 
-### Heroku one-click
+## Deployment with Docker
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
+Install Docker CE and `docker run -d -p 3000:3000 gilcreator/html2rss-web`.
 
-Since this repository receives updates frequently, you'd need to update your
-instance yourself.
-
-### with Docker
-
-1. Install Docker CE.
-2. `docker run -d -p 3000:3000 gilcreator/html2rss-web`
-
-#### Use your own (private) configs
-
-To use your private configs, mount a `feed.yml` into the `/app/config/` folder.
+To use your private _feed configs_, mount a `feed.yml` into the `/app/config/` folder.
 
 ```
 docker run -d --name html2rss-web \
@@ -45,20 +39,7 @@ docker run -d --name html2rss-web \
   gilcreator/html2rss-web
 ```
 
-When your `feeds.yml` looks like this:
-
-```yml
-headers:
-  foobar: "baz"
-feeds:
-  myfeed:
-    channel: …
-    selectors: …
-```
-
-The URL of your RSS feed is: http://localhost:3000/myfeed.rss
-
-#### Automatic updating
+### Automatic updating
 
 A primitive way to automatically update your Docker instance is to set up this
 script as a cronjob:
@@ -79,17 +60,23 @@ The cronjob for updating every 30 minutes could look like this:
 */30 *  * * * /home/deploy/html2rss-web/update > /dev/null 2>&1
 ```
 
-### None of the above
+## Heroku one-click deployment
 
-Fork this project, add a `config/feeds.yml` and deploy it.
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
 
-Use `foreman` to start the application with automatic reloading provided by [rerun](https://github.com/alexch/rerun):
+Since this repository receives updates frequently, you'd need to update your
+instance yourself.
 
-`bundle exec foreman start`
+## Run it locally
 
-*html2rss-web* now listens on port **5**000 for requests.
+1. Install Ruby `>= 2.6`.
+2. `gem install bundler`
+3. `bundle`
+4. `bundle exec foreman start`
 
-## Runtime health checks of your private feeds
+_html2rss-web_ now listens on port **5**000 for requests.
+
+## _Feed configs_ runtime health checks
 
 Websites often change their markup. To get notified when one of _your own_ configs
 break, use the `/health_check.txt` endpoint.

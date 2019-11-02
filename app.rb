@@ -3,6 +3,8 @@ require 'html2rss'
 require 'html2rss/configs'
 require 'yaml'
 
+##
+#
 class App < Sinatra::Base
   CONFIG_FILE = 'config/feeds.yml'.freeze
   CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
@@ -13,11 +15,9 @@ class App < Sinatra::Base
     errors = []
 
     yaml_feed_names.each do |feed_name|
-      begin
-        Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
-      rescue e
-        errors << "#{feed_name}: #{e.message}"
-      end
+      Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
+    rescue e
+      errors << "#{feed_name}: #{e.message}"
     end
 
     if errors.count.positive?
@@ -34,7 +34,7 @@ class App < Sinatra::Base
 
     feed_config = yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name, params)
 
-    respond_with_feed(feed_config)
+    feed_config ? respond_with_feed(feed_config) : status(404)
   end
 
   private
@@ -45,11 +45,11 @@ class App < Sinatra::Base
 
     content_type 'text/xml'
     expires config.ttl, :public, :must_revalidate
-    items?(feed.items) ? feed.to_s : status(500)
+    items?(feed) ? feed.to_s : status(500)
   end
 
-  def items?(items)
-    items.count.positive?
+  def items?(feed)
+    feed.items.count.positive?
   end
 
   def global_config
