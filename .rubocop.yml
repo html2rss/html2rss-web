@@ -1,0 +1,46 @@
+require:
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 2.6
+  DisplayCopNames: true
+
+Metrics/LineLength:
+  Max: 110
+
+Metrics/ModuleLength:
+  Exclude:
+    - "**/*_spec.rb"
+
+Metrics/MethodLength:
+  Max: 15
+
+Style/BlockDelimiters:
+  Enabled: true
+  Exclude:
+    - '**/*_spec.rb'
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/AsciiComments:
+  Enabled: false
+
+Style/BracesAroundHashParameters:
+  Description: 'Enforce braces style around hash parameters.'
+  Enabled: true
+
+Style/HashSyntax:
+  Enabled: true
+
+Layout/SpaceInsideParens:
+  Enabled: true
+
+Performance/CaseWhenSplat:
+  Enabled: true
+
+Performance/ChainArrayAllocation:
+  Enabled: true
+
+Performance/OpenStruct:
+  Enabled: true
