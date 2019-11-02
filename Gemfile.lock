@@ -6,9 +6,9 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 4e1dcbf0fbd5f303bf99e69edc7f9fd157390730
+  revision: 6424a3ea197007d8dacf42432910e79d1bbb4cdc
   specs:
-    html2rss (0.7.0)
+    html2rss (0.8.0)
       activesupport (~> 5.0)
       builder
       faraday (~> 0.15)
@@ -50,11 +50,11 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2019.1009)
     mini_portile2 (2.4.0)
-    minitest (5.12.2)
+    minitest (5.13.0)
     multipart-post (2.1.1)
     mustermann (1.0.3)
     nio4r (2.5.2)
-    nokogiri (1.10.4)
+    nokogiri (1.10.5)
       mini_portile2 (~> 2.4.0)
     nokogumbo (2.0.1)
       nokogiri (~> 1.8, >= 1.8.4)
@@ -87,7 +87,7 @@ GEM
     to_regexp (0.2.1)
     tzinfo (1.2.5)
       thread_safe (~> 0.1)
-    zeitwerk (2.2.0)
+    zeitwerk (2.2.1)
 
 PLATFORMS
   ruby
