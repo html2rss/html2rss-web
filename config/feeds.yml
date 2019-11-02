@@ -1,5 +1,5 @@
 headers:
-  'User-Agent': "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:67.0) Gecko/20100101 Firefox/67.0"
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
 feeds:
   # your custom feeds go here:
   # mysite:
