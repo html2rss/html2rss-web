@@ -2,12 +2,14 @@
 
 # html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)
 
-This is a small web application delivering RSS feeds
+This is a small web application to deliver RSS feeds
 built by [`html2rss`](https://github.com/gildesmarais/html2rss) via HTTP.
 
-It comes with all [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) included.
-It also serves your own feeds: set up your _feed configs_ in a YAML file. The [`html2rss`' README](https://github.com/gildesmarais/html2rss/blob/master/README.md#usage-with-a-yaml-config-file)
-explains what goes in that file.
+Features:
+
+- serves your own feeds: set up your _feed configs_ in a YAML file. The [`html2rss`' README](https://github.com/gildesmarais/html2rss/blob/master/README.md#usage-with-a-yaml-config-file) explains what goes in that file.
+- comes with all [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) included.
+- handles caching and HTTP Cache-Headers.
 
 This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release)
 fashion from the `master` branch.
@@ -18,13 +20,13 @@ Build the URL like this:
 
 The _feed config_ you'd like to use:  
 `lib/html2rss/configs/domainname.tld/whatever.yml`  
-`                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 The corresponding URL:  
 `http://localhost:3000/domainname.tld/whatever.rss`  
-`                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-👉 [Find all `html2rss-configs` here.](https://github.com/gildesmarais/html2rss-configs/lib/html2rss/configs)
+👉 [See file list of all `html2rss-configs`.](https://github.com/gildesmarais/html2rss-configs/tree/master/lib/html2rss/configs)
 
 ## Deployment with Docker
 
