@@ -20,7 +20,7 @@ Build the URL like this:
 
 The _feed config_ you'd like to use:  
 `lib/html2rss/configs/domainname.tld/whatever.yml`  
-`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 The corresponding URL:  
 `http://localhost:3000/domainname.tld/whatever.rss`  
