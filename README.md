@@ -72,9 +72,9 @@ instance yourself.
 ## Run it locally
 
 1. Install Ruby `>= 2.6`.
-2. `gem install bundler`
+2. `gem install bundler foreman`
 3. `bundle`
-4. `bundle exec foreman start`
+4. `foreman start`
 
 _html2rss-web_ now listens on port **5**000 for requests.
 

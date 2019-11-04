@@ -39,7 +39,6 @@ GEM
     faraday_middleware (0.13.1)
       faraday (>= 0.7.4, < 1.0)
     ffi (1.11.1)
-    foreman (0.86.0)
     hashie (3.6.0)
     i18n (1.7.0)
       concurrent-ruby (~> 1.0)
@@ -110,7 +109,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  foreman
   html2rss!
   html2rss-configs!
   puma

@@ -38,9 +38,10 @@ WORKDIR /app
 USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
-RUN bundle config --global frozen 1 \
+RUN gem install foreman \
+    && bundle config --global frozen 1 \
     && bundle install --binstubs --retry=5 --jobs=7 --without development test
 
 COPY --chown=html2rss:html2rss . .
 
-CMD ["bundle", "exec", "foreman", "start"]
+CMD ["foreman", "start"]
