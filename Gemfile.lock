@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 6886bc71ceda06f791b81c61f8ff8e33e884edd2
+  revision: bf1f95ad30f77c27a1e968c923b52914fcfd32cf
   specs:
     html2rss (0.8.0)
       activesupport (~> 5.0)
