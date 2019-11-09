@@ -6,14 +6,14 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: bf1f95ad30f77c27a1e968c923b52914fcfd32cf
+  revision: 5791b2b3b45f2b9b5f83730e38addc7895b96832
   specs:
-    html2rss (0.8.0)
+    html2rss (0.8.2)
       activesupport (~> 5.0)
+      addressable (~> 2.7)
       builder
       faraday (~> 0.15)
       faraday_middleware (~> 0.13)
-      hashie (~> 3.6)
       kramdown
       mime-types (> 3.0)
       nokogiri (>= 1.10, < 2.0)
@@ -30,6 +30,8 @@ GEM
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
+    addressable (2.7.0)
+      public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.0)
     builder (3.2.3)
     concurrent-ruby (1.1.5)
@@ -39,7 +41,6 @@ GEM
     faraday_middleware (0.13.1)
       faraday (>= 0.7.4, < 1.0)
     ffi (1.11.1)
-    hashie (3.6.0)
     i18n (1.7.0)
       concurrent-ruby (~> 1.0)
     jaro_winkler (1.5.4)
@@ -62,6 +63,7 @@ GEM
     parallel (1.18.0)
     parser (2.6.5.0)
       ast (~> 2.4.0)
+    public_suffix (4.0.1)
     puma (4.3.0)
       nio4r (~> 2.0)
     rack (2.0.7)
