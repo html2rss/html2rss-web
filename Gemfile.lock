@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: 4df2ab508ba158556d5400a3e93a483a5fad8aaa
+  revision: 0347e39eca1d50dd5f17296bbbff8f02d4ebd67b
   specs:
     html2rss (0.8.2)
       activesupport (~> 5.0)
@@ -58,7 +58,7 @@ GEM
     nio4r (2.5.2)
     nokogiri (1.10.5)
       mini_portile2 (~> 2.4.0)
-    nokogumbo (2.0.1)
+    nokogumbo (2.0.2)
       nokogiri (~> 1.8, >= 1.8.4)
     parallel (1.19.0)
     parser (2.6.5.0)
