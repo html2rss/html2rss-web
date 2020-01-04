@@ -1,4 +1,4 @@
-FROM ruby:2.6-alpine
+FROM ruby:2.7-alpine3.11
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -13,7 +13,7 @@ HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
 RUN apk add --no-cache \
   'git=~2' \
   'make=~4' \
-  'gcc=~8' \
+  'gcc=~9' \
   'libc-dev=~0' \
   'tzdata>=2019b'
 
@@ -38,7 +38,7 @@ WORKDIR /app
 USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
-RUN gem install foreman:'< 1' \
+RUN gem install foreman:'< 1' bundler:'~> 1.0' \
     && bundle config --global frozen 1 \
     && bundle install --binstubs --retry=5 --jobs=7 --without development test
 
