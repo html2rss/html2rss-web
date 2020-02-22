@@ -5,9 +5,6 @@ AllCops:
   TargetRubyVersion: 2.6
   DisplayCopNames: true
 
-Metrics/LineLength:
-  Max: 110
-
 Metrics/ModuleLength:
   Exclude:
     - "**/*_spec.rb"
@@ -26,12 +23,20 @@ Style/FrozenStringLiteralComment:
 Style/AsciiComments:
   Enabled: false
 
-Style/BracesAroundHashParameters:
-  Description: 'Enforce braces style around hash parameters.'
-  Enabled: true
-
 Style/HashSyntax:
   Enabled: true
+
+Style/HashEachMethods:
+  Enabled: true
+
+Style/HashTransformKeys:
+  Enabled: true
+
+Style/HashTransformValues:
+  Enabled: true
+
+Layout/LineLength:
+  Max: 110
 
 Layout/SpaceInsideParens:
   Enabled: true
