@@ -6,18 +6,18 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: cafb05de2739fcfddc4af0738505292332b6f8f4
+  revision: a5690d0155a8b3ff9cb41ce1a1a75681266f2081
   specs:
     html2rss (0.8.2)
       activesupport (~> 5.0)
       addressable (~> 2.7)
       builder
-      faraday (~> 0.15)
-      faraday_middleware (~> 0.13)
+      faraday (~> 1.0)
+      faraday_middleware
       kramdown
       mime-types (> 3.0)
       nokogiri (>= 1.10, < 2.0)
-      reverse_markdown (~> 1.3)
+      reverse_markdown (~> 2.0)
       sanitize (~> 5.0)
       to_regexp
       zeitwerk
@@ -36,10 +36,10 @@ GEM
     builder (3.2.4)
     concurrent-ruby (1.1.6)
     crass (1.0.6)
-    faraday (0.17.3)
+    faraday (1.0.0)
       multipart-post (>= 1.2, < 3)
-    faraday_middleware (0.14.0)
-      faraday (>= 0.7.4, < 1.0)
+    faraday_middleware (1.0.0.rc1)
+      faraday (~> 1.0)
     ffi (1.11.1)
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
@@ -57,7 +57,7 @@ GEM
     mustermann (1.1.0)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.5.2)
-    nokogiri (1.10.8)
+    nokogiri (1.10.9)
       mini_portile2 (~> 2.4.0)
     nokogumbo (2.0.2)
       nokogiri (~> 1.8, >= 1.8.4)
@@ -79,7 +79,7 @@ GEM
       ffi (~> 1.0)
     rerun (0.13.0)
       listen (~> 3.0)
-    reverse_markdown (1.4.0)
+    reverse_markdown (2.0.0)
       nokogiri
     rexml (3.2.4)
     rubocop (0.80.1)
@@ -109,7 +109,7 @@ GEM
     tzinfo (1.2.6)
       thread_safe (~> 0.1)
     unicode-display_width (1.6.1)
-    zeitwerk (2.2.2)
+    zeitwerk (2.3.0)
 
 PLATFORMS
   ruby
