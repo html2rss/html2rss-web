@@ -41,6 +41,12 @@ Layout/LineLength:
 Layout/SpaceInsideParens:
   Enabled: true
 
+Lint/RaiseException:
+  Enabled: true
+
+Lint/StructNewOverride:
+  Enabled: true
+
 Performance/CaseWhenSplat:
   Enabled: true
 
