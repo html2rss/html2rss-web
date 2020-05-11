@@ -1,6 +1,6 @@
 ![html2rss logo](https://github.com/gildesmarais/html2rss/raw/master/support/logo.png)
 
-# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)![mergify-status](https://img.shields.io/endpoint.svg?url=https://gh.mergify.io/badges/gildesmarais/html2rss-web&style=flat)
+# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)![mergify-status](https://img.shields.io/endpoint.svg?url=https://gh.mergify.io/badges/gildesmarais/html2rss-web&style=flat) [![](http://img.shields.io/liberapay/goal/gildesmarais.svg?logo=liberapa)](https://liberapay.com/gildesmarais/donate)
 
 This is a small web application to deliver RSS feeds
 built by [`html2rss`](https://github.com/gildesmarais/html2rss) via HTTP.
@@ -13,6 +13,8 @@ Features:
 
 This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release)
 fashion from the `master` branch.
+
+💓 Depending on this application? [Feel free to donate](https://liberapay.com/gildesmarais/donate)! Thank you!
 
 ## Using the included `html2rss-configs`
 
