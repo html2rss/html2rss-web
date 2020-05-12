@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: a5690d0155a8b3ff9cb41ce1a1a75681266f2081
+  revision: a31b5636e54736808924956be00c59f71ecfa5ba
   specs:
     html2rss (0.8.2)
       activesupport (~> 5.0)
@@ -43,13 +43,14 @@ GEM
     ffi (1.12.2)
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
-    kramdown (2.1.0)
+    kramdown (2.2.1)
+      rexml
     listen (3.2.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2019.1009)
+    mime-types-data (3.2020.0425)
     mini_portile2 (2.4.0)
     minitest (5.14.0)
     multipart-post (2.1.1)
@@ -63,7 +64,7 @@ GEM
     parallel (1.19.1)
     parser (2.7.1.2)
       ast (~> 2.4.0)
-    public_suffix (4.0.3)
+    public_suffix (4.0.5)
     puma (4.3.3)
       nio4r (~> 2.0)
     rack (2.2.2)
@@ -104,7 +105,7 @@ GEM
     thread_safe (0.3.6)
     tilt (2.0.10)
     to_regexp (0.2.1)
-    tzinfo (1.2.6)
+    tzinfo (1.2.7)
       thread_safe (~> 0.1)
     unicode-display_width (1.7.0)
     zeitwerk (2.3.0)
