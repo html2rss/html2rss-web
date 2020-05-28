@@ -6,10 +6,10 @@ GIT
 
 GIT
   remote: https://github.com/gildesmarais/html2rss.git
-  revision: a31b5636e54736808924956be00c59f71ecfa5ba
+  revision: 4fe283db2f012283f7957d7fd0207e98b083e6dd
   specs:
     html2rss (0.8.2)
-      activesupport (~> 5.0)
+      activesupport (>= 5, < 7)
       addressable (~> 2.7)
       builder
       faraday (~> 1.0)
@@ -25,11 +25,12 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (5.2.4.3)
+    activesupport (6.0.3.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 0.7, < 2)
       minitest (~> 5.1)
       tzinfo (~> 1.1)
+      zeitwerk (~> 2.2, >= 2.2.2)
     addressable (2.7.0)
       public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.0)
@@ -50,7 +51,7 @@ GEM
       rb-inotify (~> 0.9, >= 0.9.10)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2020.0425)
+    mime-types-data (3.2020.0512)
     mini_portile2 (2.4.0)
     minitest (5.14.1)
     multipart-post (2.1.1)
