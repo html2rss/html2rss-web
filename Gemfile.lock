@@ -99,7 +99,7 @@ GEM
       rubocop (>= 0.71.0)
     ruby-progressbar (1.10.1)
     ruby2_keywords (0.0.2)
-    sanitize (5.1.0)
+    sanitize (5.2.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.8.0)
       nokogumbo (~> 2.0)
