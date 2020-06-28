@@ -44,7 +44,7 @@ GEM
     ffi (1.13.1)
     i18n (1.8.3)
       concurrent-ruby (~> 1.0)
-    kramdown (2.2.1)
+    kramdown (2.3.0)
       rexml
     listen (3.2.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
