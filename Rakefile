@@ -4,9 +4,9 @@ task :test do
   current_dir = ENV['TRAVIS_BUILD_DIR'] || __dir__
 
   sh 'docker build -t gilcreator/html2rss-web -f Dockerfile .'
-  sh 'docker run -d -p 3000:3000 --mount type=bind,source="' +
-     current_dir +
-     '/config,target=/app/config" --name html2rss-web-test gilcreator/html2rss-web'
+  sh ['docker run -d -p 3000:3000 --mount type=bind,source="',
+      current_dir,
+      '/config,target=/app/config" --name html2rss-web-test gilcreator/html2rss-web'].join
 
   # wait for container to run and accept connections
   sleep 5

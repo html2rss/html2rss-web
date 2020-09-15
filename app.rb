@@ -27,10 +27,10 @@ class App < Sinatra::Base
     feed_name = params[:splat].first
 
     feed_config = begin
-                    yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name, params)
-                  rescue StandardError
-                    nil
-                  end
+      yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name, params)
+    rescue StandardError
+      nil
+    end
 
     feed_config ? respond_with_feed(feed_config) : status(404)
   end
