@@ -66,7 +66,7 @@ GEM
     parser (2.7.1.4)
       ast (~> 2.4.1)
     public_suffix (4.0.6)
-    puma (4.3.6)
+    puma (5.0.0)
       nio4r (~> 2.0)
     rack (2.2.3)
     rack-cache (1.12.0)
