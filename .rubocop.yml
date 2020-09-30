@@ -2,57 +2,6 @@ require:
   - rubocop-performance
 
 AllCops:
-  TargetRubyVersion: 2.6
+  TargetRubyVersion: 2.7
   DisplayCopNames: true
   NewCops: enable
-
-Metrics/ModuleLength:
-  Exclude:
-    - "**/*_spec.rb"
-
-Metrics/MethodLength:
-  Max: 15
-
-Style/BlockDelimiters:
-  Enabled: true
-  Exclude:
-    - '**/*_spec.rb'
-
-Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Style/AsciiComments:
-  Enabled: false
-
-Style/HashSyntax:
-  Enabled: true
-
-Style/HashEachMethods:
-  Enabled: true
-
-Style/HashTransformKeys:
-  Enabled: true
-
-Style/HashTransformValues:
-  Enabled: true
-
-Layout/LineLength:
-  Max: 110
-
-Layout/SpaceInsideParens:
-  Enabled: true
-
-Lint/RaiseException:
-  Enabled: true
-
-Lint/StructNewOverride:
-  Enabled: true
-
-Performance/CaseWhenSplat:
-  Enabled: true
-
-Performance/ChainArrayAllocation:
-  Enabled: true
-
-Performance/OpenStruct:
-  Enabled: true

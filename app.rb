@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'sinatra'
 require 'html2rss'
 require 'html2rss/configs'
@@ -6,7 +8,7 @@ require 'yaml'
 ##
 #
 class App < Sinatra::Base
-  CONFIG_FILE = 'config/feeds.yml'.freeze
+  CONFIG_FILE = 'config/feeds.yml'
   CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
 
   get '/health_check.txt' do
