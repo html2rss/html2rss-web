@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 
 gem 'html2rss', git: 'https://github.com/gildesmarais/html2rss.git'
-gem 'html2rss-configs', git: 'https://github.com/gildesmarais/html2rss-configs.git'
+gem 'html2rss-configs', git: 'https://github.com/html2rss/html2rss-configs.git'
 gem 'puma'
 gem 'rack-cache'
 gem 'rake'

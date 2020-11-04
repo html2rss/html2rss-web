@@ -1,10 +1,4 @@
 GIT
-  remote: https://github.com/gildesmarais/html2rss-configs.git
-  revision: 71820e3c7851ff31c63960e99798741b92c7248e
-  specs:
-    html2rss-configs (0.2.0)
-
-GIT
   remote: https://github.com/gildesmarais/html2rss.git
   revision: c777808f1bda22ab720d1cefdf24910c27b13e60
   specs:
@@ -21,6 +15,12 @@ GIT
       sanitize (~> 5.0)
       to_regexp
       zeitwerk
+
+GIT
+  remote: https://github.com/html2rss/html2rss-configs.git
+  revision: 9597f28869c16b81e020cd9f22e083510508f116
+  specs:
+    html2rss-configs (0.2.0)
 
 GEM
   remote: https://rubygems.org/

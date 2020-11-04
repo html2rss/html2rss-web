@@ -8,7 +8,7 @@ built by [`html2rss`](https://github.com/gildesmarais/html2rss) via HTTP.
 Features:
 
 - serves your own feeds: set up your _feed configs_ in a YAML file. See [`html2rss`' README](https://github.com/gildesmarais/html2rss/blob/master/README.md#usage-with-a-yaml-config-file) for documentation.
-- comes with all [`html2rss-configs`](https://github.com/gildesmarais/html2rss-configs) included.
+- comes with all [`html2rss-configs`](https://github.com/html2rss/html2rss-configs) included.
 - handles caching and HTTP Cache-Headers.
 
 This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release)
@@ -28,7 +28,7 @@ The corresponding URL:
 `http://localhost:3000/domainname.tld/whatever.rss`  
 `‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-👉 [See file list of all `html2rss-configs`.](https://github.com/gildesmarais/html2rss-configs/tree/master/lib/html2rss/configs)
+👉 [See file list of all `html2rss-configs`.](https://github.com/html2rss/html2rss-configs/tree/master/lib/html2rss/configs)
 
 ## Deployment with Docker
 
