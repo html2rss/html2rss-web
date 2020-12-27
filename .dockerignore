@@ -3,6 +3,5 @@
 .git/
 .travis.yml
 app.json
-ci/
 docker/
 work/
