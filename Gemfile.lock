@@ -80,7 +80,7 @@ GEM
     rb-fsevent (0.10.4)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
-    regexp_parser (2.0.2)
+    regexp_parser (2.0.3)
     rerun (0.13.1)
       listen (~> 3.0)
     reverse_markdown (2.0.0)
