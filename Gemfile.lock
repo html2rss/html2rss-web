@@ -46,7 +46,7 @@ GEM
     faraday_middleware (1.0.0)
       faraday (~> 1.0)
     ffi (1.14.2)
-    i18n (1.8.5)
+    i18n (1.8.6)
       concurrent-ruby (~> 1.0)
     kramdown (2.3.0)
       rexml
