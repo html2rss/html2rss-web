@@ -57,7 +57,7 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2020.1104)
     mini_portile2 (2.5.0)
-    minitest (5.14.2)
+    minitest (5.14.3)
     multipart-post (2.1.1)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
