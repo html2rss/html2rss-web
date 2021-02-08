@@ -2,6 +2,9 @@
 
 require './app'
 require 'rack/cache'
+require 'rack-timeout'
+
+use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
 
 use Rack::Cache,
     metastore: 'file:./tmp/rack-cache-meta',

@@ -79,6 +79,7 @@ GEM
       rack (>= 0.4)
     rack-protection (2.1.0)
       rack
+    rack-timeout (0.6.0)
     rainbow (3.0.0)
     rake (13.0.3)
     rb-fsevent (0.10.4)
@@ -132,6 +133,7 @@ DEPENDENCIES
   html2rss-configs!
   puma
   rack-cache
+  rack-timeout
   rake
   rerun
   rubocop
