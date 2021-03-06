@@ -46,7 +46,7 @@ GEM
     faraday-net_http (1.0.1)
     faraday_middleware (1.0.0)
       faraday (~> 1.0)
-    ffi (1.14.2)
+    ffi (1.15.0)
     i18n (1.8.9)
       concurrent-ruby (~> 1.0)
     kramdown (2.3.0)
