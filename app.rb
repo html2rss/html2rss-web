@@ -40,7 +40,11 @@ class App < Sinatra::Base
   private
 
   def respond_with_feed(feed_config, params)
-    config = Html2rss::Config.new(feed_config, global_config, params)
+    # Create a Hash from params [Sinatra::IndifferentHash] with symbolized keys.
+    dynamic_params = {}
+    params.each_pair { |k, v| dynamic_params[k.to_sym] = v if k != 'splat' }
+
+    config = Html2rss::Config.new(feed_config, global_config, dynamic_params)
     feed = Html2rss.feed(config)
 
     content_type 'text/xml'
