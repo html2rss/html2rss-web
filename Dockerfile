@@ -1,4 +1,4 @@
-FROM ruby:2.7.2-alpine3.11
+FROM ruby:3.0.0-alpine3.13
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -13,7 +13,7 @@ HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
 RUN apk add --no-cache \
   'git=~2' \
   'make=~4' \
-  'gcc=~9' \
+  'gcc=~10' \
   'libc-dev=~0' \
   'tzdata>=2019b'
 
