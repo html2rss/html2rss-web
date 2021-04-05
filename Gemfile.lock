@@ -91,7 +91,7 @@ GEM
       listen (~> 3.0)
     reverse_markdown (2.0.0)
       nokogiri
-    rexml (3.2.4)
+    rexml (3.2.5)
     rss (0.2.9)
       rexml
     rubocop (1.12.1)
