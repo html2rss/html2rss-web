@@ -4,16 +4,9 @@ updates:
   directory: "/"
   schedule:
     interval: daily
-    time: "09:00"
+    time: "22:00"
   open-pull-requests-limit: 10
   versioning-strategy: increase-if-necessary
-  allow:
-  - dependency-type: direct
-  - dependency-type: indirect
-  ignore:
-  - dependency-name: mini_portile2
-    versions:
-    - 2.5.1
 - package-ecosystem: docker
   directory: "/"
   schedule:
