@@ -10,7 +10,7 @@ jobs:
     name: bundle update
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: pull request on bundle update
         uses: supermanner/pull-request-on-bundle-update@v1.0.1
         with:
