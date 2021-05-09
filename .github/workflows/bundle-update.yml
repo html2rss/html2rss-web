@@ -1,0 +1,19 @@
+name: bundle update
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+
+  workflow_dispatch:
+
+jobs:
+  bundle-update:
+    name: bundle update
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: pull request on bundle update
+        uses: supermanner/pull-request-on-bundle-update@v1.0.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_user_name: ${{ secrets.HUB_USER }}
+          git_email: ${{ secrets.HUB_EMAIL }}
