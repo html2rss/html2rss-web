@@ -1,7 +1,7 @@
 .bundle/
 .DS_Store
 .git/
-.travis.yml
+.github/
 app.json
 docker/
 work/

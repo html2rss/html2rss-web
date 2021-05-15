@@ -38,10 +38,10 @@ WORKDIR /app
 USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
-RUN gem install foreman:'< 1' bundler:'~> 1.0' \
-    && bundle config --global frozen 1 \
-    && bundle install --binstubs --retry=5 --jobs=7 --without development test
+RUN gem install bundler:'<3' \
+    && bundle config set deployment 'true' \
+    && bundle install --retry=5 --jobs=7
 
 COPY --chown=html2rss:html2rss . .
 
-CMD ["foreman", "start"]
+CMD ["bundle", "exec", "puma -C config/puma.rb"]

@@ -1,0 +1,41 @@
+name: test, docker build & push
+
+on: [push]
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker run --rm -i hadolint/hadolint < Dockerfile
+
+  ruby:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - run: bundle exec rubocop -F
+
+  docker-test:
+    needs: hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: |
+          bundle exec rake
+
+# TODO: deployment on push to master branch
+# - name: build
+#   run: docker/build
+# - name: push
+#   env:
+#     HUB_EMAIL:
+#     HUB_USER
+#     run: docker/push

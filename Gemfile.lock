@@ -50,25 +50,19 @@ GEM
     faraday-net_http_persistent (1.1.0)
     faraday_middleware (1.0.0)
       faraday (~> 1.0)
-    ffi (1.15.0)
     i18n (1.8.10)
       concurrent-ruby (~> 1.0)
     kramdown (2.3.1)
       rexml
-    listen (3.5.1)
-      rb-fsevent (~> 0.10, >= 0.10.3)
-      rb-inotify (~> 0.9, >= 0.9.10)
     mime-types (3.3.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2021.0225)
-    mini_portile2 (2.5.1)
     minitest (5.14.4)
     multipart-post (2.1.1)
     mustermann (1.1.1)
       ruby2_keywords (~> 0.0.1)
     nio4r (2.5.7)
-    nokogiri (1.11.5)
-      mini_portile2 (~> 2.5.0)
+    nokogiri (1.11.5-x86_64-darwin)
       racc (~> 1.4)
     nokogumbo (2.0.5)
       nokogiri (~> 1.8, >= 1.8.4)
@@ -87,12 +81,7 @@ GEM
     rack-timeout (0.6.0)
     rainbow (3.0.0)
     rake (13.0.3)
-    rb-fsevent (0.11.0)
-    rb-inotify (0.10.1)
-      ffi (~> 1.0)
     regexp_parser (2.1.1)
-    rerun (0.13.1)
-      listen (~> 3.0)
     reverse_markdown (2.0.0)
       nokogiri
     rexml (3.2.5)
@@ -132,7 +121,7 @@ GEM
     zeitwerk (2.4.2)
 
 PLATFORMS
-  ruby
+  x86_64-darwin-20
 
 DEPENDENCIES
   html2rss!
@@ -141,10 +130,9 @@ DEPENDENCIES
   rack-cache
   rack-timeout
   rake
-  rerun
   rubocop
   rubocop-performance
   sinatra (~> 2.0)
 
 BUNDLED WITH
-   1.17.3
+   2.2.17
