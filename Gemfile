@@ -7,11 +7,10 @@ gem 'html2rss-configs', git: 'https://github.com/html2rss/html2rss-configs.git'
 gem 'puma'
 gem 'rack-cache'
 gem 'rack-timeout'
-gem 'rake'
-gem 'rerun'
 gem 'sinatra', '~> 2.0'
 
 group :development do
+  gem 'rake'
   gem 'rubocop'
   gem 'rubocop-performance'
 end
