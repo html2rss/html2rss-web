@@ -31,11 +31,17 @@ jobs:
       - run: |
           bundle exec rake
 
-# TODO: deployment on push to master branch
-# - name: build
-#   run: docker/build
-# - name: push
-#   env:
-#     HUB_EMAIL:
-#     HUB_USER
-#     run: docker/push
+  docker:
+    if: ${{ github.ref == 'refs/heads/master' }}
+    needs:
+      - docker-test
+      - hadolint
+      - ruby
+    runs-on: ubuntu-latest
+    steps:
+      - run: docker/build
+
+      - run: docker/push
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
