@@ -39,7 +39,6 @@ USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
 RUN gem install bundler:'<3' \
-    && bundle config set deployment 'true' \
     && bundle install --retry=5 --jobs=7
 
 COPY --chown=html2rss:html2rss . .
