@@ -1,7 +1,7 @@
 {
   "name": "html2rss-web",
   "description": "Builds RSS feeds from websites. Comes with many html2rss-configs included.",
-  "website": "https://github.com/gildesmarais/html2rss-web",
+  "website": "https://github.com/html2rss/html2rss-web",
   "env": {
     "RACK_ENV": "production"
   }

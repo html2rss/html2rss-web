@@ -1,13 +1,13 @@
-![html2rss logo](https://github.com/gildesmarais/html2rss/raw/master/support/logo.png)
+![html2rss logo](https://github.com/html2rss/html2rss/raw/master/support/logo.png)
 
-# html2rss-web [![Build Status](https://travis-ci.com/gildesmarais/html2rss-web.svg?branch=master)](https://travis-ci.com/gildesmarais/html2rss-web) [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)![mergify-status](https://img.shields.io/endpoint.svg?url=https://gh.mergify.io/badges/gildesmarais/html2rss-web&style=flat) [![](http://img.shields.io/liberapay/goal/gildesmarais.svg?logo=liberapa)](https://liberapay.com/gildesmarais/donate)
+# html2rss-web [![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)![mergify-status](https://img.shields.io/endpoint.svg?url=https://gh.mergify.io/badges/html2rss/html2rss-web&style=flat) [![](http://img.shields.io/liberapay/goal/gildesmarais.svg?logo=liberapa)](https://liberapay.com/gildesmarais/donate)
 
 This is a small web application to deliver RSS feeds
-built by [`html2rss`](https://github.com/gildesmarais/html2rss) via HTTP.
+built by [`html2rss`](https://github.com/html2rss/html2rss) via HTTP.
 
 Features:
 
-- serves your own feeds: set up your _feed configs_ in a YAML file. See [`html2rss`' README](https://github.com/gildesmarais/html2rss/blob/master/README.md#usage-with-a-yaml-config-file) for documentation.
+- serves your own feeds: set up your _feed configs_ in a YAML file. See [`html2rss`' README](https://github.com/html2rss/html2rss/blob/master/README.md#usage-with-a-yaml-config-file) for documentation.
 - comes with all [`html2rss-configs`](https://github.com/html2rss/html2rss-configs) included.
 - handles caching and HTTP Cache-Headers.
 
@@ -66,7 +66,7 @@ The cronjob for updating every 30 minutes could look like this:
 
 ## Heroku one-click deployment
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/gildesmarais/html2rss-web)
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/html2rss/html2rss-web)
 
 Since this repository receives updates frequently, you'd need to update your
 instance yourself.
