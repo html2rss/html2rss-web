@@ -2,12 +2,14 @@
 
 require_relative 'local_config'
 
+##
+# Checks if the local configs generate valid RSS feeds.
 module HealthCheck
   module_function
 
   ##
   # @return [String] "success" when all checks passed.
-  def check
+  def run
     broken_feeds = errors
 
     if broken_feeds.any?

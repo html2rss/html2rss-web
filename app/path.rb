@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+##
+# Provides helper methods to get config names of the request path.
 class Path
   attr_reader :folder_name
 

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+##
+# Provides helper methods to deal with the local config file at `CONFIG_FILE`.
 module LocalConfig
   class NotFound < StandardError; end
 
