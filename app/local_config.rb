@@ -30,7 +30,8 @@ module LocalConfig
   ##
   # @return [Hash<Symbol, Hash>]
   def yaml
-    # TODO: cache in production
-    YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
+    return @yaml if defined?(@yaml) && ENV['RACK_ENV'] != 'development'
+
+    @yaml = YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
   end
 end
