@@ -7,18 +7,26 @@ module LocalConfig
 
   module_function
 
+  ##
+  # @return [Hash<Symbol, Hash>]
   def find(name)
     feeds&.fetch(name, false) || raise(NotFound, "Did not find local feed config at '#{name}'")
   end
 
+  ##
+  # @return [Hash<Symbol, Hash>]
   def feeds
     yaml.fetch(:feeds, {})
   end
 
-  def global_config
+  ##
+  # @return [Hash<Symbol, Hash>]
+  def global
     yaml.reject { |key| key == :feeds }
   end
 
+  ##
+  # @return [Hash<Symbol, Hash>]
   def yaml
     # TODO: cache in production
     YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze

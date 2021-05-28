@@ -4,3 +4,7 @@ require:
 AllCops:
   DisplayCopNames: true
   NewCops: enable
+
+Metrics/BlockLength:
+  ExcludedMethods:
+    - route

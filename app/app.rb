@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 # TODO: add csp stuff
-# https://github.com/jeremyevans/roda-sequel-stack/blob/master/app.rb
 require 'html2rss'
 require 'html2rss/configs'
 require 'yaml'
@@ -9,7 +8,12 @@ require 'rack/cache'
 require 'rack-timeout'
 require 'time'
 
-require_relative './health_check.rb'
+require_relative './health_check'
+
+##
+# This app uses html2rss and serves the feeds via HTTP.
+#
+# It is built with [Roda](https://roda.jeremyevans.net/).
 class App < Roda
   use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
 
@@ -35,8 +39,8 @@ class App < Roda
 
   ##
   # @return [Html2rss::Config]
-  # @throws [Roda::RodaPlugins::TypecastParams::Error]
-  def feed_config_to_config(feed_config, typecast_params, global_config: LocalConfig.global_config)
+  # @raise [Roda::RodaPlugins::TypecastParams::Error]
+  def feed_config_to_config(feed_config, typecast_params, global_config: LocalConfig.global)
     dynamic_params = Html2rss::Config.required_params_for_feed_config(feed_config)
                                      .map { |name| [name, typecast_params.str!(name)] }
                                      .to_h
@@ -48,7 +52,7 @@ class App < Roda
     response['Expires'] = (Time.now + seconds).httpdate
 
     response['Cache-Control'] = if cache_control
-                                  "max-age=#{seconds}, #{cache_control}"
+                                  "max-age=#{seconds},#{cache_control}"
                                 else
                                   "max-age=#{seconds}"
                                 end
@@ -66,7 +70,7 @@ class App < Roda
     r.get 'health_check.txt' do |_|
       response['Content-Type'] = 'text/plain'
       response['Expires'] = '0'
-      response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+      response['Cache-Control'] = 'private,max-age=0,no-cache,no-store,must-revalidate'
 
       HealthCheck.check
     rescue StandardError => e

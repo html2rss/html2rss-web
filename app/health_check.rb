@@ -1,8 +1,12 @@
-require_relative 'local_config.rb'
+# frozen_string_literal: true
+
+require_relative 'local_config'
 
 module HealthCheck
   module_function
 
+  ##
+  # @return [String] "success" when all checks passed.
   def check
     broken_feeds = errors
 
@@ -13,6 +17,8 @@ module HealthCheck
     end
   end
 
+  ##
+  # @return [Array<String>]
   def errors
     [].tap do |errors|
       LocalConfig.feeds.each_key do |feed_name|

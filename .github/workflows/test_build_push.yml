@@ -19,6 +19,7 @@ jobs:
           bundler-cache: true
 
       - run: bundle exec rubocop -F
+      - run: yard doc --fail-on-warning --no-output
 
   docker-test:
     needs: hadolint
@@ -40,9 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: docker/build
+      - run: bin/build
 
-      - run: docker/push
+      - run: bin/push
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}

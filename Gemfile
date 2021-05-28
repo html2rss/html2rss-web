@@ -20,4 +20,5 @@ group :development do
   gem 'rake'
   gem 'rubocop'
   gem 'rubocop-performance'
+  gem 'yard'
 end
