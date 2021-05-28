@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
-# TODO: add csp stuff
 require 'rack/cache'
 require 'rack-timeout'
-
 require_relative './app/health_check'
 require_relative './app/html2rss_facade'
 
@@ -12,12 +10,28 @@ require_relative './app/html2rss_facade'
 #
 # It is built with [Roda](https://roda.jeremyevans.net/).
 class App < Roda
+  opts[:check_dynamic_arity] = false
+  opts[:check_arity] = :warn
+
   use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
 
   use Rack::Cache,
       metastore: 'file:./tmp/rack-cache-meta',
       entitystore: 'file:./tmp/rack-cache-body',
       verbose: (ENV['RACK_ENV'] == 'development')
+
+  plugin :content_security_policy do |csp|
+    csp.default_src :none
+    csp.style_src :self
+    csp.script_src :self
+    csp.connect_src :self
+    csp.img_src :self
+    csp.font_src :self
+    csp.form_action :self
+    csp.base_uri :none
+    csp.frame_ancestors :none
+    csp.block_all_mixed_content
+  end
 
   plugin :default_headers,
          'Content-Type' => 'text/html',
