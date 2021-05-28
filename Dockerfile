@@ -7,7 +7,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV RACK_ENV=production
 
-HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
+HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://localhost:3000/health_check.txt || exit 1
 
 RUN apk add --no-cache \
