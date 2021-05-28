@@ -4,8 +4,8 @@
 require 'rack/cache'
 require 'rack-timeout'
 
-require_relative './health_check'
-require_relative './html2rss_facade'
+require_relative './app/health_check'
+require_relative './app/html2rss_facade'
 
 ##
 # This app uses html2rss and serves the feeds via HTTP.
@@ -25,15 +25,37 @@ class App < Roda
          'X-Content-Type-Options' => 'nosniff',
          'X-XSS-Protection' => '1; mode=block'
 
+  plugin :error_handler do |error|
+    case error
+    when Html2rss::Config::ParamsMissing
+      @page_title = 'Parameters missing'
+      response.status = 422
+    when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
+         Html2rss::ItemExtractors::UnknownExtractorName,
+         Html2rss::Config::ChannelMissing
+      @page_title = 'Invalid feed config'
+      response.status = 422
+    when LocalConfig::NotFound,
+         Html2rss::Configs::ConfigNotFound
+      @page_title = 'Feed config not found'
+      response.status = 404
+    else
+      warn "#{e.class}: #{e.message}\n"
+      warn e.backtrace
+      @page_title = 'Internal Server Error'
+    end
+
+    @error = error
+    view 'error'
+  end
+
   plugin :public
-  # TODO: plugin :error_handler
+  plugin :render, escape: true, layout: 'layout'
   plugin :typecast_params
 
   route do |r|
     r.root do
-      # render default page layout with h2r info
-      # TODO: add water.css to the default layout
-      ENV['RACK_ENV']
+      view 'index'
     end
 
     r.public

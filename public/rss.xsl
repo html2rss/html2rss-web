@@ -10,53 +10,7 @@
   <title><xsl:value-of select="rss/channel/title"/> (Feed)</title>
   <link href="/feed.svg" rel="icon"/>
   <link href="/water.css" rel="stylesheet"/>
-  <style>
-    :root {
-      --links: #60b0f4;
-      --highlight: #ff9300;
-    }
-
-    label {
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 0.5em;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      max-width: 780px;
-    }
-
-    body > h2 {
-      margin-top: 2em;
-    }
-
-    .items {
-      list-style: none;
-      padding-left: 0;
-      margin-top: 2em;
-    }
-
-    .items > li {
-      background-color: var(--background);
-      border-radius: 6px;
-      padding: 0.5em 0.75em;
-      margin-bottom: 1em;
-    }
-
-    .items > li:nth-child(odd) {
-      background-color: var(--background-alt);
-    }
-
-    .items > li > h3 {
-      margin-top: 0;
-    }
-
-    .item > li > div {
-      font-size: .9em;
-      padding: 0.25em;
-    }
-  </style>
+  <link href="/styles.css" rel="stylesheet"/>
 </head>
 <body>
   <header>
@@ -72,6 +26,11 @@
       You can follow this feed to get updates through a
       <a href="https://en.wikipedia.org/wiki/News_aggregator" target="_blank" rel="noopener">news aggregator</a> of your choice.
     </p>
+  </aside>
+  <aside class="aside-icon">
+    <a href="https://html2rss.github.io/">
+      <img src="/favicon.ico" alt="HTML2RSS icon" />
+    </a>
   </aside>
   <main>
     <p>

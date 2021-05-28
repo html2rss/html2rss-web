@@ -9,10 +9,12 @@ gem 'html2rss-configs', git: 'https://github.com/html2rss/html2rss-configs.git'
 # gem 'html2rss', path: '../html2rss'
 # gem 'html2rss-configs', path: '../html2rss-configs'
 
+gem 'erubi'
 gem 'rack-cache'
 gem 'rack-timeout'
 gem 'rack-unreloader'
 gem 'roda'
+gem 'tilt'
 
 gem 'puma', require: false
 
