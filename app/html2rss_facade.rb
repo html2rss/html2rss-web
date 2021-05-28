@@ -23,23 +23,21 @@ class Html2rssFacade
   # @param name [String] the name of a html2rss-configs provided config.
   # @param typecast_params
   # @return [String] the serializied RSS feed
-  def self.from_config_name(name, typecast_params)
+  def self.from_config_name(name, typecast_params, &block)
     feed_config = Html2rss::Configs.find_by_name(name)
 
-    new(feed_config, typecast_params).feed
+    new(feed_config, typecast_params).feed(&block)
   end
 
   ##
   # @param name [String] the name of a feed in the file `config/feeds.yml`
   # @param typecast_params
   # @return [String] the serializied RSS feed
-  def self.from_local_config(name, typecast_params)
+  def self.from_local_config(name, typecast_params, &block)
     feed_config = LocalConfig.find name
 
-    new(feed_config, typecast_params).feed
+    new(feed_config, typecast_params).feed(&block)
   end
-
-  private
 
   ##
   # @return [String]
@@ -50,6 +48,8 @@ class Html2rssFacade
 
     Html2rss.feed(config).to_s
   end
+
+  private
 
   ##
   # @return [Html2rss::Config]

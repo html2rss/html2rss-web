@@ -47,10 +47,10 @@ class App < Roda
     end
 
     # Route for feeds from the local feeds.yml
-    r.get String do |config_name_with_ext|
-      path = Path.new(config_name_with_ext)
+    r.get String do |_config_name_with_ext|
+      path = RequestPath.new(request)
 
-      Html2rssFacade.from_local_config(path.name, typecast_params) do |config|
+      Html2rssFacade.from_local_config(path.full_config_name, typecast_params) do |config|
         response['Content-Type'] = 'text/xml'
 
         HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
@@ -58,10 +58,10 @@ class App < Roda
     end
 
     # Route for feeds from html2rss-configs
-    r.get String, String do |folder_name, config_name_with_ext|
-      path = Path.new(config_name_with_ext, folder_name)
+    r.get String, String do |_folder_name, _config_name_with_ext|
+      path = RequestPath.new(request)
 
-      Html2rssFacade.from_config_name(path.name, typecast_params) do |config|
+      Html2rssFacade.from_config_name(path.full_config_name, typecast_params) do |config|
         response['Content-Type'] = 'text/xml'
 
         HttpCache.expires(response, config.ttl * 60, cache_control: 'public')

@@ -19,7 +19,7 @@ jobs:
           bundler-cache: true
 
       - run: bundle exec rubocop -F
-      - run: yard doc --fail-on-warning --no-output
+      - run: bundle exec yard doc --fail-on-warning --no-output
 
   docker-test:
     needs: hadolint

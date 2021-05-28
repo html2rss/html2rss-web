@@ -90,10 +90,10 @@ Otherwise it will not print `success`, but states the broken config names.
 
 ## Supported ENV variables
 
-| Name | Description |
-| - | - |
-| `PORT` | default: 3000 |
-| `RACK_ENV` | default: 'development' |
-| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15|
-| `WEB_CONCURRENCY` | default: 2 |
-| `WEB_MAX_THREADS` | default: 5 |
+| Name                           | Description            |
+| ------------------------------ | ---------------------- |
+| `PORT`                         | default: 3000          |
+| `RACK_ENV`                     | default: 'development' |
+| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15            |
+| `WEB_CONCURRENCY`              | default: 2             |
+| `WEB_MAX_THREADS`              | default: 5             |
