@@ -21,6 +21,7 @@ task :test do
 
   sh 'curl -f http://127.0.0.1:3000/github.com/releases.rss\?username=nuxt\&repository=nuxt.js || exit 1'
   sh 'curl -f http://127.0.0.1:3000/health_check.txt || exit 1'
+  sh 'docker exec html2rss-web-test html2rss help'
 ensure
   sh 'docker logs --tail all html2rss-web-test'
   sh 'docker stop html2rss-web-test'
