@@ -25,7 +25,7 @@ module App
     def errors
       [].tap do |errors|
         LocalConfig.feed_names.each do |feed_name|
-          Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name).to_s
+          Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name.to_s).to_s
         rescue StandardError => e
           errors << "[#{feed_name}] #{e.class}: #{e.message}"
         end
