@@ -4,6 +4,7 @@ require 'roda'
 require 'rack/cache'
 require 'rack-timeout'
 require_relative './app/health_check'
+require_relative './app/local_config'
 require_relative './app/html2rss_facade'
 
 module App
@@ -52,16 +53,16 @@ module App
            Html2rss::Config::ChannelMissing
         @page_title = 'Invalid feed config'
         response.status = 422
-      when LocalConfig::NotFound,
+      when ::App::LocalConfig::NotFound,
            Html2rss::Configs::ConfigNotFound
         @page_title = 'Feed config not found'
         response.status = 404
       else
-        warn "#{e.class}: #{e.message}\n"
-        warn e.backtrace
         @page_title = 'Internal Server Error'
+        response.status = 500
       end
 
+      @show_backtrace = ENV['RACK_ENV'] == 'development'
       @error = error
       view 'error'
     end
@@ -80,11 +81,9 @@ module App
       r.public
 
       r.get 'health_check.txt' do |_|
-        HttpCache.expires_now
+        HttpCache.expires_now(response)
 
         HealthCheck.run
-      rescue StandardError => e
-        "Error #{e.class} with message: #{e.message}"
       end
 
       # Route for feeds from the local feeds.yml
