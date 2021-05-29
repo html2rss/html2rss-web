@@ -146,6 +146,7 @@ GEM
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.0.0)
+    vcr (6.0.0)
     yard (0.9.26)
     zeitwerk (2.4.2)
 
@@ -171,6 +172,7 @@ DEPENDENCIES
   rubocop-rspec
   simplecov
   tilt
+  vcr
   yard
 
 BUNDLED WITH

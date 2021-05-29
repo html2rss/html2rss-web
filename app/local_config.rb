@@ -14,9 +14,10 @@ module App
     module_function
 
     ##
+    # @param name [String, Symbol, #to_sym]
     # @return [Hash<Symbol, Hash>]
     def find(name)
-      feeds&.fetch(name, false) || raise(NotFound, "Did not find local feed config at '#{name}'")
+      feeds&.fetch(name.to_sym, false) || raise(NotFound, "Did not find local feed config at '#{name}'")
     end
 
     ##

@@ -6,7 +6,13 @@ headers:
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
 feeds:
   # your custom feeds go here:
-  # mysite:
-  #   channel:
-  #     url:
-  #   selectors:
+  example:
+    channel:
+      url: https://html2rss.github.io/
+    selectors:
+      items:
+        selector: '[role=main]'
+      title:
+        selector: 'h1'
+      description:
+        selector: 'p'

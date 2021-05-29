@@ -9,7 +9,15 @@ RSpec.describe App::LocalConfig do
   end
 
   describe '.find' do
-    it { expect { described_class.find(:foobar) }.to raise_error /Did not find/ }
+    context 'with inexistent name' do
+      it { expect { described_class.find(:foobar) }.to raise_error(/Did not find/) }
+      it { expect { described_class.find('foobar') }.to raise_error(/Did not find/) }
+    end
+
+    context 'with existing name' do
+      it { expect(described_class.find(:example)).to be_a Hash }
+      it { expect(described_class.find('example')).to be_a Hash }
+    end
   end
 
   describe '.feeds' do

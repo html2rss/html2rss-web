@@ -23,6 +23,10 @@ RSpec.describe App::HealthCheck do
   end
 
   describe '.errors' do
-    it { expect(described_class.errors).to be_a(Array) }
+    it 'builds feeds from local configs' do
+      VCR.use_cassette('health_check.errors') do
+        expect(described_class.errors).to be_an(Array)
+      end
+    end
   end
 end
