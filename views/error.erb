@@ -1,3 +1,9 @@
 <h1><%= response.status %> - <%= @page_title %></h1>
 
-<pre><%= @error.message %></pre>
+<pre>
+<%= @error.class %>: <%= @error.message %>
+
+<% if @show_backtrace %>
+<%= @error.backtrace.join("\n") %>
+<% end %>
+</pre>

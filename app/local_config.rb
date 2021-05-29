@@ -7,7 +7,7 @@ module App
   module LocalConfig
     ##
     # raised when the local config wasn't found
-    class NotFound < StandardError; end
+    class NotFound < RuntimeError; end
 
     CONFIG_FILE = 'config/feeds.yml'
 
