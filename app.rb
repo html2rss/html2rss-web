@@ -1,79 +1,108 @@
 # frozen_string_literal: true
 
-require 'sinatra'
-require 'html2rss'
-require 'html2rss/configs'
-require 'yaml'
+require 'roda'
+require 'rack/cache'
+require 'rack-timeout'
+require_relative './app/health_check'
+require_relative './app/html2rss_facade'
 
-##
-#
-class App < Sinatra::Base
-  CONFIG_FILE = 'config/feeds.yml'
-  CONFIG_YAML = YAML.safe_load(File.open(CONFIG_FILE)).freeze
+module App
+  ##
+  # This app uses html2rss and serves the feeds via HTTP.
+  #
+  # It is built with [Roda](https://roda.jeremyevans.net/).
+  class App < Roda
+    opts[:check_dynamic_arity] = false
+    opts[:check_arity] = :warn
 
-  get '/health_check.txt' do
-    content_type 'text/plain'
+    use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
 
-    broken_feeds = errors
+    use Rack::Cache,
+        metastore: 'file:./tmp/rack-cache-meta',
+        entitystore: 'file:./tmp/rack-cache-body',
+        verbose: (ENV['RACK_ENV'] == 'development')
 
-    if broken_feeds.any?
-      status 500
-      broken_feeds.join("\n")
-    else
-      status 200
-      'success'
+    plugin :content_security_policy do |csp|
+      csp.default_src :none
+      csp.style_src :self
+      csp.script_src :self
+      csp.connect_src :self
+      csp.img_src :self
+      csp.font_src :self
+      csp.form_action :self
+      csp.base_uri :none
+      csp.frame_ancestors :none
+      csp.block_all_mixed_content
     end
-  end
 
-  get '/*.rss' do
-    feed_name = params[:splat].first
+    plugin :default_headers,
+           'Content-Type' => 'text/html',
+           'X-Frame-Options' => 'deny',
+           'X-Content-Type-Options' => 'nosniff',
+           'X-XSS-Protection' => '1; mode=block'
 
-    feed_config = begin
-      yaml_feeds[feed_name] || Html2rss::Configs.find_by_name(feed_name)
-    rescue StandardError
-      nil
+    plugin :error_handler do |error|
+      case error
+      when Html2rss::Config::ParamsMissing,
+           Roda::RodaPlugins::TypecastParams::Error
+        @page_title = 'Parameters missing or invalid'
+        response.status = 422
+      when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
+           Html2rss::ItemExtractors::UnknownExtractorName,
+           Html2rss::Config::ChannelMissing
+        @page_title = 'Invalid feed config'
+        response.status = 422
+      when LocalConfig::NotFound,
+           Html2rss::Configs::ConfigNotFound
+        @page_title = 'Feed config not found'
+        response.status = 404
+      else
+        warn "#{e.class}: #{e.message}\n"
+        warn e.backtrace
+        @page_title = 'Internal Server Error'
+      end
+
+      @error = error
+      view 'error'
     end
 
-    feed_config ? respond_with_feed(feed_config, params) : status(404)
-  end
+    plugin :public
+    plugin :render, escape: true, layout: 'layout'
+    plugin :typecast_params
 
-  private
+    route do |r|
+      path = RequestPath.new(request)
 
-  def respond_with_feed(feed_config, params)
-    # Create a Hash from params [Sinatra::IndifferentHash] with symbolized keys.
-    dynamic_params = {}
-    params.each_pair { |k, v| dynamic_params[k.to_sym] = v if k != 'splat' }
+      r.root do
+        view 'index'
+      end
 
-    config = Html2rss::Config.new(feed_config, global_config, dynamic_params)
-    feed = Html2rss.feed(config)
+      r.public
 
-    content_type 'text/xml'
-    expires(config.ttl * 60, :public, :must_revalidate)
-    items?(feed) ? feed.to_s : status(500)
-  end
+      r.get 'health_check.txt' do |_|
+        HttpCache.expires_now
 
-  def items?(feed)
-    feed.items.count.positive?
-  end
+        HealthCheck.run
+      rescue StandardError => e
+        "Error #{e.class} with message: #{e.message}"
+      end
 
-  def global_config
-    @global_config ||= CONFIG_YAML.reject { |key| key == 'feeds' }
-  end
+      # Route for feeds from the local feeds.yml
+      r.get String do |_config_name_with_ext|
+        Html2rssFacade.from_local_config(path.full_config_name, typecast_params) do |config|
+          response['Content-Type'] = 'text/xml'
 
-  def yaml_feeds
-    CONFIG_YAML.fetch('feeds') || {}
-  end
+          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
+        end
+      end
 
-  def yaml_feed_names
-    yaml_feeds.keys
-  end
+      # Route for feeds from html2rss-configs
+      r.get String, String do |_folder_name, _config_name_with_ext|
+        Html2rssFacade.from_config(path.full_config_name, typecast_params) do |config|
+          response['Content-Type'] = 'text/xml'
 
-  def errors
-    [].tap do |errors|
-      yaml_feed_names.each do |feed_name|
-        Html2rss.feed_from_yaml_config(CONFIG_FILE, feed_name).to_s
-      rescue e
-        errors << "#{feed_name}: #{e.message}"
+          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
+        end
       end
     end
   end

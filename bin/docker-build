@@ -1,4 +1,4 @@
 #!/bin/bash
-set -eu
+set -eux
 
 docker build --no-cache -t gilcreator/html2rss-web -f Dockerfile .

@@ -7,7 +7,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV RACK_ENV=production
 
-HEALTHCHECK --interval=5m --timeout=3s --start-period=5s \
+HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://localhost:3000/health_check.txt || exit 1
 
 RUN apk add --no-cache \
@@ -39,6 +39,7 @@ USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
 RUN gem install bundler:'<3' \
+    && bundle config set --local without 'development test' \
     && bundle install --retry=5 --jobs=7
 
 COPY --chown=html2rss:html2rss . .

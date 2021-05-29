@@ -1,14 +1,27 @@
 # frozen_string_literal: true
 
-require './app'
-require 'rack/cache'
-require 'rack-timeout'
+require 'rubygems'
+require 'bundler/setup'
 
-use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
+dev = ENV['RACK_ENV'] == 'development'
 
-use Rack::Cache,
-    metastore: 'file:./tmp/rack-cache-meta',
-    entitystore: 'file:./tmp/rack-cache-body',
-    verbose: (ENV['RACK_ENV'] == 'development')
+if dev
+  require 'logger'
+  logger = Logger.new($stdout)
+end
 
-run App
+require 'rack/unreloader'
+Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
+                                  logger: logger,
+                                  reload: dev) do
+  App::App
+end
+
+Unreloader.require('app.rb') { 'App' }
+Unreloader.require('./app/health_check.rb')
+Unreloader.require('./app/html2rss_facade.rb')
+Unreloader.require('./app/http_cache.rb')
+Unreloader.require('./app/local_config.rb')
+Unreloader.require('./app/request_path.rb')
+
+run(dev ? Unreloader : App::App.freeze.app)

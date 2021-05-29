@@ -1,6 +1,12 @@
 require:
   - rubocop-performance
+  - rubocop-rspec
+  - rubocop-rake
 
 AllCops:
   DisplayCopNames: true
   NewCops: enable
+
+Metrics/BlockLength:
+  ExcludedMethods:
+    - route

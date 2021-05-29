@@ -2,6 +2,7 @@
 
 task default: %w[test]
 
+desc 'Build and run docker image/container, and send requests to it'
 task :test do
   current_dir = ENV['GITHUB_WORKSPACE'] || __dir__
 
