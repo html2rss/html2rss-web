@@ -6,6 +6,7 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV RACK_ENV=production
+ENV PATH="/app/bin:${PATH}"
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://localhost:3000/health_check.txt || exit 1
@@ -40,7 +41,8 @@ USER html2rss
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
 RUN gem install bundler:'<3' \
     && bundle config set --local without 'development test' \
-    && bundle install --retry=5 --jobs=7
+    && bundle install --retry=5 --jobs=7 \
+    && bundle binstubs bundler html2rss
 
 COPY --chown=html2rss:html2rss . .
 

@@ -80,6 +80,33 @@ instance yourself.
 
 _html2rss-web_ now listens on port **5**000 for requests.
 
+## Build and run with docker locally
+
+This approach allows you to play around without installing Ruby on your machine.
+All you need to do is install and run the Docker daemon.
+
+```sh
+# Build image from Dockerfile and name/tag it as html2rss-web:
+docker build -t html2rss-web -f Dockerfile .
+
+# Run the image and name it html2rss-web-dev:
+docker run \
+  --detach \
+  --mount type=bind,source=$(pwd)/config,target=/app/config \
+  --name html2rss-web-dev \
+  html2rss-web
+
+# Open a interactive TTY with the shell `sh`:
+docker exec -ti html2rss-web-dev sh
+
+# Stop and cleanup container
+docker stop html2rss-web-dev
+docker rm html2rss-web-dev
+
+# Remove the image
+docker rmi html2rss-web
+```
+
 ## _Feed configs_ runtime health checks
 
 Websites often change their markup. To get notified when one of _your own_ configs
