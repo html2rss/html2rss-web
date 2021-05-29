@@ -3,8 +3,6 @@
 require 'rubygems'
 require 'bundler/setup'
 
-require 'roda'
-
 dev = ENV['RACK_ENV'] == 'development'
 
 if dev
@@ -13,7 +11,11 @@ if dev
 end
 
 require 'rack/unreloader'
-Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss], logger: logger, reload: dev) { App }
+Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
+                                  logger: logger,
+                                  reload: dev) do
+  App::App
+end
 
 Unreloader.require('app.rb') { 'App' }
 Unreloader.require('./app/health_check.rb')
@@ -22,4 +24,4 @@ Unreloader.require('./app/http_cache.rb')
 Unreloader.require('./app/local_config.rb')
 Unreloader.require('./app/request_path.rb')
 
-run(dev ? Unreloader : App.freeze.app)
+run(dev ? Unreloader : App::App.freeze.app)

@@ -20,8 +20,15 @@ gem 'puma', require: false
 
 group :development do
   gem 'byebug'
-  gem 'rake'
-  gem 'rubocop'
-  gem 'rubocop-performance'
-  gem 'yard'
+  gem 'rake', require: false
+  gem 'rubocop', require: false
+  gem 'rubocop-performance', require: false
+  gem 'rubocop-rake', require: false
+  gem 'rubocop-rspec', require: false
+  gem 'yard', require: false
+end
+
+group :test do
+  gem 'rspec'
+  gem 'simplecov', require: false
 end

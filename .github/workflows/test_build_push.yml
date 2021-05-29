@@ -21,6 +21,17 @@ jobs:
       - run: bundle exec rubocop -F
       - run: bundle exec yard doc --fail-on-warning --no-output
 
+  rspec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - run: bundle exec rspec
+
   docker-test:
     needs: hadolint
     runs-on: ubuntu-latest

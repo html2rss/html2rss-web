@@ -1,5 +1,7 @@
 require:
   - rubocop-performance
+  - rubocop-rspec
+  - rubocop-rake
 
 AllCops:
   DisplayCopNames: true

@@ -1,3 +1,4 @@
 tmp/*
 !tmp/.keep
 .yardoc
+coverage
