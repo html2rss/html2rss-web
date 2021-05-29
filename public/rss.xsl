@@ -66,11 +66,7 @@
       </code>.
     </p>
   </footer>
-  <script type="text/javascript">
-    const $url = document.getElementById('url')
-    $url.value = window.location.href
-    $url.addEventListener('click', ({ target }) => target.select())
-  </script>
+  <script type="text/javascript" src="/rss.js" defer="true" />
 </body>
 </html>
 </xsl:template>
