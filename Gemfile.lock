@@ -91,7 +91,7 @@ GEM
     rack-timeout (0.6.0)
     rack-unreloader (1.7.0)
     rainbow (3.0.0)
-    rake (13.0.4)
+    rake (13.0.5)
     regexp_parser (2.1.1)
     reverse_markdown (2.0.0)
       nokogiri
