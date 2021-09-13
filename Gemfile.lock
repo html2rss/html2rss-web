@@ -96,7 +96,7 @@ GEM
     reverse_markdown (2.0.0)
       nokogiri
     rexml (3.2.5)
-    roda (3.47.0)
+    roda (3.48.0)
       rack
     rspec (3.10.0)
       rspec-core (~> 3.10.0)
