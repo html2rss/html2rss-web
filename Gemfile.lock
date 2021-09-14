@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs.git
-  revision: 8bf01c9b6f7ffb6bbc84376333b59900d35b338e
+  revision: f46eaa003ffc84fb35b693ce428c1dbc22e9f6b6
   specs:
     html2rss-configs (0.2.0)
 
@@ -179,4 +179,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.2.17
+   2.2.26
