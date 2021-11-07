@@ -6,7 +6,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss.git
-  revision: d407e0399a923862d0181bc5362fe42443eef41d
+  revision: 300f38d0b950be220cf4469bfae462e292d422d2
   specs:
     html2rss (0.9.0)
       activesupport (>= 5, < 7)
@@ -62,9 +62,9 @@ GEM
     faraday-net_http_persistent (1.2.0)
     faraday-patron (1.0.0)
     faraday-rack (1.0.0)
-    faraday_middleware (1.1.0)
+    faraday_middleware (1.2.0)
       faraday (~> 1.0)
-    i18n (1.8.10)
+    i18n (1.8.11)
       concurrent-ruby (~> 1.0)
     kramdown (2.3.1)
       rexml
@@ -84,7 +84,7 @@ GEM
     public_suffix (4.0.6)
     puma (5.5.2)
       nio4r (~> 2.0)
-    racc (1.5.2)
+    racc (1.6.0)
     rack (2.2.3)
     rack-cache (1.13.0)
       rack (>= 0.4)
@@ -93,7 +93,7 @@ GEM
     rainbow (3.0.0)
     rake (13.0.6)
     regexp_parser (2.1.1)
-    reverse_markdown (2.0.0)
+    reverse_markdown (2.1.1)
       nokogiri
     rexml (3.2.5)
     roda (3.49.0)
@@ -150,7 +150,7 @@ GEM
     unicode-display_width (2.1.0)
     vcr (6.0.0)
     yard (0.9.26)
-    zeitwerk (2.4.2)
+    zeitwerk (2.5.1)
 
 PLATFORMS
   x86_64-darwin-20
