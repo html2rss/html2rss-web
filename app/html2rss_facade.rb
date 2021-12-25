@@ -56,8 +56,7 @@ module App
     # @raise [Roda::RodaPlugins::TypecastParams::Error]
     def self.feed_config_to_config(feed_config, typecast_params, global_config: LocalConfig.global)
       dynamic_params = Html2rss::Config.required_params_for_feed_config(feed_config)
-                                       .map { |name| [name, typecast_params.str!(name)] }
-                                       .to_h
+                                       .to_h { |name| [name, typecast_params.str!(name)] }
 
       Html2rss::Config.new(feed_config, global_config, dynamic_params)
     end
