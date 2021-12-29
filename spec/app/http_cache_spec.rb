@@ -17,7 +17,7 @@ RSpec.describe App::HttpCache do
     end
 
     it do
-      described_class.expires(response, seconds, cache_control: cache_control)
+      described_class.expires(response, seconds, cache_control:)
       expect(response['Cache-Control']).to eq "max-age=#{seconds},#{cache_control}"
     end
   end
