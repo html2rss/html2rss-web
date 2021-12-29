@@ -12,7 +12,7 @@ end
 
 require 'rack/unreloader'
 Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
-                                  logger: logger,
+                                  logger:,
                                   reload: dev) do
   App::App
 end
