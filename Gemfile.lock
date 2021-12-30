@@ -6,10 +6,10 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss.git
-  revision: acd3fa3cdcf74ae57464ac70b8a078267d2f02d7
+  revision: 5c423d45e47c4348cb990598088b0436fef4ebf6
   specs:
     html2rss (0.9.0)
-      activesupport (>= 5, < 7)
+      activesupport (>= 5, < 8)
       addressable (~> 2.7)
       builder
       faraday (~> 1.0)
@@ -27,12 +27,11 @@ GIT
 GEM
   remote: https://rubygems.org/
   specs:
-    activesupport (6.1.4.4)
+    activesupport (7.0.0)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-      zeitwerk (~> 2.3)
     addressable (2.8.0)
       public_suffix (>= 2.0.2, < 5.0)
     ast (2.4.2)
@@ -71,12 +70,12 @@ GEM
     mime-types (3.4.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2021.1115)
-    mini_portile2 (2.6.1)
     minitest (5.15.0)
     multipart-post (2.1.1)
     nio4r (2.5.8)
-    nokogiri (1.12.5)
-      mini_portile2 (~> 2.6.1)
+    nokogiri (1.12.5-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.12.5-x86_64-linux)
       racc (~> 1.4)
     parallel (1.21.0)
     parser (3.0.3.2)
