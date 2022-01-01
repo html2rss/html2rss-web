@@ -18,6 +18,8 @@ gem 'tilt'
 
 gem 'puma', require: false
 
+gem 'activesupport', '~> 6.0'
+
 group :development do
   gem 'byebug'
   gem 'rake', require: false
