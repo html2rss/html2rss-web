@@ -1,13 +1,13 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs.git
-  revision: 0cc9872f4aa26d5fd05911dc74214586550cd882
+  revision: 86c065dd4b6a78d7da0ba73edd1a740e59fbe5c4
   specs:
     html2rss-configs (0.2.0)
       activesupport (< 7)
 
 GIT
   remote: https://github.com/html2rss/html2rss.git
-  revision: 91c163c8918dda8eeaf6a7c537657a06c92538c6
+  revision: ffb2cc8d6247be5d35a4ddc14acb5ce29c154f79
   specs:
     html2rss (0.9.0)
       activesupport (>= 5, < 8)
@@ -60,7 +60,7 @@ GEM
     faraday-em_synchrony (1.0.0)
     faraday-excon (1.1.0)
     faraday-httpclient (1.0.1)
-    faraday-multipart (1.0.2)
+    faraday-multipart (1.0.3)
       multipart-post (>= 1.2, < 3)
     faraday-net_http (1.0.1)
     faraday-net_http_persistent (1.2.0)
@@ -69,7 +69,7 @@ GEM
     faraday-retry (1.0.3)
     faraday_middleware (1.2.0)
       faraday (~> 1.0)
-    i18n (1.8.11)
+    i18n (1.9.1)
       concurrent-ruby (~> 1.0)
     kramdown (2.3.1)
       rexml
@@ -79,9 +79,9 @@ GEM
     minitest (5.15.0)
     multipart-post (2.1.1)
     nio4r (2.5.8)
-    nokogiri (1.13.0-x86_64-darwin)
+    nokogiri (1.13.1-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.13.0-x86_64-linux)
+    nokogiri (1.13.1-x86_64-linux)
       racc (~> 1.4)
     parallel (1.21.0)
     parser (3.1.0.0)
@@ -107,12 +107,12 @@ GEM
       rspec-core (~> 3.10.0)
       rspec-expectations (~> 3.10.0)
       rspec-mocks (~> 3.10.0)
-    rspec-core (3.10.1)
+    rspec-core (3.10.2)
       rspec-support (~> 3.10.0)
-    rspec-expectations (3.10.1)
+    rspec-expectations (3.10.2)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.10.0)
-    rspec-mocks (3.10.2)
+    rspec-mocks (3.10.3)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.10.0)
     rspec-support (3.10.3)
@@ -157,14 +157,14 @@ GEM
     webrick (1.7.0)
     yard (0.9.27)
       webrick (~> 1.7.0)
-    zeitwerk (2.5.3)
+    zeitwerk (2.5.4)
 
 PLATFORMS
   x86_64-darwin-20
   x86_64-linux
 
 DEPENDENCIES
-  activesupport (~> 6.0)
+  activesupport
   byebug
   erubi
   html2rss!
