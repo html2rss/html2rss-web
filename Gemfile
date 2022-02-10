@@ -2,8 +2,10 @@
 
 source 'https://rubygems.org'
 
-gem 'html2rss', git: 'https://github.com/html2rss/html2rss.git'
-gem 'html2rss-configs', git: 'https://github.com/html2rss/html2rss-configs.git'
+git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
+
+gem 'html2rss', github: 'html2rss/html2rss'
+gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 # Use these instead of the two above (uncomment them) when developing locally:
 # gem 'html2rss', path: '../html2rss'
@@ -17,8 +19,6 @@ gem 'roda'
 gem 'tilt'
 
 gem 'puma', require: false
-
-gem 'activesupport'
 
 group :development do
   gem 'byebug'
