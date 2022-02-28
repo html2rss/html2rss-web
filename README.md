@@ -36,7 +36,7 @@ Install Docker CE and `docker run -d -p 3000:3000 gilcreator/html2rss-web`.
 
 To use your private _feed configs_, mount a `feed.yml` into the `/app/config/` folder.
 
-```
+```sh
 docker run -d --name html2rss-web \
   --mount type=bind,source="/path/to/your/config/folder,target=/app/config" \
   -p 3000:3000 \
@@ -45,8 +45,35 @@ docker run -d --name html2rss-web \
 
 ### Automatic updating
 
+#### using containrrr/watchtower
+
+The docker image [containrrr/watchtower](https://containrrr.dev/watchtower/) automatically pulls running docker images and checks for updates. If an update is available, it will start the updated image with the same configuration as the running one.
+
+To start html2rss-web and let watchtower monitor it, save this as `start` script:
+
+```sh
+#!/bin/sh
+
+docker run -d --name html2rss-web \
+  --mount type=bind,source="/path/to/your/config/folder,target=/app/config" \
+  -p 3000:3000 \
+  gilcreator/html2rss-web
+
+docker run -d \
+  --name watchtower \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  containrrr/watchtower \
+  --cleanup \
+  --interval=7200 \
+  html2rss-web
+```
+
+Watchtower will pull in a 2h interval to check if there's a new image and cleanup (remove the stopped previous image).
+
+#### via cronjob
+
 A primitive way to automatically update your Docker instance is to set up this
-script as a cronjob:
+script as a cronjob. This has the disadvantage that it restarts the container without first checking whether an update is available or not.
 
 ```bash
 #!/bin/bash
