@@ -140,7 +140,7 @@ GEM
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.1.0)
-    vcr (6.0.0)
+    vcr (6.1.0)
     webrick (1.7.0)
     yard (0.9.27)
       webrick (~> 1.7.0)
