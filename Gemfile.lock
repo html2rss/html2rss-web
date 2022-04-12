@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: f0fec08f56db2e269be97cb9348937783891581a
+  revision: 4a0801e5a942b88296a979634c5fc26b680c0e00
   specs:
     html2rss-configs (0.2.0)
 
