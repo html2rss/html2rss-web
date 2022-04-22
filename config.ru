@@ -3,7 +3,7 @@
 require 'rubygems'
 require 'bundler/setup'
 
-dev = ENV['RACK_ENV'] == 'development'
+dev = ENV.fetch('RACK_ENV', nil) == 'development'
 
 if dev
   require 'logger'
