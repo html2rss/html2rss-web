@@ -21,7 +21,7 @@ module App
     use Rack::Cache,
         metastore: 'file:./tmp/rack-cache-meta',
         entitystore: 'file:./tmp/rack-cache-body',
-        verbose: (ENV['RACK_ENV'] == 'development')
+        verbose: (ENV.fetch('RACK_ENV', nil) == 'development')
 
     plugin :content_security_policy do |csp|
       csp.default_src :none
@@ -62,7 +62,7 @@ module App
         response.status = 500
       end
 
-      @show_backtrace = ENV['RACK_ENV'] == 'development'
+      @show_backtrace = ENV.fetch('RACK_ENV', nil) == 'development'
       @error = error
       view 'error'
     end
