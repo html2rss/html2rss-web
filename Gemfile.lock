@@ -85,7 +85,7 @@ GEM
     rack-unreloader (1.8.0)
     rainbow (3.1.1)
     rake (13.0.6)
-    regexp_parser (2.3.1)
+    regexp_parser (2.4.0)
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.2.5)
@@ -106,7 +106,7 @@ GEM
     rspec-support (3.11.0)
     rss (0.2.9)
       rexml
-    rubocop (1.29.0)
+    rubocop (1.29.1)
       parallel (~> 1.10)
       parser (>= 3.1.0.0)
       rainbow (>= 2.2.2, < 4.0)
