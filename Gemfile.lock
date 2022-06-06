@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 01c29ac61e204ab809ede4321c2b03a99ffdf3d4
+  revision: cb4f65d984ee459f227ea6f79be7b7b236290156
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 7085346dcdcb516748e509bad990dcc24add9b3a
+  revision: 6ce9f0de979e1049d13a08637287d8560312e0f7
   specs:
     html2rss-configs (0.2.0)
 
@@ -65,7 +65,7 @@ GEM
     mime-types (3.4.1)
       mime-types-data (~> 3.2015)
     mime-types-data (3.2022.0105)
-    multipart-post (2.1.1)
+    multipart-post (2.2.0)
     nio4r (2.5.8)
     nokogiri (1.13.6-x86_64-darwin)
       racc (~> 1.4)
@@ -117,7 +117,7 @@ GEM
       unicode-display_width (>= 1.4.0, < 3.0)
     rubocop-ast (1.18.0)
       parser (>= 3.1.1.0)
-    rubocop-performance (1.14.0)
+    rubocop-performance (1.14.1)
       rubocop (>= 1.7.0, < 2.0)
       rubocop-ast (>= 0.4.0)
     rubocop-rake (0.6.0)
