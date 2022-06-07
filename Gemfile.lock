@@ -81,7 +81,7 @@ GEM
     rack (2.2.3.1)
     rack-cache (1.13.0)
       rack (>= 0.4)
-    rack-timeout (0.6.1)
+    rack-timeout (0.6.2)
     rack-unreloader (1.8.0)
     rainbow (3.1.1)
     rake (13.0.6)
