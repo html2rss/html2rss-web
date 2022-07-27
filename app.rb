@@ -16,7 +16,7 @@ module App
     opts[:check_dynamic_arity] = false
     opts[:check_arity] = :warn
 
-    use Rack::Timeout, service_timeout: ENV.fetch('RACK_TIMEOUT_SERVICE_TIMEOUT', 15)
+    use Rack::Timeout
 
     use Rack::Cache,
         metastore: 'file:./tmp/rack-cache-meta',
