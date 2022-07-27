@@ -42,6 +42,7 @@ docker run -d --name html2rss-web \
   -p 3000:3000 \
   gilcreator/html2rss-web
 ```
+Your private feed specified in the `feed.yml` file will be available at `http://SERVER-IP:3000/example.rss`. You can change the name of the feed by editing the name of the `example` section in the `feed.yml` file. 
 
 ### Automatic updating
 
