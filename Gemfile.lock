@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: e8973af55283bd03f49b4e34b2b88fb5a8be175c
+  revision: f4feed552def2d56f8137d89439e27a6a3bb0147
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 11f49b3f9647d11440bdc9246acbd582ebd1be6e
+  revision: 39abbe090b126a4a725d8173bb73d17609e76fc4
   specs:
     html2rss-configs (0.2.0)
 
@@ -87,19 +87,19 @@ GEM
     rspec-support (3.11.0)
     rss (0.2.9)
       rexml
-    rubocop (1.31.2)
+    rubocop (1.32.0)
       json (~> 2.3)
       parallel (~> 1.10)
       parser (>= 3.1.0.0)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 1.8, < 3.0)
       rexml (>= 3.2.5, < 4.0)
-      rubocop-ast (>= 1.18.0, < 2.0)
+      rubocop-ast (>= 1.19.1, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 1.4.0, < 3.0)
-    rubocop-ast (1.18.0)
+    rubocop-ast (1.19.1)
       parser (>= 3.1.1.0)
-    rubocop-performance (1.14.2)
+    rubocop-performance (1.14.3)
       rubocop (>= 1.7.0, < 2.0)
       rubocop-ast (>= 0.4.0)
     rubocop-rake (0.6.0)
