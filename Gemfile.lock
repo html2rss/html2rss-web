@@ -19,15 +19,15 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 39abbe090b126a4a725d8173bb73d17609e76fc4
+  revision: 78ea1c69c4a6f7b6c66695ee15bc54e436d62225
   specs:
     html2rss-configs (0.2.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    addressable (2.8.0)
-      public_suffix (>= 2.0.2, < 5.0)
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
     byebug (11.1.3)
     concurrent-ruby (1.1.10)
@@ -35,12 +35,12 @@ GEM
     diff-lcs (1.5.0)
     docile (1.4.0)
     erubi (1.11.0)
-    faraday (2.4.0)
-      faraday-net_http (~> 2.0)
+    faraday (2.5.2)
+      faraday-net_http (>= 2.0, < 3.1)
       ruby2_keywords (>= 0.0.4)
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
-    faraday-net_http (2.1.0)
+    faraday-net_http (3.0.0)
     json (2.6.2)
     kramdown (2.4.0)
       rexml
@@ -53,13 +53,13 @@ GEM
     nokogiri (1.13.8-x86_64-linux)
       racc (~> 1.4)
     parallel (1.22.1)
-    parser (3.1.2.0)
+    parser (3.1.2.1)
       ast (~> 2.4.1)
-    public_suffix (4.0.7)
-    puma (5.6.4)
+    public_suffix (5.0.0)
+    puma (5.6.5)
       nio4r (~> 2.0)
     racc (1.6.0)
-    rack (2.2.4)
+    rack (3.0.0)
     rack-cache (1.13.0)
       rack (>= 0.4)
     rack-timeout (0.6.3)
@@ -70,7 +70,7 @@ GEM
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.2.5)
-    roda (3.58.0)
+    roda (3.59.0)
       rack
     rspec (3.11.0)
       rspec-core (~> 3.11.0)
@@ -78,34 +78,34 @@ GEM
       rspec-mocks (~> 3.11.0)
     rspec-core (3.11.0)
       rspec-support (~> 3.11.0)
-    rspec-expectations (3.11.0)
+    rspec-expectations (3.11.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.11.0)
     rspec-mocks (3.11.1)
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.11.0)
-    rspec-support (3.11.0)
+    rspec-support (3.11.1)
     rss (0.2.9)
       rexml
-    rubocop (1.32.0)
+    rubocop (1.36.0)
       json (~> 2.3)
       parallel (~> 1.10)
-      parser (>= 3.1.0.0)
+      parser (>= 3.1.2.1)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 1.8, < 3.0)
       rexml (>= 3.2.5, < 4.0)
-      rubocop-ast (>= 1.19.1, < 2.0)
+      rubocop-ast (>= 1.20.1, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 1.4.0, < 3.0)
-    rubocop-ast (1.19.1)
+    rubocop-ast (1.21.0)
       parser (>= 3.1.1.0)
-    rubocop-performance (1.14.3)
+    rubocop-performance (1.15.0)
       rubocop (>= 1.7.0, < 2.0)
       rubocop-ast (>= 0.4.0)
     rubocop-rake (0.6.0)
       rubocop (~> 1.0)
-    rubocop-rspec (2.12.1)
-      rubocop (~> 1.31)
+    rubocop-rspec (2.13.1)
+      rubocop (~> 1.33)
     ruby-progressbar (1.11.0)
     ruby2_keywords (0.0.5)
     sanitize (6.0.0)
@@ -154,4 +154,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.3.7
+   2.3.22
