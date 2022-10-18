@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: f4feed552def2d56f8137d89439e27a6a3bb0147
+  revision: 25d3904cf72df04ecbf1f578df2298f89a35dd57
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -35,12 +35,12 @@ GEM
     diff-lcs (1.5.0)
     docile (1.4.0)
     erubi (1.11.0)
-    faraday (2.5.2)
+    faraday (2.6.0)
       faraday-net_http (>= 2.0, < 3.1)
       ruby2_keywords (>= 0.0.4)
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
-    faraday-net_http (3.0.0)
+    faraday-net_http (3.0.1)
     json (2.6.2)
     kramdown (2.4.0)
       rexml
@@ -48,9 +48,9 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2022.0105)
     nio4r (2.5.8)
-    nokogiri (1.13.8-x86_64-darwin)
+    nokogiri (1.13.9-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.13.8-x86_64-linux)
+    nokogiri (1.13.9-x86_64-linux)
       racc (~> 1.4)
     parallel (1.22.1)
     parser (3.1.2.1)
@@ -126,7 +126,7 @@ GEM
     webrick (1.7.0)
     yard (0.9.28)
       webrick (~> 1.7.0)
-    zeitwerk (2.6.0)
+    zeitwerk (2.6.1)
 
 PLATFORMS
   x86_64-darwin-20
