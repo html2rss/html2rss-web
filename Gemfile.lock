@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 9571a188f2a7f733b4c4a99fe4cacffa0846cdb1
+  revision: cfbffe84c199533a601f74bd259fff0fce84676f
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -55,7 +55,7 @@ GEM
     parallel (1.22.1)
     parser (3.1.2.1)
       ast (~> 2.4.1)
-    public_suffix (5.0.0)
+    public_suffix (5.0.1)
     puma (6.0.0)
       nio4r (~> 2.0)
     racc (1.6.1)
