@@ -2,22 +2,20 @@
 
 # html2rss-web
 
-[![](https://images.microbadger.com/badges/version/gilcreator/html2rss-web.svg)](https://hub.docker.com/r/gilcreator/html2rss-web)
-
 This web application scrapes websites to build and deliver RSS 2.0 feeds.
 
-## Features
+**Features:**
 
-- [create your custom feeds](#how-to-build-a-rss-feed)!
+- [create your custom feeds](#how-to-build-your-rss-feeds)!
 - comes with plenty of [included configs](https://github.com/html2rss/html2rss-configs) out of the box.
 - handles request caching.
 - sets caching related HTTP headers.
 
-This application is intended for Docker usage and is designed to need as little maintenance as possible. See [Versioning and Releases](#versioning-and-releases) and consider automatic updates (with _watchtower_ -- keep reading).
-
 The functionality of scraping websites and building the RSS is provided by the Ruby gem [`html2rss`](https://github.com/html2rss/html2rss).
 
 ## Get started
+
+This application should be used with Docker. It is designed to require as little maintenance as possible. See [Versioning and Releases](#versioning-and-releases) and [consider automatic updates](#docker-automatically-keep-the-html2rss-web-image-up-to-date).
 
 ### with Docker
 
@@ -93,7 +91,7 @@ Please refer to [html2rss' README for a description of _the feed config and its 
 
 This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release) fashion from the `master` branch.
 
-For the latest commit passing the Github CI/CD on the master branch, an updated Docker image will be pushed to Docker Hub: `gilcreator/html2rss-web`](<https://hub.docker.com/r/gilcreator/html2rss-web>).
+For the latest commit passing the Github CI/CD on the master branch, an updated Docker image will be pushed to [Docker Hub: `gilcreator/html2rss-web`](https://hub.docker.com/r/gilcreator/html2rss-web).
 
 Github's @dependabot is enabled for dependency updates and are automatically merged to the `master` branch when the CI gives the green light.
 
@@ -176,3 +174,11 @@ If you're comfortable with installing Ruby directly on your machine, follow thes
 4. `foreman start`
 
 _html2rss-web_ now listens on port **5**000 for requests.
+
+## Contribute
+
+Contributions are welcome!
+
+Open a pull request with your changes,
+open an issue, or
+[join discussions on html2rss](https://github.com/orgs/html2rss/discussions).
