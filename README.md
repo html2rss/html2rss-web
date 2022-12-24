@@ -25,7 +25,7 @@ The functionality of scraping websites and building the RSS is provided by the R
 docker run -p 3000:3000 gilcreator/html2rss-web
 ```
 
-and open <http://127.0.0.1:3000/> in your browser.
+and open <http://127.0.0.1:3000/> in your browser and click onto the example feed link.
 
 This is the quickest way to get started. However, it's also the one with least flexibility: it doesn't allow to use custom feed configs and doesn't update automatically.
 
@@ -73,12 +73,12 @@ html2rss-web comes with many feed configs out of the box. [See file list of all 
 
 To use a config from there, build the URL like this:
 
-The _feed config_ you'd like to use:
-`lib/html2rss/configs/domainname.tld/whatever.yml`
+The _feed config_ you'd like to use:  
+`lib/html2rss/configs/domainname.tld/whatever.yml`  
 `‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-The corresponding URL:
-`http://localhost:3000/domainname.tld/whatever.rss`
+The corresponding URL:  
+`http://localhost:3000/domainname.tld/whatever.rss`  
 `‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 ## How to build your RSS feeds
