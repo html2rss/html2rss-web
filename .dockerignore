@@ -11,8 +11,10 @@
 app.json
 bin/
 coverage/
+docs/
 Procfile
 Rakefile
 renovate.json
 spec/
+tmp/
 work/
