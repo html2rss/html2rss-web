@@ -168,7 +168,7 @@ docker rmi html2rss-web
 
 If you're comfortable with installing Ruby directly on your machine, follow these instructions:
 
-1. Install Ruby `>= 3.1`
+1. Install Ruby `>= 3.2`
 2. `gem install bundler foreman`
 3. `bundle`
 4. `foreman start`
