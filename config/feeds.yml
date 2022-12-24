@@ -1,18 +1,21 @@
 stylesheets:
-  - href: '/rss.xsl'
-    media: 'all'
-    type: 'text/xsl'
+  - href: "/rss.xsl"
+    media: "all"
+    type: "text/xsl"
 headers:
-  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; rv:68.0) Gecko/20100101 Firefox/68.0"
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
 feeds:
   # your custom feeds go here:
   example:
     channel:
-      url: https://html2rss.github.io/
+      url: https://github.com/html2rss/html2rss-web/commits/master
+      title: Latest commits on html2rss-web's master branch.
+      ttl: 120
     selectors:
       items:
-        selector: '[role=main]'
+        selector: "ol > li > div"
       title:
-        selector: 'h1'
-      description:
-        selector: 'p'
+        selector: "p"
+      link:
+        selector: "a"
+        extractor: "href"
