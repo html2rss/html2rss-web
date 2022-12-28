@@ -14,9 +14,9 @@ HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
 RUN apk add --no-cache \
   'git=~2' \
   'make=~4' \
-  'gcc=~10' \
+  'gcc=~12' \
   'libc-dev=~0' \
-  'tzdata>=2019b'
+  'tzdata>=2022f'
 
 ARG USER=html2rss
 ARG UID=991
