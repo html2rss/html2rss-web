@@ -73,13 +73,14 @@ html2rss-web comes with many feed configs out of the box. [See file list of all 
 
 To use a config from there, build the URL like this:
 
-The _feed config_ you'd like to use:
-`lib/html2rss/configs/domainname.tld/whatever.yml`
-`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+Build the URL of the _feed config_ you'd like to use like this:
 
-The corresponding URL:
-`http://localhost:3000/domainname.tld/whatever.rss`
-`‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
+|                          |                               |
+| -----------------------: | :---------------------------- |
+|  `lib/html2rss/configs/` | `domainname.tld/whatever.yml` |
+|  Would becomes this URL: |                               |
+| `http://localhost:3000/` | `domainname.tld/whatever.rss` |
+|                          | `^^^^^^^^^^^^^^^^^^^^^^^^^^^` |
 
 ## How to build your RSS feeds
 
@@ -114,21 +115,21 @@ If you're going to host a public instance, _please please please_:
 
 ### Supported ENV variables
 
-| Name                           | Description            |
-| ------------------------------ | ---------------------- |
-| `PORT`                         | default: 3000          |
-| `RACK_ENV`                     | default: 'development' |
-| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15            |
-| `WEB_CONCURRENCY`              | default: 2             |
-| `WEB_MAX_THREADS`              | default: 5             |
-| `HEALTH_CHECK_USERNAME`        | |
-| `HEALTH_CHECK_PASSWORD`        | |
+| Name                           | Description                      |
+| ------------------------------ | -------------------------------- |
+| `PORT`                         | default: 3000                    |
+| `RACK_ENV`                     | default: 'development'           |
+| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                      |
+| `WEB_CONCURRENCY`              | default: 2                       |
+| `WEB_MAX_THREADS`              | default: 5                       |
+| `HEALTH_CHECK_USERNAME`        | default: auto generated on start |
+| `HEALTH_CHECK_PASSWORD`        | default: auto generated on start |
 
 ### Runtime monitoring via `GET /health_check.txt`
 
 It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs break. The endpoint uses HTTP Basic authentication.
 
-First, set values for username and password with the environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. If these variables are not set, html2rss-web will generate a random username and password on each start.
+First, set username and password via these environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. If these are not set, html2rss-web will generate a new random username and password on _each_ start.
 
 An authenticated `GET /health_check.txt` request will be responded with:
 
@@ -138,7 +139,7 @@ An authenticated `GET /health_check.txt` request will be responded with:
 To get notified when one of your configs breaks, setup a monitoring of this endpoint.
 
 [UptimeRobot's free plan](https://uptimerobot.com/) is sufficent for basic monitoring (every 5 minutes).
-Create a monitor of type _Keyword_ with this information and add your username and password:
+Create a monitor of type _Keyword_ with this information and make it aware of your username and password:
 
 ![A screenshot showing the Keyword Monitor: a name, the instance's URL to /health_check.txt and an interval.](docs/uptimerobot_monitor.jpg)
 
