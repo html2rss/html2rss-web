@@ -126,9 +126,9 @@ If you're going to host a public instance, _please please please_:
 
 ### Runtime monitoring via `GET /health_check.txt`
 
-It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs break.
+It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs break. The endpoint uses HTTP Basic authentication.
 
-First, set values for username and password with the environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. html2rss-web will generate a random username and password on each start if these variables are not set.
+First, set values for username and password with the environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. If these variables are not set, html2rss-web will generate a random username and password on each start.
 
 An authenticated `GET /health_check.txt` request will be responded with:
 

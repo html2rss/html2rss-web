@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'roda'
 require 'openssl'
 
 class Roda
@@ -12,7 +13,7 @@ class Roda
       def self.authorize(username, password, auth)
         given_user, given_password = auth.credentials
 
-        secure_compare(username.to_s, given_user) & secure_compare(password.to_s, given_password)
+        secure_compare(username, given_user) & secure_compare(password, given_password)
       end
 
       def self.secure_compare(left, right)
@@ -22,15 +23,21 @@ class Roda
       ##
       # Methods here become instance methods in the roda application.
       module InstanceMethods
-        def basic_auth(realm:, username:, password:)
+        def with_basic_auth(realm:, username:, password:)
           raise ArgumentError, 'realm must not be a blank string' if realm.to_s.strip == ''
 
           response.headers['WWW-Authenticate'] = "Basic realm=#{realm}"
 
           auth = Rack::Auth::Basic::Request.new(env)
 
-          return if auth.provided? && Roda::RodaPlugins::BasicAuth.authorize(username, password, auth)
+          if auth.provided? && Roda::RodaPlugins::BasicAuth.authorize(username, password, auth)
+            yield if block_given?
+          else
+            unauthorized
+          end
+        end
 
+        def unauthorized
           response.status = 401
           request.halt response.finish
         end

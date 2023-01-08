@@ -7,7 +7,7 @@ require_relative './app/health_check'
 require_relative './app/local_config'
 require_relative './app/html2rss_facade'
 
-require_relative 'roda_plugins/basic_auth'
+require_relative 'roda/roda_plugins/basic_auth'
 
 module App
   ##
@@ -86,11 +86,11 @@ module App
       r.get 'health_check.txt' do |_|
         HttpCache.expires_now(response)
 
-        basic_auth(realm: HealthCheck,
-                   username: HealthCheck::Auth.username,
-                   password: HealthCheck::Auth.password)
-
-        HealthCheck.run
+        with_basic_auth(realm: HealthCheck,
+                        username: HealthCheck::Auth.username,
+                        password: HealthCheck::Auth.password) do
+          HealthCheck.run
+        end
       end
 
       # Route for feeds from the local feeds.yml

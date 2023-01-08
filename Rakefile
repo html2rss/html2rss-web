@@ -11,6 +11,8 @@ task :test do
       '-d',
       '-p 3000:3000',
       '--env PUMA_LOG_CONFIG=1',
+      '--env HEALTH_CHECK_USERNAME=username',
+      '--env HEALTH_CHECK_PASSWORD=password',
       "--mount type=bind,source=#{current_dir}/config,target=/app/config",
       '--name html2rss-web-test',
       'gilcreator/html2rss-web'].join(' ')
@@ -20,7 +22,8 @@ task :test do
   sh 'docker ps -a'
 
   sh 'curl -f http://127.0.0.1:3000/github.com/releases.rss\?username=nuxt\&repository=nuxt.js || exit 1'
-  sh 'curl -f http://127.0.0.1:3000/health_check.txt || exit 1'
+  sh 'curl -f http://127.0.0.1:3000/example.rss || exit 1'
+  sh 'curl -f http://username:password@127.0.0.1:3000/health_check.txt || exit 1'
   sh 'docker exec html2rss-web-test html2rss help'
 ensure
   sh 'docker logs --tail all html2rss-web-test'
