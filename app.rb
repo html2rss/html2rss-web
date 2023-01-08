@@ -71,6 +71,9 @@ module App
     plugin :render, escape: true, layout: 'layout'
     plugin :typecast_params
 
+    require_relative 'roda_plugins/basic_auth'
+    plugin :basic_auth
+
     route do |r|
       path = RequestPath.new(request)
 
