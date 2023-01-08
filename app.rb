@@ -7,6 +7,8 @@ require_relative './app/health_check'
 require_relative './app/local_config'
 require_relative './app/html2rss_facade'
 
+require_relative 'roda_plugins/basic_auth'
+
 module App
   ##
   # This app uses html2rss and serves the feeds via HTTP.
@@ -71,7 +73,6 @@ module App
     plugin :render, escape: true, layout: 'layout'
     plugin :typecast_params
 
-    require_relative 'roda_plugins/basic_auth'
     plugin :basic_auth
 
     route do |r|
@@ -84,6 +85,8 @@ module App
       r.public
 
       r.get 'health_check.txt' do |_|
+        basic_auth realm: 'health_check', username: 'foo', password: 'bar'
+
         HttpCache.expires_now(response)
 
         HealthCheck.run

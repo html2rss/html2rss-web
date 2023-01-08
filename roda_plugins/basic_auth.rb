@@ -1,34 +1,42 @@
 # frozen_string_literal: true
 
-class Roda
-  module RodaPlugins
-    module BasicAuth
-      # def self.configure(app, opts = {})
-      #   plugin_opts = (app.opts[:http_auth] ||= {})
-      #   app.opts[:http_auth] = plugin_opts.merge(opts)
-      #   app.opts[:http_auth].freeze
-      # end
+require 'openssl'
 
-      # TODO: secure compare
+class Roda
+  ##
+  # Roda's plugin namespace
+  module RodaPlugins
+    ##
+    # Basic Auth plugin's namespace
+    module BasicAuth
+      def self.authorize(username, password, auth)
+        given_user, given_password = auth.credentials
+
+        secure_compare(username.to_s, given_user) & secure_compare(password.to_s, given_password)
+      end
+
+      def self.secure_compare(left, right)
+        left.bytesize == right.bytesize && OpenSSL.fixed_length_secure_compare(left, right)
+      end
 
       ##
-      # ... authenticator
-      module RequestMethods
-        def basic_auth(&authenticator)
-          raise ArgumentError, 'must be used with a block' unless authenticator
+      # Methods here become instance methods in the roda application.
+      module InstanceMethods
+        def basic_auth(realm:, username:, password:)
+          raise ArgumentError, 'realm must not be a blank string' if realm.to_s.strip == ''
+
+          response.headers['WWW-Authenticate'] = "Basic realm=#{realm}"
 
           auth = Rack::Auth::Basic::Request.new(env)
 
-          if auth.provided? && yield(*auth.credentials)
-            env['REMOTE_USER'] = auth.username
-          else
-            response.status = 401
-            # request.block_result(instance_exec(request, &opts[:unauthorized]))
-            request.halt response.finish
-          end
+          return if auth.provided? && Roda::RodaPlugins::BasicAuth.authorize(username, password, auth)
+
+          response.status = 401
+          request.halt response.finish
         end
       end
     end
+
     register_plugin(:basic_auth, BasicAuth)
   end
 end
