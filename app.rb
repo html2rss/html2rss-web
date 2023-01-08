@@ -72,7 +72,6 @@ module App
     plugin :public
     plugin :render, escape: true, layout: 'layout'
     plugin :typecast_params
-
     plugin :basic_auth
 
     route do |r|
@@ -85,9 +84,11 @@ module App
       r.public
 
       r.get 'health_check.txt' do |_|
-        basic_auth realm: 'health_check', username: 'foo', password: 'bar'
-
         HttpCache.expires_now(response)
+
+        basic_auth(realm: HealthCheck,
+                   username: HealthCheck::Auth.username,
+                   password: HealthCheck::Auth.password)
 
         HealthCheck.run
       end

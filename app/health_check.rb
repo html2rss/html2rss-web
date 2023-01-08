@@ -1,11 +1,32 @@
 # frozen_string_literal: true
 
 require_relative './local_config'
+require 'singleton'
 
 module App
   ##
   # Checks if the local configs generate valid RSS feeds.
   module HealthCheck
+    ##
+    # Contains logic to obtain username and password to be used with HealthCheck endpoint.
+    class Auth
+      def self.username
+        @username ||= ENV.fetch('HEALTH_CHECK_USERNAME') do
+          SecureRandom.base64(32).tap do |string|
+            puts "HEALTH_CHECK_USERNAME env var. missing! Please set it. Using generated value instead: #{string}"
+          end
+        end
+      end
+
+      def self.password
+        @password ||= ENV.fetch('HEALTH_CHECK_PASSWORD') do
+          SecureRandom.base64(32).tap do |string|
+            puts "HEALTH_CHECK_PASSWORD env var. missing! Please set it. Using generated value instead: #{string}"
+          end
+        end
+      end
+    end
+
     module_function
 
     ##

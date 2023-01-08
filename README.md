@@ -47,6 +47,8 @@ services:
         read_only: true
     environment:
       - RACK_ENV=production
+      - HEALTH_CHECK_USERNAME=health
+      - HEALTH_CHECK_PASSWORD=please-set-YOUR-OWN-veeeeeery-l0ng-aNd-h4rd-to-gue55-Passw0rd!
   watchtower:
     image: containrrr/watchtower
     volumes:
@@ -71,12 +73,12 @@ html2rss-web comes with many feed configs out of the box. [See file list of all 
 
 To use a config from there, build the URL like this:
 
-The _feed config_ you'd like to use:  
-`lib/html2rss/configs/domainname.tld/whatever.yml`  
+The _feed config_ you'd like to use:
+`lib/html2rss/configs/domainname.tld/whatever.yml`
 `‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
-The corresponding URL:  
-`http://localhost:3000/domainname.tld/whatever.rss`  
+The corresponding URL:
+`http://localhost:3000/domainname.tld/whatever.rss`
 `‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ‌ ^^^^^^^^^^^^^^^^^^^^^^^^^^^`
 
 ## How to build your RSS feeds
@@ -119,17 +121,24 @@ If you're going to host a public instance, _please please please_:
 | `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15            |
 | `WEB_CONCURRENCY`              | default: 2             |
 | `WEB_MAX_THREADS`              | default: 5             |
+| `HEALTH_CHECK_USERNAME`        | |
+| `HEALTH_CHECK_PASSWORD`        | |
 
 ### Runtime monitoring via `GET /health_check.txt`
 
-It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can be notified when one of _your own_ configs break.
+It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs break.
 
-The `GET /health_check.txt` endpoint responds with:
+First, set values for username and password with the environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. html2rss-web will generate a random username and password on each start if these variables are not set.
 
-- if the feeds are generatable: it will respond with `success` .
-- otherwise: it states the broken config names.
+An authenticated `GET /health_check.txt` request will be responded with:
 
-[UptimeRobot's free plan](https://uptimerobot.com/) is sufficent for basic monitoring every 5 minutes. Create a monitor of type _Keyword_ with this information:
+- if the feeds are generatable: `success`.
+- otherwise: the names of the broken configs.
+
+To get notified when one of your configs breaks, setup a monitoring of this endpoint.
+
+[UptimeRobot's free plan](https://uptimerobot.com/) is sufficent for basic monitoring (every 5 minutes).
+Create a monitor of type _Keyword_ with this information and add your username and password:
 
 ![A screenshot showing the Keyword Monitor: a name, the instance's URL to /health_check.txt and an interval.](docs/uptimerobot_monitor.jpg)
 
