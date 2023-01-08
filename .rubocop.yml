@@ -8,5 +8,7 @@ AllCops:
   NewCops: enable
 
 Metrics/BlockLength:
+  Exclude:
+    - Rakefile
   ExcludedMethods:
     - route

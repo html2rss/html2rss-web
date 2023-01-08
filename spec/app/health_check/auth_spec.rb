@@ -9,16 +9,16 @@ RSpec.describe App::HealthCheck::Auth do
   end
 
   describe '.username' do
-    it {
+    it 'deletes the ENV var', :aggregate_failures do
       expect(described_class.username).to be_a String
       expect(ENV).to have_received(:delete).with('HEALTH_CHECK_USERNAME').once
-    }
+    end
   end
 
   describe '.password' do
-    it {
+    it 'deletes the ENV var', :aggregate_failures do
       expect(described_class.password).to be_a String
       expect(ENV).to have_received(:delete).with('HEALTH_CHECK_PASSWORD').once
-    }
+    end
   end
 end

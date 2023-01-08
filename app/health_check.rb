@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative './local_config'
-require 'singleton'
 
 module App
   ##
