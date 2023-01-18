@@ -67,7 +67,7 @@ GEM
     rack-cache (1.13.0)
       rack (>= 0.4)
     rack-timeout (0.6.3)
-    rack-unreloader (2.0.0)
+    rack-unreloader (2.1.0)
     rainbow (3.1.1)
     rake (13.0.6)
     regexp_parser (2.6.1)
