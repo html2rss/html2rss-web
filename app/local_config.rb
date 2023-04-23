@@ -41,9 +41,7 @@ module App
     ##
     # @return [Hash<Symbol, Hash>]
     def yaml
-      return @yaml if defined?(@yaml) && ENV.fetch('RACK_ENV', nil) != 'development'
-
-      @yaml = YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
+      YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
     end
   end
 end
