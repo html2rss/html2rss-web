@@ -41,7 +41,7 @@ module App
     ##
     # @return [Hash<Symbol, Hash>]
     def yaml
-      @yaml = YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
+      YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
     end
   end
 end
