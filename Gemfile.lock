@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 4aacf96f76893dee5bed5350c44fc2aeeed9b2bf
+  revision: e9697f75ea66d7b51780a6dc2e5460655e6e2e2d
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -35,7 +35,7 @@ GEM
     diff-lcs (1.5.0)
     docile (1.4.0)
     erubi (1.12.0)
-    faraday (2.7.4)
+    faraday (2.7.10)
       faraday-net_http (>= 2.0, < 3.1)
       ruby2_keywords (>= 0.0.4)
     faraday-follow_redirects (0.3.0)
@@ -70,7 +70,7 @@ GEM
     rack-unreloader (2.1.0)
     rainbow (3.1.1)
     rake (13.0.6)
-    regexp_parser (2.7.0)
+    regexp_parser (2.8.1)
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.2.5)
@@ -121,7 +121,7 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
     simplecov_json_formatter (0.1.4)
-    thor (1.2.1)
+    thor (1.2.2)
     tilt (2.2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
@@ -130,7 +130,7 @@ GEM
     webrick (1.7.0)
     yard (0.9.28)
       webrick (~> 1.7.0)
-    zeitwerk (2.6.7)
+    zeitwerk (2.6.8)
 
 PLATFORMS
   ruby
