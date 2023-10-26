@@ -3,9 +3,9 @@
 require 'roda'
 require 'rack/cache'
 require 'rack-timeout'
-require_relative './app/health_check'
-require_relative './app/local_config'
-require_relative './app/html2rss_facade'
+require_relative 'app/health_check'
+require_relative 'app/local_config'
+require_relative 'app/html2rss_facade'
 
 require_relative 'roda/roda_plugins/basic_auth'
 
