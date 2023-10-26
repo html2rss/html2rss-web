@@ -1,4 +1,4 @@
-FROM ruby:3.2.2-alpine3.17
+FROM ruby:3.2.2-alpine3.18
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -11,12 +11,12 @@ ENV PATH="/app/bin:${PATH}"
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:3000/health_check.txt || exit 1
 
-RUN apk add --no-cache \
+RUN apk add --no-cache --verbose \
   'git=~2' \
   'make=~4' \
-  'gcc=~12' \
+  'gcc>=12' \
   'libc-dev=~0' \
-  'tzdata>=2022f'
+  'tzdata>=2023c-r1'
 
 ARG USER=html2rss
 ARG UID=991
