@@ -1,4 +1,5 @@
 version: 2
+
 updates:
   - package-ecosystem: bundler
     directory: "/"
@@ -9,9 +10,23 @@ updates:
     versioning-strategy: increase-if-necessary
     allow:
       - dependency-type: production
+    groups:
+      rubygems:
+        patterns:
+          - "*"
+
   - package-ecosystem: docker
     directory: "/"
     schedule:
       interval: daily
       time: "09:00"
     open-pull-requests-limit: 10
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
