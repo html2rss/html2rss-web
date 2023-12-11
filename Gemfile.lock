@@ -68,7 +68,7 @@ GEM
       nio4r (~> 2.0)
     racc (1.7.1)
     rack (3.0.8)
-    rack-cache (1.14.0)
+    rack-cache (1.15.0)
       rack (>= 0.4)
     rack-timeout (0.6.3)
     rack-unreloader (2.1.0)
