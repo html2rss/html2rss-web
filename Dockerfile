@@ -12,6 +12,7 @@ HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:3000/health_check.txt || exit 1
 
 RUN apk add --no-cache --verbose \
+  'curl>=8.5.0' \
   'gcc>=12' \
   'git=~2' \
   'libc-dev=~0' \
