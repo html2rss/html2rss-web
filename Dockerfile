@@ -8,6 +8,8 @@ ENV PORT=3000
 ENV RACK_ENV=production
 ENV PATH="/app/bin:${PATH}"
 
+SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:3000/health_check.txt || exit 1
 
@@ -41,9 +43,10 @@ WORKDIR /app
 USER html2rss
 
 COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
-RUN gem install bundler:'<3' \
+# hadolint ignore=SC2046
+RUN gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
   && bundle config set --local without 'development test' \
-  && bundle install --retry=5 --jobs=7 \
+  && bundle install --retry=5 --jobs=$(nproc) \
   && bundle binstubs bundler html2rss
 
 COPY --chown=html2rss:html2rss . .
