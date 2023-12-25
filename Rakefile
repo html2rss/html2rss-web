@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'json'
+
 ##
 # Helper methods used during :test run
 module Output
@@ -61,8 +63,13 @@ task :test do
   Output.describe 'Print output of `html2rss help`'
   sh 'docker exec html2rss-web-test html2rss help'
 ensure
-  Output.describe 'Cleaning up'
-  sh 'docker logs --tail all html2rss-web-test'
-  sh 'docker stop html2rss-web-test'
-  sh 'docker rm html2rss-web-test'
+  test_container_exists = JSON.parse(`docker inspect html2rss-web-test`).any?
+
+  if test_container_exists
+    Output.describe 'Cleaning up test container'
+
+    sh 'docker logs --tail all html2rss-web-test'
+    sh 'docker stop html2rss-web-test'
+    sh 'docker rm html2rss-web-test'
+  end
 end
