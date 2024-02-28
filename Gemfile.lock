@@ -63,7 +63,7 @@ GEM
     puma (6.4.2)
       nio4r (~> 2.0)
     racc (1.7.3)
-    rack (3.0.9)
+    rack (3.0.9.1)
     rack-cache (1.15.0)
       rack (>= 0.4)
     rack-timeout (0.6.3)
