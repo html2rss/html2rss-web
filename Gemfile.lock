@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 8e9c589fbd73ddbd5e9d53eb318a8a79757d4e57
+  revision: 9fd264d3dd04a79ed81793c79ae70aea99ccdfeb
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -29,27 +29,27 @@ GEM
     addressable (2.8.6)
       public_suffix (>= 2.0.2, < 6.0)
     ast (2.4.2)
-    base64 (0.2.0)
     byebug (11.1.3)
-    concurrent-ruby (1.2.2)
+    concurrent-ruby (1.2.3)
     crass (1.0.6)
     diff-lcs (1.5.0)
     docile (1.4.0)
     erubi (1.12.0)
-    faraday (2.8.1)
-      base64
-      faraday-net_http (>= 2.0, < 3.1)
-      ruby2_keywords (>= 0.0.4)
+    faraday (2.9.0)
+      faraday-net_http (>= 2.0, < 3.2)
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
-    faraday-net_http (3.0.2)
+    faraday-net_http (3.1.0)
+      net-http
     json (2.7.1)
     kramdown (2.4.0)
       rexml
     language_server-protocol (3.17.0.3)
-    mime-types (3.5.1)
+    mime-types (3.5.2)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2023.1205)
+    mime-types-data (3.2024.0206)
+    net-http (0.4.1)
+      uri
     nio4r (2.7.0)
     nokogiri (1.16.2-arm64-darwin)
       racc (~> 1.4)
@@ -70,7 +70,7 @@ GEM
     rack-unreloader (2.1.0)
     rainbow (3.1.1)
     rake (13.1.0)
-    regexp_parser (2.8.3)
+    regexp_parser (2.9.0)
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.2.6)
@@ -118,7 +118,6 @@ GEM
       rubocop-capybara (~> 2.17)
       rubocop-factory_bot (~> 2.22)
     ruby-progressbar (1.13.0)
-    ruby2_keywords (0.0.5)
     sanitize (6.1.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -128,14 +127,15 @@ GEM
       simplecov_json_formatter (~> 0.1)
     simplecov-html (0.12.3)
     simplecov_json_formatter (0.1.4)
-    thor (1.3.0)
+    thor (1.3.1)
     tilt (2.3.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
+    uri (0.13.0)
     vcr (6.2.0)
     yard (0.9.34)
-    zeitwerk (2.6.12)
+    zeitwerk (2.6.13)
 
 PLATFORMS
   arm64-darwin-22
