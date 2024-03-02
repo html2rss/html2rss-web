@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: af7c3f2e6296c94ca9dd22417e8610627668497f
+  revision: 3fa8eb7bb55b36acf22e283e9b3ab9fd6a785932
   specs:
     html2rss-configs (0.2.0)
 
@@ -64,7 +64,7 @@ GEM
       nio4r (~> 2.0)
     racc (1.7.3)
     rack (3.0.9.1)
-    rack-cache (1.15.0)
+    rack-cache (1.16.0)
       rack (>= 0.4)
     rack-timeout (0.6.3)
     rack-unreloader (2.1.0)
