@@ -1,4 +1,4 @@
-FROM ruby:3.3.0-alpine3.18
+FROM ruby:3.3.1-alpine3.18
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
