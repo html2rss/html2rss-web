@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 0410ef83af318343acb56e23bfa7b07b93cc1ab0
+  revision: 2d794ef92bcff24c06299c3ea1751dccdfb48d24
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -47,19 +47,19 @@ GEM
     language_server-protocol (3.17.0.3)
     mime-types (3.5.2)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.0206)
+    mime-types-data (3.2024.0305)
     net-http (0.4.1)
       uri
     nio4r (2.7.0)
-    nokogiri (1.16.2-arm64-darwin)
+    nokogiri (1.16.4-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.16.2-x86_64-linux)
+    nokogiri (1.16.4-x86_64-linux)
       racc (~> 1.4)
     parallel (1.24.0)
     parser (3.2.2.4)
       ast (~> 2.4.1)
       racc
-    public_suffix (5.0.4)
+    public_suffix (5.0.5)
     puma (6.4.2)
       nio4r (~> 2.0)
     racc (1.7.3)
