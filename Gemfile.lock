@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: aa99bd68c7add7abd4f65d2e4b558ebe20227ee8
+  revision: 2c458a7606c2519a5fc75b58b1acca0cb4f1ace3
   specs:
     html2rss (0.9.0)
       addressable (~> 2.7)
@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: f5da387390341a8bb5191e65740ad456c714b0b3
+  revision: 8759c607cc4bbe469f4294a200ee424dfa82ac48
   specs:
     html2rss-configs (0.2.0)
 
@@ -40,7 +40,7 @@ GEM
       logger
     faraday-follow_redirects (0.3.0)
       faraday (>= 1, < 3)
-    faraday-net_http (3.1.0)
+    faraday-net_http (3.1.1)
       net-http
     json (2.7.2)
     kramdown (2.4.0)
@@ -53,15 +53,15 @@ GEM
     net-http (0.4.1)
       uri
     nio4r (2.7.3)
-    nokogiri (1.16.6-arm64-darwin)
+    nokogiri (1.16.7-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.16.6-x86_64-linux)
+    nokogiri (1.16.7-x86_64-linux)
       racc (~> 1.4)
     parallel (1.24.0)
     parser (3.3.1.0)
       ast (~> 2.4.1)
       racc
-    public_suffix (6.0.0)
+    public_suffix (6.0.1)
     puma (6.4.2)
       nio4r (~> 2.0)
     racc (1.8.0)
@@ -124,7 +124,7 @@ GEM
     rubocop-rspec_rails (2.28.3)
       rubocop (~> 1.40)
     ruby-progressbar (1.13.0)
-    sanitize (6.1.1)
+    sanitize (6.1.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
     simplecov (0.22.0)
@@ -142,7 +142,7 @@ GEM
     uri (0.13.0)
     vcr (6.2.0)
     yard (0.9.36)
-    zeitwerk (2.6.16)
+    zeitwerk (2.6.17)
 
 PLATFORMS
   arm64-darwin-22
