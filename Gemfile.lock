@@ -1,8 +1,8 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 2c458a7606c2519a5fc75b58b1acca0cb4f1ace3
+  revision: d0a51a0ca60264b9179b6982ce93b5100a4c6b4e
   specs:
-    html2rss (0.9.0)
+    html2rss (0.10.0)
       addressable (~> 2.7)
       faraday (> 2.0.1, < 3.0)
       faraday-follow_redirects
@@ -19,9 +19,10 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 8759c607cc4bbe469f4294a200ee424dfa82ac48
+  revision: 8b2deab891846a0ef1e008c6d49bc19c97006ed9
   specs:
     html2rss-configs (0.2.0)
+      html2rss
 
 GEM
   remote: https://rubygems.org/
@@ -64,7 +65,7 @@ GEM
     public_suffix (6.0.1)
     puma (6.4.2)
       nio4r (~> 2.0)
-    racc (1.8.0)
+    racc (1.8.1)
     rack (3.1.7)
     rack-cache (1.17.0)
       rack (>= 0.4)
