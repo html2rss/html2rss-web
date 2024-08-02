@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: d0a51a0ca60264b9179b6982ce93b5100a4c6b4e
+  revision: 97d602ad42f4a3c1b11d810fb8924c29d19aee55
   specs:
     html2rss (0.10.0)
       addressable (~> 2.7)
@@ -19,7 +19,7 @@ GIT
 
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 8b2deab891846a0ef1e008c6d49bc19c97006ed9
+  revision: 07bbadcc2be501488a3772352ab0f8c7b05235a3
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -36,7 +36,7 @@ GEM
     diff-lcs (1.5.1)
     docile (1.4.0)
     erubi (1.13.0)
-    faraday (2.10.0)
+    faraday (2.10.1)
       faraday-net_http (>= 2.0, < 3.2)
       logger
     faraday-follow_redirects (0.3.0)
@@ -76,7 +76,7 @@ GEM
     regexp_parser (2.9.2)
     reverse_markdown (2.1.1)
       nokogiri
-    rexml (3.3.3)
+    rexml (3.3.4)
       strscan
     roda (3.82.0)
       rack
@@ -93,7 +93,7 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.13.0)
     rspec-support (3.13.1)
-    rss (0.3.0)
+    rss (0.3.1)
       rexml
     rubocop (1.63.5)
       json (~> 2.3)
