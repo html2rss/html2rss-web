@@ -13,9 +13,9 @@ feeds:
       ttl: 120
     selectors:
       items:
-        selector: "ol > li > div"
+        selector: "li > div"
       title:
-        selector: "p"
+        selector: "h4"
       link:
         selector: "a"
         extractor: "href"
