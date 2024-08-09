@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'yaml'
+
 module App
   ##
   # Provides helper methods to deal with the local config file at `CONFIG_FILE`.
@@ -15,19 +16,19 @@ module App
 
     ##
     # @param name [String, Symbol, #to_sym]
-    # @return [Hash<Symbol, Hash>]
+    # @return [Hash<Symbol, Any>]
     def find(name)
-      feeds&.fetch(name.to_sym, false) || raise(NotFound, "Did not find local feed config at '#{name}'")
+      feeds.fetch(name.to_sym) { raise NotFound, "Did not find local feed config at '#{name}'" }
     end
 
     ##
-    # @return [Hash<Symbol, Hash>]
+    # @return [Hash<Symbol, Any>]
     def feeds
-      yaml[:feeds] || {}
+      yaml.fetch(:feeds, {})
     end
 
     ##
-    # @return [Hash<Symbol, Hash>]
+    # @return [Hash<Symbol, Any>]
     def global
       yaml.reject { |key| key == :feeds }
     end
@@ -39,9 +40,11 @@ module App
     end
 
     ##
-    # @return [Hash<Symbol, Hash>]
+    # @return [Hash<Symbol, Any>]
     def yaml
-      YAML.safe_load(File.open(CONFIG_FILE), symbolize_names: true).freeze
+      YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
+    rescue Errno::ENOENT => error
+      raise NotFound, "Configuration file not found: #{error.message}"
     end
   end
 end

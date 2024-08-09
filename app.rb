@@ -45,28 +45,7 @@ module App
            'X-XSS-Protection' => '1; mode=block'
 
     plugin :error_handler do |error|
-      case error
-      when Html2rss::Config::ParamsMissing,
-           Roda::RodaPlugins::TypecastParams::Error
-        @page_title = 'Parameters missing or invalid'
-        response.status = 422
-      when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
-           Html2rss::ItemExtractors::UnknownExtractorName,
-           Html2rss::Config::ChannelMissing
-        @page_title = 'Invalid feed config'
-        response.status = 422
-      when ::App::LocalConfig::NotFound,
-           Html2rss::Configs::ConfigNotFound
-        @page_title = 'Feed config not found'
-        response.status = 404
-      else
-        @page_title = 'Internal Server Error'
-        response.status = 500
-      end
-
-      @show_backtrace = ENV.fetch('RACK_ENV', nil) == 'development'
-      @error = error
-      view 'error'
+      handle_error(error)
     end
 
     plugin :public
@@ -77,38 +56,72 @@ module App
     route do |r|
       path = RequestPath.new(request)
 
-      r.root do
-        view 'index'
-      end
+      r.root { view 'index' }
 
       r.public
 
-      r.get 'health_check.txt' do |_|
-        HttpCache.expires_now(response)
-
-        with_basic_auth(realm: HealthCheck,
-                        username: HealthCheck::Auth.username,
-                        password: HealthCheck::Auth.password) do
-          HealthCheck.run
-        end
+      r.get 'health_check.txt' do
+        handle_health_check
       end
 
-      # Route for feeds from the local feeds.yml
-      r.get String do |_config_name_with_ext|
-        Html2rssFacade.from_local_config(path.full_config_name, typecast_params) do |config|
-          response['Content-Type'] = 'text/xml'
-
-          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
-        end
+      r.on String, String do |folder_name, config_name_with_ext|
+        handle_html2rss_configs(path.full_config_name, folder_name, config_name_with_ext)
       end
 
-      # Route for feeds from html2rss-configs
-      r.get String, String do |_folder_name, _config_name_with_ext|
-        Html2rssFacade.from_config(path.full_config_name, typecast_params) do |config|
-          response['Content-Type'] = 'text/xml'
+      r.on String do |config_name_with_ext|
+        handle_local_config_feeds(path.full_config_name, config_name_with_ext)
+      end
+    end
 
-          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
-        end
+    private
+
+    def handle_error(error) # rubocop:disable Metrics/MethodLength
+      case error
+      when Html2rss::Config::ParamsMissing,
+           Roda::RodaPlugins::TypecastParams::Error
+        set_error_response('Parameters missing or invalid', 422)
+      when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
+           Html2rss::ItemExtractors::UnknownExtractorName,
+           Html2rss::Config::ChannelMissing
+        set_error_response('Invalid feed config', 422)
+      when ::App::LocalConfig::NotFound,
+           Html2rss::Configs::ConfigNotFound
+        set_error_response('Feed config not found', 404)
+      else
+        set_error_response('Internal Server Error', 500)
+      end
+
+      @show_backtrace = ENV.fetch('RACK_ENV', nil) == 'development'
+      @error = error
+      view 'error'
+    end
+
+    def set_error_response(page_title, status)
+      @page_title = page_title
+      response.status = status
+    end
+
+    def handle_health_check
+      HttpCache.expires_now(response)
+
+      with_basic_auth(realm: HealthCheck,
+                      username: HealthCheck::Auth.username,
+                      password: HealthCheck::Auth.password) do
+        HealthCheck.run
+      end
+    end
+
+    def handle_local_config_feeds(full_config_name, _config_name_with_ext)
+      Html2rssFacade.from_local_config(full_config_name, typecast_params) do |config|
+        response['Content-Type'] = 'text/xml'
+        HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
+      end
+    end
+
+    def handle_html2rss_configs(full_config_name, _folder_name, _config_name_with_ext)
+      Html2rssFacade.from_config(full_config_name, typecast_params) do |config|
+        response['Content-Type'] = 'text/xml'
+        HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
       end
     end
   end

@@ -6,35 +6,34 @@ This web application scrapes websites to build and deliver RSS 2.0 feeds.
 
 **Features:**
 
-- [create your custom feeds](#how-to-build-your-rss-feeds)!
-- comes with plenty of [included configs](https://github.com/html2rss/html2rss-configs) out of the box.
-- handles request caching.
-- sets caching related HTTP headers.
+- [Create your custom feeds](#how-to-build-your-rss-feeds)!
+- Comes with plenty of [included configs](https://github.com/html2rss/html2rss-configs) out of the box.
+- Handles request caching.
+- Sets caching-related HTTP headers.
 
-The functionality of scraping websites and building the RSS is provided by the Ruby gem [`html2rss`](https://github.com/html2rss/html2rss).
+The functionality of scraping websites and building the RSS feeds is provided by the Ruby gem [`html2rss`](https://github.com/html2rss/html2rss).
 
 ## Get started
 
 This application should be used with Docker. It is designed to require as little maintenance as possible. See [Versioning and Releases](#versioning-and-releases) and [consider automatic updates](#docker-automatically-keep-the-html2rss-web-image-up-to-date).
 
-### with Docker
+### With Docker
 
 ```sh
 docker run -p 3000:3000 gilcreator/html2rss-web
 ```
 
-and open <http://127.0.0.1:3000/> in your browser and click onto the example feed link.
+Then open <http://127.0.0.1:3000/> in your browser and click the example feed link.
 
-This is the quickest way to get started. However, it's also the one with least flexibility: it doesn't allow to use custom feed configs and doesn't update automatically.
+This is the quickest way to get started. However, it's also the option with the least flexibility: it doesn't allow you to use custom feed configs and doesn't update automatically.
 
-If you wish more flexibility and automatic updates sounds good to you, read on how to get started _with docker-compose_...
+If you want more flexibility and automatic updates sound good to you, read on to get started _with docker compose_…
 
-### with docker-compose
+### With `docker compose`
 
-Create a `docker-compose.yml` and paste the following into it:
+Create a `docker-compose.yml` file and paste the following into it:
 
-```yml
-version: "3"
+```yaml
 services:
   html2rss-web:
     image: gilcreator/html2rss-web
@@ -57,61 +56,59 @@ services:
     command: --cleanup --interval 7200
 ```
 
-Start it up per: `docker-compose up`.
+Start it up with: `docker compose up`.
 
-If you did not create your `feeds.yml` yet, download [this `feeds.yml` as blueprint](https://raw.githubusercontent.com/html2rss/html2rss-web/master/config/feeds.yml) into the directory containing the `docker-compose.yml`.
+If you have not created your `feeds.yml` yet, download [this `feeds.yml` as a blueprint](https://raw.githubusercontent.com/html2rss/html2rss-web/master/config/feeds.yml) into the directory containing the `docker-compose.yml`.
 
-## Docker: automatically keep the html2rss-web image up-to-date
+## Docker: Automatically keep the html2rss-web image up-to-date
 
-The [watchtower](https://containrrr.dev/watchtower/) service automatically pulls running docker images and checks for updates. If an update is available, it will automatically start the updated image with the same configuration as the running one. Please read its manual.
+The [watchtower](https://containrrr.dev/watchtower/) service automatically pulls running Docker images and checks for updates. If an update is available, it will automatically start the updated image with the same configuration as the running one. Please read its manual.
 
 The `docker-compose.yml` above contains a service description for watchtower.
 
 ## How to use the included configs
 
-html2rss-web comes with many feed configs out of the box. [See file list of all configs.](https://github.com/html2rss/html2rss-configs/tree/master/lib/html2rss/configs)
+html2rss-web comes with many feed configs out of the box. [See the file list of all configs.](https://github.com/html2rss/html2rss-configs/tree/master/lib/html2rss/configs)
 
 To use a config from there, build the URL like this:
 
-Build the URL of the _feed config_ you'd like to use like this:
-
 |                          |                               |
-| -----------------------: | :---------------------------- |
-|  `lib/html2rss/configs/` | `domainname.tld/whatever.yml` |
-|  Would becomes this URL: |                               |
+| ------------------------ | ----------------------------- |
+| `lib/html2rss/configs/`  | `domainname.tld/whatever.yml` |
+| Would become this URL:   |                               |
 | `http://localhost:3000/` | `domainname.tld/whatever.rss` |
 |                          | `^^^^^^^^^^^^^^^^^^^^^^^^^^^` |
 
 ## How to build your RSS feeds
 
-To build your own RSS feed, you need to create a _feed config_.
-That _feed config_ goes into the file `feeds.yml`.
+To build your own RSS feed, you need to create a _feed config_.\
+That _feed config_ goes into the file `feeds.yml`.\
 Check out the [`example` feed config](https://github.com/html2rss/html2rss-web/blob/master/config/feeds.yml#L9).
 
-Please refer to [html2rss' README for a description of _the feed config and its options_](https://github.com/html2rss/html2rss#the-feed-config-and-its-options). html2rss-web is just a small web application which depends on html2rss.
+Please refer to [html2rss' README for a description of _the feed config and its options_](https://github.com/html2rss/html2rss#the-feed-config-and-its-options). html2rss-web is just a small web application that depends on html2rss.
 
 ## Versioning and releases
 
 This web application is distributed in a [rolling release](https://en.wikipedia.org/wiki/Rolling_release) fashion from the `master` branch.
 
-For the latest commit passing the Github CI/CD on the master branch, an updated Docker image will be pushed to [Docker Hub: `gilcreator/html2rss-web`](https://hub.docker.com/r/gilcreator/html2rss-web).
+For the latest commit passing GitHub CI/CD on the master branch, an updated Docker image will be pushed to [Docker Hub: `gilcreator/html2rss-web`](https://hub.docker.com/r/gilcreator/html2rss-web).
 
-Github's @dependabot is enabled for dependency updates and are automatically merged to the `master` branch when the CI gives the green light.
+GitHub's @dependabot is enabled for dependency updates and they are automatically merged to the `master` branch when the CI gives the green light.
 
-If you use Docker, you should update to the latest image automatically, by [setting up _watchtower_ as described](#get-started).
+If you use Docker, you should update to the latest image automatically by [setting up _watchtower_ as described](#get-started).
 
 ## Use in production
 
-This app is published on Docker Hub and therefore easy to use with Docker.
+This app is published on Docker Hub and therefore easy to use with Docker.\
 The above `docker-compose.yml` is a good starting point.
 
-If you're going to host a public instance, _please please please_:
+If you're going to host a public instance, _please, please, please_:
 
-- put the application behind a reverse proxy.
-- allow outside connections only via HTTPS.
-- have an auto update strategy (e.g. watchtower).
-- monitor your `/health_check.txt` endpoint.
-- [let world know and add your instance to the wiki](https://github.com/html2rss/html2rss-web/wiki/Instances) -- thank you!
+- Put the application behind a reverse proxy.
+- Allow outside connections only via HTTPS.
+- Have an auto-update strategy (e.g., watchtower).
+- Monitor your `/health_check.txt` endpoint.
+- [Let the world know and add your instance to the wiki](https://github.com/html2rss/html2rss-web/wiki/Instances) -- thank you!
 
 ### Supported ENV variables
 
@@ -122,34 +119,34 @@ If you're going to host a public instance, _please please please_:
 | `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                      |
 | `WEB_CONCURRENCY`              | default: 2                       |
 | `WEB_MAX_THREADS`              | default: 5                       |
-| `HEALTH_CHECK_USERNAME`        | default: auto generated on start |
-| `HEALTH_CHECK_PASSWORD`        | default: auto generated on start |
+| `HEALTH_CHECK_USERNAME`        | default: auto-generated on start |
+| `HEALTH_CHECK_PASSWORD`        | default: auto-generated on start |
 
 ### Runtime monitoring via `GET /health_check.txt`
 
-It is recommended to setup a monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs break. The endpoint uses HTTP Basic authentication.
+It is recommended to set up monitoring of the `/health_check.txt` endpoint. With that, you can find out when one of _your own_ configs breaks. The endpoint uses HTTP Basic authentication.
 
-First, set username and password via these environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. If these are not set, html2rss-web will generate a new random username and password on _each_ start.
+First, set the username and password via these environment variables: `HEALTH_CHECK_USERNAME` and `HEALTH_CHECK_PASSWORD`. If these are not set, html2rss-web will generate a new random username and password on _each_ start.
 
-An authenticated `GET /health_check.txt` request will be responded with:
+An authenticated `GET /health_check.txt` request will respond with:
 
-- if the feeds are generatable: `success`.
-- otherwise: the names of the broken configs.
+- If the feeds are generatable: `success`.
+- Otherwise: the names of the broken configs.
 
-To get notified when one of your configs breaks, setup a monitoring of this endpoint.
+To get notified when one of your configs breaks, set up monitoring of this endpoint.
 
-[UptimeRobot's free plan](https://uptimerobot.com/) is sufficent for basic monitoring (every 5 minutes).
+[UptimeRobot's free plan](https://uptimerobot.com/) is sufficient for basic monitoring (every 5 minutes).\
 Create a monitor of type _Keyword_ with this information and make it aware of your username and password:
 
-![A screenshot showing the Keyword Monitor: a name, the instance's URL to /health_check.txt and an interval.](docs/uptimerobot_monitor.jpg)
+![A screenshot showing the Keyword Monitor: a name, the instance's URL to /health_check.txt, and an interval.](docs/uptimerobot_monitor.jpg)
 
 ## Setup for development
 
-Checkout the git repository and ...
+Check out the git repository and…
 
-### using Docker
+### Using Docker
 
-This approach allows you to play around without installing Ruby on your machine.
+This approach allows you to experiment without installing Ruby on your machine.
 All you need to do is install and run Docker.
 
 ```sh
@@ -163,10 +160,10 @@ docker run \
   --name html2rss-web-dev \
   html2rss-web
 
-# Open a interactive TTY with the shell `sh`:
+# Open an interactive TTY with the shell `sh`:
 docker exec -ti html2rss-web-dev sh
 
-# Stop and cleanup container
+# Stop and clean up the container
 docker stop html2rss-web-dev
 docker rm html2rss-web-dev
 
@@ -174,7 +171,7 @@ docker rm html2rss-web-dev
 docker rmi html2rss-web
 ```
 
-### using installed Ruby
+### Using installed Ruby
 
 If you're comfortable with installing Ruby directly on your machine, follow these instructions:
 
@@ -183,12 +180,12 @@ If you're comfortable with installing Ruby directly on your machine, follow thes
 3. `bundle`
 4. `foreman start`
 
-_html2rss-web_ now listens on port **5**000 for requests.
+_html2rss-web_ now listens on port **5000** for requests.
 
 ## Contribute
 
 Contributions are welcome!
 
-Open a pull request with your changes,
-open an issue, or
+Open a pull request with your changes,\
+open an issue, or\
 [join discussions on html2rss](https://github.com/orgs/html2rss/discussions).

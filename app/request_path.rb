@@ -10,11 +10,11 @@ module App
     # @param request [Rack::Request, #path]
     def initialize(request)
       @full_path = request.path[1..]
+      parts = @full_path.split('/')
 
-      if @full_path.count('/').zero?
+      if parts.size == 1
         @name_with_ext = @full_path
       else
-        parts = @full_path.split('/')
         @folder_name = parts[0..-2]
         @name_with_ext = parts[-1]
       end
@@ -23,13 +23,13 @@ module App
     ##
     # @return [String]
     def full_config_name
-      [folder_name, config_name].compact.join('/')
+      [@folder_name, config_name].compact.join('/')
     end
 
     ##
     # @return [String]
     def config_name
-      parts[...-1].join('.')
+      parts[..-2].join('.')
     end
 
     ##
