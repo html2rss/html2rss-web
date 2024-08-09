@@ -14,14 +14,6 @@ module App
     attr_reader :feed_config, :typecast_params
 
     ##
-    # @param feed_config [Hash<Symbol, Object>]
-    # @param typecast_params [Object]
-    def initialize(feed_config, typecast_params)
-      @feed_config = feed_config
-      @typecast_params = typecast_params
-    end
-
-    ##
     # @param name [String] the name of a html2rss-configs provided config.
     # @param typecast_params [Object]
     # @return [String] the serialized RSS feed
@@ -40,14 +32,6 @@ module App
     end
 
     ##
-    # @return [String]
-    def feed
-      config = self.class.feed_config_to_config(feed_config, typecast_params)
-      yield config if block_given?
-      Html2rss.feed(config).to_s
-    end
-
-    ##
     # @param feed_config [Hash<Symbol, Object>]
     # @param typecast_params [Object]
     # @param global_config [Hash<Symbol, Object>]
@@ -57,6 +41,22 @@ module App
       dynamic_params = Html2rss::Config::Channel.required_params_for_config(feed_config[:channel])
                                                 .to_h { |name| [name, typecast_params.str!(name)] }
       Html2rss::Config.new(feed_config, global_config, dynamic_params)
+    end
+
+    ##
+    # @param feed_config [Hash<Symbol, Object>]
+    # @param typecast_params [Object]
+    def initialize(feed_config, typecast_params)
+      @feed_config = feed_config
+      @typecast_params = typecast_params
+    end
+
+    ##
+    # @return [String]
+    def feed
+      config = self.class.feed_config_to_config(feed_config, typecast_params)
+      yield config if block_given?
+      Html2rss.feed(config).to_s
     end
   end
 end

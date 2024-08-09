@@ -15,3 +15,6 @@ Metrics/BlockLength:
 
 Naming/RescuedExceptionsVariableName:
   PreferredName: error
+
+Layout/ClassStructure:
+  Enabled: true
