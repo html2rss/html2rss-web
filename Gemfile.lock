@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 07bbadcc2be501488a3772352ab0f8c7b05235a3
+  revision: fef08c6fc2696e8936173e68403fa991846ff6c6
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -24,7 +24,7 @@ GEM
       faraday (>= 1, < 3)
     faraday-net_http (3.1.1)
       net-http
-    html2rss (0.10.0)
+    html2rss (0.11.0)
       addressable (~> 2.7)
       faraday (> 2.0.1, < 3.0)
       faraday-follow_redirects
@@ -45,7 +45,7 @@ GEM
     logger (1.6.0)
     mime-types (3.5.2)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.0702)
+    mime-types-data (3.2024.0806)
     net-http (0.4.1)
       uri
     nio4r (2.7.3)
@@ -53,7 +53,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.16.7-x86_64-linux)
       racc (~> 1.4)
-    parallel (1.24.0)
+    parallel (1.26.1)
     parser (3.3.1.0)
       ast (~> 2.4.1)
       racc
