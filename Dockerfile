@@ -30,7 +30,8 @@ LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 ENV PORT=3000 \
-    RACK_ENV=production
+    RACK_ENV=production \
+    RUBY_YJIT_ENABLE=1
 
 EXPOSE $PORT
 
