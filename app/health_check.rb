@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'parallel'
-
 require_relative 'local_config'
+require 'securerandom'
 
 module App
   ##
@@ -11,18 +11,22 @@ module App
     ##
     # Contains logic to obtain username and password to be used with HealthCheck endpoint.
     class Auth
-      def self.username
-        @username ||= ENV.delete('HEALTH_CHECK_USERNAME') do
-          SecureRandom.base64(32).tap do |string|
-            puts "HEALTH_CHECK_USERNAME env var. missing! Please set it. Using generated value instead: #{string}"
-          end
+      class << self
+        def username
+          @username ||= fetch_credential('HEALTH_CHECK_USERNAME')
         end
-      end
 
-      def self.password
-        @password ||= ENV.delete('HEALTH_CHECK_PASSWORD') do
-          SecureRandom.base64(32).tap do |string|
-            puts "HEALTH_CHECK_PASSWORD env var. missing! Please set it. Using generated value instead: #{string}"
+        def password
+          @password ||= fetch_credential('HEALTH_CHECK_PASSWORD')
+        end
+
+        private
+
+        def fetch_credential(env_var)
+          ENV.delete(env_var) do
+            SecureRandom.base64(32).tap do |string|
+              warn "ENV var. #{env_var} missing! Using generated value instead: #{string}"
+            end
           end
         end
       end
@@ -34,12 +38,7 @@ module App
     # @return [String] "success" when all checks passed.
     def run
       broken_feeds = errors
-
-      if broken_feeds.any?
-        broken_feeds.join("\n")
-      else
-        'success'
-      end
+      broken_feeds.any? ? broken_feeds.join("\n") : 'success'
     end
 
     ##
@@ -48,10 +47,16 @@ module App
       [].tap do |errors|
         Parallel.each(LocalConfig.feed_names, in_threads: 4) do |feed_name|
           Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name.to_s).to_s
-        rescue StandardError => e
-          errors << "[#{feed_name}] #{e.class}: #{e.message}"
+        rescue StandardError => error
+          errors << "[#{feed_name}] #{error.class}: #{error.message}"
         end
       end
     end
+
+    def format_error(feed_name, error)
+      "[#{feed_name}] #{error.class}: #{error.message}"
+    end
+
+    private_class_method :format_error
   end
 end

@@ -10,23 +10,21 @@ module App
 
     ##
     # Sets Expires and Cache-Control headers to cache for `seconds`.
-    # @param response [#[]]
+    # @param response [Hash]
     # @param seconds [Integer]
-    # @param cache_control [String]
+    # @param cache_control [String, nil]
     def expires(response, seconds, cache_control: nil)
       response['Expires'] = (Time.now + seconds).httpdate
 
-      response['Cache-Control'] = if cache_control
-                                    "max-age=#{seconds},#{cache_control}"
-                                  else
-                                    "max-age=#{seconds}"
-                                  end
+      cache_value = "max-age=#{seconds}"
+      cache_value += ",#{cache_control}" if cache_control
+      response['Cache-Control'] = cache_value
     end
 
     ##
     # Sets Expires and Cache-Control headers to invalidate existing cache and
     # prevent caching.
-    # @param response [#[]]
+    # @param response [Hash]
     def expires_now(response)
       response['Expires'] = '0'
       response['Cache-Control'] = 'private,max-age=0,no-cache,no-store,must-revalidate'

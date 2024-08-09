@@ -12,3 +12,6 @@ Metrics/BlockLength:
     - Rakefile
   ExcludedMethods:
     - route
+
+Naming/RescuedExceptionsVariableName:
+  PreferredName: error
