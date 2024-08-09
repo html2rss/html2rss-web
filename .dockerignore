@@ -7,11 +7,13 @@
 .rspec
 .rubocop.yml
 .ruby-version
+.ruby-lsp/
 .yardoc/
 app.json
 bin/
 coverage/
 docs/
+Dockerfile
 Procfile
 Rakefile
 renovate.json

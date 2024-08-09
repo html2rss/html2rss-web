@@ -1,23 +1,4 @@
 GIT
-  remote: https://github.com/html2rss/html2rss
-  revision: 97d602ad42f4a3c1b11d810fb8924c29d19aee55
-  specs:
-    html2rss (0.10.0)
-      addressable (~> 2.7)
-      faraday (> 2.0.1, < 3.0)
-      faraday-follow_redirects
-      kramdown
-      mime-types (> 3.0)
-      nokogiri (>= 1.10, < 2.0)
-      regexp_parser
-      reverse_markdown (~> 2.0)
-      rss
-      sanitize (~> 6.0)
-      thor
-      tzinfo
-      zeitwerk
-
-GIT
   remote: https://github.com/html2rss/html2rss-configs
   revision: 07bbadcc2be501488a3772352ab0f8c7b05235a3
   specs:
@@ -43,6 +24,20 @@ GEM
       faraday (>= 1, < 3)
     faraday-net_http (3.1.1)
       net-http
+    html2rss (0.10.0)
+      addressable (~> 2.7)
+      faraday (> 2.0.1, < 3.0)
+      faraday-follow_redirects
+      kramdown
+      mime-types (> 3.0)
+      nokogiri (>= 1.10, < 2.0)
+      regexp_parser
+      reverse_markdown (~> 2.0)
+      rss
+      sanitize (~> 6.0)
+      thor
+      tzinfo
+      zeitwerk
     json (2.7.2)
     kramdown (2.4.0)
       rexml
@@ -153,7 +148,7 @@ PLATFORMS
 DEPENDENCIES
   byebug
   erubi
-  html2rss!
+  html2rss
   html2rss-configs!
   puma
   rack-cache
@@ -172,4 +167,4 @@ DEPENDENCIES
   yard
 
 BUNDLED WITH
-   2.5.3
+   2.5.17

@@ -1,32 +1,50 @@
+# Stage 1: Build
+FROM ruby:3.3.1-alpine3.18 AS builder
+
+LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+WORKDIR /app
+COPY Gemfile Gemfile.lock ./
+
+# hadolint ignore=SC2046
+RUN apk add --no-cache \
+  'gcc>=12' \
+  'git>=2' \
+  'libc-dev>=0.7' \
+  'make>=4' \
+  'openssl>=3' \
+  'libxml2-dev>=2' \
+  'libxslt-dev>=1' \
+  && gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
+  && bundle config set --local without 'development test' \
+  && bundle install --retry=5 --jobs=$(nproc) \
+  && bundle binstubs bundler html2rss
+
+# Stage 2: Runtime
 FROM ruby:3.3.1-alpine3.18
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
-EXPOSE 3000
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
-ENV PORT=3000
-ENV RACK_ENV=production
-ENV PATH="/app/bin:${PATH}"
+ENV PORT=3000 \
+    RACK_ENV=production
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:3000/health_check.txt || exit 1
-
-RUN apk add --no-cache --verbose \
-  'curl>=8.5.0' \
-  'gcc>=12' \
-  'git=~2' \
-  'libc-dev=~0' \
-  'make=~4' \
-  'openssl>=3.1.4' \
-  'tzdata>=2023c-r1'
+  CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:${PORT}/health_check.txt || exit 1
 
 ARG USER=html2rss
 ARG UID=991
 ARG GID=991
 
-RUN mkdir /app \
+RUN apk add --no-cache \
+  'gcompat>=0' \
+  'libxml2>=2' \
+  'libxslt>=1' \
   && addgroup --gid "$GID" "$USER" \
   && adduser \
   --disabled-password \
@@ -34,21 +52,15 @@ RUN mkdir /app \
   --home "/app" \
   --ingroup "$USER" \
   --no-create-home \
-  --uid "$UID" \
-  "$USER" \
+  --uid "$UID" "$USER" \
+  && mkdir -p /app \
   && chown "$USER":"$USER" -R /app
 
 WORKDIR /app
 
 USER html2rss
 
-COPY --chown=html2rss:html2rss Gemfile Gemfile.lock ./
-# hadolint ignore=SC2046
-RUN gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
-  && bundle config set --local without 'development test' \
-  && bundle install --retry=5 --jobs=$(nproc) \
-  && bundle binstubs bundler html2rss
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --chown=$USER:$USER . /app
 
-COPY --chown=html2rss:html2rss . .
-
-CMD ["bundle", "exec", "puma -C config/puma.rb"]
+CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]
