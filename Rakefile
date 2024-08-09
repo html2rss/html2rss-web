@@ -52,7 +52,7 @@ task :test do
   sh 'docker ps -a --filter name=html2rss-web-test'
 
   Output.describe 'Generating feed from a html2rss-configs config'
-  sh 'curl -f http://127.0.0.1:3000/github.com/releases.rss\?username=html2rss\&repository=html2rss || exit 1'
+  sh 'curl -f http://127.0.0.1:3000/dfs.de/pressemitteilungen.rss || exit 1'
 
   Output.describe 'Generating example feed from feeds.yml'
   sh 'curl -f http://127.0.0.1:3000/example.rss || exit 1'
