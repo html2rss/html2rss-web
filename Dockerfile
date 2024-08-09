@@ -44,6 +44,7 @@ ARG GID=991
 
 RUN apk add --no-cache \
   'gcompat>=0' \
+  'tzdata>=2024' \
   'libxml2>=2' \
   'libxslt>=1' \
   && addgroup --gid "$GID" "$USER" \
