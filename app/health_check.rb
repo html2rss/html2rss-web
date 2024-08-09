@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'parallel'
+
 require_relative 'local_config'
 
 module App
@@ -44,7 +46,7 @@ module App
     # @return [Array<String>]
     def errors
       [].tap do |errors|
-        LocalConfig.feed_names.each do |feed_name|
+        Parallel.each(LocalConfig.feed_names, in_threads: 4) do |feed_name|
           Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name.to_s).to_s
         rescue StandardError => e
           errors << "[#{feed_name}] #{e.class}: #{e.message}"

@@ -150,6 +150,7 @@ DEPENDENCIES
   erubi
   html2rss
   html2rss-configs!
+  parallel
   puma
   rack-cache
   rack-timeout
