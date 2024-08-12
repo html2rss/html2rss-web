@@ -61,7 +61,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.16.7-x86_64-linux)
       racc (~> 1.4)
-    parallel (1.26.1)
+    parallel (1.26.2)
     parser (3.3.4.2)
       ast (~> 2.4.1)
       racc
@@ -81,7 +81,7 @@ GEM
       nokogiri
     rexml (3.3.4)
       strscan
-    roda (3.82.0)
+    roda (3.83.0)
       rack
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
