@@ -3,21 +3,24 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'rack-timeout'
+require 'rack/protection'
+require 'rack/protection/path_traversal'
 
 use Rack::Timeout
-
-dev = ENV.fetch('RACK_ENV', nil) == 'development'
+use Rack::Protection
+use Rack::Protection::PathTraversal
 
 requires = Dir['app/**/*.rb']
 
-if dev
+if ENV.fetch('RACK_ENV', nil) == 'development'
   require 'logger'
+  require 'rack/unreloader'
+
   logger = Logger.new($stdout)
 
-  require 'rack/unreloader'
   Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
                                     logger:,
-                                    reload: dev) do
+                                    reload: true) do
                                       Html2rss::Web::App
                                     end
   Unreloader.require('app.rb') { 'Html2rss::Web::App' }
