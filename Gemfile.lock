@@ -24,13 +24,14 @@ GEM
       faraday (>= 1, < 3)
     faraday-net_http (3.1.1)
       net-http
-    html2rss (0.12.0)
+    html2rss (0.13.0)
       addressable (~> 2.7)
       faraday (> 2.0.1, < 3.0)
       faraday-follow_redirects
       kramdown
       mime-types (> 3.0)
       nokogiri (>= 1.10, < 2.0)
+      parallel
       regexp_parser
       reverse_markdown (~> 2.0)
       rss
@@ -79,7 +80,7 @@ GEM
     regexp_parser (2.9.2)
     reverse_markdown (2.1.1)
       nokogiri
-    rexml (3.3.4)
+    rexml (3.3.5)
       strscan
     roda (3.83.0)
       rack
@@ -119,7 +120,7 @@ GEM
     rubocop-rspec (3.0.4)
       rubocop (~> 1.61)
     ruby-progressbar (1.13.0)
-    sanitize (6.1.2)
+    sanitize (6.1.3)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
     simplecov (0.22.0)
