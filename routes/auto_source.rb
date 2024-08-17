@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
+require 'addressable'
 require 'base64'
+require 'ssrf_filter'
+require 'html2rss'
 
 module Html2rss
   module Web
@@ -10,17 +13,14 @@ module Html2rss
           with_basic_auth(realm: 'Auto Source',
                           username: ENV.fetch('AUTO_SOURCE_USERNAME'),
                           password: ENV.fetch('AUTO_SOURCE_PASSWORD')) do
-            r.get 'test' do |_r|
-              'AUTO'
-            end
-
             r.on String, method: :get do |encoded_url|
-              url = Base64.urlsafe_decode64(encoded_url)
+              url = Addressable::URI.parse(Base64.urlsafe_decode64(encoded_url))
 
-              rss = Html2rss.auto_source(url)
-              ttl = (rss.channel.ttl || 60) * 60
+              rss = Html2rss::AutoSource.build_from_response(SsrfFilter.get(url), url)
 
-              HttpCache.expires(response, ttl, cache_control: 'private, max-age=0, must-revalidate')
+              max_age = (rss.channel.ttl || 60) * 60
+
+              HttpCache.expires(response, max_age, cache_control: 'private, must-revalidate')
 
               response['Content-Type'] = 'application/rss+xml'
 
