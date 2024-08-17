@@ -48,7 +48,7 @@ module Html2rss
         handle_error(error)
       end
 
-      plugin :hash_branches
+      plugin :hash_branch_view_subdir
       plugin :public
       plugin :render, escape: true, layout: 'layout'
       plugin :typecast_params
