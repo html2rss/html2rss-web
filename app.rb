@@ -2,7 +2,6 @@
 
 require 'roda'
 require 'rack/cache'
-require 'rack-timeout' # TODO: move to config.ru
 
 require_relative 'roda/roda_plugins/basic_auth'
 
@@ -22,8 +21,6 @@ module Html2rss
 
       opts[:check_dynamic_arity] = false
       opts[:check_arity] = :warn
-
-      use Rack::Timeout # TODO: move to config.ru
 
       use Rack::Cache,
           metastore: 'file:./tmp/rack-cache-meta',

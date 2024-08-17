@@ -2,6 +2,9 @@
 
 require 'rubygems'
 require 'bundler/setup'
+require 'rack-timeout'
+
+use Rack::Timeout
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
 
