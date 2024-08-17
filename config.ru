@@ -18,10 +18,13 @@ if dev
                                       Html2rss::Web::App
                                     end
   Unreloader.require('app.rb') { 'Html2rss::Web::App' }
+
   requires.each { |f| Unreloader.require(f) }
 
   run Unreloader
 else
+  require_relative 'app'
   requires.each { |f| require_relative f }
+
   run(Html2rss::Web::App.freeze.app)
 end

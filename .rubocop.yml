@@ -18,3 +18,7 @@ Naming/RescuedExceptionsVariableName:
 
 Layout/ClassStructure:
   Enabled: true
+
+Style/Documentation:
+  AllowedConstants:
+    - App

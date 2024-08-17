@@ -13,6 +13,7 @@ module Html2rss
     #
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
+      # TODO: move to helper
       def self.development?
         ENV['RACK_ENV'] == 'development'
       end
@@ -55,79 +56,45 @@ module Html2rss
         handle_error(error)
       end
 
+      plugin :hash_branches
       plugin :public
       plugin :render, escape: true, layout: 'layout'
       plugin :typecast_params
       plugin :basic_auth
 
+      Dir['routes/**/*.rb'].each do |f|
+        if development?
+          Unreloader.require f
+        else
+          require_relative f
+        end
+      end
 
       route do |r|
-        r.root { view 'index' }
-
         r.public
+
+        r.hash_branches('')
+
+        r.root { view 'index' }
 
         r.get 'health_check.txt' do
           handle_health_check
         end
 
         r.on String, String do |folder_name, config_name_with_ext|
-          handle_html2rss_configs(path.full_config_name, folder_name, config_name_with_ext)
+          handle_html2rss_configs(request, folder_name, config_name_with_ext)
         end
 
         r.on String do |config_name_with_ext|
-          handle_local_config_feeds(path.full_config_name, config_name_with_ext)
+          handle_local_config_feeds(request, config_name_with_ext)
         end
       end
 
-      private
-
-      def handle_error(error) # rubocop:disable Metrics/MethodLength
-        case error
-        when Html2rss::Config::ParamsMissing,
-             Roda::RodaPlugins::TypecastParams::Error
-          set_error_response('Parameters missing or invalid', 422)
-        when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
-             Html2rss::ItemExtractors::UnknownExtractorName,
-             Html2rss::Config::ChannelMissing
-          set_error_response('Invalid feed config', 422)
-        when LocalConfig::NotFound,
-             Html2rss::Configs::ConfigNotFound
-          set_error_response('Feed config not found', 404)
+      Dir['helpers/*.rb'].each do |f|
+        if development?
+          Unreloader.require f
         else
-          set_error_response('Internal Server Error', 500)
-        end
-
-        @show_backtrace = ENV.fetch('RACK_ENV', nil) == 'development'
-        @error = error
-        view 'error'
-      end
-
-      def set_error_response(page_title, status)
-        @page_title = page_title
-        response.status = status
-      end
-
-      def handle_health_check
-        HttpCache.expires_now(response)
-
-        with_basic_auth(realm: HealthCheck,
-                        username: HealthCheck::Auth.username,
-                        password: HealthCheck::Auth.password) do
-          HealthCheck.run
-        end
-      end
-
-      def handle_local_config_feeds(full_config_name, _config_name_with_ext)
-        Html2rssFacade.from_local_config(full_config_name, typecast_params) do |config|
-          response['Content-Type'] = 'text/xml'
-          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
-        end
-      end
-
-      def handle_html2rss_configs(full_config_name, _folder_name, _config_name_with_ext)
-        Html2rssFacade.from_config(full_config_name, typecast_params) do |config|
-          response['Content-Type'] = 'text/xml'
-          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
+          require_relative f
         end
       end
     end
