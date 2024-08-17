@@ -3,6 +3,7 @@
 require 'parallel'
 require_relative 'local_config'
 require 'securerandom'
+require 'singleton'
 
 module Html2rss
   module Web
@@ -12,22 +13,25 @@ module Html2rss
       ##
       # Contains logic to obtain username and password to be used with HealthCheck endpoint.
       class Auth
-        class << self
-          def username
-            @username ||= fetch_credential('HEALTH_CHECK_USERNAME')
-          end
+        include Singleton
 
-          def password
-            @password ||= fetch_credential('HEALTH_CHECK_PASSWORD')
-          end
+        def self.username = instance.username
+        def self.password = instance.password
 
-          private
+        def username
+          @username ||= fetch_credential('HEALTH_CHECK_USERNAME')
+        end
 
-          def fetch_credential(env_var)
-            ENV.delete(env_var) do
-              SecureRandom.base64(32).tap do |string|
-                warn "ENV var. #{env_var} missing! Using generated value instead: #{string}"
-              end
+        def password
+          @password ||= fetch_credential('HEALTH_CHECK_PASSWORD')
+        end
+
+        private
+
+        def fetch_credential(env_var)
+          ENV.delete(env_var) do
+            SecureRandom.base64(32).tap do |string|
+              warn "ENV var. #{env_var} missing! Using generated value instead: #{string}"
             end
           end
         end
