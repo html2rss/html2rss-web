@@ -23,6 +23,8 @@ module Html2rss
 
         @show_backtrace = self.class.development?
         @error = error
+
+        set_view_subdir nil
         view 'error'
       end
 
