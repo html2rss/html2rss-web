@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../app/http_cache'
+require_relative '../../../../app/http_cache'
 
-RSpec.describe App::HttpCache do
+RSpec.describe Html2rss::Web::HttpCache do
   let(:response) { {} }
 
   describe '.expires(response, seconds, cache_control:)' do

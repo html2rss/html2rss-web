@@ -2,9 +2,9 @@
 
 require 'spec_helper'
 require 'rack/request'
-require_relative '../../app/request_path'
+require_relative '../../../../app/request_path'
 
-RSpec.describe App::RequestPath do
+RSpec.describe Html2rss::Web::RequestPath do
   subject(:instance) { described_class.new(request) }
 
   context 'with a local config' do

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../app/local_config'
+require_relative '../../../../app/local_config'
 
-RSpec.describe App::LocalConfig do
+RSpec.describe Html2rss::Web::LocalConfig do
   describe '::CONFIG_FILE' do
     it { expect(described_class::CONFIG_FILE).to eq 'config/feeds.yml' }
   end

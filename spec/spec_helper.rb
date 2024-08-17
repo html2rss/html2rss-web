@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
-require 'simplecov'
-SimpleCov.start do
-  add_filter '/spec/'
-  track_files '**/*.rb'
+if ENV['CI'] || ENV['COVERAGE']
+  require 'simplecov'
+
+  SimpleCov.start do
+    add_filter '/spec/'
+    track_files '**/*.rb'
+  end
 end
 
 require 'vcr'
+
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/fixtures/vcr_cassettes'
   config.hook_into :faraday
