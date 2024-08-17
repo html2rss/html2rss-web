@@ -11,6 +11,7 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 # gem 'html2rss', path: '../html2rss'
 # gem 'html2rss-configs', path: '../html2rss-configs'
 
+gem 'base64'
 gem 'erubi'
 gem 'parallel'
 gem 'rack-cache'

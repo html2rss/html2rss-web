@@ -66,6 +66,10 @@ The [watchtower](https://containrrr.dev/watchtower/) service automatically pulls
 
 The `docker-compose.yml` above contains a service description for watchtower.
 
+## How to use automatic feed generation
+
+1. add `FEATURE_AUTO_SOURCE_ENABLED=true` to your `docker-compose.yml` file
+
 ## How to use the included configs
 
 html2rss-web comes with many feed configs out of the box. [See the file list of all configs.](https://github.com/html2rss/html2rss-configs/tree/master/lib/html2rss/configs)
