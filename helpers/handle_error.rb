@@ -19,10 +19,12 @@ module Html2rss
           set_error_response('Internal Server Error', 500)
         end
 
-        @show_backtrace = ENV.fetch('RACK_ENV', nil) == 'development'
+        @show_backtrace = self.class.development?
         @error = error
         view 'error'
       end
+
+      private
 
       def set_error_response(page_title, status)
         @page_title = page_title

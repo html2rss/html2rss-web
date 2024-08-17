@@ -12,12 +12,7 @@ module Html2rss
     #
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
-      # TODO: move to helper
-      def self.development?
-        ENV['RACK_ENV'] == 'development'
-      end
-
-      def development? = self.class.development?
+      def self.development? = ENV['RACK_ENV'] == 'development'
 
       opts[:check_dynamic_arity] = false
       opts[:check_arity] = :warn
