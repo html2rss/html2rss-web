@@ -2,26 +2,32 @@
 
 require 'rubygems'
 require 'bundler/setup'
+require 'rack-timeout'
+
+use Rack::Timeout
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
+
+requires = Dir['app/**/*.rb']
 
 if dev
   require 'logger'
   logger = Logger.new($stdout)
+
+  require 'rack/unreloader'
+  Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
+                                    logger:,
+                                    reload: dev) do
+                                      Html2rss::Web::App
+                                    end
+  Unreloader.require('app.rb') { 'Html2rss::Web::App' }
+
+  requires.each { |f| Unreloader.require(f) }
+
+  run Unreloader
+else
+  require_relative 'app'
+  requires.each { |f| require_relative f }
+
+  run(Html2rss::Web::App.freeze.app)
 end
-
-require 'rack/unreloader'
-Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
-                                  logger:,
-                                  reload: dev) do
-  App::App
-end
-
-Unreloader.require('app.rb') { 'App' }
-Unreloader.require('./app/health_check.rb')
-Unreloader.require('./app/html2rss_facade.rb')
-Unreloader.require('./app/http_cache.rb')
-Unreloader.require('./app/local_config.rb')
-Unreloader.require('./app/request_path.rb')
-
-run(dev ? Unreloader : App::App.freeze.app)

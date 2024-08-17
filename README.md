@@ -180,7 +180,7 @@ If you're comfortable with installing Ruby directly on your machine, follow thes
 3. `bundle`
 4. `foreman start`
 
-_html2rss-web_ now listens on port **5000** for requests.
+_html2rss-web_ now listens on port **3000** for requests.
 
 ## Contribute
 

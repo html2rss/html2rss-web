@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../app/html2rss_facade'
+require_relative '../../../../app/html2rss_facade'
 
-RSpec.describe App::Html2rssFacade do
+RSpec.describe Html2rss::Web::Html2rssFacade do
   describe '.from_config(name, typecast_params, &block)' do
     let(:typecast_params) do
       double({}, str!: nil) # rubocop:disable RSpec/VerifiedDoubles

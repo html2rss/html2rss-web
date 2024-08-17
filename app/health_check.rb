@@ -3,15 +3,21 @@
 require 'parallel'
 require_relative 'local_config'
 require 'securerandom'
+require 'singleton'
 
-module App
-  ##
-  # Checks if the local configs are generatable.
-  module HealthCheck
+module Html2rss
+  module Web
     ##
-    # Contains logic to obtain username and password to be used with HealthCheck endpoint.
-    class Auth
-      class << self
+    # Checks if the local configs are generatable.
+    module HealthCheck
+      ##
+      # Contains logic to obtain username and password to be used with HealthCheck endpoint.
+      class Auth
+        include Singleton
+
+        def self.username = instance.username
+        def self.password = instance.password
+
         def username
           @username ||= fetch_credential('HEALTH_CHECK_USERNAME')
         end
@@ -30,33 +36,33 @@ module App
           end
         end
       end
-    end
 
-    module_function
+      module_function
 
-    ##
-    # @return [String] "success" when all checks passed.
-    def run
-      broken_feeds = errors
-      broken_feeds.any? ? broken_feeds.join("\n") : 'success'
-    end
+      ##
+      # @return [String] "success" when all checks passed.
+      def run
+        broken_feeds = errors
+        broken_feeds.any? ? broken_feeds.join("\n") : 'success'
+      end
 
-    ##
-    # @return [Array<String>]
-    def errors
-      [].tap do |errors|
-        Parallel.each(LocalConfig.feed_names, in_threads: 4) do |feed_name|
-          Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name.to_s).to_s
-        rescue StandardError => error
-          errors << "[#{feed_name}] #{error.class}: #{error.message}"
+      ##
+      # @return [Array<String>]
+      def errors
+        [].tap do |errors|
+          Parallel.each(LocalConfig.feed_names) do |feed_name|
+            Html2rss.feed_from_yaml_config(LocalConfig::CONFIG_FILE, feed_name.to_s)
+          rescue StandardError => error
+            errors << "[#{feed_name}] #{error.class}: #{error.message}"
+          end
         end
       end
-    end
 
-    def format_error(feed_name, error)
-      "[#{feed_name}] #{error.class}: #{error.message}"
-    end
+      def format_error(feed_name, error)
+        "[#{feed_name}] #{error.class}: #{error.message}"
+      end
 
-    private_class_method :format_error
+      private_class_method :format_error
+    end
   end
 end

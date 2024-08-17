@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../app/health_check'
+require_relative '../../../../../app/health_check'
 
-RSpec.describe App::HealthCheck::Auth do
+RSpec.describe Html2rss::Web::HealthCheck::Auth do
   before do
     allow(ENV).to receive(:delete).with(any_args).and_call_original
   end
