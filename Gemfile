@@ -18,6 +18,7 @@ gem 'rack-cache'
 gem 'rack-timeout'
 gem 'rack-unreloader'
 gem 'roda'
+gem 'ssrf_filter'
 gem 'tilt'
 
 gem 'puma', require: false
