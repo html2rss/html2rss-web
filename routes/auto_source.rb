@@ -9,24 +9,42 @@ module Html2rss
   module Web
     class App
       if ENV['AUTO_SOURCE_ENABLED'].to_s == 'true'
+
         hash_branch 'auto_source' do |r|
           with_basic_auth(realm: 'Auto Source',
                           username: ENV.fetch('AUTO_SOURCE_USERNAME'),
                           password: ENV.fetch('AUTO_SOURCE_PASSWORD')) do
+            r.get '/' do
+              view 'index', layout: '/layout'
+            end
+
             r.on String, method: :get do |encoded_url|
-              url = Addressable::URI.parse(Base64.urlsafe_decode64(encoded_url))
+              rss = build_auto_source_from_encoded_url(encoded_url)
 
-              rss = Html2rss::AutoSource.build_from_response(SsrfFilter.get(url), url)
-
-              max_age = (rss.channel.ttl || 60) * 60
-
-              HttpCache.expires(response, max_age, cache_control: 'private, must-revalidate')
+              HttpCache.expires(response, ttl_in_seconds(rss), cache_control: 'private, must-revalidate')
 
               response['Content-Type'] = 'application/rss+xml'
 
               rss.to_s
             end
           end
+        end
+
+        private
+
+        def build_auto_source_from_encoded_url(encoded_url)
+          url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
+          request = SsrfFilter.get(url)
+
+          auto_source = Html2rss::AutoSource.new(url,
+                                                 body: request.body,
+                                                 headers: request.to_hash.transform_values(&:first))
+
+          auto_source.build
+        end
+
+        def ttl_in_seconds(rss, default_in_minutes: 60)
+          (rss.channel.ttl || default_in_minutes) * 60
         end
 
       else
