@@ -2,7 +2,6 @@
 
 require 'roda'
 require 'rack/cache'
-
 require_relative 'roda/roda_plugins/basic_auth'
 
 module Html2rss
@@ -12,6 +11,8 @@ module Html2rss
     #
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
+      CONTENT_TYPE_RSS = 'application/xml'
+
       def self.development? = ENV['RACK_ENV'] == 'development'
 
       opts[:check_dynamic_arity] = false
@@ -64,7 +65,6 @@ module Html2rss
 
       route do |r|
         r.public
-
         r.hash_branches('')
 
         r.root { view 'index' }

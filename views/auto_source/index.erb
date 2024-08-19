@@ -1,0 +1,20 @@
+<nav>
+  <a href="/">‹ Back to Home</a>
+</nav>
+
+<h1>Auto Source</h1>
+<p>
+  Generate an RSS feed from a website.
+</p>
+
+<section class="auto_source">
+  <form>
+    <input id="url" type="url" placeholder="https://" pattern="http[s]://.*"  required>
+    <input type="submit" value="Generate">
+    <input type="url" id="rss_url" readonly>
+  </form>
+
+<iframe loading="lazy"></iframe>
+</section>
+
+<script src="/auto_source.js"></script>

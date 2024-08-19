@@ -14,7 +14,7 @@ module Html2rss
           with_basic_auth(realm: 'Auto Source',
                           username: ENV.fetch('AUTO_SOURCE_USERNAME'),
                           password: ENV.fetch('AUTO_SOURCE_PASSWORD')) do
-            r.get '/' do
+            r.root do
               view 'index', layout: '/layout'
             end
 
@@ -23,7 +23,7 @@ module Html2rss
 
               HttpCache.expires(response, ttl_in_seconds(rss), cache_control: 'private, must-revalidate')
 
-              response['Content-Type'] = 'application/rss+xml'
+              response['Content-Type'] = CONTENT_TYPE_RSS
 
               rss.to_s
             end
@@ -35,10 +35,11 @@ module Html2rss
         def build_auto_source_from_encoded_url(encoded_url)
           url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
           request = SsrfFilter.get(url)
+          headers = request.to_hash.transform_values(&:first)
 
-          auto_source = Html2rss::AutoSource.new(url,
-                                                 body: request.body,
-                                                 headers: request.to_hash.transform_values(&:first))
+          auto_source = Html2rss::AutoSource.new(url, body: request.body, headers:)
+
+          auto_source.channel.stylesheets << Html2rss::RssBuilder::Stylesheet.new(href: './rss.xsl', type: 'text/xsl')
 
           auto_source.build
         end
