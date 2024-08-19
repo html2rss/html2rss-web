@@ -47,6 +47,7 @@ class FormHandler {
     const initialUrl = params.get("url");
     if (initialUrl) {
       this.urlInput.value = initialUrl;
+      this.form.dispatchEvent(new Event("submit"));
     }
   }
 
@@ -71,6 +72,10 @@ class FormHandler {
 
       this.rssUrlInput.value = autoSourceUrl;
       this.rssUrlInput.select();
+
+      if (window.location.search !== `?url=${url}`) {
+        window.history.pushState({}, "", `?url=${url}`);
+      }
     }
   }
 
