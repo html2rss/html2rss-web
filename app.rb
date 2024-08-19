@@ -29,16 +29,16 @@ module Html2rss
         csp.script_src :self
         csp.connect_src :self
         csp.img_src :self
-        csp.font_src :self
+        csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none
-        csp.frame_ancestors :none
+        csp.frame_ancestors :self
+        csp.frame_src :self
         csp.block_all_mixed_content
       end
 
       plugin :default_headers,
              'Content-Type' => 'text/html',
-             'X-Frame-Options' => 'deny',
              'X-Content-Type-Options' => 'nosniff',
              'X-XSS-Protection' => '1; mode=block'
 

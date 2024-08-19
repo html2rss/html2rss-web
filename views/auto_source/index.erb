@@ -9,10 +9,15 @@
 
 <section class="auto_source">
   <form>
-    <input id="url" type="url" placeholder="https://" pattern="http[s]://.*"  required>
+    <input id="url" type="url" placeholder="https://" pattern="http[s]://.*" autocomplete="on" token-list="url" required>
     <input type="submit" value="Generate">
-    <input type="url" id="rss_url" readonly>
   </form>
+
+  <label for="rss_url">
+    <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
+      Feed URL
+    </label>
+  <input type="url" id="rss_url" readonly>
 
 <iframe loading="lazy"></iframe>
 </section>

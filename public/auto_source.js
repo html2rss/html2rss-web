@@ -29,5 +29,5 @@ $form?.addEventListener("submit", async (event) => {
 });
 
 $rssUrl?.addEventListener("focus", () => {
-  $iframe.src = `${$rssUrl.value}#feed`;
+  $iframe.src = `${$rssUrl.value}#items`;
 });
