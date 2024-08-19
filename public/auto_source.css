@@ -1,0 +1,57 @@
+/* Auto Source Form */
+.auto_source {
+  display: flex;
+  flex-direction: column;
+}
+
+.auto_source input,
+.auto_source button {
+  width: 100%;
+  font-family: monospace;
+}
+
+.auto_source > form {
+  display: flex;
+  flex-direction: column;
+}
+
+.auto_source > form input[type="submit"] {
+  flex: 1 1;
+  margin-right: 0;
+}
+
+.auto_source > nav {
+  display: flex;
+  flex-direction: column;
+}
+
+@media screen and (min-width: 768px) {
+  .auto_source > nav {
+    justify-content: space-between;
+    flex-direction: row;
+  }
+}
+
+.auto_source > nav button {
+  margin-left: 0.25em;
+  margin-right: 0;
+  flex: 1;
+}
+
+.auto_source button.muted {
+  color: var(--text-muted);
+  border: 1px solid var(--background-alt);
+}
+
+.auto_source iframe {
+  margin-top: 2em;
+  border: 2px groove var(--highlight);
+  border-radius: 0.5em;
+  display: none; /* Hide by default */
+}
+
+.auto_source iframe[src] {
+  display: block;
+  min-height: 50em;
+  max-height: 80vh;
+}
