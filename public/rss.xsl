@@ -41,7 +41,7 @@
       <input id="url" type="text"/>
     </p>
 
-    <h2>Feed content preview</h2>
+    <h2 id="feed">Feed content preview</h2>
     <ol class="items">
       <xsl:for-each select="rss/channel/item">
         <li>
