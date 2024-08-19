@@ -7,10 +7,19 @@
   background-color: var(--highlight);
 }
 
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 label {
   font-weight: bold;
   cursor: pointer;
-  margin-top: 0.5em;
 }
 
 input[type="text"] {
@@ -24,8 +33,8 @@ body > h2 {
 
 .items {
   list-style: none;
+  padding-top: 2em;
   padding-left: 0;
-  margin-top: 2em;
 }
 
 .items > li {
@@ -68,7 +77,7 @@ body > h2 {
 
 .aside-icon > a:hover > img,
 .aside-icon > a:focus > img {
-  border-color: currentColor;
+  border-color: var(--highlight);
   opacity: 0.9;
 }
 
@@ -84,7 +93,18 @@ body > h2 {
 
 .auto_source > form {
   display: flex;
-  flex-wrap: wrap;
+}
+
+.auto_source > form input[type="submit"] {
+  flex: 1 1 20em;
+  margin-right: 0;
+}
+
+.auto_source iframe {
+  margin-top: 2em;
+  border-color: var(--background);
+  border-style: groove;
+  border-radius: 6px;
 }
 
 .auto_source iframe:not([src]) {
@@ -93,8 +113,6 @@ body > h2 {
 
 .auto_source iframe[src] {
   display: block;
-  width: 100%;
   min-height: 50em;
   max-height: 80vh;
-  border: 0;
 }

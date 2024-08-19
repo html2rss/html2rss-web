@@ -39,7 +39,7 @@ module Html2rss
 
           auto_source = Html2rss::AutoSource.new(url, body: request.body, headers:)
 
-          auto_source.channel.stylesheets << Html2rss::RssBuilder::Stylesheet.new(href: './rss.xsl', type: 'text/xsl')
+          auto_source.channel.stylesheets << Html2rss::RssBuilder::Stylesheet.new(href: '/rss.xsl', type: 'text/xsl')
 
           auto_source.build
         end

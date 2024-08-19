@@ -41,12 +41,12 @@
       <input id="url" type="text"/>
     </p>
 
-    <h2 id="feed">Feed content preview</h2>
-    <ol class="items">
+    <h2>Feed content preview</h2>
+    <ol class="items" id="items">
       <xsl:for-each select="rss/channel/item">
         <li>
           <h3>
-            <a rel="noopener">
+            <a rel="noopener" target="_blank">
               <xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute>
               <xsl:value-of select="title"/>
             </a>
