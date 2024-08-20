@@ -82,36 +82,3 @@ body > h2 {
   border-color: var(--highlight);
   opacity: 0.9;
 }
-
-/* Auto Source Form */
-.auto_source {
-  display: flex;
-  flex-direction: column;
-}
-
-.auto_source input {
-  width: 100%;
-}
-
-.auto_source > form {
-  display: flex;
-}
-
-.auto_source > form input[type="submit"] {
-  flex: 1 1 20em;
-  margin-right: 0;
-}
-
-/* Iframe Styles */
-.auto_source iframe {
-  margin-top: 2em;
-  border: 1px groove var(--background);
-  border-radius: 6px;
-  display: none; /* Hide by default */
-}
-
-.auto_source iframe[src] {
-  display: block;
-  min-height: 50em;
-  max-height: 80vh;
-}
