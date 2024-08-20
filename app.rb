@@ -51,6 +51,7 @@ module Html2rss
 
       plugin :hash_branch_view_subdir
       plugin :public
+      plugin :content_for
       plugin :render, escape: true, layout: 'layout'
       plugin :typecast_params
       plugin :basic_auth

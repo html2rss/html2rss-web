@@ -9,6 +9,7 @@
     <title>html2rss-web<% if @page_title %> - <%= @page_title %><% end %></title>
     <link href="/water.css" rel="stylesheet"/>
     <link href="/styles.css" rel="stylesheet"/>
+    <%== content_for :css %>
   </head>
   <body>
     <aside class="aside-icon">
@@ -18,5 +19,6 @@
     </aside>
 
     <%== yield %>
+    <%== content_for :scripts %>
   </body>
 </html>
