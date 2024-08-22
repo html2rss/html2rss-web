@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 86f7f48f4ed613c53da36f21ed6fa0021b6afa6a
+  revision: 560c66c8fb08abdc2e485a9576b8b414480b377d
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -46,7 +46,7 @@ GEM
     logger (1.6.0)
     mime-types (3.5.2)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.0806)
+    mime-types-data (3.2024.0820)
     net-http (0.4.1)
       uri
     nio4r (2.7.3)
