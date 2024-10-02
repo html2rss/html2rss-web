@@ -9,11 +9,19 @@
 <section class="auto_source">
   <h1>Auto Source</h1>
   <p>
-    Automatically generate an RSS feed from a website.
+    Automatically sources an RSS feed from a website.
   </p>
 
   <form>
-    <input id="url" type="url" placeholder="https://" pattern="http[s]://.*" autocomplete="on" token-list="url" required>
+    <input
+      id="url"
+      type="url"
+      placeholder="https://"
+      pattern="http[s]://(?!.*@).*"
+      autocomplete="on"
+      token-list="url"
+      autofocus
+      required>
     <input type="submit" value="Generate">
   </form>
 
