@@ -17,6 +17,10 @@ html {
   box-sizing: inherit;
 }
 
+body {
+  scroll-behavior: smooth;
+}
+
 /* General Styles */
 label {
   font-weight: bold;
