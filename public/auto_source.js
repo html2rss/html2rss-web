@@ -1,18 +1,4 @@
 const autoSource = (function () {
-  const ALLOWED_ORIGINS = ["127.0.0.1", "::1"];
-
-  function assertAllowedOrigin() {
-    const allowedOrigin = ALLOWED_ORIGINS.includes(location.host.split(":")[0]);
-
-    if (allowedOrigin) {
-      return;
-    }
-
-    if (location.protocol !== "https:") {
-      throw new Error("You must use HTTPS for the auto_source feature.");
-    }
-  }
-
   class Bookmarklet {
     constructor() {
       const $bookmarklet = document.querySelector("a#bookmarklet");
@@ -223,8 +209,6 @@ const autoSource = (function () {
      * Subscribes to the feed specified in the text field.
      */
     async subscribeToFeed() {
-      assertAllowedOrigin();
-
       const feedUrl = this.rssUrlField.value;
       const storedUser = LocalStorageFacade.getOrAskUser("username");
       const storedPassword = LocalStorageFacade.getOrAskUser("password");
