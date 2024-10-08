@@ -45,9 +45,16 @@ services:
         target: /app/config/feeds.yml
         read_only: true
     environment:
-      - RACK_ENV=production
-      - HEALTH_CHECK_USERNAME=health
-      - HEALTH_CHECK_PASSWORD=please-set-YOUR-OWN-veeeeeery-l0ng-aNd-h4rd-to-gue55-Passw0rd!
+      RACK_ENV: production
+      HEALTH_CHECK_USERNAME: health
+      HEALTH_CHECK_PASSWORD: please-set-YOUR-OWN-veeeeeery-l0ng-aNd-h4rd-to-gue55-Passw0rd!
+      # AUTO_SOURCE_ENABLED: true
+      # AUTO_SOURCE_USERNAME: foobar
+      # AUTO_SOURCE_PASSWORD: A-Unique-And-Long-Password-For-Your-Own-Instance
+      ## to allow just requests originating from the local host
+      # AUTO_SOURCE_ALLOWED_ORIGINS: 127.0.0.1:3000
+      ## to allow multiple origins, seperate those via comma:
+      # AUTO_SOURCE_ALLOWED_ORIGINS: example.com,h2r.host.tld
   watchtower:
     image: containrrr/watchtower
     volumes:
@@ -68,7 +75,28 @@ The `docker-compose.yml` above contains a service description for watchtower.
 
 ## How to use automatic feed generation
 
-1. add `FEATURE_AUTO_SOURCE_ENABLED=true` to your `docker-compose.yml` file
+> [!NOTE]
+> This feature is disabled by default.
+
+To enable the `auto_source` feature, comment in the env variables in the `docker-compose.yml` file from above and change the values accordingly:
+
+```yaml
+environment:
+  ## … snip ✁
+  AUTO_SOURCE_ENABLED: true
+  AUTO_SOURCE_USERNAME: foobar
+  AUTO_SOURCE_PASSWORD: A-Unique-And-Long-Password-For-Your-Own-Instance
+  ## to allow just requests originating from the local host
+  AUTO_SOURCE_ALLOWED_ORIGINS: 127.0.0.1:3000
+  ## to allow multiple origins, seperate those via comma:
+  # AUTO_SOURCE_ALLOWED_ORIGINS: example.com,h2r.host.tld
+  ## … snap ✃
+```
+
+Restart the container and open <http://127.0.0.1:3000/auto_source>.
+When asked, enter your username and password.
+
+Then enter the URL of a website and click on the _Generate_ button.
 
 ## How to use the included configs
 
@@ -89,7 +117,7 @@ To build your own RSS feed, you need to create a _feed config_.\
 That _feed config_ goes into the file `feeds.yml`.\
 Check out the [`example` feed config](https://github.com/html2rss/html2rss-web/blob/master/config/feeds.yml#L9).
 
-Please refer to [html2rss' README for a description of _the feed config and its options_](https://github.com/html2rss/html2rss#the-feed-config-and-its-options). html2rss-web is just a small web application that depends on html2rss.
+Please refer to [html2rss' README for a description of _the feed config and its options_](https://github.com/html2rss/html2rss#the-feed-config-and-its-options). html2rss-web is just a small web application that builds on html2rss.
 
 ## Versioning and releases
 
@@ -116,15 +144,23 @@ If you're going to host a public instance, _please, please, please_:
 
 ### Supported ENV variables
 
-| Name                           | Description                      |
-| ------------------------------ | -------------------------------- |
-| `PORT`                         | default: 3000                    |
-| `RACK_ENV`                     | default: 'development'           |
-| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                      |
-| `WEB_CONCURRENCY`              | default: 2                       |
-| `WEB_MAX_THREADS`              | default: 5                       |
-| `HEALTH_CHECK_USERNAME`        | default: auto-generated on start |
-| `HEALTH_CHECK_PASSWORD`        | default: auto-generated on start |
+| Name                           | Description                        |
+| ------------------------------ | ---------------------------------- |
+| `BASE_URL`                     | default: '<http://localhost:3000>' |
+| `LOG_LEVEL`                    | default: 'warn'                    |
+| `HEALTH_CHECK_USERNAME`        | default: auto-generated on start   |
+| `HEALTH_CHECK_PASSWORD`        | default: auto-generated on start   |
+|                                |                                    |
+| `AUTO_SOURCE_ENABLED`          | default: false                     |
+| `AUTO_SOURCE_USERNAME          | no default                         |
+| `AUTO_SOURCE_PASSWORD          | no default                         |
+| `AUTO_SOURCE_ALLOWED_ORIGINS`  | no default.                        |
+|                                |                                    |
+| `PORT`                         | default: 3000                      |
+| `RACK_ENV`                     | default: 'development'             |
+| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                        |
+| `WEB_CONCURRENCY`              | default: 2                         |
+| `WEB_MAX_THREADS`              | default: 5                         |
 
 ### Runtime monitoring via `GET /health_check.txt`
 
