@@ -135,7 +135,7 @@ GEM
     simplecov_json_formatter (0.1.4)
     ssrf_filter (1.1.2)
     strscan (3.1.0)
-    thor (1.3.1)
+    thor (1.3.2)
     tilt (2.4.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
@@ -157,7 +157,7 @@ DEPENDENCIES
   base64
   byebug
   erubi
-  html2rss
+  html2rss (~> 0.14)
   html2rss-configs!
   parallel
   puma
