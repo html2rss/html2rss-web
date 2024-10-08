@@ -19,6 +19,8 @@ module Html2rss
             end
 
             r.on String, method: :get do |encoded_url|
+              assert_allowed_request_origin!
+
               rss = build_auto_source_from_encoded_url(encoded_url)
 
               HttpCache.expires(response, ttl_in_seconds(rss), cache_control: 'private, must-revalidate')
@@ -31,6 +33,22 @@ module Html2rss
         end
 
         private
+
+        def assert_allowed_request_origin!
+          allowed_origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', '').split(',').to_set
+
+          if allowed_origins.empty?
+            response.write 'No allowed origins are configured. Please set AUTO_SOURCE_ALLOWED_ORIGINS.'
+          else
+            origin = request.env['HTTP_HOST']
+
+            return if allowed_origins.include?(origin)
+
+            response.write "Origin '#{origin}' is not allowed."
+          end
+
+          request.halt
+        end
 
         def build_auto_source_from_encoded_url(encoded_url)
           url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
