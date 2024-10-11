@@ -4,8 +4,6 @@ require 'rubygems'
 require 'bundler/setup'
 require 'rack-timeout'
 
-use Rack::Timeout
-
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
 
 requires = Dir['app/**/*.rb']
@@ -26,6 +24,8 @@ if dev
 
   run Unreloader
 else
+  use Rack::Timeout
+
   require_relative 'app'
   requires.each { |f| require_relative f }
 

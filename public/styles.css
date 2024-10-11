@@ -3,10 +3,28 @@
   --highlight: #ff9300;
 }
 
+::selection {
+  background-color: var(--highlight);
+}
+
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+body {
+  scroll-behavior: smooth;
+}
+
+/* General Styles */
 label {
   font-weight: bold;
   cursor: pointer;
-  margin-top: 0.5em;
 }
 
 input[type="text"] {
@@ -18,10 +36,10 @@ body > h2 {
   margin-top: 2em;
 }
 
+/* List Items */
 .items {
   list-style: none;
-  padding-left: 0;
-  margin-top: 2em;
+  padding: 2em 0 0 0;
 }
 
 .items > li {
@@ -39,11 +57,12 @@ body > h2 {
   margin-top: 0;
 }
 
-.item > li > div {
+.items > li > div {
   font-size: 0.9em;
   padding: 0.25em;
 }
 
+/* Aside Icon */
 .aside-icon {
   position: fixed;
   top: 0.5em;
@@ -57,11 +76,13 @@ body > h2 {
   box-shadow: 0 0 0.25em;
   border-radius: 0.25em;
   border: 1px solid transparent;
-  transition: border-color 0.2s, opacity 0.2s;
+  transition:
+    border-color 0.2s,
+    opacity 0.2s;
 }
 
 .aside-icon > a:hover > img,
 .aside-icon > a:focus > img {
-  border-color: currentColor;
+  border-color: var(--highlight);
   opacity: 0.9;
 }

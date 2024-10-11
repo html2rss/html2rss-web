@@ -66,6 +66,32 @@ The [watchtower](https://containrrr.dev/watchtower/) service automatically pulls
 
 The `docker-compose.yml` above contains a service description for watchtower.
 
+## How to use automatic feed generation
+
+> [!NOTE]
+> This feature is disabled by default.
+
+To enable the `auto_source` feature, add these env variables to your `docker-compose.yml` file:
+
+`AUTO_SOURCE_ENABLED: true` and  
+`AUTO_SOURCE_USERNAME: your-user-name` and  
+`AUTO_SOURCE_PASSWORD: your-password` and  
+`AUTO_SOURCE_ALLOWED_ORIGINS=hostname1[,hostname2[,hostnameN]]`
+
+Example:
+
+```yaml
+environment:
+  # … snip ✁
+  AUTO_SOURCE_ENABLED: true
+  AUTO_SOURCE_USERNAME: foobar
+  AUTO_SOURCE_PASSWORD: 'Why-did-the-hexadecimal-number-F-fear-the-number-10?|Because-10-is-greater-than-F!'
+  AUTO_SOURCE_ALLOWED_ORIGINS: 127.0.0.1:3000,my-h2r-web-instance.dev
+  # … snap ✃
+```
+
+Restart the container and navigate to <http://127.0.0.1:3000/auto_source>.
+
 ## How to use the included configs
 
 html2rss-web comes with many feed configs out of the box. [See the file list of all configs.](https://github.com/html2rss/html2rss-configs/tree/master/lib/html2rss/configs)
@@ -112,15 +138,23 @@ If you're going to host a public instance, _please, please, please_:
 
 ### Supported ENV variables
 
-| Name                           | Description                      |
-| ------------------------------ | -------------------------------- |
-| `PORT`                         | default: 3000                    |
-| `RACK_ENV`                     | default: 'development'           |
-| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                      |
-| `WEB_CONCURRENCY`              | default: 2                       |
-| `WEB_MAX_THREADS`              | default: 5                       |
-| `HEALTH_CHECK_USERNAME`        | default: auto-generated on start |
-| `HEALTH_CHECK_PASSWORD`        | default: auto-generated on start |
+| Name                           | Description                        |
+| ------------------------------ | ---------------------------------- |
+| `BASE_URL`                     | default: '<http://localhost:3000>' |
+| `LOG_LEVEL`                    | default: 'warn'                    |
+| `HEALTH_CHECK_USERNAME`        | default: auto-generated on start   |
+| `HEALTH_CHECK_PASSWORD`        | default: auto-generated on start   |
+|                                |                                    |
+| `AUTO_SOURCE_ENABLED`          | default: false                     |
+| `AUTO_SOURCE_USERNAME          | no default                         |
+| `AUTO_SOURCE_PASSWORD          | no default                         |
+| `AUTO_SOURCE_ALLOWED_ORIGINS`  | no default.                        |
+|                                |                                    |
+| `PORT`                         | default: 3000                      |
+| `RACK_ENV`                     | default: 'development'             |
+| `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                        |
+| `WEB_CONCURRENCY`              | default: 2                         |
+| `WEB_MAX_THREADS`              | default: 5                         |
 
 ### Runtime monitoring via `GET /health_check.txt`
 

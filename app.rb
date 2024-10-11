@@ -2,7 +2,6 @@
 
 require 'roda'
 require 'rack/cache'
-
 require_relative 'roda/roda_plugins/basic_auth'
 
 module Html2rss
@@ -12,12 +11,9 @@ module Html2rss
     #
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
-      # TODO: move to helper
-      def self.development?
-        ENV['RACK_ENV'] == 'development'
-      end
+      CONTENT_TYPE_RSS = 'application/xml'
 
-      def development? = self.class.development?
+      def self.development? = ENV['RACK_ENV'] == 'development'
 
       opts[:check_dynamic_arity] = false
       opts[:check_arity] = :warn
@@ -33,16 +29,16 @@ module Html2rss
         csp.script_src :self
         csp.connect_src :self
         csp.img_src :self
-        csp.font_src :self
+        csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none
-        csp.frame_ancestors :none
+        csp.frame_ancestors :self
+        csp.frame_src :self
         csp.block_all_mixed_content
       end
 
       plugin :default_headers,
              'Content-Type' => 'text/html',
-             'X-Frame-Options' => 'deny',
              'X-Content-Type-Options' => 'nosniff',
              'X-XSS-Protection' => '1; mode=block'
 
@@ -53,8 +49,9 @@ module Html2rss
         handle_error(error)
       end
 
-      plugin :hash_branches
+      plugin :hash_branch_view_subdir
       plugin :public
+      plugin :content_for
       plugin :render, escape: true, layout: 'layout'
       plugin :typecast_params
       plugin :basic_auth
@@ -69,7 +66,6 @@ module Html2rss
 
       route do |r|
         r.public
-
         r.hash_branches('')
 
         r.root { view 'index' }
