@@ -35,7 +35,9 @@ group :development do
 end
 
 group :test do
+  gem 'rack-test'
   gem 'rspec'
   gem 'simplecov', require: false
   gem 'vcr'
+  gem 'webmock'
 end

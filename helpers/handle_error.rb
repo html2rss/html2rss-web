@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'html2rss/configs'
+require_relative '../app/local_config'
+
 module Html2rss
   module Web
     class App
