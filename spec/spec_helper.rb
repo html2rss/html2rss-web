@@ -5,6 +5,8 @@ if ENV['CI'] || ENV['COVERAGE']
 
   SimpleCov.start do
     add_filter '/spec/'
+    add_filter '/config/'
+
     track_files '**/*.rb'
   end
 end
