@@ -16,6 +16,24 @@ RSpec.describe Html2rss::Web::App do
       get '/'
       expect(last_response).to be_ok
     end
+
+    it 'sets CSP headers' do # rubocop:disable RSpec/ExampleLength
+      get '/'
+
+      expect(last_response.headers['Content-Security-Policy']).to eq <<~HEADERS.gsub(/\n\s*/, ' ')
+        default-src 'none';
+        style-src 'self';
+        script-src 'self';
+        connect-src 'self';
+        img-src 'self';
+        font-src 'self' data:;
+        form-action 'self';
+        base-uri 'none';
+        frame-ancestors 'self';
+        frame-src 'self';
+        block-all-mixed-content;
+      HEADERS
+    end
   end
 
   describe '.development?' do
