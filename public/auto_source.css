@@ -38,6 +38,12 @@
   flex: 1;
 }
 
+.auto_source__bookmarklet {
+  background-color: var(--background);
+  padding: 0.25em;
+  border-radius: 0.25em;
+}
+
 .auto_source button.muted {
   color: var(--text-muted);
   border: 1px solid var(--background-alt);

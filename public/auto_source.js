@@ -1,4 +1,6 @@
 const autoSource = (function () {
+  const BASE_PATH = "auto_source";
+
   class Bookmarklet {
     constructor() {
       const $bookmarklet = document.querySelector("a#bookmarklet");
@@ -13,8 +15,8 @@ const autoSource = (function () {
 
     generateBookmarkletHref() {
       const h2rUrl = new URL(window.location.origin);
-      h2rUrl.pathname = "auto_source/";
-      h2rUrl.search = `?url=`;
+      h2rUrl.pathname = `${BASE_PATH}/`;
+      h2rUrl.search = "?url=";
       h2rUrl.hash = "";
 
       return `javascript:window.location.href='${h2rUrl.toString()}'+window.location.href;`;
@@ -131,9 +133,8 @@ const autoSource = (function () {
      * @returns {string} The generated auto-source URL.
      */
     generateAutoSourceUrl(encodedUrl) {
-      const BASE_URL = "auto_source"; // Use constant to avoid magic strings
       const baseUrl = new URL(window.location.origin);
-      return `${baseUrl}${BASE_URL}/${encodedUrl}`;
+      return `${baseUrl}${BASE_PATH}/${encodedUrl}`;
     }
 
     /**
