@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-
+require 'rss'
 require_relative '../../app'
 
 describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
@@ -15,11 +15,20 @@ describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   let(:username) { 'username' }
   let(:password) { 'password' }
 
+  let(:feed) do
+    RSS::Maker.make('2.0') do |maker|
+      maker.channel.title = 'title'
+      maker.channel.link = 'link'
+      maker.channel.description = 'description'
+    end
+  end
+
   before do
     allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true,
                                                          username:,
                                                          password:,
-                                                         allowed_origins: Set['localhost'])
+                                                         allowed_origins: Set['localhost'],
+                                                         build_auto_source_from_encoded_url: feed)
   end
 
   describe "GET '/auto_source/'" do
@@ -57,17 +66,15 @@ describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   describe "GET '/auto_source/:encoded_url'" do
     context 'with provided basic auth' do
       subject(:response) do
-        VCR.use_cassette('auto_source-github-h2r-web') do
-          get "/auto_source/#{Base64.urlsafe_encode64('https://github.com/html2rss/html2rss-web')}",
-              {},
-              request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
-        end
+        get "/auto_source/#{Base64.urlsafe_encode64('https://github.com/html2rss/html2rss-web')}",
+            {},
+            request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
       end
 
       it 'responds successfully', :aggregate_failures do
         expect(response).to be_ok
         expect(response.body).to start_with '<?xml version="1.0" encoding="UTF-8"?>'
-        expect(response.get_header('cache-control')).to eq 'must-revalidate, private, max-age=0'
+        expect(response.get_header('cache-control')).to eq 'must-revalidate, private, max-age=3600'
         expect(response.get_header('content-type')).to eq described_class::CONTENT_TYPE_RSS
       end
     end
