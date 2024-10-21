@@ -1,0 +1,61 @@
+<% content_for :css do %>
+<link href="/auto_source.css" rel="stylesheet"/>
+<% end %>
+
+<% content_for :scripts do %>
+<script src="/auto_source.js" defer></script>
+<% end %>
+
+<section class="auto_source">
+  <h1>Auto Source</h1>
+  <p>
+    Automatically sources an RSS feed from a website.
+  </p>
+
+  <form>
+    <input
+      id="url"
+      type="url"
+      placeholder="https://"
+      pattern="http[s]://(?!.*@).*"
+      autocomplete="on"
+      token-list="url"
+      autofocus
+      required>
+    <input type="submit" value="Generate">
+  </form>
+
+  <label>
+    <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
+      Feed URL
+      <input type="url" id="rss_url" readonly>
+  </label>
+
+  <nav>
+    <button id="resetCredentials" class="muted">Remove credentials</button>
+    <button id="copy">Copy URL</button>
+    <button id="goto">Open</button>
+    <button id="openInFeed">Subscribe</button>
+  </nav>
+
+  <iframe loading="lazy"></iframe>
+</section>
+
+<aside>
+  <h2>Utilities</h2>
+  <p>
+    Several utilities exist to make the Auto Source feature easier to use.
+  </p>
+  <article>
+    <h3>Bookmarklet</h3>
+
+    <p>
+      Drag this link to your bookmarks and click it on any page:
+      <a id="bookmarklet" class="auto_source__bookmarklet" href="#">Html2Rss</a>
+    </p>
+  </article>
+</aside>
+
+<nav>
+  <a href="/">‹ Back to Home</a>
+</nav>

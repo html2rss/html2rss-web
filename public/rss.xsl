@@ -42,11 +42,11 @@
     </p>
 
     <h2>Feed content preview</h2>
-    <ol class="items">
+    <ol class="items" id="items">
       <xsl:for-each select="rss/channel/item">
         <li>
           <h3>
-            <a rel="noopener">
+            <a rel="noopener" target="_blank">
               <xsl:attribute name="href"><xsl:value-of select="link"/></xsl:attribute>
               <xsl:value-of select="title"/>
             </a>
