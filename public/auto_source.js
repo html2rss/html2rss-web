@@ -189,7 +189,6 @@ const autoSource = (function () {
       try {
         const textToCopy = this.rssUrlField.value;
         await navigator.clipboard.writeText(textToCopy);
-        console.log("Text copied to clipboard:", textToCopy);
       } catch (error) {
         console.error("Failed to copy text to clipboard:", error);
       }
@@ -211,8 +210,8 @@ const autoSource = (function () {
      */
     async subscribeToFeed() {
       const feedUrl = this.rssUrlField.value;
-      const storedUser = LocalStorageFacade.getOrAskUser("username");
-      const storedPassword = LocalStorageFacade.getOrAskUser("password");
+      const storedUser = LocalStorageFacade.getOrAsk("username");
+      const storedPassword = LocalStorageFacade.getOrAsk("password");
 
       const url = new URL(feedUrl);
       url.username = storedUser;
@@ -255,16 +254,16 @@ const autoSource = (function () {
       return localStorage.removeItem(key);
     }
 
-    static getOrAskUser(columnName) {
-      let value = LocalStorageFacade.get(columnName);
+    static getOrAsk(key) {
+      let value = LocalStorageFacade.get(key);
 
       while (typeof value !== "string" || value === "") {
-        value = window.prompt(`Please enter your ${columnName}:`);
+        value = window.prompt(`Please enter your ${key}:`);
 
         if (!value || value.trim() === "") {
-          alert(`Blank ${columnName} submitted. Try again!`);
+          alert(`Blank ${key} submitted. Try again!`);
         } else {
-          LocalStorageFacade.set(columnName, value);
+          LocalStorageFacade.set(key, value);
         }
       }
 

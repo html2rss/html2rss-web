@@ -7,7 +7,6 @@
 .auto_source input,
 .auto_source button {
   width: 100%;
-  font-family: monospace;
 }
 
 .auto_source > form {
@@ -51,13 +50,15 @@
 
 .auto_source iframe {
   margin-top: 2em;
-  border: 2px groove var(--highlight);
+  border: 2px groove transparent;
   border-radius: 0.5em;
   display: none; /* Hide by default */
+  transition: border-color 0.2s;
 }
 
 .auto_source iframe[src] {
   display: block;
   min-height: 50em;
   max-height: 80vh;
+  border-color: var(--highlight);
 }
