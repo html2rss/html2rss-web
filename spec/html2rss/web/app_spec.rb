@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'climate_control'
 
 require_relative '../../../app'
 
@@ -39,14 +40,18 @@ RSpec.describe Html2rss::Web::App do
   describe '.development?' do
     subject { described_class.development? }
 
+    around do |example|
+      ClimateControl.modify(RACK_ENV: env) { example.run }
+    end
+
     context 'when RACK_ENV is development' do
-      before { ENV['RACK_ENV'] = 'development' }
+      let(:env) { 'development' }
 
       it { is_expected.to be true }
     end
 
     context 'when RACK_ENV is not development' do
-      before { ENV['RACK_ENV'] = 'test' }
+      let(:env) { 'test' }
 
       it { is_expected.to be false }
     end

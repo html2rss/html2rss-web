@@ -4,7 +4,7 @@ require 'spec_helper'
 require 'rss'
 require_relative '../../app'
 
-describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
+RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   include Rack::Test::Methods
   def app = described_class
 

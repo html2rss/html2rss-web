@@ -11,8 +11,6 @@ if ENV['CI'] || ENV['COVERAGE']
   end
 end
 
-require_relative 'support/climate_control'
-
 require 'rack/test'
 require 'vcr'
 
@@ -79,14 +77,14 @@ RSpec.configure do |config|
   #   # Allows RSpec to persist some state between runs in order to support
   #   # the `--only-failures` and `--next-failure` CLI options. We recommend
   #   # you configure your source control system to ignore this file.
-  #   config.example_status_persistence_file_path = "spec/examples.txt"
+  config.example_status_persistence_file_path = 'spec/examples.txt'
   #
   #   # Limits the available syntax to the non-monkey patched syntax that is
   #   # recommended. For more details, see:
   #   #   - http://rspec.info/blog/2012/06/rspecs-new-expectation-syntax/
   #   #   - http://www.teaisaweso.me/blog/2013/05/27/rspecs-new-message-expectation-syntax/
   #   #   - http://rspec.info/blog/2014/05/notable-changes-in-rspec-3/#zero-monkey-patching-mode
-  #   config.disable_monkey_patching!
+  config.disable_monkey_patching!
   #
   #   # This setting enables warnings. It's recommended, but in some cases may
   #   # be too noisy due to issues in dependencies.
@@ -118,6 +116,4 @@ RSpec.configure do |config|
   #   # test failures related to randomization by passing the same `--seed` value
   #   # as the one that triggered the failure.
   #   Kernel.srand config.seed
-
-  config.include(EnvHelper)
 end
