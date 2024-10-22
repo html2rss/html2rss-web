@@ -11,8 +11,6 @@ if ENV['CI'] || ENV['COVERAGE']
   end
 end
 
-require_relative 'support/climate_control'
-
 require 'rack/test'
 require 'vcr'
 
@@ -118,6 +116,4 @@ RSpec.configure do |config|
   #   # test failures related to randomization by passing the same `--seed` value
   #   # as the one that triggered the failure.
   #   Kernel.srand config.seed
-
-  config.include(EnvHelper)
 end

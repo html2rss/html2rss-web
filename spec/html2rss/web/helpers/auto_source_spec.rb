@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'rss'
-require 'roda'
 require 'base64'
+require 'climate_control'
+require 'roda'
+require 'rss'
+
 require_relative '../../../../helpers/auto_source'
 
 describe Html2rss::Web::AutoSource do # rubocop:disable RSpec/SpecFilePathFormat
