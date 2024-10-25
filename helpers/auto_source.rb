@@ -24,7 +24,7 @@ module Html2rss
       # @return [RSS::Rss]
       def self.build_auto_source_from_encoded_url(encoded_url)
         url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
-        request = SsrfFilter.get(url)
+        request = SsrfFilter.get(url, headers: LocalConfig.global.fetch(:headers, {}))
         headers = request.to_hash.transform_values(&:first)
 
         auto_source = Html2rss::AutoSource.new(url, body: request.body, headers:)
