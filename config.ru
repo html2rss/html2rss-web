@@ -4,8 +4,31 @@ require 'rubygems'
 require 'bundler/setup'
 require 'rack-timeout'
 
-dev = ENV.fetch('RACK_ENV', nil) == 'development'
+if ENV.key?('SENTRY_DSN')
+  Bundler.require(:sentry)
+  require 'sentry-ruby'
 
+  Sentry.init do |config|
+    config.dsn = ENV.fetch('SENTRY_DSN')
+
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for tracing.
+    # We recommend adjusting this value in production.
+    config.traces_sample_rate = 1.0
+    # or
+    # config.traces_sampler = lambda do |_context|
+    #   true
+    # end
+    # Set profiles_sample_rate to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    config.profiles_sample_rate = 1.0
+  end
+
+  use Sentry::Rack::CaptureExceptions
+end
+
+dev = ENV.fetch('RACK_ENV', nil) == 'development'
 requires = Dir['app/**/*.rb']
 
 if dev
