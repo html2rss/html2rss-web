@@ -162,6 +162,8 @@ If you're going to host a public instance, _please, please, please_:
 | `RACK_TIMEOUT_SERVICE_TIMEOUT` | default: 15                        |
 | `WEB_CONCURRENCY`              | default: 2                         |
 | `WEB_MAX_THREADS`              | default: 5                         |
+|                                |                                    |
+| `SENTRY_DSN`                   | no default.                        |
 
 ### Runtime monitoring via `GET /health_check.txt`
 
@@ -180,6 +182,10 @@ To get notified when one of your configs breaks, set up monitoring of this endpo
 Create a monitor of type _Keyword_ with this information and make it aware of your username and password:
 
 ![A screenshot showing the Keyword Monitor: a name, the instance's URL to /health_check.txt, and an interval.](docs/uptimerobot_monitor.jpg)
+
+### Application Performance Monitoring using Sentry
+
+When you specify `SENTRY_DSN` in your environment variables, the application will be setup to use Sentry.
 
 ## Setup for development
 

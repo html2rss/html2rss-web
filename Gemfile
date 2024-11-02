@@ -42,3 +42,8 @@ group :test do
   gem 'vcr'
   gem 'webmock'
 end
+
+group :sentry do
+  gem 'sentry-ruby'
+  gem 'stackprof'
+end
