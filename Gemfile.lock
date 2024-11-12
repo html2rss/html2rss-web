@@ -79,7 +79,7 @@ GEM
     puma (6.4.3)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (3.1.7)
+    rack (3.1.8)
     rack-cache (1.17.0)
       rack (>= 0.4)
     rack-test (2.1.0)
@@ -92,7 +92,7 @@ GEM
     reverse_markdown (2.1.1)
       nokogiri
     rexml (3.3.9)
-    roda (3.85.0)
+    roda (3.86.0)
       rack
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
