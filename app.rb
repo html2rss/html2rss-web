@@ -56,13 +56,7 @@ module Html2rss
       plugin :typecast_params
       plugin :basic_auth
 
-      Dir['routes/**/*.rb'].each do |f|
-        if development?
-          Unreloader.require f
-        else
-          require_relative f
-        end
-      end
+      Dir['routes/**/*.rb'].each { |f| require_relative f }
 
       route do |r|
         r.public
@@ -83,13 +77,7 @@ module Html2rss
         end
       end
 
-      Dir['helpers/*.rb'].each do |f|
-        if development?
-          Unreloader.require f
-        else
-          require_relative f
-        end
-      end
+      Dir['helpers/*.rb'].each { |f| require_relative f }
     end
   end
 end

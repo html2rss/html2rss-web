@@ -191,6 +191,10 @@ When you specify `SENTRY_DSN` in your environment variables, the application wil
 
 Check out the git repository and…
 
+### using Devcontainer (recommended)
+
+Open the cloned repository in your devcontainer supporting IDE (i.e. VSCode). That's it. Happy coding.
+
 ### Using Docker
 
 This approach allows you to experiment without installing Ruby on your machine.

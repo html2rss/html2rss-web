@@ -1,0 +1,22 @@
+name: "app"
+services:
+  html2rss-web:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../..:/workspaces:cached
+      - type: bind
+        source: ../config/feeds.yml
+        target: /app/config/feeds.yml
+        read_only: true
+    environment:
+      RACK_ENV: development
+      HEALTH_CHECK_USERNAME: health
+      HEALTH_CHECK_PASSWORD: please-set-YOUR-OWN-veeeeeery-l0ng-aNd-h4rd-to-gue55-Passw0rd!
+      AUTO_SOURCE_ENABLED: true
+      AUTO_SOURCE_USERNAME: foo
+      AUTO_SOURCE_PASSWORD: bar
+      AUTO_SOURCE_ALLOWED_ORIGINS: 127.0.0.1:3000
