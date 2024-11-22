@@ -1,18 +1,17 @@
 queue_rules:
   - name: dependabot
-    conditions:
+    queue_conditions:
+      - author=dependabot[bot]
+    merge_conditions:
       - author=dependabot[bot]
       - status-success=docker-test
       - status-success=hadolint
       - status-success=ruby
       - base=master
-      
+    merge_method: squash
+
 pull_request_rules:
-  - name: automatic merge for Dependabot pull requests
-    conditions:
-      - author=dependabot[bot]
+  - name: refactored queue action rule
+    conditions: []
     actions:
       queue:
-        method: squash
-        name: dependabot
-        
