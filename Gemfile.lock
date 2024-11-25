@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 905ca2a7da7d5cbf63d5265f8b70c64563957252
+  revision: 9aa87f0d713f5caebaab148c3922698655556a33
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -58,7 +58,7 @@ GEM
     mime-types-data (3.2024.1105)
     net-http (0.5.0)
       uri
-    nio4r (2.7.3)
+    nio4r (2.7.4)
     nokogiri (1.16.7-aarch64-linux)
       racc (~> 1.4)
     nokogiri (1.16.7-arm-linux)
@@ -76,7 +76,7 @@ GEM
       ast (~> 2.4.1)
       racc
     public_suffix (6.0.1)
-    puma (6.4.3)
+    puma (6.5.0)
       nio4r (~> 2.0)
     racc (1.8.1)
     rack (3.1.8)
