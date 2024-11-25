@@ -1,0 +1,24 @@
+{
+  "name": "app",
+  "service": "html2rss-web",
+  "dockerComposeFile": "compose.yml",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [
+    3000
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "ruby.format": true,
+        "ruby.lint": true
+      },
+      "extensions": [
+        "Shopify.ruby-lsp"
+      ]
+    }
+  },
+  "postCreateCommand": "bundle install"
+}
