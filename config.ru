@@ -29,7 +29,12 @@ if ENV.key?('SENTRY_DSN')
 end
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
-requires = Dir['app/**/*.rb']
+requires = Dir[
+  'app/**/*.rb',
+  'helpers/**/*.rb',
+  'roda/**/*.rb',
+  'routes/**/*.rb',
+]
 
 if dev
   require 'logger'
