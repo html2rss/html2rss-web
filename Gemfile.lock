@@ -22,7 +22,7 @@ GEM
     crass (1.0.6)
     diff-lcs (1.5.1)
     docile (1.4.1)
-    erubi (1.13.0)
+    erubi (1.13.1)
     faraday (2.12.1)
       faraday-net_http (>= 2.0, < 3.5)
       json
