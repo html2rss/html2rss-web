@@ -21,14 +21,29 @@
       autocomplete="on"
       token-list="url"
       autofocus
-      required>
+      required
+    >
+
+    <%- default_strategy_name = Html2rss::RequestService.default_strategy_name %>
+    <fieldset>
+      <legend>Strategy</legend>
+      <% Html2rss::RequestService.strategy_names.each do |strategy| %>
+        <label>
+          <input type="radio" name="strategy"
+                 value="<%= strategy %>"
+                 <%= 'checked' if strategy.to_sym == default_strategy_name %>
+          >
+          <span><%= strategy %></span>
+        </label>
+      <% end %>
+    </fieldset>
     <input type="submit" value="Generate">
   </form>
 
   <label>
     <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
-      Feed URL
-      <input type="url" id="rss_url" readonly>
+    Feed URL
+    <input type="url" id="rss_url" readonly>
   </label>
 
   <nav>

@@ -19,6 +19,20 @@
   margin-right: 0;
 }
 
+.auto_source > form label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.auto_source > form label > span {
+  flex: 1;
+}
+
+.auto_source > form label > input {
+  flex: 0;
+}
+
 .auto_source > nav {
   display: flex;
   flex-direction: column;

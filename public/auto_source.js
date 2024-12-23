@@ -93,7 +93,13 @@ const autoSource = (function () {
 
       if (this.isValidUrl(url)) {
         const encodedUrl = this.encodeUrl(url);
-        const autoSourceUrl = this.generateAutoSourceUrl(encodedUrl);
+        const params = {};
+        const strategy = this.form?.querySelector('input[name="strategy"]:checked')?.value;
+        if (strategy) {
+          params["strategy"] = strategy;
+        }
+
+        const autoSourceUrl = this.generateAutoSourceUrl(encodedUrl, params);
 
         this.rssUrlInput.value = autoSourceUrl;
         this.rssUrlInput.select();
@@ -132,9 +138,12 @@ const autoSource = (function () {
      * @param {string} encodedUrl - The base64 encoded URL.
      * @returns {string} The generated auto-source URL.
      */
-    generateAutoSourceUrl(encodedUrl) {
+    generateAutoSourceUrl(encodedUrl, params = {}) {
       const baseUrl = new URL(window.location.origin);
-      return `${baseUrl}${BASE_PATH}/${encodedUrl}`;
+
+      const url = new URL(`${baseUrl}${BASE_PATH}/${encodedUrl}`);
+      url.search = new URLSearchParams(params).toString();
+      return url.toString();
     }
 
     /**
