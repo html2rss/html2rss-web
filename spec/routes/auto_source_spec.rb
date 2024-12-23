@@ -3,6 +3,7 @@
 require 'spec_helper'
 require 'rss'
 require_relative '../../app'
+require 'html2rss'
 
 RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   include Rack::Test::Methods
@@ -11,6 +12,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   let(:request_headers) do
     { 'HTTP_HOST' => 'localhost' }
   end
+  let(:encoded_url) { Base64.urlsafe_encode64('https://github.com/html2rss/html2rss-web/commits/master') }
 
   let(:username) { 'username' }
   let(:password) { 'password' }
@@ -27,8 +29,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
     allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true,
                                                          username:,
                                                          password:,
-                                                         allowed_origins: Set['localhost'],
-                                                         build_auto_source_from_encoded_url: feed)
+                                                         allowed_origins: Set['localhost'])
   end
 
   describe "GET '/auto_source/'" do
@@ -66,16 +67,33 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   describe "GET '/auto_source/:encoded_url'" do
     context 'with provided basic auth' do
       subject(:response) do
-        get "/auto_source/#{Base64.urlsafe_encode64('https://github.com/html2rss/html2rss-web')}",
-            {},
-            request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
+        VCR.use_cassette('auto_source-github-h2r-web') do
+          get "/auto_source/#{encoded_url}?strategy",
+              {},
+              request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
+        end
       end
 
       it 'responds successfully', :aggregate_failures do
         expect(response).to be_ok
         expect(response.body).to start_with '<?xml version="1.0" encoding="UTF-8"?>'
-        expect(response.get_header('cache-control')).to eq 'must-revalidate, private, max-age=3600'
+        expect(response.get_header('cache-control')).to eq 'must-revalidate, private, max-age=0'
         expect(response.get_header('content-type')).to eq described_class::CONTENT_TYPE_RSS
+      end
+    end
+
+    context 'when strategy is not registered' do
+      subject(:response) do
+        VCR.use_cassette('auto_source-github-h2r-web', match_requests_on: [:path]) do
+          get "/auto_source/#{encoded_url}?strategy=nope",
+              {},
+              request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
+        end
+      end
+
+      it 'responds with Error', :aggregate_failures do
+        expect(response.status).to eq 422
+        expect(response.body).to match(/UnknownStrategy/)
       end
     end
   end
@@ -96,7 +114,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
 
     describe "GET '/auto_source/:encoded_url'" do
       it 'responds with 400 Bad Request', :aggregate_failures do
-        get "/auto_source/#{Base64.urlsafe_encode64('https://github.com/html2rss/html2rss-web')}",
+        get "/auto_source/#{encoded_url}",
             {},
             request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
 

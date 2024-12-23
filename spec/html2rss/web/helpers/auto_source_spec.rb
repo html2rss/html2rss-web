@@ -149,31 +149,4 @@ RSpec.describe Html2rss::Web::AutoSource do # rubocop:disable RSpec/SpecFilePath
     end
   end
   # rubocop:enable RSpec/NamedSubject, RSpec/MessageSpies
-
-  describe '.build_auto_source_from_encoded_url' do
-    subject(:feed) do
-      VCR.use_cassette('auto_source-github-h2r-web', match_requests_on: %i[method path]) do
-        described_class.build_auto_source_from_encoded_url(encoded_url)
-      end
-    end
-
-    before do
-      allow(SsrfFilter).to receive(:get).with(any_args).and_call_original
-    end
-
-    let(:url) { 'https://github.com/html2rss/html2rss-web/commits/master' }
-    let(:encoded_url) { Base64.urlsafe_encode64(url) }
-
-    it 'returns an RSS::Rss object' do
-      expect(feed).to be_a(RSS::Rss)
-    end
-
-    it 'sets headers in the http request' do
-      feed
-      expect(SsrfFilter).to have_received(:get).with(Addressable::URI.parse(url),
-                                                     headers: {
-                                                       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36' # rubocop:disable Layout/LineLength
-                                                     })
-    end
-  end
 end
