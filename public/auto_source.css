@@ -4,6 +4,14 @@
   flex-direction: column;
 }
 
+.auto_source__wrapper {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 1em;
+  background: var(--background-alt);
+  padding: 0.75em 1em;
+  border-radius: 1em;
+}
 .auto_source input,
 .auto_source button {
   width: 100%;
@@ -14,27 +22,38 @@
   flex-direction: column;
 }
 
-.auto_source > form input[type="submit"] {
-  flex: 1 1;
-  margin-right: 0;
+.auto_source > form label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.auto_source > nav {
+.auto_source > form label > span {
+  flex: 1;
+}
+
+.auto_source > form label > input {
+  flex: 0;
+}
+
+.auto_source nav {
   display: flex;
   flex-direction: column;
 }
 
 @media screen and (min-width: 768px) {
-  .auto_source > nav {
+  .auto_source nav {
     justify-content: space-between;
     flex-direction: row;
   }
 }
 
-.auto_source > nav button {
+.auto_source nav button {
   margin-left: 0.25em;
   margin-right: 0;
   flex: 1;
+  font-size: 0.9em;
+  padding: 0.75em;
 }
 
 .auto_source__bookmarklet {
@@ -49,7 +68,7 @@
 }
 
 .auto_source iframe {
-  margin-top: 2em;
+  margin-top: 1em;
   border: 2px groove transparent;
   border-radius: 0.5em;
   display: none; /* Hide by default */

@@ -8,11 +8,8 @@
 
 <section class="auto_source">
   <h1>Auto Source</h1>
-  <p>
-    Automatically sources an RSS feed from a website.
-  </p>
 
-  <form>
+  <form class="auto_source__wrapper">
     <input
       id="url"
       type="url"
@@ -21,22 +18,38 @@
       autocomplete="on"
       token-list="url"
       autofocus
-      required>
-    <input type="submit" value="Generate">
+      required
+    >
+
+    <%- default_strategy_name = Html2rss::RequestService.default_strategy_name %>
+    <fieldset>
+      <legend>Strategy</legend>
+      <% Html2rss::RequestService.strategy_names.each do |strategy| %>
+        <label>
+          <input type="radio" name="strategy"
+                 value="<%= strategy %>"
+                 <%= 'checked' if strategy.to_sym == default_strategy_name %>
+          >
+          <span><%= strategy %></span>
+        </label>
+      <% end %>
+    </fieldset>
   </form>
 
-  <label>
-    <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
+  <section class="auto_source__wrapper">
+    <label>
+      <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
       Feed URL
       <input type="url" id="rss_url" readonly>
-  </label>
+    </label>
 
-  <nav>
-    <button id="resetCredentials" class="muted">Remove credentials</button>
-    <button id="copy">Copy URL</button>
-    <button id="goto">Open</button>
-    <button id="openInFeed">Subscribe</button>
-  </nav>
+    <nav>
+      <button id="resetCredentials" class="muted">Remove credentials</button>
+      <button id="copy">Copy URL</button>
+      <button id="goto">Open</button>
+      <button id="openInFeed">Subscribe</button>
+    </nav>
+  </section>
 
   <iframe loading="lazy"></iframe>
 </section>

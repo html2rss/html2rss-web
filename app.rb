@@ -4,6 +4,9 @@ require 'roda'
 require 'rack/cache'
 require_relative 'roda/roda_plugins/basic_auth'
 
+require 'html2rss'
+require_relative 'app/ssrf_filter_strategy'
+
 module Html2rss
   module Web
     ##
@@ -12,6 +15,10 @@ module Html2rss
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
       CONTENT_TYPE_RSS = 'application/xml'
+
+      Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
+      Html2rss::RequestService.default_strategy_name = :ssrf_filter
+      Html2rss::RequestService.unregister_strategy(:faraday)
 
       def self.development? = ENV['RACK_ENV'] == 'development'
 
@@ -63,6 +70,8 @@ module Html2rss
           require_relative f
         end
       end
+
+      @show_backtrace = !ENV['CI'].to_s.empty? || development?
 
       route do |r|
         r.public

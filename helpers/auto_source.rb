@@ -3,7 +3,6 @@
 require 'addressable'
 require 'base64'
 require 'html2rss'
-require 'ssrf_filter'
 
 module Html2rss
   module Web
@@ -19,20 +18,6 @@ module Html2rss
                                     .map(&:strip)
                                     .reject(&:empty?)
                                     .to_set
-
-      # @param encoded_url [String] Base64 encoded URL
-      # @return [RSS::Rss]
-      def self.build_auto_source_from_encoded_url(encoded_url)
-        url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
-        request = SsrfFilter.get(url, headers: LocalConfig.global.fetch(:headers, {}))
-        headers = request.to_hash.transform_values(&:first)
-
-        auto_source = Html2rss::AutoSource.new(url, body: request.body, headers:)
-
-        auto_source.channel.stylesheets << Html2rss::RssBuilder::Stylesheet.new(href: '/rss.xsl', type: 'text/xsl')
-
-        auto_source.build
-      end
 
       # @param rss [RSS::Rss]
       # @param default_in_minutes [Integer]
