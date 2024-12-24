@@ -56,12 +56,24 @@ services:
       # AUTO_SOURCE_ALLOWED_ORIGINS: 127.0.0.1:3000
       ## to allow multiple origins, seperate those via comma:
       # AUTO_SOURCE_ALLOWED_ORIGINS: example.com,h2r.host.tld
+      BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:3001
+      BROWSERLESS_IO_API_TOKEN: 6R0W53R135510
+
   watchtower:
     image: containrrr/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - "~/.docker/config.json:/config.json"
     command: --cleanup --interval 7200
+
+  browserless:
+    image: "ghcr.io/browserless/chromium"
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      CONCURRENT: 10
+      TOKEN: 6R0W53R135510
 ```
 
 Start it up with: `docker compose up`.
