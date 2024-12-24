@@ -10,6 +10,15 @@ require_relative '../../../../helpers/auto_source'
 
 RSpec.describe Html2rss::Web::AutoSource do # rubocop:disable RSpec/SpecFilePathFormat
   context 'when ENV variables are not set' do
+    around do |example|
+      ClimateControl.modify AUTO_SOURCE_ENABLED: nil,
+                            AUTO_SOURCE_USERNAME: nil,
+                            AUTO_SOURCE_PASSWORD: nil,
+                            AUTO_SOURCE_ALLOWED_ORIGINS: nil do
+                              example.run
+                            end
+    end
+
     describe '.enabled?' do
       subject { described_class.enabled? }
 
