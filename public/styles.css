@@ -19,9 +19,20 @@ html {
 
 body {
   scroll-behavior: smooth;
+  margin: 0 auto;
 }
 
 /* General Styles */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 1rem 0;
+}
+
 label {
   font-weight: bold;
   cursor: pointer;

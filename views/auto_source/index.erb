@@ -8,11 +8,8 @@
 
 <section class="auto_source">
   <h1>Auto Source</h1>
-  <p>
-    Automatically sources an RSS feed from a website.
-  </p>
 
-  <form>
+  <form class="auto_source__wrapper">
     <input
       id="url"
       type="url"
@@ -37,21 +34,22 @@
         </label>
       <% end %>
     </fieldset>
-    <input type="submit" value="Generate">
   </form>
 
-  <label>
-    <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
-    Feed URL
-    <input type="url" id="rss_url" readonly>
-  </label>
+  <section class="auto_source__wrapper">
+    <label>
+      <img src="/feed.svg" height="16" width="16" alt="the orange RSS icon" role="presentation"/>
+      Feed URL
+      <input type="url" id="rss_url" readonly>
+    </label>
 
-  <nav>
-    <button id="resetCredentials" class="muted">Remove credentials</button>
-    <button id="copy">Copy URL</button>
-    <button id="goto">Open</button>
-    <button id="openInFeed">Subscribe</button>
-  </nav>
+    <nav>
+      <button id="resetCredentials" class="muted">Remove credentials</button>
+      <button id="copy">Copy URL</button>
+      <button id="goto">Open</button>
+      <button id="openInFeed">Subscribe</button>
+    </nav>
+  </section>
 
   <iframe loading="lazy"></iframe>
 </section>

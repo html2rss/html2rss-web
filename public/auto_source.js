@@ -47,13 +47,19 @@ const autoSource = (function () {
     initEventListeners() {
       // Event listener for URL input change
       this.urlInput.addEventListener("change", () => this.clearRssUrl());
+      this.urlInput.addEventListener("blur", (event) => this.handleFormSubmit(event));
 
       // Event listener for form submit
       this.form.addEventListener("submit", (event) => this.handleFormSubmit(event));
 
+      const $radios = this.form?.querySelectorAll('input[type="radio"]');
+      Array.from($radios).forEach(($radio) => {
+        $radio.addEventListener("change", (event) => this.handleFormSubmit(event));
+      });
+
       // Event listener for RSS URL input focus
       this.rssUrlInput.addEventListener("focus", () => {
-        const strippedIframeSrc = this.iframe.src.replace("#items", "").trim();
+        const strippedIframeSrc = this.iframe.src.trim();
         if (this.rssUrlInput.value.trim() !== strippedIframeSrc) {
           this.updateIframeSrc(this.rssUrlInput.value.trim());
         }
@@ -104,8 +110,9 @@ const autoSource = (function () {
         this.rssUrlInput.value = autoSourceUrl;
         this.rssUrlInput.select();
 
-        if (window.location.search !== `?url=${url}`) {
-          window.history.pushState({}, "", `?url=${url}`);
+        const targetSearch = `?url=${url}&strategy=${strategy}`;
+        if (window.location.search !== targetSearch) {
+          window.history.pushState({}, "", targetSearch);
         }
       }
     }
@@ -151,7 +158,7 @@ const autoSource = (function () {
      * @param {string} rssUrlValue - The RSS URL value.
      */
     updateIframeSrc(rssUrlValue) {
-      this.iframe.src = rssUrlValue === "" ? "" : `${rssUrlValue}#items`;
+      this.iframe.src = rssUrlValue === "" ? "about://blank" : `${rssUrlValue}`;
     }
   }
 
@@ -196,7 +203,7 @@ const autoSource = (function () {
      */
     async copyText() {
       try {
-        const textToCopy = this.rssUrlField.value;
+        const textToCopy = this.rssUrlWithAuth;
         await navigator.clipboard.writeText(textToCopy);
       } catch (error) {
         console.error("Failed to copy text to clipboard:", error);
@@ -207,7 +214,7 @@ const autoSource = (function () {
      * Opens the link specified in the text field.
      */
     openLink() {
-      const linkToOpen = this.rssUrlField?.value;
+      const linkToOpen = this.rssUrlWithAuth;
 
       if (typeof linkToOpen === "string" && linkToOpen.trim() !== "") {
         window.open(linkToOpen, "_blank", "noopener,noreferrer");
@@ -218,6 +225,10 @@ const autoSource = (function () {
      * Subscribes to the feed specified in the text field.
      */
     async subscribeToFeed() {
+      window.open(this.rssUrlWithAuth);
+    }
+
+    get rssUrlWithAuth() {
       const feedUrl = this.rssUrlField.value;
       const storedUser = LocalStorageFacade.getOrAsk("username");
       const storedPassword = LocalStorageFacade.getOrAsk("password");
@@ -226,9 +237,7 @@ const autoSource = (function () {
       url.username = storedUser;
       url.password = storedPassword;
 
-      const feedUrlWithAuth = `feed:${url.toString()}`;
-
-      window.open(feedUrlWithAuth);
+      return `feed:${url.toString()}`;
     }
 
     resetCredentials() {

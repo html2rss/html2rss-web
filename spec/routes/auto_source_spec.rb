@@ -48,7 +48,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
             request_headers.merge('HTTP_AUTHORIZATION' => basic_authorize(username, password))
 
         expect(last_response).to be_ok
-        expect(last_response.body).to include('Automatically sources') &
+        expect(last_response.body).to include('<h1>Auto Source</h1>') &
                                       include('<iframe loading="lazy"></iframe>')
       end
     end
