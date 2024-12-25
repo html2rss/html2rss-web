@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 9aa87f0d713f5caebaab148c3922698655556a33
+  revision: 94ce79307a7cf03fda89f566aceb086de8441532
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -57,20 +57,22 @@ GEM
       logger
       mime-types-data (~> 3.2015)
     mime-types-data (3.2024.1203)
+    mini_portile2 (2.8.8)
     net-http (0.6.0)
       uri
     nio4r (2.7.4)
-    nokogiri (1.17.2-aarch64-linux)
+    nokogiri (1.18.0)
+      mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
-    nokogiri (1.17.2-arm-linux)
+    nokogiri (1.18.0-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.17.2-arm64-darwin)
+    nokogiri (1.18.0-arm-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.17.2-x86-linux)
+    nokogiri (1.18.0-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.17.2-x86_64-darwin)
+    nokogiri (1.18.0-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.17.2-x86_64-linux)
+    nokogiri (1.18.0-x86_64-linux-gnu)
       racc (~> 1.4)
     parallel (1.26.3)
     parser (3.3.6.0)
@@ -93,7 +95,7 @@ GEM
     rack-unreloader (2.1.0)
     rainbow (3.1.1)
     rake (13.2.1)
-    regexp_parser (2.9.3)
+    regexp_parser (2.10.0)
     reverse_markdown (3.0.0)
       nokogiri
     rexml (3.4.0)
