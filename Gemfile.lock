@@ -15,7 +15,7 @@ GEM
     bigdecimal (3.1.9)
     byebug (11.1.3)
     climate_control (1.2.0)
-    concurrent-ruby (1.3.4)
+    concurrent-ruby (1.3.5)
     crack (1.0.0)
       bigdecimal
       rexml
@@ -32,7 +32,7 @@ GEM
     faraday-net_http (3.4.0)
       net-http (>= 0.5.0)
     hashdiff (1.1.2)
-    html2rss (0.16.0)
+    html2rss (0.17.0)
       addressable (~> 2.7)
       faraday (> 2.0.1, < 3.0)
       faraday-follow_redirects
@@ -47,32 +47,32 @@ GEM
       sanitize (~> 6.0)
       thor
       tzinfo
-      zeitwerk (~> 2.6.0)
+      zeitwerk
     json (2.9.1)
     kramdown (2.5.1)
       rexml (>= 3.3.9)
     language_server-protocol (3.17.0.3)
-    logger (1.6.4)
+    logger (1.6.5)
     mime-types (3.6.0)
       logger
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2024.1203)
+    mime-types-data (3.2025.0107)
     mini_portile2 (2.8.8)
     net-http (0.6.0)
       uri
     nio4r (2.7.4)
-    nokogiri (1.18.0)
+    nokogiri (1.18.1)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
-    nokogiri (1.18.0-aarch64-linux-gnu)
+    nokogiri (1.18.1-aarch64-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.18.0-arm-linux-gnu)
+    nokogiri (1.18.1-arm-linux-gnu)
       racc (~> 1.4)
-    nokogiri (1.18.0-arm64-darwin)
+    nokogiri (1.18.1-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.0-x86_64-darwin)
+    nokogiri (1.18.1-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.18.0-x86_64-linux-gnu)
+    nokogiri (1.18.1-x86_64-linux-gnu)
       racc (~> 1.4)
     parallel (1.26.3)
     parser (3.3.6.0)
@@ -166,11 +166,12 @@ GEM
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
-    websocket-driver (0.7.6)
+    websocket-driver (0.7.7)
+      base64
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
     yard (0.9.37)
-    zeitwerk (2.6.18)
+    zeitwerk (2.7.1)
 
 PLATFORMS
   aarch64-linux
@@ -217,7 +218,7 @@ CHECKSUMS
   bigdecimal (3.1.9) sha256=2ffc742031521ad69c2dfc815a98e426a230a3d22aeac1995826a75dabfad8cc
   byebug (11.1.3) sha256=2485944d2bb21283c593d562f9ae1019bf80002143cc3a255aaffd4e9cf4a35b
   climate_control (1.2.0) sha256=36b21896193fa8c8536fa1cd843a07cf8ddbd03aaba43665e26c53ec1bd70aa5
-  concurrent-ruby (1.3.4) sha256=d4aa926339b0a86b5b5054a0a8c580163e6f5dcbdfd0f4bb916b1a2570731c32
+  concurrent-ruby (1.3.5) sha256=813b3e37aca6df2a21a3b9f1d497f8cbab24a2b94cab325bffe65ee0f6cbebc6
   crack (1.0.0) sha256=c83aefdb428cdc7b66c7f287e488c796f055c0839e6e545fec2c7047743c4a49
   crass (1.0.6) sha256=dc516022a56e7b3b156099abc81b6d2b08ea1ed12676ac7a5657617f012bd45d
   diff-lcs (1.5.1) sha256=273223dfb40685548436d32b4733aa67351769c7dea621da7d9dd4813e63ddfe
@@ -227,23 +228,23 @@ CHECKSUMS
   faraday-follow_redirects (0.3.0) sha256=d92d975635e2c7fe525dd494fcd4b9bb7f0a4a0ec0d5f4c15c729530fdb807f9
   faraday-net_http (3.4.0) sha256=a1f1e4cd6a2cf21599c8221595e27582d9936819977bbd4089a601f24c64e54a
   hashdiff (1.1.2) sha256=2c30eeded6ed3dce8401d2b5b99e6963fe5f14ed85e60dd9e33c545a44b71a77
-  html2rss (0.16.0) sha256=4652236a8f2f6e9af8c396a8a8b57e69311129b16b2d18dce3b7e38c7b5bc16c
+  html2rss (0.17.0) sha256=f97c978272212fb9b67dfe8f9712a212ff22c9a812f574e9d64df703a8278370
   html2rss-configs (0.2.0)
   json (2.9.1) sha256=d2bdef4644052fad91c1785d48263756fe32fcac08b96a20bb15840e96550d11
   kramdown (2.5.1) sha256=87bbb6abd9d3cebe4fc1f33e367c392b4500e6f8fa19dd61c0972cf4afe7368c
   language_server-protocol (3.17.0.3) sha256=3d5c58c02f44a20d972957a9febe386d7e7468ab3900ce6bd2b563dd910c6b3f
-  logger (1.6.4) sha256=b627b91c922231050932e7bf8ee886fe54790ba2238a468ead52ba21911f2ee7
+  logger (1.6.5) sha256=c3cfe56d01656490ddd103d38b8993d73d86296adebc5f58cefc9ec03741e56b
   mime-types (3.6.0) sha256=6f71db957840ceae44211531eff3e2f7e0dd4645fefb5f535dbaeb6307ab6464
-  mime-types-data (3.2024.1203) sha256=2ffe0af6d084c6542d61e37d304d81f97628f5f7b2baaedb29bb396139c0ee28
+  mime-types-data (3.2025.0107) sha256=232a497cc68cfca58982685d47fb26f10ef2eb009c4d1c53a7e159d572743dca
   mini_portile2 (2.8.8) sha256=8e47136cdac04ce81750bb6c09733b37895bf06962554e4b4056d78168d70a75
   net-http (0.6.0) sha256=9621b20c137898af9d890556848c93603716cab516dc2c89b01a38b894e259fb
   nio4r (2.7.4) sha256=d95dee68e0bb251b8ff90ac3423a511e3b784124e5db7ff5f4813a220ae73ca9
-  nokogiri (1.18.0) sha256=119dea343386d88849f44dd8c36fb1cc36f4a4fe42cf4d60f26f4bac18b3a709
-  nokogiri (1.18.0-aarch64-linux-gnu) sha256=a240b4183b7a12d82cdd46d7a77255d785e01198ffb0c52c8aee1197daf0b465
-  nokogiri (1.18.0-arm-linux-gnu) sha256=80e9534e153b141242864c7274605fcb8312860a16460bae796fa4490acca4e8
-  nokogiri (1.18.0-arm64-darwin) sha256=e6e75760aa66adf5ea0dccfba2516c111526ba50f6475426975532d1a134173c
-  nokogiri (1.18.0-x86_64-darwin) sha256=4c27a29a3509f38caeec582feef381b07d1e80f56a622b3548be07271dc903b9
-  nokogiri (1.18.0-x86_64-linux-gnu) sha256=1232a310b8e186d402a5f3d0c06affafaf25b1c30b01aa797559ac7bd5851c92
+  nokogiri (1.18.1) sha256=df18be7e96c34736b6abfdeda80c6e845134fb9afe2fe5d4fbc1cf1f89c68475
+  nokogiri (1.18.1-aarch64-linux-gnu) sha256=35837013800e34342fcbaca305f8c49231f6bd4f779bfa23fe7b4686ae82d5b8
+  nokogiri (1.18.1-arm-linux-gnu) sha256=3b873fd6b0cd1ad7c77e87af701075bdfd14c9a6b2f2965c5e00ed29a5627a37
+  nokogiri (1.18.1-arm64-darwin) sha256=d75193f284c899d225943a8944479faedd995a7573ddd5c8308ffbdf2ec55204
+  nokogiri (1.18.1-x86_64-darwin) sha256=d94e3aa6483577495fc8969d6b4b5c075840ce6b1ab09636a6d4177ad171051d
+  nokogiri (1.18.1-x86_64-linux-gnu) sha256=e516cf16ccde67ed4cc595a2621ca5ddd42562ecb24928914b0045a20a41620e
   parallel (1.26.3) sha256=d86babb7a2b814be9f4b81587bf0b6ce2da7d45969fab24d8ae4bf2bb4d4c7ef
   parser (3.3.6.0) sha256=25d4e67cc4f0f7cab9a2ae1f38e2005b6904d2ea13c34734511d0faad038bc3b
   public_suffix (6.0.1) sha256=61d44e1cab5cbbbe5b31068481cf16976dd0dc1b6b07bd95617ef8c5e3e00c6f
@@ -289,10 +290,10 @@ CHECKSUMS
   uri (1.0.2) sha256=b303504ceb7e5905771fa7fa14b649652fa949df18b5880d69cfb12494791e27
   vcr (6.3.1) sha256=37b56e157e720446a3f4d2d39919cabef8cb7b6c45936acffd2ef8229fec03ed
   webmock (3.24.0) sha256=be01357f6fc773606337ca79f3ba332b7d52cbe5c27587671abc0572dbec7122
-  websocket-driver (0.7.6) sha256=f69400be7bc197879726ad8e6f5869a61823147372fd8928836a53c2c741d0db
+  websocket-driver (0.7.7) sha256=056d99f2cd545712cfb1291650fde7478e4f2661dc1db6a0fa3b966231a146b4
   websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
   yard (0.9.37) sha256=a6e910399e78e613f80ba9add9ba7c394b1a935f083cccbef82903a3d2a26992
-  zeitwerk (2.6.18) sha256=bd2d213996ff7b3b364cd342a585fbee9797dbc1c0c6d868dc4150cc75739781
+  zeitwerk (2.7.1) sha256=0945986050e4907140895378e74df1fe882a2271ed087cc6c6d6b00d415a2756
 
 BUNDLED WITH
    2.6.2
