@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 077f27c87c44454ef5411fd8d4d2054447ff26b7
+  revision: 6aadc0cf35c10642a4f15022e3ee9902360d3171
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -48,15 +48,15 @@ GEM
       thor
       tzinfo
       zeitwerk
-    json (2.9.1)
+    json (2.10.1)
     kramdown (2.5.1)
       rexml (>= 3.3.9)
     language_server-protocol (3.17.0.3)
-    logger (1.6.5)
+    logger (1.6.6)
     mime-types (3.6.0)
       logger
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2025.0204)
+    mime-types-data (3.2025.0304)
     mini_portile2 (2.8.8)
     net-http (0.6.0)
       uri
@@ -98,8 +98,8 @@ GEM
     regexp_parser (2.10.0)
     reverse_markdown (3.0.0)
       nokogiri
-    rexml (3.4.0)
-    roda (3.89.0)
+    rexml (3.4.1)
+    roda (3.90.0)
       rack
     rspec (3.13.0)
       rspec-core (~> 3.13.0)
@@ -171,7 +171,7 @@ GEM
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
     yard (0.9.37)
-    zeitwerk (2.7.1)
+    zeitwerk (2.7.2)
 
 PLATFORMS
   aarch64-linux
@@ -230,12 +230,12 @@ CHECKSUMS
   hashdiff (1.1.2) sha256=2c30eeded6ed3dce8401d2b5b99e6963fe5f14ed85e60dd9e33c545a44b71a77
   html2rss (0.17.0) sha256=f97c978272212fb9b67dfe8f9712a212ff22c9a812f574e9d64df703a8278370
   html2rss-configs (0.2.0)
-  json (2.9.1) sha256=d2bdef4644052fad91c1785d48263756fe32fcac08b96a20bb15840e96550d11
+  json (2.10.1) sha256=ddc88ad91a1baf3f0038c174f253af3b086d30dc74db17ca4259bbde982f94dc
   kramdown (2.5.1) sha256=87bbb6abd9d3cebe4fc1f33e367c392b4500e6f8fa19dd61c0972cf4afe7368c
   language_server-protocol (3.17.0.3) sha256=3d5c58c02f44a20d972957a9febe386d7e7468ab3900ce6bd2b563dd910c6b3f
-  logger (1.6.5) sha256=c3cfe56d01656490ddd103d38b8993d73d86296adebc5f58cefc9ec03741e56b
+  logger (1.6.6) sha256=dd618d24e637715472732e7eed02e33cfbdf56deaad225edd0f1f89d38024017
   mime-types (3.6.0) sha256=6f71db957840ceae44211531eff3e2f7e0dd4645fefb5f535dbaeb6307ab6464
-  mime-types-data (3.2025.0204) sha256=de3659d75ab211affa8e0f7579959d5b9ca60b76ff9a5abd550bf3a7d4e3f58a
+  mime-types-data (3.2025.0304) sha256=7ed9385881432d708b7f4e9cf2a4a9e1d4e8bf8abcd08283c23a0d5cd7205097
   mini_portile2 (2.8.8) sha256=8e47136cdac04ce81750bb6c09733b37895bf06962554e4b4056d78168d70a75
   net-http (0.6.0) sha256=9621b20c137898af9d890556848c93603716cab516dc2c89b01a38b894e259fb
   nio4r (2.7.4) sha256=d95dee68e0bb251b8ff90ac3423a511e3b784124e5db7ff5f4813a220ae73ca9
@@ -260,8 +260,8 @@ CHECKSUMS
   rake (13.2.1) sha256=46cb38dae65d7d74b6020a4ac9d48afed8eb8149c040eccf0523bec91907059d
   regexp_parser (2.10.0) sha256=cb6f0ddde88772cd64bff1dbbf68df66d376043fe2e66a9ef77fcb1b0c548c61
   reverse_markdown (3.0.0) sha256=ab228386765a0259835873cd07054b62939c40f620c77c247eafaaa3b23faca4
-  rexml (3.4.0) sha256=efbea1efba7fa151158e0ee1e643525834da2d8eb4cf744aa68f6480bc9804b2
-  roda (3.89.0) sha256=cc6df44d7bf6a408470f730ea1e4102691bef7022c5fa4326173261b1af9aae8
+  rexml (3.4.1) sha256=c74527a9a0a04b4ec31dbe0dc4ed6004b960af943d8db42e539edde3a871abca
+  roda (3.90.0) sha256=4f16b05135c66f5f9a1260b63b492926587f146d46700d8a4c61767b97b30b59
   rspec (3.13.0) sha256=d490914ac1d5a5a64a0e1400c1d54ddd2a501324d703b8cfe83f458337bab993
   rspec-core (3.13.2) sha256=94fbda6e4738e478f1c7532b7cc241272fcdc8b9eac03a97338b1122e4573300
   rspec-expectations (3.13.3) sha256=0e6b5af59b900147698ea0ff80456c4f2e69cac4394fbd392fbd1ca561f66c58
@@ -293,7 +293,7 @@ CHECKSUMS
   websocket-driver (0.7.7) sha256=056d99f2cd545712cfb1291650fde7478e4f2661dc1db6a0fa3b966231a146b4
   websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
   yard (0.9.37) sha256=a6e910399e78e613f80ba9add9ba7c394b1a935f083cccbef82903a3d2a26992
-  zeitwerk (2.7.1) sha256=0945986050e4907140895378e74df1fe882a2271ed087cc6c6d6b00d415a2756
+  zeitwerk (2.7.2) sha256=842e067cb11eb923d747249badfb5fcdc9652d6f20a1f06453317920fdcd4673
 
 BUNDLED WITH
    2.6.2
