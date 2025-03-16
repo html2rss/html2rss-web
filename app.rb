@@ -98,7 +98,7 @@ module Html2rss
 
           HttpCache.expires(response, feed.channel.ttl.to_i * 60, cache_control: 'public')
 
-          feed.to_xml
+          feed.to_s
         end
 
         r.on String do |config_name_with_ext|
@@ -115,7 +115,7 @@ module Html2rss
 
           HttpCache.expires(response, feed.channel.ttl.to_i * 60, cache_control: 'public')
 
-          feed.to_xml
+          feed.to_s
         end
       end
 
