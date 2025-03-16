@@ -27,7 +27,7 @@ module Html2rss
 
               response['Content-Type'] = CONTENT_TYPE_RSS
 
-              url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
+              url = Addressable::URI.parse(Base64.urlsafe_decode64(encoded_url)).to_s
               rss = Html2rss.auto_source(url, strategy:)
 
               # Unfortunately, Ruby's rss gem does not provide a direct method to

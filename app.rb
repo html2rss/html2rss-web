@@ -84,11 +84,38 @@ module Html2rss
         end
 
         r.on String, String do |folder_name, config_name_with_ext|
-          handle_html2rss_configs(request, folder_name, config_name_with_ext)
+          response['Content-Type'] = CONTENT_TYPE_RSS
+
+          name = "#{folder_name}/#{File.basename(config_name_with_ext, '.*')}"
+          config = Html2rss::Configs.find_by_name(name)
+
+          if (params = request.params).any?
+            config[:params] ||= {}
+            config[:params].merge!(params)
+          end
+
+          feed = Html2rss.feed(config)
+
+          HttpCache.expires(response, feed.channel.ttl.to_i * 60, cache_control: 'public')
+
+          feed.to_xml
         end
 
         r.on String do |config_name_with_ext|
-          handle_local_config_feeds(request, config_name_with_ext)
+          response['Content-Type'] = CONTENT_TYPE_RSS
+
+          config = LocalConfig.find(File.basename(config_name_with_ext, '.*'))
+
+          if (params = request.params).any?
+            config[:params] ||= {}
+            config[:params].merge!(params)
+          end
+
+          feed = Html2rss.feed(config)
+
+          HttpCache.expires(response, feed.channel.ttl.to_i * 60, cache_control: 'public')
+
+          feed.to_xml
         end
       end
 

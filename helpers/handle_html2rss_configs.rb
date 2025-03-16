@@ -8,7 +8,8 @@ module Html2rss
 
         Html2rssFacade.from_config(path.full_config_name, typecast_params) do |config|
           response['Content-Type'] = CONTENT_TYPE_RSS
-          HttpCache.expires(response, config.ttl * 60, cache_control: 'public')
+
+          HttpCache.expires(response, config.dig(:channel, :ttl).to_i * 60, cache_control: 'public')
         end
       end
     end
