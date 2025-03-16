@@ -21,28 +21,19 @@ module Html2rss
 
             r.on String, method: :get do |encoded_url|
               strategy = (request.params['strategy'] || :ssrf_filter).to_sym
-              unless Html2rss::RequestService.strategy_registered?(strategy)
-                raise Html2rss::RequestService::UnknownStrategy
-              end
+
+              url = Addressable::URI.parse(Base64.urlsafe_decode64(encoded_url))
+
+              feed = Html2rss.feed(stylesheets: [{ href: '/rss.xsl', type: 'text/xsl' }],
+                                   strategy:,
+                                   channel: { url: url.to_s },
+                                   auto_source: {})
+
+              HttpCache.expires(response, AutoSource.ttl_in_seconds(feed), cache_control: 'private, must-revalidate')
 
               response['Content-Type'] = CONTENT_TYPE_RSS
-
-              url = Addressable::URI.parse Base64.urlsafe_decode64(encoded_url)
-              rss = Html2rss.auto_source(url, strategy:)
-
-              # Unfortunately, Ruby's rss gem does not provide a direct method to
-              # add an XML stylesheet to the RSS::RSS object itself.
-              stylesheet = Html2rss::RssBuilder::Stylesheet.new(href: '/rss.xsl', type: 'text/xsl').to_xml
-
-              xml_content = rss.to_xml
-              xml_content.sub!(/^<\?xml version="1.0" encoding="UTF-8"\?>/,
-                               "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n#{stylesheet}")
-
-              HttpCache.expires response,
-                                AutoSource.ttl_in_seconds(rss),
-                                cache_control: 'private, must-revalidate'
-
-              xml_content
+              response.status = 200
+              feed.to_xml
             end
           else
             # auto_source feature is disabled
