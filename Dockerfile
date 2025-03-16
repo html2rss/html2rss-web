@@ -57,6 +57,8 @@ RUN apk add --no-cache \
   --no-create-home \
   --uid "$UID" "$USER" \
   && mkdir -p /app \
+  && mkdir -p /app/tmp/rack-cache-body \
+  && mkdir -p /app/tmp/rack-cache-meta \
   && chown "$USER":"$USER" -R /app
 
 WORKDIR /app
