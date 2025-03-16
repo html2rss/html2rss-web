@@ -77,7 +77,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
       it 'responds successfully', :aggregate_failures do
         expect(response).to be_ok
         expect(response.body).to start_with '<?xml version="1.0" encoding="UTF-8"?>'
-        expect(response.get_header('cache-control')).to eq 'must-revalidate, private, max-age=0'
+        expect(response.get_header('cache-control')).to eq 'must-revalidate, no-cache, no-store, private, max-age=0'
         expect(response.get_header('content-type')).to eq described_class::CONTENT_TYPE_RSS
       end
     end
