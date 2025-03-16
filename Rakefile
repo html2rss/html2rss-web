@@ -58,7 +58,7 @@ task :test do
   sh 'curl -f http://127.0.0.1:3000/example.rss || exit 1'
 
   Output.describe 'Authenticated request to GET /health_check.txt'
-  sh 'curl -f http://username:password@127.0.0.1:3000/health_check.txt || exit 1'
+  sh 'docker exec html2rss-web-test curl -f http://username:password@127.0.0.1:3000/health_check.txt || exit 1'
 
   Output.describe 'Print output of `html2rss help`'
   sh 'docker exec html2rss-web-test html2rss help'
@@ -72,4 +72,6 @@ ensure
     sh 'docker stop html2rss-web-test'
     sh 'docker rm html2rss-web-test'
   end
+
+  exit 1 if $ERROR_INFO
 end
