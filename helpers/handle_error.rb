@@ -11,8 +11,7 @@ module Html2rss
         when Html2rss::Config::DynamicParams::ParamsMissing,
              Roda::RodaPlugins::TypecastParams::Error
           set_error_response('Parameters missing or invalid', 422)
-        when Html2rss::Selectors::PostProcessors::UnknownPostProcessorName,
-             Html2rss::Selectors::Extractors::UnknownExtractorName
+        when Html2rss::Selectors::PostProcessors::UnknownPostProcessorName
           set_error_response('Invalid feed config', 422)
         when LocalConfig::NotFound,
              Html2rss::Configs::ConfigNotFound
