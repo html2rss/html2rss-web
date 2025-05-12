@@ -94,7 +94,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
 
       it 'responds with Error', :aggregate_failures do
         expect(response.status).to eq 422
-        expect(response.body).to match(/Invalid configuration: {:strategy/)
+        expect(response.body).to match(/Html2rss::Config::InvalidConfig/)
       end
     end
   end
