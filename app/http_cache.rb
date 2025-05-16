@@ -15,6 +15,8 @@ module Html2rss
       # @param seconds [Integer]
       # @param cache_control [String, nil]
       def expires(response, seconds, cache_control: nil)
+        expires_now(response) and return if seconds <= 0
+
         response['Expires'] = (Time.now + seconds).httpdate
 
         cache_value = "max-age=#{seconds}"
