@@ -16,6 +16,6 @@ feeds:
         selector: "li > div"
       title:
         selector: "h4"
-      link:
+      url:
         selector: "a"
         extractor: "href"

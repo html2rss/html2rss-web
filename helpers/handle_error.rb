@@ -8,12 +8,10 @@ module Html2rss
     class App
       def handle_error(error) # rubocop:disable Metrics/MethodLength
         case error
-        when Html2rss::Config::ParamsMissing,
+        when Html2rss::Config::DynamicParams::ParamsMissing,
              Roda::RodaPlugins::TypecastParams::Error
           set_error_response('Parameters missing or invalid', 422)
-        when Html2rss::AttributePostProcessors::UnknownPostProcessorName,
-             Html2rss::ItemExtractors::UnknownExtractorName,
-             Html2rss::Config::ChannelMissing
+        when Html2rss::Selectors::PostProcessors::UnknownPostProcessorName
           set_error_response('Invalid feed config', 422)
         when LocalConfig::NotFound,
              Html2rss::Configs::ConfigNotFound

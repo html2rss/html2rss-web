@@ -16,6 +16,7 @@ module Html2rss
         response = SsrfFilter.get(ctx.url, headers:)
 
         Html2rss::RequestService::Response.new(body: response.body,
+                                               url: ctx.url,
                                                headers: response.to_hash.transform_values(&:first))
       end
     end
