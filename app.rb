@@ -90,8 +90,14 @@ module Html2rss
           config = Html2rss::Configs.find_by_name(name)
 
           if (params = request.params).any?
+            config = config.dup
             config[:params] ||= {}
             config[:params].merge!(params)
+          end
+
+          unless config[:strategy]
+            config = config.dup if config.frozen?
+            config[:strategy] ||= Html2rss::RequestService.default_strategy_name
           end
 
           feed = Html2rss.feed(config)
@@ -107,8 +113,14 @@ module Html2rss
           config = LocalConfig.find(File.basename(config_name_with_ext, '.*'))
 
           if (params = request.params).any?
+            config = config.dup
             config[:params] ||= {}
             config[:params].merge!(params)
+          end
+
+          unless config[:strategy]
+            config = config.dup if config.frozen?
+            config[:strategy] ||= Html2rss::RequestService.default_strategy_name
           end
 
           feed = Html2rss.feed(config)
