@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 70540c7d2accdfab85fb52d3839b31a615ffe3b3
+  revision: f4e080c7de7e54ec83453192c434e6e40b5db7ea
   specs:
     html2rss (0.17.0)
       addressable (~> 2.7)
@@ -33,8 +33,8 @@ GEM
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
     ast (2.4.3)
-    base64 (0.2.0)
-    bigdecimal (3.1.9)
+    base64 (0.3.0)
+    bigdecimal (3.2.0)
     byebug (12.0.0)
     climate_control (1.2.0)
     concurrent-ruby (1.3.5)
@@ -267,8 +267,8 @@ DEPENDENCIES
 CHECKSUMS
   addressable (2.8.7) sha256=462986537cf3735ab5f3c0f557f14155d778f4b43ea4f485a9deb9c8f7c58232
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
-  base64 (0.2.0) sha256=0f25e9b21a02a0cc0cea8ef92b2041035d39350946e8789c562b2d1a3da01507
-  bigdecimal (3.1.9) sha256=2ffc742031521ad69c2dfc815a98e426a230a3d22aeac1995826a75dabfad8cc
+  base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
+  bigdecimal (3.2.0) sha256=f220c34e07d98b04e02eb23193bee436fab9afcd551f43dce8837a1b4aa80762
   byebug (12.0.0) sha256=d4a150d291cca40b66ec9ca31f754e93fed8aa266a17335f71bb0afa7fca1a1e
   climate_control (1.2.0) sha256=36b21896193fa8c8536fa1cd843a07cf8ddbd03aaba43665e26c53ec1bd70aa5
   concurrent-ruby (1.3.5) sha256=813b3e37aca6df2a21a3b9f1d497f8cbab24a2b94cab325bffe65ee0f6cbebc6
