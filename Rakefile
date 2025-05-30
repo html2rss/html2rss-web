@@ -46,7 +46,7 @@ task :test do
       '--name html2rss-web-test',
       'gilcreator/html2rss-web'].join(' ')
 
-  Output.wait 5, message: 'Waiting for container to start:'
+  Output.wait 10, message: 'Waiting for container to start:'
 
   Output.describe 'Listing docker containers matching html2rss-web-test filter'
   sh 'docker ps -a --filter name=html2rss-web-test'
