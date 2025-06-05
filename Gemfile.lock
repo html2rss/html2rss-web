@@ -131,7 +131,7 @@ GEM
       mime-types (>= 3.0)
       websocket-driver (>= 0.6.0)
     racc (1.8.1)
-    rack (3.1.15)
+    rack (3.1.16)
     rack-cache (1.17.0)
       rack (>= 0.4)
     rack-test (2.2.0)
@@ -315,7 +315,7 @@ CHECKSUMS
   puma (6.6.0) sha256=f25c06873eb3d5de5f0a4ebc783acc81a4ccfe580c760cfe323497798018ad87
   puppeteer-ruby (0.45.6) sha256=cb86f7b4f6f8658a709ae1a305e820bdb009548e6beff6675489926f9ceb5995
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
-  rack (3.1.15) sha256=d12b3e9960d18a26ded961250f2c0e3b375b49ff40dbe6786e9c3b160cbffca4
+  rack (3.1.16) sha256=efb5606c351efc56b85b10c3493055d0d35209d23f44792ec4e1183eb0234635
   rack-cache (1.17.0) sha256=49592f3ef2173b0f5524df98bb801fb411e839869e7ce84ac428dc492bf0eb90
   rack-test (2.2.0) sha256=005a36692c306ac0b4a9350355ee080fd09ddef1148a5f8b2ac636c720f5c463
   rack-timeout (0.7.0) sha256=757337e9793cca999bb73a61fe2a7d4280aa9eefbaf787ce3b98d860749c87d9
