@@ -144,7 +144,7 @@ GEM
     reverse_markdown (3.0.0)
       nokogiri
     rexml (3.4.1)
-    roda (3.92.0)
+    roda (3.93.0)
       rack
     rspec (3.13.1)
       rspec-core (~> 3.13.0)
@@ -325,7 +325,7 @@ CHECKSUMS
   regexp_parser (2.10.0) sha256=cb6f0ddde88772cd64bff1dbbf68df66d376043fe2e66a9ef77fcb1b0c548c61
   reverse_markdown (3.0.0) sha256=ab228386765a0259835873cd07054b62939c40f620c77c247eafaaa3b23faca4
   rexml (3.4.1) sha256=c74527a9a0a04b4ec31dbe0dc4ed6004b960af943d8db42e539edde3a871abca
-  roda (3.92.0) sha256=2da31fc792c00dd6927d336519a13bea29e1fc500821ccf60471c37b9732619e
+  roda (3.93.0) sha256=f4246e1a0dcae64d9abda11b91a2ab75395580f8748b25045a5b52a97c8c164a
   rspec (3.13.1) sha256=b9f9a58fa915b8d94a1d6b3195fe6dd28c4c34836a6097015142c4a9ace72140
   rspec-core (3.13.4) sha256=f9da156b7b775c82610a7b580624df51a55102f8c8e4a103b98f5d7a9fa23958
   rspec-expectations (3.13.5) sha256=33a4d3a1d95060aea4c94e9f237030a8f9eae5615e9bd85718fe3a09e4b58836
