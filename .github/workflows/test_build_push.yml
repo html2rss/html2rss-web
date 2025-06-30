@@ -99,7 +99,7 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
       - name: Scan Docker image for vulnerabilities
-        uses: aquasecurity/trivy-action@v0.18.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: gilcreator/html2rss-web:latest
           format: table
