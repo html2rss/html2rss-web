@@ -86,25 +86,57 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0.15.3
+        with:
+          image: gilcreator/html2rss-web:latest
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+      # - name: Publish SBOM to Docker Hub Description
+      #   env:
+      #     DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      #   run: |
+      #     curl -s -X PATCH "https://hub.docker.com/v2/repositories/${IMAGE_NAME}/" \
+      #       -H "Content-Type: application/json" \
+      #       -u "$DOCKERHUB_USERNAME:$DOCKERHUB_TOKEN" \
+      #       -d '{"full_description": "Auto-generated SBOM: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts"}'
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          # tags: |
-          #   gilcreator/html2rss-web:latest
-          #   ghcr.io/${{ github.repository_owner }}/html2rss-web:latest
+          tags: |
+            gilcreator/html2rss-web:latest
+            ghcr.io/${{ github.repository_owner }}/html2rss-web:latest
           platforms: linux/amd64,linux/arm64
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
+          provenance: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=html2rss-web
+            org.opencontainers.image.description=Generates RSS feeds of any website & serves to the web!
+            org.opencontainers.image.sbom=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts
 
-      - name: Scan Docker image for vulnerabilities
-        uses: aquasecurity/trivy-action@0.28.0
+      - name: Scan Docker image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           image-ref: gilcreator/html2rss-web:latest
           format: table
-          exit-code: 0
+          exit-code: 1
           ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
 
       - name: Move updated cache into place
         run: |
