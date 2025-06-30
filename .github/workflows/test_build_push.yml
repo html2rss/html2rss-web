@@ -44,7 +44,7 @@ jobs:
           bundle exec rake
 
   docker-push:
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - docker-test
       - hadolint
@@ -84,7 +84,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
+          push: true
           tags: |
             gilcreator/html2rss-web:latest
             gilcreator/html2rss-web:${{ github.sha }}
