@@ -44,7 +44,7 @@ jobs:
           bundle exec rake
 
   docker-push:
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     needs:
       - docker-test
       - hadolint
@@ -95,7 +95,7 @@ jobs:
           SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
         with:
           context: .
-          push: false
+          push: true
           tags: |
             gilcreator/html2rss-web:latest
             gilcreator/html2rss-web:${{ github.sha }}
@@ -113,19 +113,7 @@ jobs:
             org.opencontainers.image.description=Generates RSS feeds of any website & serves to the web!
             org.opencontainers.image.sbom=https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts
 
-      # - name: Generate SBOM
-      #   uses: anchore/sbom-action@v0.20.1
-      #   with:
-      #     image: gilcreator/html2rss-web:${{ github.sha }}
-      #     output-file: sbom.spdx.json
-
-      # - name: Upload SBOM Artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: sbom
-      #     path: sbom.spdx.json
-
-      # - name: Move updated cache into place
-      #   run: |
-      #     rm -rf /tmp/.buildx-cache
-      #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      - name: Move updated cache into place
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
