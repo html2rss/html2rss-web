@@ -16,7 +16,7 @@ The functionality of scraping websites and building the RSS feeds is provided by
 
 ## Documentation
 
-For full documentation, please see the [html2rss-web documentation](https://html2rss.github.io//web-application/).
+For full documentation, please see the [html2rss-web documentation](https://html2rss.github.io/web-application/).
 
 ## Contributing
 
