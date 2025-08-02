@@ -20,7 +20,7 @@ For full documentation, please see the [html2rss-web documentation](https://html
 
 ## Contributing
 
-Contributions are welcome! Please see the [contributing guide](https://html2rss.github.io//get-involved/contributing) for more information.
+Contributions are welcome! Please see the [contributing guide](https://html2rss.github.io/get-involved/contributing) for more information.
 
 ## Sponsoring
 
