@@ -1,0 +1,74 @@
+name: Frontend CI
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+  pull_request:
+    paths:
+      - "frontend/**"
+
+jobs:
+  frontend-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Check code formatting
+        run: |
+          cd frontend
+          npm run format:check
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Verify build output
+        run: |
+          ls -la frontend/dist/
+          test -f frontend/dist/index.html
+          test -f frontend/dist/gallery/index.html
+          test -f frontend/dist/styles.css
+
+  frontend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Check for vulnerabilities
+        run: |
+          cd frontend
+          npm audit --audit-level=moderate
+
+      - name: Build and verify
+        run: |
+          cd frontend
+          npm run build
+          # Verify the built HTML is valid
+          grep -q "html2rss-web" dist/index.html
+          grep -q "Feed Gallery" dist/gallery/index.html

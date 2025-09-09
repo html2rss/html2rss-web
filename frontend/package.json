@@ -1,0 +1,13 @@
+{
+  "name": "html2rss-frontend",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "astro": "^4.0.0"
+  }
+}

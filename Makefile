@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint fix setup dev clean
+.PHONY: help test lint fix setup dev clean frontend-setup frontend-format frontend-format-check frontend-lint
 
 # Default target
 help: ## Show this help message
@@ -17,13 +17,18 @@ setup: ## Full development setup
 		echo "Created .env file"; \
 	fi
 	@mkdir -p tmp/rack-cache-body tmp/rack-cache-meta
+	@echo "Setting up frontend..."
+	@cd frontend && npm install
 	@echo "Setup complete!"
 
-dev: ## Start development server
-	@echo "Starting development server..."
-	@echo "Server will be available at: http://localhost:3000"
-	@echo "Press Ctrl+C to stop"
+dev: ## Start development server with hot reload
+	@bin/dev-with-frontend
+
+dev-ruby: ## Start Ruby server only
 	@bin/dev
+
+dev-frontend: ## Start Astro dev server only
+	@cd frontend && npm run dev
 
 test: ## Run tests
 	bundle exec rspec
@@ -36,4 +41,22 @@ fix: ## Auto-fix linting issues
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/
+	@cd frontend && rm -rf dist/ .astro/ node_modules/
 	@echo "Clean complete!"
+
+frontend-setup: ## Setup frontend dependencies
+	@echo "Setting up frontend dependencies..."
+	@cd frontend && npm install
+	@echo "Frontend setup complete!"
+
+frontend-format: ## Format frontend code
+	@echo "Formatting frontend code..."
+	@cd frontend && npm run format
+	@echo "Frontend formatting complete!"
+
+frontend-format-check: ## Check frontend code formatting
+	@echo "Checking frontend code formatting..."
+	@cd frontend && npm run format:check
+
+frontend-lint: frontend-format-check ## Lint frontend code (formatting check)
+	@echo "Frontend linting complete!"
