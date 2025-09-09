@@ -1,25 +1,79 @@
 ---
-import Layout from '../layouts/Layout.astro'
+import Layout from "../layouts/Layout.astro"
+
+// Fetch available feeds from Ruby backend
+let feeds = []
+try {
+  const backendUrl = "http://localhost:3000"
+  const response = await fetch(`${backendUrl}/api/feeds.json`)
+  if (response.ok) {
+    feeds = await response.json()
+  }
+} catch (error) {
+  console.error("Failed to fetch feeds:", error)
+}
 ---
 
 <Layout title="html2rss-web - Convert websites to RSS feeds">
   <div class="hero">
     <h2>Convert websites to RSS feeds</h2>
     <p>Transform any website into a structured RSS feed instantly</p>
-    <a href="/example.rss" class="btn">Try Example Feed</a>
+    <a href="http://localhost:3000/api/example" class="btn" aria-describedby="example-desc"
+      >Try Example Feed</a
+    >
+    <p id="example-desc" class="sr-only">Opens the example RSS feed in a new tab</p>
   </div>
 
   <div class="features">
     <div class="feature">
       <h3>Pre-built Feeds</h3>
       <p>Access popular feeds from our curated gallery</p>
-      <a href="/app/gallery">Browse Gallery</a>
+      <a href="/gallery" aria-describedby="gallery-desc">Browse Gallery</a>
+      <p id="gallery-desc" class="sr-only">View our collection of pre-configured RSS feeds</p>
     </div>
 
     <div class="feature">
       <h3>Auto Source</h3>
       <p>Generate feeds from any website automatically</p>
-      <a href="/auto_source/">Try Auto Source</a>
+      <a href="/auto_source/" aria-describedby="auto-source-desc">Try Auto Source</a>
+      <p id="auto-source-desc" class="sr-only">Create RSS feeds from any website URL</p>
     </div>
   </div>
+
+  {
+    feeds.length > 0 && (
+      <div class="available-feeds">
+        <h3>Available Feeds</h3>
+        <div class="feed-list" role="list">
+          {feeds.map((feed) => (
+            <div class="feed-item" role="listitem">
+              <h4>{feed.name}</h4>
+              <p>{feed.description}</p>
+              <a
+                href={`http://localhost:3000${feed.url}`}
+                class="feed-link"
+                aria-label={`Subscribe to ${feed.name} RSS feed`}
+              >
+                Subscribe
+              </a>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 </Layout>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

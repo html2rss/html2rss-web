@@ -14,12 +14,24 @@ This web application scrapes websites to build and deliver RSS 2.0 feeds with a 
 - **Pre-built Configs**: Comes with plenty of [included configs](https://html2rss.github.io/web-application/how-to/use-included-configs)
 - **Performance**: Handles request caching and sets caching-related HTTP headers
 - **Progressive Enhancement**: Works without JavaScript, enhanced with modern features
+- **Security**: URL restrictions, authentication, SSRF protection, and input validation
 
 **Architecture:**
 
 - **Backend**: Ruby + Roda for API and RSS generation
 - **Frontend**: Astro for modern, fast static site generation
 - **Core Engine**: [`html2rss`](https://github.com/html2rss/html2rss) Ruby gem for feed generation
+
+## Configuration
+
+The application can be configured using environment variables. See the [configuration guide](CONFIGURATION.md) for details.
+
+### Security Features
+
+- **URL Restrictions**: Public instances can restrict auto source to specific URLs
+- **Authentication**: Basic auth for auto source and health check endpoints  
+- **SSRF Protection**: Built-in protection against Server-Side Request Forgery
+- **Input Validation**: Comprehensive validation of all inputs
 
 ## Documentation
 

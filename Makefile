@@ -30,8 +30,21 @@ dev-ruby: ## Start Ruby server only
 dev-frontend: ## Start Astro dev server only
 	@cd frontend && npm run dev
 
-test: ## Run tests
+test: ## Run all tests (Ruby + Frontend)
 	bundle exec rspec
+	@cd frontend && npm run test:ci
+
+test-ruby: ## Run Ruby tests only
+	bundle exec rspec
+
+test-frontend: ## Run frontend tests only
+	@cd frontend && npm run test:ci
+
+test-frontend-unit: ## Run frontend unit tests only
+	@cd frontend && npm run test:unit
+
+test-frontend-integration: ## Run frontend integration tests only
+	@cd frontend && npm run test:integration
 
 lint: ## Run linter
 	bundle exec rubocop

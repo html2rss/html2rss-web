@@ -1,34 +1,66 @@
 ---
-import Layout from '../layouts/Layout.astro'
+import Layout from "../layouts/Layout.astro"
 
-// Simple data - no API calls needed
-const feeds = [
-  {
-    name: 'GitHub Releases',
-    description: 'Latest releases from GitHub repositories',
-    url: '/github.com/releases.rss?username=html2rss&repository=html2rss-web',
-    category: 'Development'
-  },
-  {
-    name: 'Example Feed',
-    description: 'Sample feed from this repository',
-    url: '/example.rss',
-    category: 'Sample'
+// Fetch available feeds from API
+let feeds = []
+try {
+  const baseUrl = Astro.url.origin
+  const response = await fetch(`${baseUrl}/api/feeds.json`)
+  if (response.ok) {
+    feeds = await response.json()
   }
+} catch (error) {
+  console.error("Failed to fetch feeds:", error)
+}
+
+// Sample feeds as fallback
+const sampleFeeds = [
+  {
+    name: "example",
+    description: "Sample feed from this repository",
+    url: "/api/example",
+    category: "Sample",
+  },
 ]
 ---
 
 <Layout title="Feed Gallery - html2rss-web">
   <h2>Feed Gallery</h2>
+  <p>Browse our collection of pre-configured RSS feeds</p>
 
-  <div class="feed-grid">
-    {feeds.map(feed => (
-      <div class="feed-card">
-        <h3>{feed.name}</h3>
-        <p>{feed.description}</p>
-        <span class="category">{feed.category}</span>
-        <a href={feed.url} class="btn">Subscribe</a>
-      </div>
-    ))}
+  <div class="feed-grid" role="list">
+    {
+      (feeds.length > 0 ? feeds : sampleFeeds).map((feed) => (
+        <div class="feed-card" role="listitem">
+          <h3>{feed.name}</h3>
+          <p>{feed.description}</p>
+          <span class="category" aria-label="Feed type">
+            RSS Feed
+          </span>
+          <a href={feed.url} class="btn" aria-label={`Subscribe to ${feed.name} RSS feed`}>
+            Subscribe
+          </a>
+        </div>
+      ))
+    }
   </div>
+
+  {
+    feeds.length === 0 && (
+      <div class="no-feeds" role="alert">
+        <p>No feeds available. Using sample feeds for demonstration.</p>
+      </div>
+    )
+  }
 </Layout>
+
+<style>
+  .no-feeds {
+    margin: 2rem 0;
+    padding: 1rem;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    color: #856404;
+  }
+</style>

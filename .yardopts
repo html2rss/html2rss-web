@@ -1,0 +1,10 @@
+--markup markdown
+--charset utf-8
+--exclude spec/
+--exclude tmp/
+--exclude log/
+--exclude public/
+--exclude config/
+--exclude bin/
+--exclude .devcontainer/
+--exclude .github/
