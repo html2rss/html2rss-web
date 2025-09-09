@@ -99,7 +99,7 @@ import Layout from "../layouts/Layout.astro"
     try {
       // Encode URL for API
       const encodedUrl = btoa(url)
-      const apiUrl = `http://localhost:3000/auto_source/${encodedUrl}?strategy=${strategy}`
+      const apiUrl = `/auto_source/${encodedUrl}?strategy=${strategy}`
 
       // Show result area
       const resultArea = document.getElementById("result")
