@@ -1,0 +1,41 @@
+{
+  "name": "html2rss-web",
+  "image": "mcr.microsoft.com/devcontainers/ruby:3.4",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "github.copilot",
+        "github.copilot-chat",
+        "shopify.ruby-lsp"
+      ],
+      "settings": {
+        "ruby.rubocop.executePath": "bundle exec",
+        "ruby.format": "rubocop",
+        "ruby.lint": {
+          "rubocop": true
+        },
+        "files.associations": {
+          "*.erb": "erb"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "make setup",
+  "postStartCommand": "echo '🚀 html2rss-web Development Environment Ready!' && echo '' && echo '📋 Quick Start Commands:' && echo '  make dev         # Start development server' && echo '  make test        # Run tests' && echo '  make lint        # Run linter' && echo '  make fix         # Auto-fix linting issues' && echo '  make help        # Show all commands' && echo '' && echo '🌐 Server will be available at: http://localhost:3000' && echo '📁 Project files are in: /workspaces/html2rss-web' && echo '' && echo '💡 Tip: Use Ctrl+C to stop the development server' && echo ''",
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "html2rss-web",
+      "onAutoForward": "notify"
+    }
+  },
+  "remoteUser": "vscode"
+}

@@ -18,6 +18,45 @@ The functionality of scraping websites and building the RSS feeds is provided by
 
 For full documentation, please see the [html2rss-web documentation](https://html2rss.github.io/web-application/).
 
+## Development
+
+### Quick Start with GitHub Codespaces
+
+The easiest way to get started is using GitHub Codespaces:
+
+1. Fork this repository
+2. Click "Code" → "Codespaces" → "Create codespace on [your-username]/html2rss-web"
+3. Wait for the codespace to build (it will automatically run `bundle install`)
+4. The development server will be available at the forwarded port (usually 3000)
+
+### Local Development
+
+1. **Clone and setup:**
+   ```bash
+   git clone https://github.com/html2rss/html2rss-web.git
+   cd html2rss-web
+   make setup
+   ```
+
+2. **Start development server:**
+   ```bash
+   make dev
+   ```
+
+The application will be available at `http://localhost:3000`.
+
+### Development Commands
+
+| Command      | Description                 |
+| ------------ | --------------------------- |
+| `make help`  | Show all available commands |
+| `make setup` | Full development setup      |
+| `make dev`   | Start development server    |
+| `make test`  | Run tests                   |
+| `make lint`  | Run linter                  |
+| `make fix`   | Auto-fix linting issues     |
+| `make clean` | Clean temporary files       |
+
 ## Contributing
 
 Contributions are welcome! Please see the [contributing guide](https://html2rss.github.io/get-involved/contributing) for more information.
