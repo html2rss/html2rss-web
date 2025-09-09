@@ -47,5 +47,8 @@ cd frontend
 npm run dev &
 ASTRO_PID=$!
 
+# Wait a moment for Astro server to start
+sleep 3
+
 # Wait for both processes
 wait $RUBY_PID $ASTRO_PID
