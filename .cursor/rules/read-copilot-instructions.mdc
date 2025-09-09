@@ -1,0 +1,12 @@
+---
+description: Read and follow .github/copilot-instructions.md for this repo
+alwaysApply: true
+---
+
+Before assisting, open and read `.github/copilot-instructions.md`.
+Follow it as the authoritative source for coding practices, docs style, security, and compliance for this project.
+
+If the file is missing, say so, ask to create it, and proceed with safe defaults.
+When “Copilot” is mentioned in that file, interpret it as referring to **you (Cursor)**.
+Summarize the relevant sections into your working context before you act.
+

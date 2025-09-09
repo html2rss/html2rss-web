@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+# Development environment setup script
+set -e
+
+echo "Setting up html2rss-web development environment..."
+
+# Check if Ruby version is correct
+ruby_version=$(ruby -v | cut -d' ' -f2 | cut -d'p' -f1)
+echo "Ruby version: $ruby_version"
+
+# Install dependencies
+echo "Installing dependencies..."
+bundle install
+
+# Create .env file if it doesn't exist
+if [ ! -f .env ]; then
+  echo "Creating .env file from .env.example..."
+  cp .env.example .env
+  echo "Please edit .env file with your configuration"
+fi
+
+# Create necessary directories
+echo "Creating necessary directories..."
+mkdir -p tmp/rack-cache-body
+mkdir -p tmp/rack-cache-meta
+
+# Run tests to verify setup
+echo "Running tests to verify setup..."
+bundle exec rspec
+
+echo "Setup complete! You can now run:"
+echo "  bin/dev          # Start development server"
+echo "  bundle exec rspec # Run tests"
+echo "  bundle exec rubocop # Run linter"
