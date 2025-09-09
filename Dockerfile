@@ -1,4 +1,13 @@
-# Stage 1: Build
+# Stage 1: Frontend Build
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci --only=production
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Ruby Build
 FROM ruby:4.0.1-alpine3.23 AS builder
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
@@ -22,7 +31,7 @@ RUN apk add --no-cache \
   && bundle install --retry=5 --jobs=$(nproc) \
   && bundle binstubs bundler html2rss
 
-# Stage 2: Runtime
+# Stage 3: Runtime
 FROM ruby:4.0.1-alpine3.23
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
@@ -30,8 +39,8 @@ LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 ENV PORT=3000 \
-    RACK_ENV=production \
-    RUBY_YJIT_ENABLE=1
+  RACK_ENV=production \
+  RUBY_YJIT_ENABLE=1
 
 EXPOSE $PORT
 
@@ -67,5 +76,6 @@ USER html2rss
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 COPY --chown=$USER:$USER . /app
+COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./public/frontend
 
 CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]

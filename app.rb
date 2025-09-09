@@ -77,7 +77,18 @@ module Html2rss
         r.public
         r.hash_branches('')
 
-        r.root { view 'index' }
+        r.root { r.redirect '/app' }
+
+        # Serve Astro frontend
+        r.get 'app' do
+          response['Content-Type'] = 'text/html'
+          File.read('public/frontend/index.html')
+        end
+
+        r.get 'app/gallery' do
+          response['Content-Type'] = 'text/html'
+          File.read('public/frontend/gallery/index.html')
+        end
 
         r.get 'health_check.txt' do
           handle_health_check

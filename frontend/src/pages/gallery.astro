@@ -1,0 +1,34 @@
+---
+import Layout from '../layouts/Layout.astro'
+
+// Simple data - no API calls needed
+const feeds = [
+  {
+    name: 'GitHub Releases',
+    description: 'Latest releases from GitHub repositories',
+    url: '/github.com/releases.rss?username=html2rss&repository=html2rss-web',
+    category: 'Development'
+  },
+  {
+    name: 'Example Feed',
+    description: 'Sample feed from this repository',
+    url: '/example.rss',
+    category: 'Sample'
+  }
+]
+---
+
+<Layout title="Feed Gallery - html2rss-web">
+  <h2>Feed Gallery</h2>
+
+  <div class="feed-grid">
+    {feeds.map(feed => (
+      <div class="feed-card">
+        <h3>{feed.name}</h3>
+        <p>{feed.description}</p>
+        <span class="category">{feed.category}</span>
+        <a href={feed.url} class="btn">Subscribe</a>
+      </div>
+    ))}
+  </div>
+</Layout>

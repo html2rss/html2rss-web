@@ -63,3 +63,14 @@ Thumbs.db
 
 # Ignore simplecov
 /coverage/
+
+# Ignore Astro frontend build output
+/frontend/dist/
+/frontend/.astro/
+
+# Ignore Node.js dependencies
+/frontend/node_modules/
+/frontend/package-lock.json
+
+# Ignore Astro cache
+/frontend/.astro/
