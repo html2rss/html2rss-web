@@ -4,8 +4,7 @@ import Layout from "../layouts/Layout.astro"
 // Fetch available feeds from API
 let feeds = []
 try {
-  const baseUrl = Astro.url.origin
-  const response = await fetch(`${baseUrl}/api/feeds.json`)
+  const response = await fetch('/api/feeds.json')
   if (response.ok) {
     feeds = await response.json()
   }

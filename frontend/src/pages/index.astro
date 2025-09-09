@@ -4,8 +4,7 @@ import Layout from "../layouts/Layout.astro"
 // Fetch available feeds from Ruby backend
 let feeds = []
 try {
-  const backendUrl = "http://localhost:3000"
-  const response = await fetch(`${backendUrl}/api/feeds.json`)
+  const response = await fetch('/api/feeds.json')
   if (response.ok) {
     feeds = await response.json()
   }
@@ -18,7 +17,7 @@ try {
   <div class="hero">
     <h2>Convert websites to RSS feeds</h2>
     <p>Transform any website into a structured RSS feed instantly</p>
-    <a href="http://localhost:3000/api/example" class="btn" aria-describedby="example-desc"
+    <a href="/api/example" class="btn" aria-describedby="example-desc"
       >Try Example Feed</a
     >
     <p id="example-desc" class="sr-only">Opens the example RSS feed in a new tab</p>
@@ -49,11 +48,11 @@ try {
             <div class="feed-item" role="listitem">
               <h4>{feed.name}</h4>
               <p>{feed.description}</p>
-              <a
-                href={`http://localhost:3000${feed.url}`}
-                class="feed-link"
-                aria-label={`Subscribe to ${feed.name} RSS feed`}
-              >
+               <a
+                 href={feed.url}
+                 class="feed-link"
+                 aria-label={`Subscribe to ${feed.name} RSS feed`}
+               >
                 Subscribe
               </a>
             </div>
