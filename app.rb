@@ -100,6 +100,9 @@ module Html2rss
             config[:strategy] ||= Html2rss::RequestService.default_strategy_name
           end
 
+          # Merge global stylesheets into the config
+          config = LocalConfig.merge_global_stylesheets(config)
+
           feed = Html2rss.feed(config)
 
           HttpCache.expires(response, feed.channel.ttl.to_i * 60, cache_control: 'public')
