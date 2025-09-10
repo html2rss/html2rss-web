@@ -1,0 +1,24 @@
+{
+  "name": "html2rss-frontend",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:unit": "vitest run --reporter=verbose --exclude='**/*integration*.test.js'",
+    "test:integration": "node scripts/test-with-server.cjs",
+    "test:ci": "npm run test:unit && npm run test:integration"
+  },
+  "dependencies": {
+    "astro": "^4.0.0",
+    "@astrojs/node": "^8.0.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.x.x",
+    "prettier-plugin-astro": "^0.x.x",
+    "vitest": "^1.0.0"
+  }
+}

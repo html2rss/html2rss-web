@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ../:/workspace:cached
+      - bundle-cache:/usr/local/bundle
+    ports:
+      - "3000:3000"
+    environment:
+      - RACK_ENV=development
+      - BUNDLE_PATH=/usr/local/bundle
+    command: sleep infinity
+    user: vscode
+    working_dir: /workspace
+
+volumes:
+  bundle-cache:

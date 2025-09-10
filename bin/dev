@@ -17,4 +17,4 @@ echo "Environment: $RACK_ENV"
 echo "Port: ${PORT:-3000}"
 
 # Start the development server
-bundle exec rackup -p ${PORT:-3000} -o 0.0.0.0
+bundle exec puma -p ${PORT:-3000} -C config/puma.rb
