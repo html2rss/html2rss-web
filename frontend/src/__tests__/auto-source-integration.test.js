@@ -1,6 +1,8 @@
 // Simple integration tests for auto-source functionality
 // Tests against actual backend (Ruby or Astro) - no mocking
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
+import { spawn } from "child_process"
+import { join } from "path"
 
 describe("Auto Source Integration Tests", () => {
   const RUBY_BACKEND_URL = "http://localhost:3000"
@@ -8,55 +10,142 @@ describe("Auto Source Integration Tests", () => {
 
   let backendUrl
   let isRubyBackend = false
+  let rubyServer = null
 
   beforeAll(async () => {
     // Try to detect which backend is running
     try {
       const rubyResponse = await fetch(`${RUBY_BACKEND_URL}/health_check.txt`, {
         method: "GET",
+        headers: {
+          Authorization: `Basic ${Buffer.from("admin:changeme").toString("base64")}`,
+        },
         signal: AbortSignal.timeout(1000), // 1 second timeout
       })
 
       if (rubyResponse.ok) {
         backendUrl = RUBY_BACKEND_URL
         isRubyBackend = true
-        console.log("✅ Testing against Ruby backend")
+        console.log("✅ Testing against existing Ruby backend")
+        return
       }
     } catch (error) {
       // Ruby backend not available, try Astro
     }
 
-    if (!backendUrl) {
+    try {
+      const astroResponse = await fetch(`${ASTRO_BACKEND_URL}/api/feeds.json`, {
+        method: "GET",
+        signal: AbortSignal.timeout(1000),
+      })
+
+      if (astroResponse.ok) {
+        backendUrl = ASTRO_BACKEND_URL
+        isRubyBackend = false
+        console.log("✅ Testing against existing Astro backend")
+        return
+      }
+    } catch (error) {
+      // Neither backend available
+    }
+
+    // If no backend is running, start Ruby backend for tests
+    console.log("🚀 Starting Ruby backend for integration tests...")
+    await startRubyBackend()
+
+    // Wait for server to be ready
+    const maxWait = 30000 // 30 seconds
+    const startTime = Date.now()
+
+    while (Date.now() - startTime < maxWait) {
       try {
-        const astroResponse = await fetch(`${ASTRO_BACKEND_URL}/api/feeds.json`, {
+        const response = await fetch(`${RUBY_BACKEND_URL}/health_check.txt`, {
           method: "GET",
+          headers: {
+            Authorization: `Basic ${Buffer.from("admin:changeme").toString("base64")}`,
+          },
           signal: AbortSignal.timeout(1000),
         })
 
-        if (astroResponse.ok) {
-          backendUrl = ASTRO_BACKEND_URL
-          isRubyBackend = false
-          console.log("✅ Testing against Astro backend")
+        if (response.ok) {
+          backendUrl = RUBY_BACKEND_URL
+          isRubyBackend = true
+          console.log("✅ Ruby backend started and ready for testing")
+          return
         }
       } catch (error) {
-        // Neither backend available
+        // Server not ready yet
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 500))
     }
 
-    if (!backendUrl) {
-      throw new Error(`
-❌ No backend available for integration testing!
+    throw new Error("Failed to start Ruby backend for integration tests")
+  })
 
-To run integration tests, start a backend server:
-  make dev                    # Start both Ruby + Astro
-  # or
-  cd frontend && npm run dev  # Start Astro only
+  afterAll(async () => {
+    if (rubyServer) {
+      console.log("🛑 Stopping Ruby backend...")
+      rubyServer.kill("SIGTERM")
 
-Integration tests require a running backend to test real API behavior.
-Unit tests can run without a backend: npm run test:unit
-      `)
+      // Wait for graceful shutdown
+      await new Promise((resolve) => {
+        rubyServer.on("exit", resolve)
+        setTimeout(resolve, 5000) // Force resolve after 5 seconds
+      })
     }
   })
+
+  async function startRubyBackend() {
+    return new Promise((resolve, reject) => {
+      const appRoot = join(process.cwd(), "..")
+      console.log("Starting Ruby server from:", appRoot)
+
+      rubyServer = spawn("bundle", ["exec", "puma", "-p", "3000"], {
+        cwd: appRoot,
+        stdio: "pipe",
+        env: {
+          ...process.env,
+          RACK_ENV: "development",
+          AUTO_SOURCE_ENABLED: "true",
+          AUTO_SOURCE_USERNAME: "admin",
+          AUTO_SOURCE_PASSWORD: "changeme",
+          AUTO_SOURCE_ALLOWED_ORIGINS: "localhost:3000",
+          AUTO_SOURCE_ALLOWED_URLS: "https://github.com/*,https://example.com/*",
+          HEALTH_CHECK_USERNAME: "admin",
+          HEALTH_CHECK_PASSWORD: "changeme",
+        },
+      })
+
+      rubyServer.stdout.on("data", (data) => {
+        const output = data.toString()
+        console.log("Ruby stdout:", output)
+        if (output.includes("Listening on") || output.includes("listening on") || output.includes("Puma starting") || output.includes("New classes in")) {
+          resolve()
+        }
+      })
+
+      rubyServer.stderr.on("data", (data) => {
+        const error = data.toString()
+        console.log("Ruby stderr:", error)
+        if (error.includes("Address already in use")) {
+          console.log("⚠️  Ruby server already running on port 3000")
+          resolve()
+        } else if (error.includes("ERROR")) {
+          reject(new Error(error))
+        }
+      })
+
+      rubyServer.on("error", (error) => {
+        reject(error)
+      })
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        reject(new Error("Ruby server startup timeout"))
+      }, 30000)
+    })
+  }
 
   describe("URL Restriction Tests", () => {
     it("should allow URLs in whitelist", async () => {
