@@ -131,7 +131,7 @@ GEM
       mime-types (>= 3.0)
       websocket-driver (>= 0.6.0)
     racc (1.8.1)
-    rack (3.2.0)
+    rack (3.2.1)
     rack-cache (1.17.0)
       rack (>= 0.4)
     rack-test (2.2.0)
@@ -144,7 +144,7 @@ GEM
     reverse_markdown (3.0.0)
       nokogiri
     rexml (3.4.4)
-    roda (3.95.0)
+    roda (3.96.0)
       rack
     rspec (3.13.1)
       rspec-core (~> 3.13.0)
@@ -315,7 +315,7 @@ CHECKSUMS
   puma (7.0.2) sha256=cb419624b3dbd122852ca4d7ced87e40a51c2b08c6166b302c49ef5b3de20c82
   puppeteer-ruby (0.45.6) sha256=cb86f7b4f6f8658a709ae1a305e820bdb009548e6beff6675489926f9ceb5995
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
-  rack (3.2.0) sha256=79cd21514d696c59d61fae02e62900f087aac2d053fdc77d45f4e91b94fb3612
+  rack (3.2.1) sha256=30af3f7e5ec21b0d14d822cf24446048dba5f651b617c7e97405b604f20a9e33
   rack-cache (1.17.0) sha256=49592f3ef2173b0f5524df98bb801fb411e839869e7ce84ac428dc492bf0eb90
   rack-test (2.2.0) sha256=005a36692c306ac0b4a9350355ee080fd09ddef1148a5f8b2ac636c720f5c463
   rack-timeout (0.7.0) sha256=757337e9793cca999bb73a61fe2a7d4280aa9eefbaf787ce3b98d860749c87d9
@@ -325,7 +325,7 @@ CHECKSUMS
   regexp_parser (2.11.2) sha256=5e5e9c1485ffd8de53ab1d2807affd81f617f72967dfc64fc75a69e2cbf0ff98
   reverse_markdown (3.0.0) sha256=ab228386765a0259835873cd07054b62939c40f620c77c247eafaaa3b23faca4
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
-  roda (3.95.0) sha256=61fbc5f00f234f1b92c3eae7f4195c1310e1c70cb61dcebfe559201b554140d8
+  roda (3.96.0) sha256=e89397269a2713c3ce8e95156c7579309e514e808dc124b50657c7bdadff90df
   rspec (3.13.1) sha256=b9f9a58fa915b8d94a1d6b3195fe6dd28c4c34836a6097015142c4a9ace72140
   rspec-core (3.13.4) sha256=f9da156b7b775c82610a7b580624df51a55102f8c8e4a103b98f5d7a9fa23958
   rspec-expectations (3.13.5) sha256=33a4d3a1d95060aea4c94e9f237030a8f9eae5615e9bd85718fe3a09e4b58836
