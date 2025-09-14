@@ -9,8 +9,8 @@ module Html2rss
 
       def enabled?
         # Enable by default in development, require explicit setting in production
-        rack_env = ENV['RACK_ENV']
-        auto_source_enabled = ENV['AUTO_SOURCE_ENABLED']
+        rack_env = ENV.fetch('RACK_ENV', nil)
+        auto_source_enabled = ENV.fetch('AUTO_SOURCE_ENABLED', nil)
 
         if rack_env == 'development'
           auto_source_enabled != 'false'
@@ -26,26 +26,35 @@ module Html2rss
         credentials = Base64.decode64(auth[6..]).split(':')
         username, password = credentials
 
-        # Use default credentials in development if not set
-        expected_username = ENV['AUTO_SOURCE_USERNAME'] || (ENV['RACK_ENV'] == 'development' ? 'admin' : nil)
-        expected_password = ENV['AUTO_SOURCE_PASSWORD'] || (ENV['RACK_ENV'] == 'development' ? 'password' : nil)
-
+        expected_username, expected_password = expected_credentials
         return false unless expected_username && expected_password
 
         username == expected_username && password == expected_password
       end
 
+      def expected_credentials
+        # Use default credentials in development if not set
+        username = ENV.fetch('AUTO_SOURCE_USERNAME', nil) ||
+                   (ENV.fetch('RACK_ENV', nil) == 'development' ? 'admin' : nil)
+        password = ENV.fetch('AUTO_SOURCE_PASSWORD', nil) ||
+                   (ENV.fetch('RACK_ENV', nil) == 'development' ? 'password' : nil)
+        [username, password]
+      end
+
       def allowed_origin?(request)
         origin = request.env['HTTP_HOST'] || request.env['HTTP_X_FORWARDED_HOST']
+        origins = allowed_origins
+        origins.empty? || origins.include?(origin)
+      end
 
-        # In development, allow localhost origins by default
-        if ENV['RACK_ENV'] == 'development'
-          allowed_origins = (ENV['AUTO_SOURCE_ALLOWED_ORIGINS'] || 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001').split(',').map(&:strip)
+      def allowed_origins
+        if ENV.fetch('RACK_ENV', nil) == 'development'
+          default_origins = 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001'
+          origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', default_origins)
         else
-          allowed_origins = (ENV['AUTO_SOURCE_ALLOWED_ORIGINS'] || '').split(',').map(&:strip)
+          origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', '')
         end
-
-        allowed_origins.empty? || allowed_origins.include?(origin)
+        origins.split(',').map(&:strip)
       end
 
       def allowed_url?(url)

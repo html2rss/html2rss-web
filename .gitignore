@@ -74,3 +74,4 @@ Thumbs.db
 
 # Ignore Astro cache
 /frontend/.astro/
+frontend/dist/

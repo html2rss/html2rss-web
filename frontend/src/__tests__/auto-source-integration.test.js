@@ -18,7 +18,7 @@ describe("Auto Source Integration Tests", () => {
       const rubyResponse = await fetch(`${RUBY_BACKEND_URL}/health_check.txt`, {
         method: "GET",
         headers: {
-          Authorization: `Basic ${Buffer.from("admin:changeme").toString("base64")}`,
+          Authorization: `Basic ${Buffer.from("admin:password").toString("base64")}`,
         },
         signal: AbortSignal.timeout(1000), // 1 second timeout
       })
@@ -120,7 +120,12 @@ describe("Auto Source Integration Tests", () => {
       rubyServer.stdout.on("data", (data) => {
         const output = data.toString()
         console.log("Ruby stdout:", output)
-        if (output.includes("Listening on") || output.includes("listening on") || output.includes("Puma starting") || output.includes("New classes in")) {
+        if (
+          output.includes("Listening on") ||
+          output.includes("listening on") ||
+          output.includes("Puma starting") ||
+          output.includes("New classes in")
+        ) {
           resolve()
         }
       })
