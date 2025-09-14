@@ -8,7 +8,15 @@ module Html2rss
       module_function
 
       def enabled?
-        ENV['AUTO_SOURCE_ENABLED'] == 'true'
+        # Enable by default in development, require explicit setting in production
+        rack_env = ENV['RACK_ENV']
+        auto_source_enabled = ENV['AUTO_SOURCE_ENABLED']
+
+        if rack_env == 'development'
+          auto_source_enabled != 'false'
+        else
+          auto_source_enabled == 'true'
+        end
       end
 
       def authenticate(request)
@@ -18,13 +26,24 @@ module Html2rss
         credentials = Base64.decode64(auth[6..]).split(':')
         username, password = credentials
 
-        username == ENV['AUTO_SOURCE_USERNAME'] &&
-          password == ENV['AUTO_SOURCE_PASSWORD']
+        # Use default credentials in development if not set
+        expected_username = ENV['AUTO_SOURCE_USERNAME'] || (ENV['RACK_ENV'] == 'development' ? 'admin' : nil)
+        expected_password = ENV['AUTO_SOURCE_PASSWORD'] || (ENV['RACK_ENV'] == 'development' ? 'password' : nil)
+
+        return false unless expected_username && expected_password
+
+        username == expected_username && password == expected_password
       end
 
       def allowed_origin?(request)
         origin = request.env['HTTP_HOST'] || request.env['HTTP_X_FORWARDED_HOST']
-        allowed_origins = (ENV['AUTO_SOURCE_ALLOWED_ORIGINS'] || '').split(',').map(&:strip)
+
+        # In development, allow localhost origins by default
+        if ENV['RACK_ENV'] == 'development'
+          allowed_origins = (ENV['AUTO_SOURCE_ALLOWED_ORIGINS'] || 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001').split(',').map(&:strip)
+        else
+          allowed_origins = (ENV['AUTO_SOURCE_ALLOWED_ORIGINS'] || '').split(',').map(&:strip)
+        end
 
         allowed_origins.empty? || allowed_origins.include?(origin)
       end

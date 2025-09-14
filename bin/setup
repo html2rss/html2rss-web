@@ -31,6 +31,7 @@ echo "Running tests to verify setup..."
 bundle exec rspec
 
 echo "Setup complete! You can now run:"
-echo "  bin/dev          # Start development server"
+echo "  bin/dev          # Start development server (Ruby + Astro)"
+echo "  bin/dev-ruby     # Start Ruby server only"
 echo "  bundle exec rspec # Run tests"
 echo "  bundle exec rubocop # Run linter"

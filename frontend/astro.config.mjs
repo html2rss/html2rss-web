@@ -3,19 +3,12 @@ import { defineConfig } from "astro/config"
 export default defineConfig({
   output: "static",
   server: {
-    port: 4321,
+    port: 3001,
     host: true,
   },
   vite: {
     server: {
-      watch: {
-        usePolling: true,
-      },
       proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
-        },
         '/auto_source': {
           target: 'http://localhost:3000',
           changeOrigin: true,

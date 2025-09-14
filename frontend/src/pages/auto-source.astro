@@ -97,9 +97,22 @@ import Layout from "../layouts/Layout.astro"
     if (!url) return
 
     try {
+      // Show loading state
+      const submitBtn = e.target.querySelector('button[type="submit"]')
+      const originalText = submitBtn.textContent
+      submitBtn.textContent = "Generating..."
+      submitBtn.disabled = true
+
       // Encode URL for API
       const encodedUrl = btoa(url)
-      const apiUrl = `/auto_source/${encodedUrl}?strategy=${strategy}`
+      const apiUrl = `http://localhost:3000/auto_source/${encodedUrl}?strategy=${strategy}`
+
+      // Test the API call
+      const response = await fetch(apiUrl)
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status} ${response.statusText}`)
+      }
 
       // Show result area
       const resultArea = document.getElementById("result")
@@ -114,7 +127,12 @@ import Layout from "../layouts/Layout.astro"
       resultArea.scrollIntoView({ behavior: "smooth" })
     } catch (error) {
       console.error("Error generating feed:", error)
-      showError("Error generating feed. Please try again.")
+      showError(`Error generating feed: ${error.message}`)
+    } finally {
+      // Reset button state
+      const submitBtn = e.target.querySelector('button[type="submit"]')
+      submitBtn.textContent = originalText
+      submitBtn.disabled = false
     }
   })
 
@@ -238,5 +256,34 @@ import Layout from "../layouts/Layout.astro"
   .restrictions li {
     margin: 0.25rem 0;
     color: #856404;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .btn:hover {
+    background: #0056b3;
+  }
+
+  .btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+  }
+
+  .btn-secondary:hover {
+    background: #545b62;
   }
 </style>

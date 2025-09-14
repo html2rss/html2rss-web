@@ -60,6 +60,7 @@ module Html2rss
 
       plugin :public
       plugin :hash_branches
+      plugin :render, engine: 'erb', views: 'views'
 
       @show_backtrace = !ENV['CI'].to_s.empty? || (ENV['RACK_ENV'] == 'development')
 
@@ -84,7 +85,7 @@ module Html2rss
           handle_auto_source_feed(r, encoded_url)
         end
 
-        r.get { auto_source_disabled_response }
+        r.get { auto_source_instructions_response }
       end
 
       # Health check route
@@ -123,6 +124,12 @@ module Html2rss
       def auto_source_disabled_response
         response.status = 400
         'The auto source feature is disabled.'
+      end
+
+      def auto_source_instructions_response
+        response.status = 200
+        response['Content-Type'] = 'text/html'
+        render(:auto_source_instructions)
       end
 
       def handle_auto_source_feed(router, encoded_url)
