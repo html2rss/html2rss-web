@@ -21,11 +21,16 @@ setup: ## Full development setup
 	@cd frontend && npm install
 	@echo "Setup complete!"
 
-dev: ## Start development server with hot reload
-	@bin/dev-with-frontend
+dev: ## Start development server with live reload
+	@echo "Starting html2rss-web development environment..."
+	@echo "Ruby server: http://localhost:3000"
+	@echo "Astro dev server: http://localhost:3001 (with live reload)"
+	@echo "Main development URL: http://localhost:3001"
+	@echo ""
+	@bin/dev
 
 dev-ruby: ## Start Ruby server only
-	@bin/dev
+	@bin/dev-ruby
 
 dev-frontend: ## Start Astro dev server only
 	@cd frontend && npm run dev
