@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll } from "vitest"
 describe("Auto Source API Integration Tests", () => {
   const RUBY_BACKEND_URL = "http://localhost:3000"
   const ASTRO_BACKEND_URL = "http://localhost:4321"
-  const auth = Buffer.from("admin:changeme").toString("base64")
+  const auth = Buffer.from("admin:password").toString("base64")
 
   let backendUrl
 
@@ -13,7 +13,7 @@ describe("Auto Source API Integration Tests", () => {
     // Set up test environment variables
     process.env.AUTO_SOURCE_ENABLED = "true"
     process.env.AUTO_SOURCE_USERNAME = "admin"
-    process.env.AUTO_SOURCE_PASSWORD = "changeme"
+    process.env.AUTO_SOURCE_PASSWORD = "password"
     process.env.AUTO_SOURCE_ALLOWED_ORIGINS = "localhost:3000,localhost:4321"
     process.env.AUTO_SOURCE_ALLOWED_URLS = "https://github.com/*,https://example.com/*"
 
@@ -22,6 +22,9 @@ describe("Auto Source API Integration Tests", () => {
       const rubyResponse = await fetch(`${RUBY_BACKEND_URL}/health_check.txt`, {
         method: "GET",
         signal: AbortSignal.timeout(1000),
+        headers: {
+          Authorization: `Basic ${Buffer.from("admin:password").toString("base64")}`,
+        },
       })
 
       if (rubyResponse.ok) {

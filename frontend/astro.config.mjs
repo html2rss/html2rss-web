@@ -9,12 +9,12 @@ export default defineConfig({
   vite: {
     server: {
       proxy: {
-        '/auto_source': {
-          target: 'http://localhost:3000',
+        "/auto_source": {
+          target: "http://localhost:3000",
           changeOrigin: true,
         },
-        '/health_check.txt': {
-          target: 'http://localhost:3000',
+        "/health_check.txt": {
+          target: "http://localhost:3000",
           changeOrigin: true,
         },
       },

@@ -195,13 +195,31 @@ module Html2rss
         credentials = Base64.decode64(auth[6..]).split(':')
         username, password = credentials
 
-        if username == ENV['HEALTH_CHECK_USERNAME'] &&
-           password == ENV['HEALTH_CHECK_PASSWORD']
+        if health_check_authenticated?(username, password)
           response['Content-Type'] = 'text/plain'
           HealthCheck.run
         else
           health_check_unauthorized
         end
+      end
+
+      def health_check_authenticated?(username, password)
+        expected_username, expected_password = health_check_credentials
+        expected_username && expected_password &&
+          username == expected_username && password == expected_password
+      end
+
+      def health_check_credentials
+        username = ENV.fetch('HEALTH_CHECK_USERNAME', nil)
+        password = ENV.fetch('HEALTH_CHECK_PASSWORD', nil)
+
+        # In development, use default credentials if not set
+        if username.nil? && ENV.fetch('RACK_ENV', nil) == 'development'
+          username = 'admin'
+          password = 'password'
+        end
+
+        [username, password]
       end
 
       def health_check_unauthorized

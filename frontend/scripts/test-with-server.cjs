@@ -13,14 +13,20 @@ const MAX_WAIT_TIME = 30000 // 30 seconds
 let rubyServer = null
 let astroServer = null
 
-async function waitForServer(url, maxWait = MAX_WAIT_TIME) {
+async function waitForServer(url, maxWait = MAX_WAIT_TIME, auth = null) {
   const startTime = Date.now()
 
   while (Date.now() - startTime < maxWait) {
     try {
+      const headers = {}
+      if (auth) {
+        headers.Authorization = `Basic ${Buffer.from(auth).toString("base64")}`
+      }
+
       const response = await fetch(url, {
         method: "GET",
         signal: AbortSignal.timeout(1000),
+        headers,
       })
 
       if (response.ok) {
@@ -51,6 +57,8 @@ async function startRubyServer() {
         AUTO_SOURCE_PASSWORD: "changeme",
         AUTO_SOURCE_ALLOWED_ORIGINS: "localhost:3000",
         AUTO_SOURCE_ALLOWED_URLS: "https://github.com/*,https://example.com/*",
+        HEALTH_CHECK_USERNAME: "admin",
+        HEALTH_CHECK_PASSWORD: "password",
       },
     })
 
@@ -266,7 +274,11 @@ async function main() {
 
     // Wait for servers to be ready
     console.log("⏳ Waiting for servers to be ready...")
-    const rubyReady = await waitForServer(`http://localhost:${RUBY_SERVER_PORT}/health_check.txt`)
+    const rubyReady = await waitForServer(
+      `http://localhost:${RUBY_SERVER_PORT}/health_check.txt`,
+      MAX_WAIT_TIME,
+      "admin:password",
+    )
     const astroReady = await waitForServer(`http://localhost:${ASTRO_SERVER_PORT}/api/feeds.json`)
 
     if (!rubyReady && !astroReady) {
