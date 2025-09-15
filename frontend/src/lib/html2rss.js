@@ -1,6 +1,5 @@
 // HTML2RSS integration for Astro API endpoints
 import { spawn } from "child_process"
-import { readFileSync } from "fs"
 import { join } from "path"
 
 // Load Ruby dependencies
