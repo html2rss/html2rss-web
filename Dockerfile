@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM ruby:3.4.5-alpine3.21 AS builder
+FROM ruby:3.4.6-alpine3.21 AS builder
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -23,7 +23,7 @@ RUN apk add --no-cache \
   && bundle binstubs bundler html2rss
 
 # Stage 2: Runtime
-FROM ruby:3.4.5-alpine3.21
+FROM ruby:3.4.6-alpine3.21
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
