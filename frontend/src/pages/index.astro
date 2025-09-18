@@ -1,15 +1,15 @@
 ---
-import Layout from "../layouts/Layout.astro"
+import Layout from "../layouts/Layout.astro";
 
 // Fetch available feeds from Ruby backend
-let feeds = []
+let feeds = [];
 try {
-  const response = await fetch("/api/feeds.json")
+  const response = await fetch("/api/feeds.json");
   if (response.ok) {
-    feeds = await response.json()
+    feeds = await response.json();
   }
 } catch (error) {
-  console.error("Failed to fetch feeds:", error)
+  console.error("Failed to fetch feeds:", error);
 }
 ---
 

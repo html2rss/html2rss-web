@@ -6,18 +6,18 @@
  * @returns {boolean} - True if URL is allowed, false otherwise
  */
 export function isUrlAllowed(url, allowedUrlsEnv) {
-  const allowedUrls = allowedUrlsEnv ? allowedUrlsEnv.split(",").map((u) => u.trim()) : []
+  const allowedUrls = allowedUrlsEnv ? allowedUrlsEnv.split(',').map((u) => u.trim()) : [];
 
-  if (allowedUrls.length === 0) return true
+  if (allowedUrls.length === 0) return true;
 
   return allowedUrls.some((allowedUrl) => {
     try {
-      const allowedPattern = new RegExp(allowedUrl.replace(/\*/g, ".*"))
-      return allowedPattern.test(url)
+      const allowedPattern = new RegExp(allowedUrl.replace(/\*/g, '.*'));
+      return allowedPattern.test(url);
     } catch {
-      return url.includes(allowedUrl)
+      return url.includes(allowedUrl);
     }
-  })
+  });
 }
 
 /**
@@ -27,14 +27,14 @@ export function isUrlAllowed(url, allowedUrlsEnv) {
  * @returns {boolean} - True if origin is allowed, false otherwise
  */
 export function isOriginAllowed(origin, allowedOriginsEnv) {
-  const allowedOrigins = (allowedOriginsEnv || "")
-    .split(",")
+  const allowedOrigins = (allowedOriginsEnv || '')
+    .split(',')
     .map((o) => o.trim())
-    .filter((o) => o.length > 0)
+    .filter((o) => o.length > 0);
 
-  if (allowedOrigins.length === 0) return true
+  if (allowedOrigins.length === 0) return true;
 
-  return allowedOrigins.includes(origin)
+  return allowedOrigins.includes(origin);
 }
 
 /**
@@ -45,16 +45,16 @@ export function isOriginAllowed(origin, allowedOriginsEnv) {
  * @returns {boolean} - True if credentials are valid, false otherwise
  */
 export function validateBasicAuth(authHeader, expectedUsername, expectedPassword) {
-  if (!authHeader || !authHeader.startsWith("Basic ")) {
-    return false
+  if (!authHeader || !authHeader.startsWith('Basic ')) {
+    return false;
   }
 
-  const credentials = Buffer.from(authHeader.slice(6), "base64").toString()
-  const colonIndex = credentials.indexOf(":")
-  if (colonIndex === -1) return false
+  const credentials = Buffer.from(authHeader.slice(6), 'base64').toString();
+  const colonIndex = credentials.indexOf(':');
+  if (colonIndex === -1) return false;
 
-  const username = credentials.slice(0, colonIndex)
-  const password = credentials.slice(colonIndex + 1)
+  const username = credentials.slice(0, colonIndex);
+  const password = credentials.slice(colonIndex + 1);
 
-  return username === expectedUsername && password === expectedPassword
+  return username === expectedUsername && password === expectedPassword;
 }

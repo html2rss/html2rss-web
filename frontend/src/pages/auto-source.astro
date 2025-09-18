@@ -1,5 +1,5 @@
 ---
-import Layout from "../layouts/Layout.astro"
+import Layout from "../layouts/Layout.astro";
 ---
 
 <Layout title="Auto Source - html2rss-web">
@@ -11,7 +11,9 @@ import Layout from "../layouts/Layout.astro"
       <h3>📌 Quick Access Bookmarklet</h3>
       <p>Drag this button to your bookmarks bar to quickly convert any website to RSS:</p>
       <a id="bookmarklet" class="btn btn-bookmarklet" href="#">📰 Convert to RSS</a>
-      <p class="bookmarklet-help">Click the button above to generate the bookmarklet, then drag it to your bookmarks bar.</p>
+      <p class="bookmarklet-help">
+        Click the button above to generate the bookmarklet, then drag it to your bookmarks bar.
+      </p>
     </div>
 
     <div class="auto-source-form">
@@ -143,73 +145,73 @@ import Layout from "../layouts/Layout.astro"
   handleUrlParams();
 
   document.getElementById("auto-source-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const form = e.target as HTMLFormElement
-    const formData = new FormData(form)
-    const url = formData.get("url") as string
-    const strategy = formData.get("strategy") as string
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const url = formData.get("url") as string;
+    const strategy = formData.get("strategy") as string;
 
-    if (!url) return
+    if (!url) return;
 
     // Show loading state
-    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement
-    const originalText = submitBtn.textContent
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
 
     try {
-      submitBtn.textContent = "Generating..."
-      submitBtn.disabled = true
+      submitBtn.textContent = "Generating...";
+      submitBtn.disabled = true;
 
       // Encode URL for API
-      const encodedUrl = btoa(url)
-      const apiUrl = `http://127.0.0.1:3001/auto_source/${encodedUrl}?strategy=${strategy}`
+      const encodedUrl = btoa(url);
+      const apiUrl = `http://127.0.0.1:3001/auto_source/${encodedUrl}?strategy=${strategy}`;
 
       // Test the API call with Basic authentication
       const response = await fetch(apiUrl, {
         headers: {
-          'Authorization': 'Basic ' + btoa('admin:password')
-        }
-      })
+          Authorization: "Basic " + btoa("admin:password"),
+        },
+      });
 
       if (!response.ok) {
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`)
+        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
       }
 
       // Show result area
-      const resultArea = document.getElementById("result")
-      const feedUrlSpan = document.getElementById("feed-url")
-      const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement
+      const resultArea = document.getElementById("result");
+      const feedUrlSpan = document.getElementById("feed-url");
+      const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement;
 
-      if (feedUrlSpan) feedUrlSpan.textContent = apiUrl
-      if (subscribeLink) subscribeLink.href = apiUrl
+      if (feedUrlSpan) feedUrlSpan.textContent = apiUrl;
+      if (subscribeLink) subscribeLink.href = apiUrl;
       if (resultArea) {
-        resultArea.style.display = "block"
-        resultArea.scrollIntoView({ behavior: "smooth" })
+        resultArea.style.display = "block";
+        resultArea.scrollIntoView({ behavior: "smooth" });
       }
     } catch (error) {
-      console.error("Error generating feed:", error)
-      showError(`Error generating feed: ${error.message}`)
+      console.error("Error generating feed:", error);
+      showError(`Error generating feed: ${error.message}`);
     } finally {
       // Reset button state
-      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement
-      submitBtn.textContent = originalText
-      submitBtn.disabled = false
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
     }
-  })
+  });
 
   function showError(message) {
-    const errorArea = document.getElementById("error")
-    const errorMessage = document.getElementById("error-message")
-    const resultArea = document.getElementById("result")
+    const errorArea = document.getElementById("error");
+    const errorMessage = document.getElementById("error-message");
+    const resultArea = document.getElementById("result");
 
     // Hide result area
-    if (resultArea) resultArea.style.display = "none"
+    if (resultArea) resultArea.style.display = "none";
 
     // Show error area
-    if (errorMessage) errorMessage.textContent = message
+    if (errorMessage) errorMessage.textContent = message;
     if (errorArea) {
-      errorArea.style.display = "block"
-      errorArea.scrollIntoView({ behavior: "smooth" })
+      errorArea.style.display = "block";
+      errorArea.scrollIntoView({ behavior: "smooth" });
     }
   }
 </script>

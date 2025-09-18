@@ -1,10 +1,10 @@
 // HTML2RSS integration for Astro API endpoints
-import { spawn } from "child_process"
-import { join } from "path"
+import { spawn } from 'child_process';
+import { join } from 'path';
 
 // Load Ruby dependencies
-const RUBY_PATH = process.env.RUBY_PATH || "ruby"
-const APP_ROOT = process.env.APP_ROOT || join(process.cwd(), "..")
+const RUBY_PATH = process.env.RUBY_PATH || 'ruby';
+const APP_ROOT = process.env.APP_ROOT || join(process.cwd(), '..');
 
 /**
  * Execute Ruby code and return the result
@@ -13,31 +13,31 @@ const APP_ROOT = process.env.APP_ROOT || join(process.cwd(), "..")
  */
 async function executeRuby(rubyCode) {
   return new Promise((resolve, reject) => {
-    const ruby = spawn("bundle", ["exec", "ruby", "-e", rubyCode], {
+    const ruby = spawn('bundle', ['exec', 'ruby', '-e', rubyCode], {
       cwd: APP_ROOT,
-      stdio: ["pipe", "pipe", "pipe"],
-      env: { ...process.env, BUNDLE_GEMFILE: join(APP_ROOT, "Gemfile") },
-    })
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, BUNDLE_GEMFILE: join(APP_ROOT, 'Gemfile') },
+    });
 
-    let stdout = ""
-    let stderr = ""
+    let stdout = '';
+    let stderr = '';
 
-    ruby.stdout.on("data", (data) => {
-      stdout += data.toString()
-    })
+    ruby.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
 
-    ruby.stderr.on("data", (data) => {
-      stderr += data.toString()
-    })
+    ruby.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
 
-    ruby.on("close", (code) => {
+    ruby.on('close', (code) => {
       if (code === 0) {
-        resolve(stdout)
+        resolve(stdout);
       } else {
-        reject(new Error(`Ruby execution failed: ${stderr}`))
+        reject(new Error(`Ruby execution failed: ${stderr}`));
       }
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -69,12 +69,12 @@ export async function generateFeed(config, params = {}) {
     # Generate feed
     feed = Html2rss.feed(config)
     puts feed.to_s
-  `
+  `;
 
   try {
-    return await executeRuby(rubyCode)
+    return await executeRuby(rubyCode);
   } catch (error) {
-    throw new Error(`Failed to generate feed: ${error.message}`)
+    throw new Error(`Failed to generate feed: ${error.message}`);
   }
 }
 
@@ -91,13 +91,13 @@ export async function loadLocalConfig(name) {
 
     config = Html2rss::Web::LocalConfig.find('${name}')
     puts JSON.generate(config)
-  `
+  `;
 
   try {
-    const result = await executeRuby(rubyCode)
-    return JSON.parse(result)
+    const result = await executeRuby(rubyCode);
+    return JSON.parse(result);
   } catch (error) {
-    throw new Error(`Config not found: ${name}`)
+    throw new Error(`Config not found: ${name}`);
   }
 }
 
@@ -113,13 +113,13 @@ export async function getFeedNames() {
 
     names = Html2rss::Web::LocalConfig.feed_names
     puts JSON.generate(names)
-  `
+  `;
 
   try {
-    const result = await executeRuby(rubyCode)
-    return JSON.parse(result)
+    const result = await executeRuby(rubyCode);
+    return JSON.parse(result);
   } catch (error) {
-    return []
+    return [];
   }
 }
 
@@ -134,11 +134,11 @@ export async function runHealthCheck() {
 
     result = Html2rss::Web::HealthCheck.run
     puts result
-  `
+  `;
 
   try {
-    return await executeRuby(rubyCode)
+    return await executeRuby(rubyCode);
   } catch (error) {
-    return `Health check failed: ${error.message}`
+    return `Health check failed: ${error.message}`;
   }
 }
