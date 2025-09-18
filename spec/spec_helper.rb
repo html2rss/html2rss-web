@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+# Set up test environment before loading any application code
+ENV['RACK_ENV'] = 'test'
+ENV['HTML2RSS_SECRET_KEY'] = 'test-secret-key-for-specs'
+
 if ENV['CI'] || ENV['COVERAGE']
   require 'simplecov'
 

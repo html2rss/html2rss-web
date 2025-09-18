@@ -2,42 +2,21 @@
 
 require 'parallel'
 require_relative 'local_config'
-require 'securerandom'
-require 'singleton'
+require_relative 'auth'
 
 module Html2rss
   module Web
     ##
     # Checks if the local configs are generatable.
     module HealthCheck
-      ##
-      # Contains logic to obtain username and password to be used with HealthCheck endpoint.
-      class Auth
-        include Singleton
-
-        def self.username = instance.username
-        def self.password = instance.password
-
-        def username
-          @username ||= fetch_credential('HEALTH_CHECK_USERNAME')
-        end
-
-        def password
-          @password ||= fetch_credential('HEALTH_CHECK_PASSWORD')
-        end
-
-        private
-
-        def fetch_credential(env_var)
-          ENV.delete(env_var) do
-            SecureRandom.base64(32).tap do |string|
-              warn "ENV var. #{env_var} missing! Using generated value instead: #{string}"
-            end
-          end
-        end
-      end
-
       module_function
+
+      ##
+      # Find health-check account by username
+      # @return [Hash, nil] account data if found
+      def find_health_check_account
+        Auth.accounts.find { |account| account[:username] == 'health-check' }
+      end
 
       ##
       # @return [String] "success" when all checks passed.
@@ -57,12 +36,6 @@ module Html2rss
           end
         end
       end
-
-      def format_error(feed_name, error)
-        "[#{feed_name}] #{error.class}: #{error.message}"
-      end
-
-      private_class_method :format_error
     end
   end
 end
