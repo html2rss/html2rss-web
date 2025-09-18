@@ -92,24 +92,23 @@ The project includes a modern Astro frontend alongside the Ruby backend:
 
 ### Development Commands
 
-| Command      | Description                 |
-| ------------ | --------------------------- |
-| `make help`  | Show all available commands |
-| `make setup` | Full development setup      |
-| `make dev`   | Start development server    |
-| `make test`  | Run tests                   |
-| `make lint`  | Run linter                  |
-| `make fix`   | Auto-fix linting issues     |
-| `make clean` | Clean temporary files       |
-
-### Development Commands
-
-| Command                | Description                           |
-| ---------------------- | ------------------------------------- |
-| `make dev`             | Start both Ruby and Astro dev servers |
-| `make dev-ruby`        | Start Ruby server only                |
-| `make dev-frontend`    | Start Astro dev server only           |
-| `make frontend-format` | Format frontend code                  |
+| Command              | Description                           |
+| -------------------- | ------------------------------------- |
+| `make help`          | Show all available commands           |
+| `make setup`         | Full development setup                |
+| `make dev`           | Start both Ruby and Astro dev servers |
+| `make dev-ruby`      | Start Ruby server only                |
+| `make dev-frontend`  | Start Astro dev server only           |
+| `make test`          | Run all tests (Ruby + Frontend)       |
+| `make test-ruby`     | Run Ruby tests only                   |
+| `make test-frontend` | Run frontend tests only               |
+| `make lint`          | Run all linters (Ruby + Frontend)     |
+| `make lint-ruby`     | Run Ruby linter only                  |
+| `make lint-js`       | Run frontend linter only              |
+| `make lintfix`       | Auto-fix all linting issues           |
+| `make lintfix-ruby`  | Auto-fix Ruby linting issues          |
+| `make lintfix-js`    | Auto-fix frontend linting issues      |
+| `make clean`         | Clean temporary files                 |
 
 ### Frontend Commands
 

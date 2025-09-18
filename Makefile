@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint fix setup dev clean frontend-setup frontend-format frontend-format-check frontend-lint
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup
 
 # Default target
 help: ## Show this help message
@@ -51,11 +51,31 @@ test-frontend-unit: ## Run frontend unit tests only
 test-frontend-integration: ## Run frontend integration tests only
 	@cd frontend && npm run test:integration
 
-lint: ## Run linter
-	bundle exec rubocop
+lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issues found
+	@echo "All linting complete!"
 
-fix: ## Auto-fix linting issues
-	bundle exec rubocop -a
+lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
+	@echo "Running RuboCop linting..."
+	bundle exec rubocop
+	@echo "Ruby linting complete!"
+
+lint-js: ## Run JavaScript/Frontend linter (Prettier) - errors when issues found
+	@echo "Running Prettier format check..."
+	@cd frontend && npm run format:check
+	@echo "JavaScript linting complete!"
+
+lintfix: lintfix-ruby lintfix-js ## Auto-fix all linting issues (Ruby + Frontend)
+	@echo "All lintfix complete!"
+
+lintfix-ruby: ## Auto-fix Ruby linting issues
+	@echo "Running RuboCop auto-correct..."
+	-bundle exec rubocop --auto-correct
+	@echo "Ruby lintfix complete!"
+
+lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
+	@echo "Running Prettier formatting..."
+	@cd frontend && npm run format
+	@echo "JavaScript lintfix complete!"
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/
@@ -66,15 +86,3 @@ frontend-setup: ## Setup frontend dependencies
 	@echo "Setting up frontend dependencies..."
 	@cd frontend && npm install
 	@echo "Frontend setup complete!"
-
-frontend-format: ## Format frontend code
-	@echo "Formatting frontend code..."
-	@cd frontend && npm run format
-	@echo "Frontend formatting complete!"
-
-frontend-format-check: ## Check frontend code formatting
-	@echo "Checking frontend code formatting..."
-	@cd frontend && npm run format:check
-
-frontend-lint: frontend-format-check ## Lint frontend code (formatting check)
-	@echo "Frontend linting complete!"
