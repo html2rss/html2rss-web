@@ -2,6 +2,7 @@
 
 require 'uri'
 require_relative 'auth'
+require_relative 'xml_builder'
 
 module Html2rss
   module Web
@@ -87,50 +88,64 @@ module Html2rss
       end
 
       def generate_feed_content(url, strategy = 'ssrf_filter')
-        call_strategy(url, strategy)
+        feed_content = call_strategy(url, strategy)
+
+        # Check if feed is empty and provide better error handling
+        if feed_content.respond_to?(:to_s)
+          feed_xml = feed_content.to_s
+          if feed_xml.include?('<item>') == false
+            # Feed has no items - this might be a content extraction issue
+            return create_empty_feed_warning(url, strategy)
+          end
+        end
+
+        feed_content
       end
 
+      def create_empty_feed_warning(url, strategy)
+        site_title = extract_site_title(url)
+        XmlBuilder.build_empty_feed_warning(
+          url: url,
+          strategy: strategy,
+          site_title: site_title
+        )
+      end
+
+      # rubocop:disable Metrics/MethodLength
       def call_strategy(url, strategy)
         config = {
           stylesheets: [{ href: '/rss.xsl', type: 'text/xsl' }],
           strategy: strategy.to_sym,
           channel: {
             url: url,
-            title: "Auto-generated feed for #{url}"
+            title: extract_channel_title(url)
           },
-          auto_source: {}
+          auto_source: {
+            # Auto source configuration for automatic content detection
+            # This allows Html2rss to automatically detect content on the page
+          }
         }
 
         Html2rss.feed(config)
       end
+      # rubocop:enable Metrics/MethodLength
+
+      def extract_channel_title(url)
+        Html2rss::Url.for_channel(url).channel_titleized || 'RSS Feed'
+      end
+
+      def extract_site_title(url)
+        Html2rss::Url.for_channel(url).channel_titleized
+      rescue StandardError
+        nil
+      end
 
       def error_feed(message)
-        sanitized_message = Auth.sanitize_xml(message)
-        build_rss_feed('Error', "Failed to generate auto-source feed: #{sanitized_message}", sanitized_message)
+        XmlBuilder.build_error_feed(message: message)
       end
 
       def access_denied_feed(url)
-        sanitized_url = Auth.sanitize_xml(url)
-        title = 'Access Denied'
-        description = 'This URL is not allowed for public auto source generation.'
-        item_description = "URL '#{sanitized_url}' is not in the allowed list for public auto source."
-        build_rss_feed(title, description, item_description)
-      end
-
-      def build_rss_feed(title, description, item_description)
-        <<~RSS
-          <?xml version="1.0" encoding="UTF-8"?>
-          <rss version="2.0">
-            <channel>
-              <title>#{title}</title>
-              <description>#{description}</description>
-              <item>
-                <title>#{title}</title>
-                <description>#{item_description}</description>
-              </item>
-            </channel>
-          </rss>
-        RSS
+        XmlBuilder.build_access_denied_feed(url)
       end
     end
   end

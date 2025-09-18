@@ -1,0 +1,20 @@
+---
+// XmlDisplay.astro - XML preview and display component
+import "../styles/forms.css";
+---
+
+<!-- Content Preview -->
+<div class="xml-preview" id="xml-preview" style="display: none;">
+  <div class="loading">Loading RSS feed preview...</div>
+</div>
+
+<!-- XML Feed Display -->
+<div class="xml-feed-display" id="xml-feed-display" style="display: none;">
+  <div class="xml-feed-header">
+    <h4>📄 Raw XML Feed</h4>
+    <button type="button" class="xml-toggle" id="xml-toggle">Show XML</button>
+  </div>
+  <div class="xml-feed-content" id="xml-feed-content" style="display: none;">
+    <pre><code id="rss-content" /></pre>
+  </div>
+</div>

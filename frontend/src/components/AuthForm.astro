@@ -1,0 +1,38 @@
+---
+// AuthForm.astro - Simple authentication form component
+import "../styles/forms.css";
+---
+
+<div id="auth-section">
+  <div class="form-group-compact">
+    <label for="username" class="form-label required">Username</label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      class="form-input"
+      placeholder="Enter your username"
+      required
+      autocomplete="username"
+    />
+    <div class="form-error" id="username-error"></div>
+  </div>
+
+  <div class="form-group-compact">
+    <label for="token" class="form-label required">Token</label>
+    <input
+      type="password"
+      id="token"
+      name="token"
+      class="form-input"
+      placeholder="Enter your authentication token"
+      required
+      autocomplete="current-password"
+    />
+    <div class="form-error" id="token-error"></div>
+  </div>
+
+  <div class="form-row">
+    <button type="button" class="form-button" id="auth-button">Authenticate</button>
+  </div>
+</div>
