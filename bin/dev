@@ -12,10 +12,28 @@ export RACK_ENV=${RACK_ENV:-development}
 
 # Cleanup function for graceful shutdown
 cleanup() {
-  kill $RUBY_PID 2>/dev/null || true
-  kill $ASTRO_PID 2>/dev/null || true
-  wait $RUBY_PID 2>/dev/null || true
-  wait $ASTRO_PID 2>/dev/null || true
+  echo ""
+  echo "🛑 Shutting down development servers..."
+
+  # Kill Ruby server
+  if [ ! -z "$RUBY_PID" ]; then
+    kill $RUBY_PID 2>/dev/null || true
+    wait $RUBY_PID 2>/dev/null || true
+  fi
+
+  # Kill Astro server and its children
+  if [ ! -z "$ASTRO_PID" ]; then
+    # Kill the npm process and its children
+    pkill -P $ASTRO_PID 2>/dev/null || true
+    kill $ASTRO_PID 2>/dev/null || true
+    wait $ASTRO_PID 2>/dev/null || true
+  fi
+
+  # Clean up any remaining processes on our ports
+  pkill -f "puma.*html2rss-web" 2>/dev/null || true
+  pkill -f "astro.*dev.*3001" 2>/dev/null || true
+
+  echo "✅ Development servers stopped"
   exit 0
 }
 
