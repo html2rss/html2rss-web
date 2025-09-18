@@ -1,0 +1,87 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Auto Source - html2rss">
+  <div class="container">
+    <h1>Auto Source RSS Generator</h1>
+    <p>This endpoint generates RSS feeds from any website automatically. To use it, provide a Base64-encoded URL as a path parameter.</p>
+
+    <h2>Usage</h2>
+    <p>Access: <code class="code">/auto_source/&#123;base64_encoded_url&#125;</code></p>
+
+    <h2>Example</h2>
+    <div class="example">
+      <p>To generate a feed for <code>https://example.com</code>:</p>
+      <p>1. Encode the URL: <code>https://example.com</code> → <code>aHR0cHM6Ly9leGFtcGxlLmNvbQ==</code></p>
+      <p>2. Access: <code>/auto_source/aHR0cHM6Ly9leGFtcGxlLmNvbQ==</code></p>
+    </div>
+
+    <h2>Authentication</h2>
+    <p>This endpoint requires HTTP Basic Authentication. Use the configured credentials.</p>
+
+    <h2>URL Restrictions</h2>
+    <p>For security, only certain URLs may be processed. Check the configuration for allowed domains.</p>
+
+    <p><a href="/auto-source/" class="btn btn-primary">🚀 Try Auto Source</a></p>
+  </div>
+</Layout>
+
+<style>
+  .container {
+    background: #f8f9fa;
+    padding: 30px;
+    border-radius: 8px;
+    margin: 20px 0;
+    max-width: 800px;
+  }
+
+  h1 {
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  p {
+    color: #666;
+    line-height: 1.6;
+  }
+
+  .code {
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Monaco', 'Menlo', monospace;
+  }
+
+  .example {
+    background: #f1f3f4;
+    padding: 15px;
+    border-radius: 4px;
+    margin: 10px 0;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .btn:hover {
+    background: #0056b3;
+  }
+
+  .btn-primary {
+    background: #007bff;
+  }
+
+  .btn-primary:hover {
+    background: #0056b3;
+  }
+</style>

@@ -7,6 +7,13 @@ import Layout from "../layouts/Layout.astro"
     <h1>Auto Source</h1>
     <p>Generate RSS feeds from any website automatically</p>
 
+    <div class="bookmarklet-section">
+      <h3>📌 Quick Access Bookmarklet</h3>
+      <p>Drag this button to your bookmarks bar to quickly convert any website to RSS:</p>
+      <a id="bookmarklet" class="btn btn-bookmarklet" href="#">📰 Convert to RSS</a>
+      <p class="bookmarklet-help">Click the button above to generate the bookmarklet, then drag it to your bookmarks bar.</p>
+    </div>
+
     <div class="auto-source-form">
       <form id="auto-source-form" novalidate>
         <div class="form-group">
@@ -70,6 +77,8 @@ import Layout from "../layouts/Layout.astro"
         <li>Use the generated URL in your RSS reader</li>
       </ul>
 
+      <p><a href="/auto-source-instructions/" class="btn btn-secondary">📖 View Detailed Instructions</a></p>
+
       <div class="restrictions">
         <h4>⚠️ URL Restrictions</h4>
         <p>
@@ -87,28 +96,80 @@ import Layout from "../layouts/Layout.astro"
 </Layout>
 
 <script>
-  document.getElementById("auto-source-form").addEventListener("submit", async (e) => {
+  // Bookmarklet functionality
+  function initBookmarklet() {
+    const bookmarklet = document.getElementById("bookmarklet") as HTMLAnchorElement;
+    if (!bookmarklet) return;
+
+    bookmarklet.href = generateBookmarkletHref();
+  }
+
+  function generateBookmarkletHref() {
+    const baseUrl = new URL(window.location.origin);
+    baseUrl.pathname = "auto_source/";
+    baseUrl.search = "?url=";
+    baseUrl.hash = "";
+
+    return `javascript:window.location.href='${baseUrl.toString()}'+window.location.href;`;
+  }
+
+  // Initialize bookmarklet on page load
+  initBookmarklet();
+
+  // Handle URL parameters from bookmarklet
+  function handleUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url");
+    const strategy = params.get("strategy");
+
+    if (url) {
+      const urlInput = document.getElementById("url") as HTMLInputElement;
+      const strategySelect = document.getElementById("strategy") as HTMLSelectElement;
+
+      if (urlInput) urlInput.value = url;
+      if (strategy && strategySelect) strategySelect.value = strategy;
+
+      // Auto-submit if URL is provided
+      if (urlInput && urlInput.value) {
+        const form = document.getElementById("auto-source-form") as HTMLFormElement;
+        if (form) {
+          form.dispatchEvent(new Event("submit"));
+        }
+      }
+    }
+  }
+
+  // Handle URL parameters on page load
+  handleUrlParams();
+
+  document.getElementById("auto-source-form")?.addEventListener("submit", async (e) => {
     e.preventDefault()
 
-    const formData = new FormData(e.target)
-    const url = formData.get("url")
-    const strategy = formData.get("strategy")
+    const form = e.target as HTMLFormElement
+    const formData = new FormData(form)
+    const url = formData.get("url") as string
+    const strategy = formData.get("strategy") as string
 
     if (!url) return
 
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement
+    const originalText = submitBtn.textContent
+
     try {
-      // Show loading state
-      const submitBtn = e.target.querySelector('button[type="submit"]')
-      const originalText = submitBtn.textContent
       submitBtn.textContent = "Generating..."
       submitBtn.disabled = true
 
       // Encode URL for API
       const encodedUrl = btoa(url)
-      const apiUrl = `http://localhost:3000/auto_source/${encodedUrl}?strategy=${strategy}`
+      const apiUrl = `http://127.0.0.1:3001/auto_source/${encodedUrl}?strategy=${strategy}`
 
-      // Test the API call
-      const response = await fetch(apiUrl)
+      // Test the API call with Basic authentication
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': 'Basic ' + btoa('admin:password')
+        }
+      })
 
       if (!response.ok) {
         throw new Error(`API call failed: ${response.status} ${response.statusText}`)
@@ -117,20 +178,20 @@ import Layout from "../layouts/Layout.astro"
       // Show result area
       const resultArea = document.getElementById("result")
       const feedUrlSpan = document.getElementById("feed-url")
-      const subscribeLink = document.getElementById("subscribe-link")
+      const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement
 
-      feedUrlSpan.textContent = apiUrl
-      subscribeLink.href = apiUrl
-      resultArea.style.display = "block"
-
-      // Scroll to result
-      resultArea.scrollIntoView({ behavior: "smooth" })
+      if (feedUrlSpan) feedUrlSpan.textContent = apiUrl
+      if (subscribeLink) subscribeLink.href = apiUrl
+      if (resultArea) {
+        resultArea.style.display = "block"
+        resultArea.scrollIntoView({ behavior: "smooth" })
+      }
     } catch (error) {
       console.error("Error generating feed:", error)
       showError(`Error generating feed: ${error.message}`)
     } finally {
       // Reset button state
-      const submitBtn = e.target.querySelector('button[type="submit"]')
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement
       submitBtn.textContent = originalText
       submitBtn.disabled = false
     }
@@ -142,18 +203,55 @@ import Layout from "../layouts/Layout.astro"
     const resultArea = document.getElementById("result")
 
     // Hide result area
-    resultArea.style.display = "none"
+    if (resultArea) resultArea.style.display = "none"
 
     // Show error area
-    errorMessage.textContent = message
-    errorArea.style.display = "block"
-
-    // Scroll to error
-    errorArea.scrollIntoView({ behavior: "smooth" })
+    if (errorMessage) errorMessage.textContent = message
+    if (errorArea) {
+      errorArea.style.display = "block"
+      errorArea.scrollIntoView({ behavior: "smooth" })
+    }
   }
 </script>
 
 <style>
+  .bookmarklet-section {
+    max-width: 600px;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+  }
+
+  .bookmarklet-section h3 {
+    margin: 0 0 1rem 0;
+    color: #495057;
+  }
+
+  .bookmarklet-section p {
+    margin: 0.5rem 0;
+    color: #6c757d;
+  }
+
+  .btn-bookmarklet {
+    background: #28a745;
+    font-size: 1.1rem;
+    padding: 0.75rem 1.5rem;
+    margin: 1rem 0;
+    display: inline-block;
+  }
+
+  .btn-bookmarklet:hover {
+    background: #218838;
+  }
+
+  .bookmarklet-help {
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #6c757d;
+  }
+
   .auto-source-form {
     max-width: 600px;
     margin: 2rem 0;
