@@ -1,0 +1,201 @@
+---
+// Hero.astro - Hero section component
+---
+
+<div class="hero-section">
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="hero-icon">📡</span>
+      Turn Any Website Into an RSS Feed
+    </h1>
+    <p class="hero-subtitle">
+      Instantly convert any website into a clean, reliable RSS feed. No coding required, works without
+      JavaScript.
+    </p>
+    <div class="hero-features">
+      <div class="feature-item">
+        <span class="feature-icon">⚡</span>
+        <span>Instant conversion</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">🔒</span>
+        <span>Secure & private</span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon">📱</span>
+        <span>Works everywhere</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    /* Hero section variables */
+    --hero-bg: linear-gradient(135deg, var(--sl-color-accent-low) 0%, var(--sl-color-bg) 100%);
+    --hero-text: var(--sl-color-text);
+    --hero-accent: var(--sl-color-accent);
+    --hero-muted: var(--sl-color-text-accent);
+  }
+
+  /* Hero Section - Specific to hero only */
+  .hero-section {
+    background: var(--hero-bg);
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 0.8s ease-out;
+    box-sizing: border-box;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(circle at 20% 80%, var(--sl-color-accent-low) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, var(--sl-color-accent-low) 0%, transparent 50%);
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--hero-text);
+    margin: 0 0 1rem 0;
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .hero-icon {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: var(--hero-muted);
+    margin: 0 0 2rem 0;
+    line-height: 1.5;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-features {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--sl-color-bg);
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 50px;
+    font-weight: 500;
+    color: var(--hero-text);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .feature-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .feature-icon {
+    font-size: 1.25rem;
+  }
+
+  /* Responsive design for hero */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2rem;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
+
+    .hero-features {
+      gap: 1rem;
+    }
+
+    .feature-item {
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+
+    .hero-section {
+      padding: 2rem 1rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .hero-title {
+      font-size: 3rem;
+    }
+
+    .hero-subtitle {
+      font-size: 1.375rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-section {
+      padding: 4rem 3rem;
+    }
+
+    .hero-title {
+      font-size: 3.5rem;
+    }
+
+    .hero-features {
+      gap: 3rem;
+    }
+
+    .feature-item {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+    }
+  }
+</style>

@@ -2,6 +2,7 @@
 // Import the `<StarlightPage>` component first to set up cascade layers
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
+import Hero from "../components/Hero.astro";
 import AuthForm from "../components/AuthForm.astro";
 import FeedForm from "../components/FeedForm.astro";
 import UrlInput from "../components/UrlInput.astro";
@@ -17,27 +18,42 @@ import "../styles/forms.css";
     template: "splash",
   }}
 >
-  <Card>
+  <!-- Hero Section -->
+  <Hero />
+
+  <Card title="">
     <!-- Progressive enhancement: form works without JavaScript -->
     <form id="auto-source-form" action="/auto_source/create" method="POST" novalidate>
       <div class="form-layout">
         <!-- Authentication Section (hidden when logged in) -->
-        <div class="form-section" id="auth-section">
-          <h3>🔐 Authentication</h3>
+        <div class="form-section auth-section-enhanced" id="auth-section">
+          <div class="section-header">
+            <h3>🔐 Authentication</h3>
+            <p class="section-description">Enter your credentials to start converting websites</p>
+          </div>
           <AuthForm />
         </div>
 
         <!-- Main Content Section (shown when logged in) -->
         <div class="main-content-section" id="main-content" style="display: none;">
           <!-- URL Input Section -->
-          <UrlInput />
+          <div class="url-section-enhanced">
+            <div class="section-header">
+              <h3>🌐 Convert Website</h3>
+              <p class="section-description">Enter the URL of the website you want to convert to RSS</p>
+            </div>
+            <UrlInput />
+          </div>
 
           <!-- XML Display Section -->
           <XmlDisplay />
 
           <!-- Feed Configuration Section -->
-          <div class="form-section">
-            <h3>⚙️ Configuration</h3>
+          <div class="form-section config-section-enhanced">
+            <div class="section-header">
+              <h3>⚙️ Configuration</h3>
+              <p class="section-description">Customize your RSS feed settings</p>
+            </div>
             <FeedForm />
           </div>
         </div>
@@ -55,513 +71,78 @@ import "../styles/forms.css";
       role="region"
       aria-labelledby="result-heading"
     >
-      <h3 id="result-heading">✅ Generated Feed</h3>
-      <div>
-        <div class="form-group-compact">
-          <label class="form-label">Feed URL</label>
-          <div class="form-row">
-            <div class="form-group">
-              <input
-                type="text"
-                id="feed-url"
-                class="form-input"
-                readonly
-                aria-label="Generated RSS feed URL"
-              />
-            </div>
-            <button type="button" class="form-button form-button-secondary" id="copy-url">Copy URL</button>
-          </div>
-        </div>
-        <div class="quick-actions" style="margin-top: 1rem;">
-          <a id="subscribe-link" href="#" class="form-button" aria-label="Subscribe to the generated RSS feed"
-            >Subscribe</a
-          >
-        </div>
-      </div>
+      <!-- Results will be populated by JavaScript -->
     </div>
 
-    <div id="error" style="display: none;" role="alert" aria-labelledby="error-heading">
-      <h3 id="error-heading">Error</h3>
-      <p id="error-message"></p>
-    </div>
+    <!-- Bookmarklet Section -->
+    <Bookmarklet />
+
+    <!-- Footer -->
+    <Footer />
   </Card>
-
-  <Bookmarklet />
-
-  <Footer />
 </StarlightPage>
 
 <script>
-  // Simple SPA state management
-  let authToken: string | null = null;
-  let authUsername: string | null = null;
-  let isAuthenticated = false;
+  // Load utility functions
+  import {
+    setupFormHandlers,
+    showView,
+    showFeedResult,
+    showError,
+    showSuccess,
+  } from "../lib/form-handlers.js";
+  import { fetchAndDisplayRSS, showContentPreview } from "../lib/feed-handlers.js";
+  import { loadRSSContent, loadRawXML } from "../lib/rss-utils.js";
 
-  // Load saved credentials from localStorage
-  function loadSavedCredentials() {
-    try {
-      const savedToken = localStorage.getItem("html2rss_token");
-      const savedUsername = localStorage.getItem("html2rss_username");
+  // Make functions globally available
+  (window as any).showView = showView;
+  (window as any).showFeedResult = showFeedResult;
+  (window as any).showError = showError;
+  (window as any).showSuccess = showSuccess;
+  (window as any).fetchAndDisplayRSS = fetchAndDisplayRSS;
+  (window as any).showContentPreview = showContentPreview;
+  (window as any).loadRSSContent = loadRSSContent;
+  (window as any).loadRawXML = loadRawXML;
 
-      if (savedToken && savedUsername) {
-        authToken = savedToken;
-        authUsername = savedUsername;
-        isAuthenticated = true;
+  // Initialize the application
+  document.addEventListener("DOMContentLoaded", () => {
+    // Check if user is already authenticated
+    const username = localStorage.getItem("html2rss_username");
+    const token = localStorage.getItem("html2rss_token");
 
-        // Update hidden fields for non-JS form submission
-        const hiddenUsername = document.getElementById("hidden-username") as HTMLInputElement;
-        const hiddenToken = document.getElementById("hidden-token") as HTMLInputElement;
-        if (hiddenUsername) hiddenUsername.value = savedUsername;
-        if (hiddenToken) hiddenToken.value = savedToken;
-
-        showView("feed-creation");
-        const userDisplay = document.getElementById("user-display");
-        if (userDisplay) userDisplay.textContent = savedUsername;
-        console.log("Loaded saved credentials for:", savedUsername);
-      }
-    } catch (error) {
-      console.warn("Failed to load saved credentials:", error);
-    }
-  }
-
-  // Save credentials to localStorage
-  function saveCredentials(username: string, token: string) {
-    try {
-      localStorage.setItem("html2rss_username", username);
-      localStorage.setItem("html2rss_token", token);
-      console.log("Saved credentials for:", username);
-    } catch (error) {
-      console.warn("Failed to save credentials:", error);
-    }
-  }
-
-  // Clear saved credentials
-  function clearSavedCredentials() {
-    try {
-      localStorage.removeItem("html2rss_username");
-      localStorage.removeItem("html2rss_token");
-      console.log("Cleared saved credentials");
-    } catch (error) {
-      console.warn("Failed to clear credentials:", error);
-    }
-  }
-
-  // Initialize on page load
-  function initializeApp() {
-    console.log("Initializing app...");
-    loadSavedCredentials(); // Load saved credentials first
-    initAuthHandlers();
-    initFeedHandlers();
-    initAdvancedToggle();
-    initCopyUrl();
-    initXmlToggle();
-    loadStrategies();
-    handleUrlParams();
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initializeApp);
-  } else {
-    initializeApp();
-  }
-
-  // Authentication handlers
-  function initAuthHandlers() {
-    const authButton = document.getElementById("auth-button") as HTMLButtonElement;
-    const logoutButton = document.getElementById("logout-button") as HTMLButtonElement;
-
-    console.log("Initializing auth handlers:", { authButton: !!authButton, logoutButton: !!logoutButton });
-
-    if (authButton) {
-      authButton.addEventListener("click", async () => {
-        console.log("Auth button clicked!");
-        const usernameField = document.getElementById("username") as HTMLInputElement;
-        const tokenField = document.getElementById("token") as HTMLInputElement;
-        const username = usernameField?.value.trim();
-        const token = tokenField?.value.trim();
-
-        if (!username || !token) {
-          showError("Please enter both username and token");
-          return;
-        }
-
-        authButton.textContent = "Authenticating...";
-        authButton.disabled = true;
-
-        try {
-          const response = await fetch("/api/strategies.json", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (response.ok) {
-            authToken = token;
-            authUsername = username;
-            isAuthenticated = true;
-            saveCredentials(username, token); // Save credentials to localStorage
-
-            // Update hidden fields for non-JS form submission
-            const hiddenUsername = document.getElementById("hidden-username") as HTMLInputElement;
-            const hiddenToken = document.getElementById("hidden-token") as HTMLInputElement;
-            if (hiddenUsername) hiddenUsername.value = username;
-            if (hiddenToken) hiddenToken.value = token;
-
-            console.log("Authentication successful:", { username, isAuthenticated, authToken: !!authToken });
-            showView("feed-creation");
-            const userDisplay = document.getElementById("user-display");
-            if (userDisplay) userDisplay.textContent = username;
-            clearFormErrors();
-          } else {
-            console.log("Authentication failed:", response.status, response.statusText);
-            showError("Authentication failed. Please check your credentials.");
-          }
-        } catch (error) {
-          showError("Authentication failed. Please try again.");
-        } finally {
-          authButton.textContent = "Authenticate";
-          authButton.disabled = false;
-        }
-      });
-    }
-
-    if (logoutButton) {
-      logoutButton.addEventListener("click", () => {
-        authToken = null;
-        authUsername = null;
-        isAuthenticated = false;
-        clearSavedCredentials(); // Clear saved credentials
-        showView("auth");
-        const form = document.getElementById("auto-source-form") as HTMLFormElement;
-        if (form) form.reset();
-      });
-    }
-  }
-
-  // Feed creation handlers
-  function initFeedHandlers() {
-    const form = document.getElementById("auto-source-form") as HTMLFormElement;
-    if (!form) return;
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      clearFormErrors();
-
-      console.log("Form submitted:", { isAuthenticated, authToken: !!authToken });
-
-      if (!isAuthenticated || !authToken) {
-        showError("Please authenticate first");
-        return;
-      }
-
-      const formData = new FormData(e.target as HTMLFormElement);
-      const url = formData.get("url") as string;
-      const name = formData.get("name") as string;
-      const strategy = formData.get("strategy") as string;
-
-      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
-      if (submitBtn) {
-        submitBtn.textContent = "Generating...";
-        submitBtn.disabled = true;
-      }
-
-      try {
-        const response = await fetch("/auto_source/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: new URLSearchParams({ url, name, strategy }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`API call failed: ${response.status}`);
-        }
-
-        const feedData = await response.json();
-        showFeedResult(feedData.public_url);
-
-        // Show both content preview and raw XML
-        await showContentPreview(feedData.public_url);
-        await fetchAndDisplayRSS(feedData.public_url);
-      } catch (error) {
-        showError(`Error generating feed: ${error.message}`);
-      } finally {
-        if (submitBtn) {
-          submitBtn.textContent = "Convert";
-          submitBtn.disabled = false;
-        }
-      }
-    });
-  }
-
-  // View management
-  function showView(view: string) {
-    const authSection = document.getElementById("auth-section");
-    const mainContent = document.getElementById("main-content");
-    const urlInput = document.getElementById("url");
-    const advancedFields = document.getElementById("advanced-fields");
-    const formLayout = document.querySelector(".form-layout");
-
-    if (view === "auth") {
-      if (authSection) authSection.style.display = "block";
-      if (mainContent) mainContent.style.display = "none";
-      if (urlInput) urlInput.style.display = "none";
-      if (advancedFields) advancedFields.style.display = "none";
-      if (formLayout) formLayout.classList.remove("authenticated");
+    if (username && token) {
+      showView("main");
     } else {
-      if (authSection) authSection.style.display = "none";
-      if (mainContent) mainContent.style.display = "block";
-      if (urlInput) urlInput.style.display = "block";
-      if (formLayout) formLayout.classList.add("authenticated");
-      // Don't force show advanced fields - let user toggle them
+      showView("auth");
     }
-  }
 
-  // Utility functions
-  function showFeedResult(feedUrl: string) {
-    const feedUrlEl = document.getElementById("feed-url") as HTMLInputElement;
-    const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement;
-    const result = document.getElementById("result");
-    const quickActions = document.querySelectorAll(".quick-actions");
+    // Set up form handlers
+    setupFormHandlers();
 
-    if (feedUrlEl) feedUrlEl.value = feedUrl;
-    if (subscribeLink) subscribeLink.href = `feed:${feedUrl}`;
-    if (result) result.style.display = "block";
-    quickActions.forEach((action) => {
-      if (action instanceof HTMLElement) action.style.display = "flex";
-    });
-  }
+    // Set up advanced options toggle
+    const advancedToggle = document.getElementById("advanced-toggle");
+    const advancedFields = document.getElementById("advanced-fields");
 
-  function showError(message: string) {
-    const errorMessage = document.getElementById("error-message");
-    const error = document.getElementById("error");
-    const result = document.getElementById("result");
+    if (advancedToggle && advancedFields) {
+      advancedToggle.addEventListener("click", () => {
+        const isVisible = advancedFields.style.display !== "none";
+        advancedFields.style.display = isVisible ? "none" : "block";
+        advancedToggle.textContent = isVisible ? "Show Advanced Options" : "Hide Advanced Options";
+      });
+    }
 
-    if (errorMessage) errorMessage.textContent = message;
-    if (error) error.style.display = "block";
-    if (result) result.style.display = "none";
-  }
-
-  function clearFormErrors() {
-    document.querySelectorAll(".form-error").forEach((error) => error.classList.remove("show"));
-  }
-
-  function initAdvancedToggle() {
-    const toggle = document.getElementById("advanced-toggle");
-    const fields = document.getElementById("advanced-fields");
-    if (toggle && fields) {
-      toggle.addEventListener("click", () => {
-        const isVisible = fields.style.display === "block" || fields.classList.contains("show");
-        if (isVisible) {
-          fields.style.display = "none";
-          fields.classList.remove("show");
-          toggle.textContent = "Show advanced options";
-        } else {
-          fields.style.display = "block";
-          fields.classList.add("show");
-          toggle.textContent = "Hide advanced options";
+    // Set up strategy radio buttons
+    const strategyRadios = document.querySelectorAll(
+      'input[name="strategy"]',
+    ) as NodeListOf<HTMLInputElement>;
+    strategyRadios.forEach((radio) => {
+      radio.addEventListener("change", () => {
+        // Update hidden field for form submission
+        const hiddenStrategy = document.getElementById("hidden-strategy") as HTMLInputElement;
+        if (hiddenStrategy) {
+          hiddenStrategy.value = radio.value;
         }
-      });
-    }
-  }
-
-  function initCopyUrl() {
-    const copyBtn = document.getElementById("copy-url");
-    if (copyBtn) {
-      copyBtn.addEventListener("click", async () => {
-        const feedUrlEl = document.getElementById("feed-url") as HTMLInputElement;
-        const url = feedUrlEl?.value;
-        if (url) {
-          await navigator.clipboard.writeText(url);
-          copyBtn.textContent = "Copied!";
-          setTimeout(() => (copyBtn.textContent = "Copy URL"), 2000);
-        }
-      });
-    }
-  }
-
-  function initXmlToggle() {
-    const toggle = document.getElementById("xml-toggle");
-    const content = document.getElementById("xml-feed-content");
-    if (toggle && content) {
-      toggle.addEventListener("click", () => {
-        const isVisible = content.style.display !== "none";
-        if (isVisible) {
-          content.style.display = "none";
-          toggle.textContent = "Show XML";
-        } else {
-          content.style.display = "block";
-          toggle.textContent = "Hide XML";
-        }
-      });
-    }
-  }
-
-  async function loadStrategies() {
-    try {
-      const response = await fetch("/api/strategies.json");
-      if (!response.ok) return;
-      const data = await response.json();
-      const strategyGroup = document.getElementById("strategy-group");
-      if (!strategyGroup) return;
-
-      strategyGroup.innerHTML = "";
-
-      data.strategies.forEach((strategy: any, index: number) => {
-        const radioId = `strategy-${strategy.name}`;
-        const isFirst = index === 0;
-        const radioOption = document.createElement("div");
-        radioOption.className = `radio-option ${isFirst ? "selected" : ""}`;
-        radioOption.innerHTML = `
-          <input type="radio" id="${radioId}" name="strategy" value="${strategy.name}" ${isFirst ? "checked" : ""}>
-          <label for="${radioId}">
-            <strong>${strategy.display_name}</strong>
-            <div class="description">${strategy.description || "Strategy option"}</div>
-          </label>
-        `;
-        strategyGroup.appendChild(radioOption);
-      });
-
-      initRadioHandlers();
-    } catch (error) {
-      console.warn("Failed to load strategies:", error);
-      initRadioHandlers();
-    }
-  }
-
-  function initRadioHandlers() {
-    document.querySelectorAll(".radio-option").forEach((option) => {
-      const radio = option.querySelector('input[type="radio"]') as HTMLInputElement;
-      option.addEventListener("click", () => {
-        document.querySelectorAll(".radio-option").forEach((opt) => opt.classList.remove("selected"));
-        option.classList.add("selected");
-        if (radio) radio.checked = true;
       });
     });
-  }
-
-  function handleUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    const url = params.get("url");
-    const strategy = params.get("strategy");
-    if (url) {
-      const urlInput = document.getElementById("url") as HTMLInputElement;
-      if (urlInput) urlInput.value = url;
-    }
-    if (strategy) {
-      setTimeout(() => {
-        const strategyRadio = document.querySelector(
-          `input[name="strategy"][value="${strategy}"]`,
-        ) as HTMLInputElement;
-        if (strategyRadio) strategyRadio.checked = true;
-      }, 100);
-    }
-  }
-
-  async function fetchAndDisplayRSS(feedUrl: string) {
-    try {
-      const response = await fetch(feedUrl);
-      const rssContent = await response.text();
-      const xmlFeedDisplay = document.getElementById("xml-feed-display");
-      const xmlFeedContent = document.getElementById("xml-feed-content");
-      const xmlToggle = document.getElementById("xml-toggle");
-      const rssContentEl = document.getElementById("rss-content");
-
-      if (xmlFeedDisplay) {
-        xmlFeedDisplay.style.display = "block";
-      }
-
-      if (rssContentEl) {
-        // Add basic XML syntax highlighting
-        const highlightedContent = rssContent
-          .replace(/&lt;(\/?[^&gt;]+)&gt;/g, '<span class="xml-tag">&lt;$1&gt;</span>')
-          .replace(
-            /(\w+)=&quot;([^&quot;]*)&quot;/g,
-            '<span class="xml-attribute">$1</span>=&quot;<span class="xml-value">$2</span>&quot;',
-          )
-          .replace(/&lt;!--([^&gt;]*)--&gt;/g, '<span class="xml-comment">&lt;!--$1--&gt;</span>');
-
-        rssContentEl.innerHTML = highlightedContent;
-      }
-
-      // Auto-show the XML content
-      if (xmlFeedContent) {
-        xmlFeedContent.style.display = "block";
-      }
-      if (xmlToggle) {
-        xmlToggle.textContent = "Hide XML";
-      }
-    } catch (error) {
-      const xmlFeedDisplay = document.getElementById("xml-feed-display");
-      if (xmlFeedDisplay) {
-        xmlFeedDisplay.innerHTML = `<div class="content-preview-error">Error fetching RSS content: ${error.message}</div>`;
-        xmlFeedDisplay.style.display = "block";
-      }
-    }
-  }
-
-  async function showContentPreview(feedUrl: string) {
-    try {
-      const response = await fetch(feedUrl);
-      const rssContent = await response.text();
-
-      // Parse RSS content to extract items
-      const parser = new DOMParser();
-      const xmlDoc = parser.parseFromString(rssContent, "text/xml");
-      const items = xmlDoc.querySelectorAll("item");
-
-      const xmlPreview = document.getElementById("xml-preview");
-      if (!xmlPreview) return;
-
-      if (items.length === 0) {
-        // No items found - show warning
-        xmlPreview.innerHTML = `
-          <div class="content-preview-warning">
-            <h4>⚠️ Content Extraction Issue</h4>
-            <p>No content could be extracted from this site. This might be due to:</p>
-            <ul>
-              <li>JavaScript-heavy site (try browserless strategy)</li>
-              <li>Anti-bot protection</li>
-              <li>Complex page structure</li>
-              <li>Site blocking automated requests</li>
-            </ul>
-            <p>Try switching to a different strategy or check if the site is accessible.</p>
-          </div>
-        `;
-      } else {
-        // Show content preview
-        const previewItems = Array.from(items)
-          .slice(0, 5)
-          .map((item) => {
-            const title = item.querySelector("title")?.textContent || "No title";
-            const description = item.querySelector("description")?.textContent || "No description";
-            const link = item.querySelector("link")?.textContent || "#";
-
-            return `
-            <div class="preview-item">
-              <h5><a href="${link}" target="_blank">${title}</a></h5>
-              <p>${description.substring(0, 150)}${description.length > 150 ? "..." : ""}</p>
-            </div>
-          `;
-          })
-          .join("");
-
-        xmlPreview.innerHTML = `
-          <div class="content-preview">
-            <h4>📰 Content Preview (${items.length} items found)</h4>
-            <div class="preview-items">${previewItems}</div>
-            ${items.length > 5 ? `<p class="preview-more">... and ${items.length - 5} more items</p>` : ""}
-          </div>
-        `;
-      }
-
-      xmlPreview.classList.add("show");
-    } catch (error) {
-      const xmlPreview = document.getElementById("xml-preview");
-      if (xmlPreview) {
-        xmlPreview.innerHTML = `<div class="content-preview-error">Error loading content preview: ${error.message}</div>`;
-        xmlPreview.classList.add("show");
-      }
-    }
-  }
+  });
 </script>
