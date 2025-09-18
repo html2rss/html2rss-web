@@ -1,72 +1,195 @@
 ---
-import Layout from "../layouts/Layout.astro";
-
-// Fetch available feeds from Ruby backend
-let feeds = [];
-try {
-  const response = await fetch("/api/feeds.json");
-  if (response.ok) {
-    feeds = await response.json();
-  }
-} catch (error) {
-  console.error("Failed to fetch feeds:", error);
-}
+// Import the `<StarlightPage>` component first to set up cascade layers
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 ---
 
-<Layout title="html2rss-web - Convert websites to RSS feeds">
-  <div class="hero">
-    <h2>Convert websites to RSS feeds</h2>
-    <p>Transform any website into a structured RSS feed instantly</p>
-    <a href="/api/example" class="btn" aria-describedby="example-desc">Try Example Feed</a>
-    <p id="example-desc" class="sr-only">Opens the example RSS feed in a new tab</p>
-  </div>
-
-  <div class="features">
-    <div class="feature">
-      <h3>Pre-built Feeds</h3>
-      <p>Access popular feeds from our curated gallery</p>
-      <a href="/gallery" aria-describedby="gallery-desc">Browse Gallery</a>
-      <p id="gallery-desc" class="sr-only">View our collection of pre-configured RSS feeds</p>
-    </div>
-
-    <div class="feature">
-      <h3>Auto Source</h3>
-      <p>Generate feeds from any website automatically</p>
-      <a href="/auto_source/" aria-describedby="auto-source-desc">Try Auto Source</a>
-      <p id="auto-source-desc" class="sr-only">Create RSS feeds from any website URL</p>
-    </div>
-  </div>
-
-  {
-    feeds.length > 0 && (
-      <div class="available-feeds">
-        <h3>Available Feeds</h3>
-        <div class="feed-list" role="list">
-          {feeds.map((feed) => (
-            <div class="feed-item" role="listitem">
-              <h4>{feed.name}</h4>
-              <p>{feed.description}</p>
-              <a href={feed.url} class="feed-link" aria-label={`Subscribe to ${feed.name} RSS feed`}>
-                Subscribe
-              </a>
-            </div>
-          ))}
-        </div>
+<StarlightPage frontmatter={{
+  title: "html2rss-web - Convert websites to RSS feeds",
+  template: "splash",
+}}>
+  <Card title="Generate RSS Feed">
+    <form id="auto-source-form" novalidate>
+      <div>
+        <label for="url">Website URL:</label>
+        <input
+          type="url"
+          id="url"
+          name="url"
+          placeholder="https://example.com"
+          required
+          autocomplete="url"
+        />
       </div>
-    )
-  }
-</Layout>
 
-<style>
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+      <div>
+        <label for="strategy">Strategy:</label>
+        <select id="strategy" name="strategy">
+          <option value="ssrf_filter">SSRF Filter (Recommended)</option>
+          <option value="faraday">Faraday</option>
+        </select>
+      </div>
+
+      <button type="submit" class="sl-link-button">Generate Feed</button>
+    </form>
+
+    <div id="result" style="display: none;" role="region" aria-labelledby="result-heading">
+      <h3 id="result-heading">Generated Feed</h3>
+      <div>
+        <p><strong>Feed URL:</strong> <span id="feed-url" aria-label="Generated RSS feed URL"></span></p>
+        <p>
+          <a
+            id="subscribe-link"
+            href="#"
+            class="sl-link-button"
+            aria-label="Subscribe to the generated RSS feed">Subscribe</a>
+        </p>
+      </div>
+    </div>
+
+    <div id="error" style="display: none;" role="alert" aria-labelledby="error-heading">
+      <h3 id="error-heading">Error</h3>
+      <p id="error-message"></p>
+    </div>
+  </Card>
+
+  <Aside type="caution" title="Limitations">
+    Limited URL support • No JavaScript • Basic content detection
+  </Aside>
+
+  <Card title="Bookmarklet">
+    <p>Drag to bookmarks bar:</p>
+    <p>
+      <a id="bookmarklet" class="sl-link-button" href="#">
+        <Icon name="rss" />
+        Convert to RSS
+      </a>
+    </p>
+  </Card>
+
+  <Card title="About">
+    <p>
+      Hosted instance • Not affiliated with html2rss project •
+      <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">Official docs</a>
+    </p>
+  </Card>
+</StarlightPage>
+
+<script>
+  // Bookmarklet functionality
+  function initBookmarklet() {
+    const bookmarklet = document.getElementById("bookmarklet") as HTMLAnchorElement;
+    if (!bookmarklet) return;
+
+    bookmarklet.href = generateBookmarkletHref();
   }
-</style>
+
+  function generateBookmarkletHref() {
+    const baseUrl = new URL(window.location.origin);
+    baseUrl.pathname = "auto_source/";
+    baseUrl.search = "?url=";
+    baseUrl.hash = "";
+
+    return `javascript:window.location.href='${baseUrl.toString()}'+window.location.href;`;
+  }
+
+  // Initialize bookmarklet on page load
+  initBookmarklet();
+
+  // Handle URL parameters from bookmarklet
+  function handleUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url");
+    const strategy = params.get("strategy");
+
+    if (url) {
+      const urlInput = document.getElementById("url") as HTMLInputElement;
+      const strategySelect = document.getElementById("strategy") as HTMLSelectElement;
+
+      if (urlInput) urlInput.value = url;
+      if (strategy && strategySelect) strategySelect.value = strategy;
+
+      // Auto-submit if URL is provided
+      if (urlInput && urlInput.value) {
+        const form = document.getElementById("auto-source-form") as HTMLFormElement;
+        if (form) {
+          form.dispatchEvent(new Event("submit"));
+        }
+      }
+    }
+  }
+
+  // Handle URL parameters on page load
+  handleUrlParams();
+
+  document.getElementById("auto-source-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    const url = formData.get("url") as string;
+    const strategy = formData.get("strategy") as string;
+
+    if (!url) return;
+
+    // Show loading state
+    const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+    const originalText = submitBtn.textContent;
+
+    try {
+      submitBtn.textContent = "Generating...";
+      submitBtn.disabled = true;
+
+      // Encode URL for API
+      const encodedUrl = btoa(url);
+      const apiUrl = `http://127.0.0.1:3001/auto_source/${encodedUrl}?strategy=${strategy}`;
+
+      // Test the API call with Basic authentication
+      const response = await fetch(apiUrl, {
+        headers: {
+          Authorization: "Basic " + btoa("admin:password"),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+      }
+
+      // Show result area
+      const resultArea = document.getElementById("result");
+      const feedUrlSpan = document.getElementById("feed-url");
+      const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement;
+
+      if (feedUrlSpan) feedUrlSpan.textContent = apiUrl;
+      if (subscribeLink) subscribeLink.href = apiUrl;
+      if (resultArea) {
+        resultArea.style.display = "block";
+        resultArea.scrollIntoView({ behavior: "smooth" });
+      }
+    } catch (error) {
+      console.error("Error generating feed:", error);
+      showError(`Error generating feed: ${error.message}`);
+    } finally {
+      // Reset button state
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+
+  function showError(message) {
+    const errorArea = document.getElementById("error");
+    const errorMessage = document.getElementById("error-message");
+    const resultArea = document.getElementById("result");
+
+    // Hide result area
+    if (resultArea) resultArea.style.display = "none";
+
+    // Show error area
+    if (errorMessage) errorMessage.textContent = message;
+    if (errorArea) {
+      errorArea.style.display = "block";
+      errorArea.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+</script>
