@@ -2,11 +2,14 @@
 
 require 'roda'
 require 'rack/cache'
+require 'json'
 
 require 'html2rss'
 require_relative 'app/ssrf_filter_strategy'
 require_relative 'app/auto_source'
 require_relative 'app/feeds'
+require_relative 'app/health_check'
+require_relative 'app/api_routes'
 
 module Html2rss
   module Web
@@ -15,6 +18,8 @@ module Html2rss
     #
     # It is built with [Roda](https://roda.jeremyevans.net/).
     class App < Roda
+      include ApiRoutes
+
       CONTENT_TYPE_RSS = 'application/xml'
 
       Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
@@ -71,8 +76,14 @@ module Html2rss
           JSON.generate(Feeds.list_feeds)
         end
 
+        r.on 'strategies.json' do
+          response['Content-Type'] = 'application/json'
+          response['Cache-Control'] = 'public, max-age=3600'
+          JSON.generate(ApiRoutes.list_available_strategies)
+        end
+
         r.on String do |feed_name|
-          handle_feed_generation(r, feed_name)
+          ApiRoutes.handle_feed_generation(r, feed_name)
         end
       end
 
@@ -97,25 +108,6 @@ module Html2rss
       end
 
       private
-
-      # API route helpers
-      def handle_feed_generation(router, feed_name)
-        params = router.params
-        rss_content = Feeds.generate_feed(feed_name, params)
-        set_rss_headers
-        rss_content.to_s
-      rescue StandardError => error
-        response.status = 500
-        response['Content-Type'] = CONTENT_TYPE_RSS
-        Feeds.error_feed(error.message)
-      end
-
-      def set_rss_headers
-        response['Content-Type'] = CONTENT_TYPE_RSS
-        response['Cache-Control'] = 'public, max-age=3600'
-        response['X-Content-Type-Options'] = 'nosniff'
-        response['X-XSS-Protection'] = '1; mode=block'
-      end
 
       # Auto source route helpers
       def auto_source_disabled_response
