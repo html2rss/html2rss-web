@@ -134,26 +134,40 @@ RSpec.describe Html2rss::Web::AutoSource do
     let(:strategy) { 'ssrf_filter' }
 
     before do
-      # Mock the html2rss gem calls
-      allow(described_class).to receive(:call_strategy).and_return(double('RSS', to_s: '<rss>test content</rss>'))
+      # Mock the html2rss gem calls with proper RSS content containing items
+      allow(described_class).to receive(:call_strategy)
+        .and_return(double('RSS', to_s: '<rss><channel><item><title>Test Item</title></item></channel></rss>'))
     end
 
     it 'generates RSS content using the specified strategy', :aggregate_failures do
       allow(described_class).to receive(:call_strategy)
         .with(url, strategy)
-        .and_return(double('RSS', to_s: '<rss>test content</rss>'))
+        .and_return(double('RSS', to_s: '<rss><channel><item><title>Test Item</title></item></channel></rss>'))
 
       content = described_class.generate_feed_content(url, strategy)
-      expect(content.to_s).to eq('<rss>test content</rss>')
+      expect(content.to_s).to eq('<rss><channel><item><title>Test Item</title></item></channel></rss>')
       expect(described_class).to have_received(:call_strategy)
         .with(url, strategy)
     end
 
     it 'handles different strategies' do
-      allow(described_class).to receive(:call_strategy).and_return(double('RSS', to_s: '<rss>strategy content</rss>'))
+      allow(described_class).to receive(:call_strategy).and_return(
+        double('RSS', to_s: '<rss><channel><item><title>Strategy Item</title></item></channel></rss>')
+      )
 
       content = described_class.generate_feed_content(url, 'custom_strategy')
-      expect(content.to_s).to eq('<rss>strategy content</rss>')
+      expect(content.to_s).to eq('<rss><channel><item><title>Strategy Item</title></item></channel></rss>')
+    end
+
+    it 'returns empty feed warning when content has no items', :aggregate_failures do
+      allow(described_class).to receive_messages(call_strategy:
+       double('RSS', to_s: '<rss><channel></channel></rss>'),
+                                                 extract_site_title: 'Example Site')
+
+      content = described_class.generate_feed_content(url, strategy)
+      expect(content).to include('Content Extraction Issue')
+      expect(content).to include('Example Site')
+      expect(content).to include('No content could be extracted')
     end
   end
 

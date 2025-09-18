@@ -13,6 +13,7 @@ require_relative 'app/health_check'
 require_relative 'app/api_routes'
 require_relative 'app/response_helpers'
 require_relative 'app/static_file_helpers'
+require_relative 'app/xml_builder'
 
 module Html2rss
   module Web

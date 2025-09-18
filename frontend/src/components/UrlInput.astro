@@ -1,0 +1,31 @@
+---
+// UrlInput.astro - URL input and conversion component
+import "../styles/forms.css";
+---
+
+<div class="url-section">
+  <div class="form-group-compact">
+    <label for="url" class="form-label required">Website URL</label>
+    <div class="form-row">
+      <div class="form-group">
+        <input
+          type="url"
+          id="url"
+          name="url"
+          class="form-input"
+          placeholder="https://example.com"
+          required
+          autocomplete="url"
+        />
+        <div class="form-error" id="url-error"></div>
+      </div>
+      <button type="submit" class="form-button">Convert</button>
+    </div>
+    <div class="quick-actions" id="quick-actions" style="display: none;">
+      <button type="button" class="form-button form-button-secondary" id="copy-url">Copy URL</button>
+      <a href="#" class="form-button form-button-secondary" id="subscribe-link" style="text-decoration: none;"
+        >Subscribe</a
+      >
+    </div>
+  </div>
+</div>

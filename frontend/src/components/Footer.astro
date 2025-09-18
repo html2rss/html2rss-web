@@ -1,0 +1,34 @@
+---
+// Footer.astro - Subtle footer information
+---
+
+<footer class="app-footer">
+  <p>
+    Hosted instance • Not affiliated with html2rss project •
+    <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">Official docs</a>
+  </p>
+</footer>
+
+<style>
+  .app-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--sl-color-hairline);
+    text-align: center;
+  }
+
+  .app-footer p {
+    margin: 0;
+    color: var(--sl-color-text-accent);
+    font-size: 0.875rem;
+  }
+
+  .app-footer a {
+    color: var(--sl-color-accent);
+    text-decoration: none;
+  }
+
+  .app-footer a:hover {
+    text-decoration: underline;
+  }
+</style>

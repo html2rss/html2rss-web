@@ -1,0 +1,552 @@
+/* Shared form styles for html2rss-web - Clean, minimal design */
+
+:root {
+  --form-bg: var(--sl-color-bg);
+  --form-border: var(--sl-color-hairline);
+  --form-focus: var(--sl-color-accent);
+  --form-error: var(--sl-color-red);
+  --form-success: var(--sl-color-green);
+  --form-text: var(--sl-color-text);
+  --form-muted: var(--sl-color-text-accent);
+  --form-spacing: 1rem;
+  --form-radius: 8px;
+  --form-shadow: none;
+}
+
+.form-container {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: end;
+}
+
+.form-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group-compact {
+  margin-bottom: 0.75rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--form-text);
+  font-size: 0.875rem;
+}
+
+.form-label.required::after {
+  content: " *";
+  color: var(--form-error);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  background: var(--sl-color-bg);
+  color: var(--form-text);
+  font-size: 0.875rem;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--form-focus);
+  box-shadow: 0 0 0 2px var(--sl-color-accent-low);
+}
+
+.form-input:invalid {
+  border-color: var(--form-error);
+}
+
+.form-input::placeholder {
+  color: var(--form-muted);
+}
+
+.form-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--form-focus);
+  color: var(--sl-color-white);
+  border: none;
+  border-radius: var(--form-radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.form-button:hover:not(:disabled) {
+  background: var(--sl-color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.form-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-button-secondary {
+  background: var(--sl-color-bg);
+  color: var(--form-text);
+  border: 1px solid var(--form-border);
+}
+
+.form-button-secondary:hover:not(:disabled) {
+  background: var(--sl-color-hairline);
+}
+
+.form-error {
+  color: var(--form-error);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  display: none;
+}
+
+.form-error.show {
+  display: block;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Section styling - minimal approach */
+.form-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  margin-bottom: 1.5rem;
+}
+
+.form-section h3 {
+  margin: 0 0 0.75rem 0;
+  color: var(--form-text);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--form-border);
+}
+
+/* URL section - clean styling */
+.url-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+.url-section .form-row {
+  gap: 1rem;
+}
+
+.url-section .form-group {
+  flex: 1;
+}
+
+.url-section .form-button {
+  min-width: 120px;
+}
+
+/* Results section */
+.results-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* Content preview - minimal styling */
+.content-preview {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.content-preview h4 {
+  margin: 0 0 1rem 0;
+  color: var(--form-text);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preview-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.preview-item {
+  background: var(--sl-color-hairline);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  padding: 1rem;
+}
+
+.preview-item h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: var(--form-text);
+}
+
+.preview-item h5 a {
+  color: var(--form-focus);
+  text-decoration: none;
+}
+
+.preview-item h5 a:hover {
+  text-decoration: underline;
+}
+
+.preview-item p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--form-muted);
+  line-height: 1.4;
+}
+
+.preview-more {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--form-muted);
+  font-style: italic;
+  text-align: center;
+}
+
+.content-preview-warning {
+  background: var(--sl-color-red-low);
+  border: 1px solid var(--form-error);
+  border-radius: var(--form-radius);
+  padding: 1rem;
+  color: var(--form-text);
+}
+
+.content-preview-warning h4 {
+  margin: 0 0 1rem 0;
+  color: var(--form-error);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.content-preview-warning p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+}
+
+.content-preview-warning ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  font-size: 0.8rem;
+}
+
+.content-preview-warning li {
+  margin: 0.25rem 0;
+  color: var(--form-muted);
+}
+
+.content-preview-error {
+  background: var(--sl-color-red-low);
+  border: 1px solid var(--form-error);
+  border-radius: var(--form-radius);
+  padding: 1rem;
+  color: var(--form-error);
+  font-size: 0.875rem;
+}
+
+/* XML Feed Display - minimal styling */
+.xml-feed-display {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.xml-feed-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.xml-feed-header h4 {
+  margin: 0;
+  color: var(--form-text);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.xml-toggle {
+  background: var(--form-focus);
+  color: var(--sl-color-white);
+  border: none;
+  border-radius: var(--form-radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.xml-toggle:hover {
+  background: var(--sl-color-accent-hover);
+}
+
+.xml-feed-content {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  padding: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.xml-feed-content pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--form-text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.xml-feed-content code {
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.xml-preview {
+  background: var(--sl-color-bg);
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  padding: 1.5rem;
+  margin-top: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+}
+
+.xml-preview pre {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--form-text);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.xml-preview code {
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.xml-preview .xml-tag {
+  color: var(--sl-color-accent);
+}
+
+.xml-preview .xml-attribute {
+  color: var(--sl-color-green);
+}
+
+.xml-preview .xml-value {
+  color: var(--sl-color-orange);
+}
+
+.xml-preview .xml-comment {
+  color: var(--form-muted);
+  font-style: italic;
+}
+
+.xml-preview.show {
+  display: block;
+}
+
+.xml-preview.loading {
+  color: var(--form-muted);
+  font-style: italic;
+}
+
+/* Advanced options */
+.advanced-toggle {
+  background: none;
+  border: none;
+  color: var(--form-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 0.5rem;
+}
+
+.advanced-toggle:hover {
+  color: var(--form-text);
+}
+
+.advanced-fields {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--form-border);
+}
+
+.advanced-fields.show {
+  display: block;
+}
+
+/* Radio group styling */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  background: var(--sl-color-bg);
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.radio-option:hover {
+  background: var(--sl-color-hairline);
+}
+
+.radio-option.selected {
+  border-color: var(--form-focus);
+  background: var(--sl-color-accent-low);
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+  accent-color: var(--form-focus);
+}
+
+.radio-option label {
+  margin: 0;
+  cursor: pointer;
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.radio-option .description {
+  font-size: 0.75rem;
+  color: var(--form-muted);
+  margin-top: 0.25rem;
+}
+
+/* Main content section */
+.main-content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* User info section */
+.user-info {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--form-border);
+}
+
+.user-info p {
+  margin: 0;
+  color: var(--form-muted);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logout-btn {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Responsive design */
+@media (min-width: 768px) {
+  .form-row {
+    gap: 1.5rem;
+  }
+
+  .form-button {
+    min-width: 140px;
+    font-size: 1rem;
+    padding: 0.875rem 1.75rem;
+  }
+
+  .radio-group {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .radio-option {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .url-section .form-row {
+    gap: 1.5rem;
+  }
+}
