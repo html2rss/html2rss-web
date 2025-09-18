@@ -4,29 +4,24 @@ import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 ---
 
-<StarlightPage frontmatter={{
-  title: "html2rss-web - Convert websites to RSS feeds",
-  template: "splash",
-}}>
+<StarlightPage
+  frontmatter={{
+    title: "html2rss-web - Convert websites to RSS feeds",
+    template: "splash",
+  }}
+>
   <Card title="Generate RSS Feed">
     <form id="auto-source-form" novalidate>
       <div>
         <label for="url">Website URL:</label>
-        <input
-          type="url"
-          id="url"
-          name="url"
-          placeholder="https://example.com"
-          required
-          autocomplete="url"
-        />
+        <input type="url" id="url" name="url" placeholder="https://example.com" required autocomplete="url" />
       </div>
 
       <div>
         <label for="strategy">Strategy:</label>
         <select id="strategy" name="strategy">
+          <!-- Fallback options for when JS is disabled -->
           <option value="ssrf_filter">SSRF Filter (Recommended)</option>
-          <option value="faraday">Faraday</option>
         </select>
       </div>
 
@@ -42,7 +37,8 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
             id="subscribe-link"
             href="#"
             class="sl-link-button"
-            aria-label="Subscribe to the generated RSS feed">Subscribe</a>
+            aria-label="Subscribe to the generated RSS feed">Subscribe</a
+          >
         </p>
       </div>
     </div>
@@ -95,6 +91,35 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 
   // Initialize bookmarklet on page load
   initBookmarklet();
+
+  // Load available strategies dynamically
+  async function loadStrategies() {
+    try {
+      const response = await fetch("/api/strategies.json");
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const strategySelect = document.getElementById("strategy") as HTMLSelectElement;
+      if (!strategySelect) return;
+
+      // Clear existing options
+      strategySelect.innerHTML = "";
+
+      // Add strategies from API
+      data.strategies.forEach((strategy: any) => {
+        const option = document.createElement("option");
+        option.value = strategy.name;
+        option.textContent = strategy.display_name;
+        strategySelect.appendChild(option);
+      });
+    } catch (error) {
+      console.warn("Failed to load strategies:", error);
+      // Fallback options remain in HTML
+    }
+  }
+
+  // Load strategies on page load
+  loadStrategies();
 
   // Handle URL parameters from bookmarklet
   function handleUrlParams() {
