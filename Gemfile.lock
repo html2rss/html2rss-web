@@ -1,6 +1,7 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 3071d18755e3f546aa35bccfdaa83694c61a475c
+  revision: 252289759287d5f0d7251a958d12a72ceebc27d6
+  branch: master
   specs:
     html2rss (0.17.0)
       addressable (~> 2.7)
@@ -79,7 +80,6 @@ GEM
       dry-initializer (~> 3.2)
       dry-schema (~> 1.14)
       zeitwerk (~> 2.6)
-    erubi (1.13.1)
     faraday (2.13.4)
       faraday-net_http (>= 2.0, < 3.5)
       json
@@ -204,7 +204,6 @@ GEM
     ssrf_filter (1.3.0)
     stackprof (0.2.27)
     thor (1.4.0)
-    tilt (2.6.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unicode-display_width (3.1.4)
@@ -238,7 +237,6 @@ DEPENDENCIES
   base64
   byebug
   climate_control
-  erubi
   html2rss!
   html2rss-configs!
   parallel
@@ -259,7 +257,6 @@ DEPENDENCIES
   simplecov
   ssrf_filter
   stackprof
-  tilt
   vcr
   webmock
   yard
@@ -284,7 +281,6 @@ CHECKSUMS
   dry-schema (1.14.1) sha256=2fcd7539a7099cacae6a22f6a3a2c1846fe5afeb1c841cde432c89c6cb9b9ff1
   dry-types (1.8.3) sha256=b5d97a45e0ed273131c0c3d5bc9f5633c2d1242e092ee47401ce7d5eab65c1bc
   dry-validation (1.11.1) sha256=70900bb5a2d911c8aab566d3e360c6bff389b8bf92ea8e04885ce51c41ff8085
-  erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
   faraday (2.13.4) sha256=c719ff52cfd0dbaeca79dd83ed3aeea3f621032abf8bc959d1c05666157cac26
   faraday-follow_redirects (0.3.0) sha256=d92d975635e2c7fe525dd494fcd4b9bb7f0a4a0ec0d5f4c15c729530fdb807f9
   faraday-net_http (3.4.1) sha256=095757fae7872b94eac839c08a1a4b8d84fd91d6886cfbe75caa2143de64ab3b
@@ -347,7 +343,6 @@ CHECKSUMS
   ssrf_filter (1.3.0) sha256=66882d7de7d09c019098d6d7372412950ae184ebbc7c51478002058307aba6f2
   stackprof (0.2.27) sha256=aff6d28656c852e74cf632cc2046f849033dc1dedffe7cb8c030d61b5745e80c
   thor (1.4.0) sha256=8763e822ccb0f1d7bee88cde131b19a65606657b847cc7b7b4b82e772bcd8a3d
-  tilt (2.6.1) sha256=35a99bba2adf7c1e362f5b48f9b581cce4edfba98117e34696dde6d308d84770
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
   unicode-display_width (3.1.4) sha256=8caf2af1c0f2f07ec89ef9e18c7d88c2790e217c482bfc78aaa65eadd5415ac1
   unicode-emoji (4.0.4) sha256=2c2c4ef7f353e5809497126285a50b23056cc6e61b64433764a35eff6c36532a
