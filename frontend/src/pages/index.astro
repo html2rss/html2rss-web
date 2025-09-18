@@ -4,29 +4,361 @@ import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 ---
 
+<style>
+  :root {
+    --form-bg: #1a1a1a;
+    --form-border: #333;
+    --form-focus: #0066cc;
+    --form-error: #dc3545;
+    --form-success: #28a745;
+    --form-text: #ffffff;
+    --form-muted: #888;
+    --form-spacing: 0.75rem;
+    --form-radius: 6px;
+    --form-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .form-container {
+    background: var(--form-bg);
+    border: 1px solid var(--form-border);
+    border-radius: var(--form-radius);
+    padding: var(--form-spacing);
+    box-shadow: var(--form-shadow);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    align-items: end;
+  }
+
+  .form-group {
+    flex: 1;
+    margin-bottom: 0;
+  }
+
+  .form-group-compact {
+    margin-bottom: 0.75rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+    color: var(--form-text);
+    font-size: 0.875rem;
+  }
+
+  .form-label.required::after {
+    content: " *";
+    color: var(--form-error);
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--form-border);
+    border-radius: var(--form-radius);
+    background: #2a2a2a;
+    color: var(--form-text);
+    font-size: 0.875rem;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--form-focus);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+  }
+
+  .form-input:invalid {
+    border-color: var(--form-error);
+  }
+
+  .form-input::placeholder {
+    color: var(--form-muted);
+  }
+
+  .form-button {
+    padding: 0.5rem 1rem;
+    background: var(--form-focus);
+    color: white;
+    border: none;
+    border-radius: var(--form-radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .form-button:hover:not(:disabled) {
+    background: #0052a3;
+    transform: translateY(-1px);
+  }
+
+  .form-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .form-button-secondary {
+    background: #444;
+    color: var(--form-text);
+  }
+
+  .form-button-secondary:hover:not(:disabled) {
+    background: #555;
+  }
+
+  .form-error {
+    color: var(--form-error);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: none;
+  }
+
+  .form-error.show {
+    display: block;
+  }
+
+  .quick-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .xml-preview {
+    background: #1e1e1e;
+    border: 1px solid var(--form-border);
+    border-radius: var(--form-radius);
+    padding: 1rem;
+    margin-top: 1rem;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #d4d4d4;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    display: none;
+  }
+
+  .xml-preview.show {
+    display: block;
+  }
+
+  .xml-preview.loading {
+    color: var(--form-muted);
+    font-style: italic;
+  }
+
+  .advanced-toggle {
+    background: none;
+    border: none;
+    color: var(--form-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-top: 0.5rem;
+  }
+
+  .advanced-toggle:hover {
+    color: var(--form-text);
+  }
+
+  .advanced-fields {
+    display: none;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--form-border);
+  }
+
+  .advanced-fields.show {
+    display: block;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--form-border);
+    border-radius: var(--form-radius);
+    background: #2a2a2a;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+
+  .radio-option:hover {
+    background: #333;
+  }
+
+  .radio-option.selected {
+    border-color: var(--form-focus);
+    background: rgba(0, 102, 204, 0.1);
+  }
+
+  .radio-option input[type="radio"] {
+    margin: 0;
+    accent-color: var(--form-focus);
+  }
+
+  .radio-option label {
+    margin: 0;
+    cursor: pointer;
+    flex: 1;
+    font-size: 0.875rem;
+  }
+
+  .radio-option .description {
+    font-size: 0.75rem;
+    color: var(--form-muted);
+    margin-top: 0.25rem;
+  }
+
+  @media (min-width: 768px) {
+    .form-row {
+      gap: 1rem;
+    }
+
+    .form-container {
+      padding: 1.5rem;
+    }
+
+    .radio-group {
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    .radio-option {
+      flex: 1;
+      min-width: 200px;
+    }
+  }
+</style>
+
 <StarlightPage
   frontmatter={{
     title: "html2rss-web - Convert websites to RSS feeds",
     template: "splash",
   }}
 >
-  <Card title="Generate RSS Feed">
-    <form id="auto-source-form" novalidate>
-      <div>
-        <label for="url">Website URL:</label>
-        <input type="url" id="url" name="url" placeholder="https://example.com" required autocomplete="url" />
-      </div>
+  <Card title="Convert Website to RSS">
+    <div class="form-container">
+      <!-- Progressive enhancement: form works without JavaScript -->
+      <form id="auto-source-form" action="/auto_source/create" method="POST" novalidate>
+        <!-- Main URL input with quick actions -->
+        <div class="form-group-compact">
+          <label for="url" class="form-label required">Website URL</label>
+          <div class="form-row">
+            <div class="form-group">
+              <input
+                type="url"
+                id="url"
+                name="url"
+                class="form-input"
+                placeholder="https://example.com"
+                required
+                autocomplete="url"
+              />
+              <div class="form-error" id="url-error"></div>
+            </div>
+            <button type="submit" class="form-button">Convert</button>
+          </div>
+          <div class="quick-actions" id="quick-actions" style="display: none;">
+            <button type="button" class="form-button form-button-secondary" id="copy-url">Copy URL</button>
+            <a
+              href="#"
+              class="form-button form-button-secondary"
+              id="subscribe-link"
+              style="text-decoration: none;">Subscribe</a
+            >
+          </div>
+        </div>
 
-      <div>
-        <label for="strategy">Strategy:</label>
-        <select id="strategy" name="strategy">
-          <!-- Fallback options for when JS is disabled -->
-          <option value="ssrf_filter">SSRF Filter (Recommended)</option>
-        </select>
-      </div>
+        <!-- Advanced options toggle -->
+        <button type="button" class="advanced-toggle" id="advanced-toggle"> Show advanced options </button>
 
-      <button type="submit" class="sl-link-button">Generate Feed</button>
-    </form>
+        <!-- Advanced fields (hidden by default) -->
+        <div class="advanced-fields" id="advanced-fields">
+          <div class="form-group-compact">
+            <label for="username" class="form-label required">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-input"
+              placeholder="Enter your username"
+              required
+              autocomplete="username"
+            />
+            <div class="form-error" id="username-error"></div>
+          </div>
+
+          <div class="form-group-compact">
+            <label for="token" class="form-label required">Token</label>
+            <input
+              type="password"
+              id="token"
+              name="token"
+              class="form-input"
+              placeholder="Enter your authentication token"
+              required
+              autocomplete="current-password"
+            />
+            <div class="form-error" id="token-error"></div>
+          </div>
+
+          <div class="form-group-compact">
+            <label for="name" class="form-label">Feed Name</label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              class="form-input"
+              placeholder="Auto-generated from URL"
+            />
+          </div>
+
+          <div class="form-group-compact">
+            <label class="form-label">Strategy</label>
+            <div class="radio-group" id="strategy-group">
+              <!-- Fallback options for when JS is disabled -->
+              <div class="radio-option selected">
+                <input type="radio" id="strategy-ssrf" name="strategy" value="ssrf_filter" checked />
+                <label for="strategy-ssrf">
+                  <strong>SSRF Filter</strong>
+                  <div class="description">Recommended - Safe and secure</div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- XML Preview -->
+        <div class="xml-preview" id="xml-preview">
+          <div class="loading">Loading RSS feed preview...</div>
+        </div>
+      </form>
+    </div>
 
     <div id="result" style="display: none;" role="region" aria-labelledby="result-heading">
       <h3 id="result-heading">Generated Feed</h3>
@@ -40,6 +372,13 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
             aria-label="Subscribe to the generated RSS feed">Subscribe</a
           >
         </p>
+        <details>
+          <summary>View RSS Content</summary>
+          <pre
+            id="rss-content"
+            style="white-space: pre-wrap; font-size: 0.8em; max-height: 400px; overflow-y: auto; background: #f5f5f5; padding: 1rem; border-radius: 4px;">
+          </pre>
+        </details>
       </div>
     </div>
 
@@ -72,6 +411,10 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 </StarlightPage>
 
 <script>
+  // Global state
+  let authToken = null;
+  let authUsername = null;
+
   // Bookmarklet functionality
   function initBookmarklet() {
     const bookmarklet = document.getElementById("bookmarklet") as HTMLAnchorElement;
@@ -99,23 +442,72 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
       if (!response.ok) return;
 
       const data = await response.json();
-      const strategySelect = document.getElementById("strategy") as HTMLSelectElement;
-      if (!strategySelect) return;
+      const strategyGroup = document.getElementById("strategy-group");
+      if (!strategyGroup) return;
 
       // Clear existing options
-      strategySelect.innerHTML = "";
+      strategyGroup.innerHTML = "";
 
       // Add strategies from API
-      data.strategies.forEach((strategy: any) => {
-        const option = document.createElement("option");
-        option.value = strategy.name;
-        option.textContent = strategy.display_name;
-        strategySelect.appendChild(option);
+      data.strategies.forEach((strategy: any, index: number) => {
+        const radioId = `strategy-${strategy.name}`;
+        const isFirst = index === 0;
+
+        const radioOption = document.createElement("div");
+        radioOption.className = `radio-option ${isFirst ? "selected" : ""}`;
+
+        radioOption.innerHTML = `
+          <input type="radio" id="${radioId}" name="strategy" value="${strategy.name}" ${isFirst ? "checked" : ""}>
+          <label for="${radioId}">
+            <strong>${strategy.display_name}</strong>
+            <div class="description">${strategy.description || "Strategy option"}</div>
+          </label>
+        `;
+
+        strategyGroup.appendChild(radioOption);
       });
+
+      // Add click handlers for radio options
+      initRadioHandlers();
     } catch (error) {
       console.warn("Failed to load strategies:", error);
       // Fallback options remain in HTML
+      initRadioHandlers();
     }
+  }
+
+  // Initialize radio button handlers
+  function initRadioHandlers() {
+    document.querySelectorAll(".radio-option").forEach((option) => {
+      const radio = option.querySelector('input[type="radio"]') as HTMLInputElement;
+
+      option.addEventListener("click", () => {
+        // Remove selected class from all options
+        document.querySelectorAll(".radio-option").forEach((opt) => {
+          opt.classList.remove("selected");
+        });
+
+        // Add selected class to clicked option
+        option.classList.add("selected");
+
+        // Check the radio button
+        if (radio) {
+          radio.checked = true;
+        }
+      });
+
+      // Handle direct radio button clicks
+      if (radio) {
+        radio.addEventListener("change", () => {
+          if (radio.checked) {
+            document.querySelectorAll(".radio-option").forEach((opt) => {
+              opt.classList.remove("selected");
+            });
+            option.classList.add("selected");
+          }
+        });
+      }
+    });
   }
 
   // Load strategies on page load
@@ -129,33 +521,138 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
 
     if (url) {
       const urlInput = document.getElementById("url") as HTMLInputElement;
-      const strategySelect = document.getElementById("strategy") as HTMLSelectElement;
-
       if (urlInput) urlInput.value = url;
-      if (strategy && strategySelect) strategySelect.value = strategy;
+    }
 
-      // Auto-submit if URL is provided
-      if (urlInput && urlInput.value) {
-        const form = document.getElementById("auto-source-form") as HTMLFormElement;
-        if (form) {
-          form.dispatchEvent(new Event("submit"));
+    if (strategy) {
+      // Wait a bit for strategies to load, then select the strategy
+      setTimeout(() => {
+        const strategyRadio = document.querySelector(
+          `input[name="strategy"][value="${strategy}"]`,
+        ) as HTMLInputElement;
+        if (strategyRadio) {
+          strategyRadio.checked = true;
+          strategyRadio.dispatchEvent(new Event("change"));
         }
-      }
+      }, 100);
     }
   }
 
   // Handle URL parameters on page load
   handleUrlParams();
 
+  // Initialize advanced toggle and copy functionality
+  initAdvancedToggle();
+  initCopyUrl();
+
+  // Advanced options toggle
+  function initAdvancedToggle() {
+    const toggle = document.getElementById("advanced-toggle");
+    const fields = document.getElementById("advanced-fields");
+
+    if (toggle && fields) {
+      toggle.addEventListener("click", () => {
+        const isVisible = fields.classList.contains("show");
+        if (isVisible) {
+          fields.classList.remove("show");
+          toggle.textContent = "Show advanced options";
+        } else {
+          fields.classList.add("show");
+          toggle.textContent = "Hide advanced options";
+        }
+      });
+    }
+  }
+
+  // Copy URL to clipboard
+  function initCopyUrl() {
+    const copyBtn = document.getElementById("copy-url");
+    const feedUrlSpan = document.getElementById("feed-url");
+
+    if (copyBtn && feedUrlSpan) {
+      copyBtn.addEventListener("click", async () => {
+        const url = feedUrlSpan.textContent;
+        if (url) {
+          try {
+            await navigator.clipboard.writeText(url);
+            copyBtn.textContent = "Copied!";
+            setTimeout(() => {
+              copyBtn.textContent = "Copy URL";
+            }, 2000);
+          } catch (err) {
+            console.error("Failed to copy URL:", err);
+          }
+        }
+      });
+    }
+  }
+
+  // Form validation helper
+  function validateField(field: HTMLInputElement): boolean {
+    const errorElement = document.getElementById(`${field.id}-error`);
+    if (!field.checkValidity()) {
+      if (errorElement) {
+        errorElement.textContent = field.validationMessage;
+        errorElement.classList.add("show");
+      }
+      return false;
+    } else {
+      if (errorElement) {
+        errorElement.classList.remove("show");
+      }
+      return true;
+    }
+  }
+
+  // Clear all form errors
+  function clearFormErrors() {
+    document.querySelectorAll(".form-error").forEach((error) => {
+      error.classList.remove("show");
+    });
+  }
+
+  // Show XML preview
+  function showXmlPreview(xmlContent: string) {
+    const preview = document.getElementById("xml-preview");
+    if (preview) {
+      preview.innerHTML = xmlContent;
+      preview.classList.add("show");
+    }
+  }
+
+  // Show quick actions
+  function showQuickActions() {
+    const quickActions = document.getElementById("quick-actions");
+    if (quickActions) {
+      quickActions.style.display = "flex";
+    }
+  }
+
+  // Main form handler (works with both auth and feed generation)
   document.getElementById("auto-source-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    clearFormErrors();
 
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    const username = formData.get("username") as string;
+    const token = formData.get("token") as string;
     const url = formData.get("url") as string;
+    const name = formData.get("name") as string;
     const strategy = formData.get("strategy") as string;
 
-    if (!url) return;
+    // Validate required fields
+    const usernameField = document.getElementById("username") as HTMLInputElement;
+    const tokenField = document.getElementById("token") as HTMLInputElement;
+    const urlField = document.getElementById("url") as HTMLInputElement;
+
+    const isUsernameValid = validateField(usernameField);
+    const isTokenValid = validateField(tokenField);
+    const isUrlValid = validateField(urlField);
+
+    if (!isUsernameValid || !isTokenValid || !isUrlValid) {
+      return;
+    }
 
     // Show loading state
     const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -165,42 +662,91 @@ import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
       submitBtn.textContent = "Generating...";
       submitBtn.disabled = true;
 
-      // Encode URL for API
-      const encodedUrl = btoa(url);
-      const apiUrl = `http://127.0.0.1:3001/auto_source/${encodedUrl}?strategy=${strategy}`;
-
-      // Test the API call with Basic authentication
-      const response = await fetch(apiUrl, {
+      // Create the feed using the new API
+      const response = await fetch("/auto_source/create", {
+        method: "POST",
         headers: {
-          Authorization: "Basic " + btoa("admin:password"),
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Bearer ${token}`,
         },
+        body: new URLSearchParams({
+          url: url,
+          name: name,
+          strategy: strategy,
+        }),
       });
 
       if (!response.ok) {
-        throw new Error(`API call failed: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
+
+      const feedData = await response.json();
 
       // Show result area
       const resultArea = document.getElementById("result");
       const feedUrlSpan = document.getElementById("feed-url");
       const subscribeLink = document.getElementById("subscribe-link") as HTMLAnchorElement;
 
-      if (feedUrlSpan) feedUrlSpan.textContent = apiUrl;
-      if (subscribeLink) subscribeLink.href = apiUrl;
+      if (feedUrlSpan) feedUrlSpan.textContent = feedData.public_url;
+      if (subscribeLink) {
+        subscribeLink.href = `feed:${feedData.public_url}`;
+      }
       if (resultArea) {
         resultArea.style.display = "block";
         resultArea.scrollIntoView({ behavior: "smooth" });
       }
+
+      // Show quick actions
+      showQuickActions();
+
+      // Fetch and display the RSS content
+      await fetchAndDisplayRSS(feedData.public_url);
     } catch (error) {
       console.error("Error generating feed:", error);
       showError(`Error generating feed: ${error.message}`);
     } finally {
       // Reset button state
-      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
       submitBtn.textContent = originalText;
       submitBtn.disabled = false;
     }
   });
+
+  // Real-time validation
+  document.querySelectorAll(".form-input[required]").forEach((input) => {
+    input.addEventListener("blur", () => {
+      validateField(input as HTMLInputElement);
+    });
+  });
+
+  // Fetch and display RSS content
+  async function fetchAndDisplayRSS(feedUrl) {
+    try {
+      const response = await fetch(feedUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch RSS: ${response.status} ${response.statusText}`);
+      }
+
+      const rssContent = await response.text();
+
+      // Show in the main XML preview
+      showXmlPreview(rssContent);
+
+      // Also show in the details section
+      const rssContentElement = document.getElementById("rss-content");
+      if (rssContentElement) {
+        rssContentElement.textContent = rssContent;
+      }
+    } catch (error) {
+      console.error("Error fetching RSS content:", error);
+      showXmlPreview(`Error fetching RSS content: ${error.message}`);
+
+      const rssContentElement = document.getElementById("rss-content");
+      if (rssContentElement) {
+        rssContentElement.textContent = `Error fetching RSS content: ${error.message}`;
+      }
+    }
+  }
 
   function showError(message) {
     const errorArea = document.getElementById("error");

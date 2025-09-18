@@ -21,7 +21,7 @@ module Html2rss
       def handle_feed_generation(router, feed_name)
         params = router.params
         rss_content = Feeds.generate_feed(feed_name, params)
-        set_rss_headers(router)
+        rss_headers(router)
         rss_content.to_s
       rescue StandardError => error
         router.response.status = 500
@@ -29,7 +29,7 @@ module Html2rss
         Feeds.error_feed(error.message)
       end
 
-      def set_rss_headers(router)
+      def rss_headers(router)
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = 'public, max-age=3600'
         router.response['X-Content-Type-Options'] = 'nosniff'

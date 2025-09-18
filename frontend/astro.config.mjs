@@ -10,7 +10,15 @@ export default defineConfig({
   vite: {
     server: {
       proxy: {
+        "/api": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+        },
         "/auto_source": {
+          target: "http://localhost:3000",
+          changeOrigin: true,
+        },
+        "/feeds": {
           target: "http://localhost:3000",
           changeOrigin: true,
         },

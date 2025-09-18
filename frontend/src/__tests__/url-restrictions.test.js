@@ -1,6 +1,12 @@
 // Unit tests for URL restrictions functionality
 import { describe, it, expect } from 'vitest';
-import { isUrlAllowed, isOriginAllowed, validateBasicAuth } from '../lib/url-restrictions.js';
+import {
+  isUrlAllowed,
+  isOriginAllowed,
+  validateBasicAuth,
+  validateAndDecodeBase64,
+  validUrl,
+} from '../lib/url-restrictions.js';
 
 describe('URL Restrictions', () => {
   describe('isUrlAllowed', () => {
@@ -149,6 +155,40 @@ describe('URL Restrictions', () => {
     it('should handle empty credentials', () => {
       const authHeader = 'Basic ' + Buffer.from(':').toString('base64');
       expect(validateBasicAuth(authHeader, '', '')).toBe(true);
+    });
+  });
+
+  describe('validateAndDecodeBase64', () => {
+    it('should decode valid Base64 strings', () => {
+      const validBase64 = Buffer.from('hello world').toString('base64');
+      expect(validateAndDecodeBase64(validBase64)).toBe('hello world');
+    });
+
+    it('should handle empty string', () => {
+      expect(validateAndDecodeBase64('')).toBe(null);
+    });
+
+    it('should handle null/undefined input', () => {
+      expect(validateAndDecodeBase64(null)).toBe(null);
+      expect(validateAndDecodeBase64(undefined)).toBe(null);
+    });
+
+    it('should reject invalid Base64 characters', () => {
+      expect(validateAndDecodeBase64('hello@world')).toBe(null);
+      expect(validateAndDecodeBase64('hello world')).toBe(null);
+      expect(validateAndDecodeBase64('hello!world')).toBe(null);
+    });
+
+    it('should reject malformed Base64', () => {
+      expect(validateAndDecodeBase64('aGVsbG8gd29ybGQ=')).toBe('hello world'); // valid
+      expect(validateAndDecodeBase64('aGVsbG8gd29ybGQ')).toBe('hello world'); // missing padding (Node.js is lenient)
+      expect(validateAndDecodeBase64('aGVsbG8gd29ybGQ===')).toBe(null); // too much padding
+    });
+
+    it('should handle non-string input', () => {
+      expect(validateAndDecodeBase64(123)).toBe(null);
+      expect(validateAndDecodeBase64({})).toBe(null);
+      expect(validateAndDecodeBase64([])).toBe(null);
     });
   });
 });

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'uri'
+require_relative 'auth'
+
 module Html2rss
   module Web
     ##
@@ -19,26 +22,8 @@ module Html2rss
         end
       end
 
-      def authenticate(request)
-        auth = request.env['HTTP_AUTHORIZATION']
-        return false unless auth&.start_with?('Basic ')
-
-        credentials = Base64.decode64(auth[6..]).split(':')
-        username, password = credentials
-
-        expected_username, expected_password = expected_credentials
-        return false unless expected_username && expected_password
-
-        username == expected_username && password == expected_password
-      end
-
-      def expected_credentials
-        # Use default credentials in development if not set
-        username = ENV.fetch('AUTO_SOURCE_USERNAME', nil) ||
-                   (ENV.fetch('RACK_ENV', nil) == 'development' ? 'admin' : nil)
-        password = ENV.fetch('AUTO_SOURCE_PASSWORD', nil) ||
-                   (ENV.fetch('RACK_ENV', nil) == 'development' ? 'password' : nil)
-        [username, password]
+      def authenticate_with_token(request)
+        Auth.authenticate(request)
       end
 
       def allowed_origin?(request)
@@ -57,28 +42,62 @@ module Html2rss
         origins.split(',').map(&:strip)
       end
 
-      def allowed_url?(url)
-        allowed_urls = (ENV['AUTO_SOURCE_ALLOWED_URLS'] || '').split(',').map(&:strip)
-        return true if allowed_urls.empty?
+      def url_allowed_for_token?(token_data, url)
+        # Get full account data from config
+        account = Auth.get_account_by_username(token_data[:username])
+        return false unless account
 
-        allowed_urls.any? do |pattern|
-          if pattern.include?('*')
-            # Convert wildcard pattern to regex
-            regex_pattern = pattern.gsub('*', '.*')
-            url.match?(Regexp.new(regex_pattern))
-          else
-            url.include?(pattern)
-          end
-        end
+        Auth.url_allowed?(account, url)
       end
 
-      def generate_feed(encoded_url, strategy = 'ssrf_filter')
-        decoded_url = Base64.decode64(encoded_url)
+      def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
+        return nil unless url_allowed_for_token?(token_data, url)
 
+        feed_id = Auth.generate_feed_id(token_data[:username], url, token_data[:token])
+        feed_token = Auth.generate_feed_token(token_data[:username], url)
+        return nil unless feed_token
+
+        build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+      end
+
+      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
+
+        {
+          id: feed_id,
+          name: name,
+          url: url,
+          username: token_data[:username],
+          strategy: strategy,
+          public_url: public_url
+        }
+      end
+
+      def generate_feed_from_stable_id(feed_id, token_data)
+        return nil unless token_data
+
+        # Reconstruct feed data from token and feed_id
+        # This is stateless - we don't store anything permanently
+        {
+          id: feed_id,
+          url: nil, # Will be provided in request
+          username: token_data[:username],
+          strategy: 'ssrf_filter'
+        }
+      end
+
+      def generate_feed_content(url, strategy = 'ssrf_filter')
+        call_strategy(url, strategy)
+      end
+
+      def call_strategy(url, strategy)
         config = {
           stylesheets: [{ href: '/rss.xsl', type: 'text/xsl' }],
           strategy: strategy.to_sym,
-          channel: { url: decoded_url },
+          channel: {
+            url: url,
+            title: "Auto-generated feed for #{url}"
+          },
           auto_source: {}
         }
 
@@ -86,31 +105,28 @@ module Html2rss
       end
 
       def error_feed(message)
-        <<~RSS
-          <?xml version="1.0" encoding="UTF-8"?>
-          <rss version="2.0">
-            <channel>
-              <title>Error</title>
-              <description>Failed to generate auto-source feed: #{message}</description>
-              <item>
-                <title>Error</title>
-                <description>#{message}</description>
-              </item>
-            </channel>
-          </rss>
-        RSS
+        sanitized_message = Auth.sanitize_xml(message)
+        build_rss_feed('Error', "Failed to generate auto-source feed: #{sanitized_message}", sanitized_message)
       end
 
       def access_denied_feed(url)
+        sanitized_url = Auth.sanitize_xml(url)
+        title = 'Access Denied'
+        description = 'This URL is not allowed for public auto source generation.'
+        item_description = "URL '#{sanitized_url}' is not in the allowed list for public auto source."
+        build_rss_feed(title, description, item_description)
+      end
+
+      def build_rss_feed(title, description, item_description)
         <<~RSS
           <?xml version="1.0" encoding="UTF-8"?>
           <rss version="2.0">
             <channel>
-              <title>Access Denied</title>
-              <description>This URL is not allowed for public auto source generation.</description>
+              <title>#{title}</title>
+              <description>#{description}</description>
               <item>
-                <title>Access Denied</title>
-                <description>URL '#{url}' is not in the allowed list for public auto source.</description>
+                <title>#{title}</title>
+                <description>#{item_description}</description>
               </item>
             </channel>
           </rss>

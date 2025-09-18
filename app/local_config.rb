@@ -35,6 +35,12 @@ module Html2rss
       end
 
       ##
+      # @return [Array<Hash>] configured auth accounts
+      def auth_accounts
+        global.dig(:auth, :accounts) || []
+      end
+
+      ##
       # @return [Array<Symbol>] names of locally available feeds
       def feed_names
         feeds.keys

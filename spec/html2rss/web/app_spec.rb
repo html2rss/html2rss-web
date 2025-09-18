@@ -18,7 +18,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response).to be_ok
     end
 
-    it 'sets CSP headers' do # rubocop:disable RSpec/ExampleLength
+    it 'sets CSP headers' do
       get '/'
 
       expect(last_response.headers['Content-Security-Policy']).to eq <<~HEADERS.gsub(/\n\s*/, ' ')

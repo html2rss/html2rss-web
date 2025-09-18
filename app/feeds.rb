@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'auth'
+
 module Html2rss
   module Web
     ##
@@ -26,15 +28,20 @@ module Html2rss
       end
 
       def error_feed(message)
+        sanitized_message = Auth.sanitize_xml(message)
+        build_error_rss(sanitized_message)
+      end
+
+      def build_error_rss(sanitized_message)
         <<~RSS
           <?xml version="1.0" encoding="UTF-8"?>
           <rss version="2.0">
             <channel>
               <title>Error</title>
-              <description>Failed to generate feed: #{message}</description>
+              <description>Failed to generate feed: #{sanitized_message}</description>
               <item>
                 <title>Error</title>
-                <description>#{message}</description>
+                <description>#{sanitized_message}</description>
               </item>
             </channel>
           </rss>
