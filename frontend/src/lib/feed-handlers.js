@@ -23,7 +23,7 @@ export function fetchAndDisplayRSS(feedUrl) {
 
     // Load and display the RSS content directly in iframe
     if (rssIframe) {
-      window.loadRSSContent(feedUrl, rssIframe);
+      window.html2rss.loadRSSContent(feedUrl, rssIframe);
     }
 
     // Set up toggle functionality
@@ -43,7 +43,7 @@ export function fetchAndDisplayRSS(feedUrl) {
 
           // Load raw XML content if not already loaded
           if (rssContentEl && !rssContentEl.innerHTML) {
-            window.loadRawXML(feedUrl, rssContentEl);
+            window.html2rss.loadRawXML(feedUrl, rssContentEl);
           }
         }
       };

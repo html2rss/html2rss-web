@@ -91,16 +91,22 @@ module Html2rss
 
       plugin :content_security_policy do |csp|
         csp.default_src :none
-        csp.style_src :self
-        csp.script_src :self
+        csp.style_src :self, "'unsafe-inline'" # Allow inline styles for Starlight
+        csp.script_src :self, "'unsafe-inline'" # Allow inline scripts for progressive enhancement
         csp.connect_src :self
-        csp.img_src :self
+        csp.img_src :self, 'data:', 'blob:'
         csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none
-        csp.frame_ancestors :self
-        csp.frame_src :self
+        csp.frame_ancestors :none # More restrictive than :self
+        csp.frame_src :none # More restrictive than :self
+        csp.object_src :none # Prevent object/embed/applet
+        csp.media_src :none # Prevent media sources
+        csp.manifest_src :none # Prevent manifest
+        csp.worker_src :none # Prevent workers
+        csp.child_src :none # Prevent child contexts
         csp.block_all_mixed_content
+        csp.upgrade_insecure_requests # Upgrade HTTP to HTTPS
       end
 
       plugin :default_headers,
@@ -110,7 +116,11 @@ module Html2rss
              'X-Frame-Options' => 'DENY',
              'X-Permitted-Cross-Domain-Policies' => 'none',
              'Referrer-Policy' => 'strict-origin-when-cross-origin',
-             'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()'
+             'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
+             'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
+             'Cross-Origin-Embedder-Policy' => 'require-corp',
+             'Cross-Origin-Opener-Policy' => 'same-origin',
+             'Cross-Origin-Resource-Policy' => 'same-origin'
 
       plugin :exception_page
       plugin :error_handler do |error|

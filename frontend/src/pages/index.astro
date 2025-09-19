@@ -88,15 +88,17 @@ import "../styles/forms.css";
   import { fetchAndDisplayRSS, showContentPreview } from "../lib/feed-handlers.js";
   import { loadRSSContent, loadRawXML } from "../lib/rss-utils.js";
 
-  // Make functions globally available
-  (window as any).showView = showView;
-  (window as any).showFeedResult = showFeedResult;
-  (window as any).showError = showError;
-  (window as any).showSuccess = showSuccess;
-  (window as any).fetchAndDisplayRSS = fetchAndDisplayRSS;
-  (window as any).showContentPreview = showContentPreview;
-  (window as any).loadRSSContent = loadRSSContent;
-  (window as any).loadRawXML = loadRawXML;
+  // Make functions globally available through a single namespace
+  (window as any).html2rss = {
+    showView,
+    showFeedResult,
+    showError,
+    showSuccess,
+    fetchAndDisplayRSS,
+    showContentPreview,
+    loadRSSContent,
+    loadRawXML
+  };
 
   // Initialize the application
   document.addEventListener("DOMContentLoaded", () => {

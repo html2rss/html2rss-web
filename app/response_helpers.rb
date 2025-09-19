@@ -9,6 +9,7 @@ module Html2rss
     module ResponseHelpers
       module_function
 
+      # Methods that work with response object directly (for main app)
       def unauthorized_response
         response.status = 401
         response['Content-Type'] = 'application/xml'
@@ -57,6 +58,57 @@ module Html2rss
         response['Cache-Control'] = 'private, must-revalidate, no-cache, no-store, max-age=0'
         response['X-Content-Type-Options'] = 'nosniff'
         response['X-XSS-Protection'] = '1; mode=block'
+      end
+
+      # Methods that work with router objects (for route modules)
+      def unauthorized_response_with_router(router)
+        router.response.status = 401
+        router.response['Content-Type'] = 'application/xml'
+        router.response['WWW-Authenticate'] = 'Basic realm="Auto Source"'
+        XmlBuilder.build_error_feed(message: 'Unauthorized')
+      end
+
+      def forbidden_origin_response_with_router(router)
+        router.response.status = 403
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Origin is not allowed.')
+      end
+
+      def access_denied_response_with_router(router, url)
+        router.response.status = 403
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_access_denied_feed(url)
+      end
+
+      def not_found_response_with_router(router)
+        router.response.status = 404
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Feed not found', title: 'Not Found')
+      end
+
+      def bad_request_response_with_router(router, message)
+        router.response.status = 400
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: message, title: 'Bad Request')
+      end
+
+      def method_not_allowed_response_with_router(router)
+        router.response.status = 405
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Method Not Allowed')
+      end
+
+      def internal_error_response_with_router(router)
+        router.response.status = 500
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Internal Server Error')
+      end
+
+      def configure_auto_source_headers_with_router(router)
+        router.response['Content-Type'] = 'application/xml'
+        router.response['Cache-Control'] = 'public, max-age=3600'
+        router.response['X-Content-Type-Options'] = 'nosniff'
+        router.response['X-XSS-Protection'] = '1; mode=block'
       end
     end
   end
