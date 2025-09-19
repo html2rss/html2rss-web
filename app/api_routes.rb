@@ -32,8 +32,6 @@ module Html2rss
       def rss_headers(router)
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = 'public, max-age=3600'
-        router.response['X-Content-Type-Options'] = 'nosniff'
-        router.response['X-XSS-Protection'] = '1; mode=block'
       end
     end
   end
