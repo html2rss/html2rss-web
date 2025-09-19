@@ -53,12 +53,17 @@ module Html2rss
         handle_auto_source_error(router, error)
       end
 
-      private
+      def handle_public_feed_access(router, _feed_id, feed_token, url)
+        # Validate feed token and URL
+        return access_denied_response(router, url) unless Auth.feed_url_allowed?(feed_token, url)
 
-      def auto_source_disabled_response(router)
-        router.response.status = 400
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'The auto source feature is disabled.', title: 'Auto Source Disabled')
+        strategy = router.params['strategy'] || 'ssrf_filter'
+        rss_content = AutoSource.generate_feed_content(url, strategy)
+
+        configure_auto_source_headers(router)
+        rss_content.to_s
+      rescue StandardError => error
+        handle_auto_source_error(router, error)
       end
 
       def handle_authenticated_feed_access(router, url)
@@ -70,21 +75,72 @@ module Html2rss
         strategy = router.params['strategy'] || 'ssrf_filter'
         rss_content = AutoSource.generate_feed_content(url, strategy)
 
-        set_auto_source_headers(router)
+        configure_auto_source_headers(router)
         rss_content.to_s
       end
 
-      def handle_public_feed_access(router, _feed_id, feed_token, url)
-        # Validate feed token and URL
-        return access_denied_response(router, url) unless Auth.feed_url_allowed?(feed_token, url)
+      def handle_auto_source_error(router, error)
+        router.response.status = 500
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: error.message)
+      end
 
-        strategy = router.params['strategy'] || 'ssrf_filter'
-        rss_content = AutoSource.generate_feed_content(url, strategy)
+      # Helper methods that need to be implemented by the main app
+      def bad_request_response(router, message)
+        router.response.status = 400
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_access_denied_feed(message)
+      end
 
-        set_auto_source_headers(router)
-        rss_content.to_s
-      rescue StandardError => error
-        handle_auto_source_error(router, error)
+      def unauthorized_response(router)
+        router.response.status = 401
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Unauthorized')
+      end
+
+      def access_denied_response(router, url)
+        router.response.status = 403
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_access_denied_feed(url)
+      end
+
+      def method_not_allowed_response(router)
+        router.response.status = 405
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Method Not Allowed')
+      end
+
+      def internal_error_response(router)
+        router.response.status = 500
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Internal Server Error')
+      end
+
+      def forbidden_origin_response(router)
+        router.response.status = 403
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'Forbidden Origin')
+      end
+
+      def configure_auto_source_headers(router)
+        router.response['Content-Type'] = 'application/xml'
+        router.response['Cache-Control'] = 'public, max-age=3600'
+        router.response['X-Content-Type-Options'] = 'nosniff'
+        router.response['X-XSS-Protection'] = '1; mode=block'
+      end
+
+      def validate_and_decode_base64(encoded_url)
+        Base64.urlsafe_decode64(encoded_url)
+      rescue ArgumentError
+        nil
+      end
+
+      private
+
+      def auto_source_disabled_response(router)
+        router.response.status = 400
+        router.response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: 'The auto source feature is disabled.', title: 'Auto Source Disabled')
       end
 
       def handle_create_feed(router)
@@ -143,64 +199,8 @@ module Html2rss
 
         strategy = router.params['strategy'] || 'ssrf_filter'
         rss_content = AutoSource.generate_feed(encoded_url, strategy)
-        set_auto_source_headers(router)
+        configure_auto_source_headers(router)
         rss_content.to_s
-      end
-
-      def handle_auto_source_error(router, error)
-        router.response.status = 500
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: error.message)
-      end
-
-      # Helper methods that need to be implemented by the main app
-      def bad_request_response(router, message)
-        router.response.status = 400
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_access_denied_feed(message)
-      end
-
-      def unauthorized_response(router)
-        router.response.status = 401
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Unauthorized')
-      end
-
-      def access_denied_response(router, url)
-        router.response.status = 403
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_access_denied_feed(url)
-      end
-
-      def method_not_allowed_response(router)
-        router.response.status = 405
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Method Not Allowed')
-      end
-
-      def internal_error_response(router)
-        router.response.status = 500
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Internal Server Error')
-      end
-
-      def forbidden_origin_response(router)
-        router.response.status = 403
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Forbidden Origin')
-      end
-
-      def set_auto_source_headers(router)
-        router.response['Content-Type'] = 'application/xml'
-        router.response['Cache-Control'] = 'public, max-age=3600'
-        router.response['X-Content-Type-Options'] = 'nosniff'
-        router.response['X-XSS-Protection'] = '1; mode=block'
-      end
-
-      def validate_and_decode_base64(encoded_url)
-        Base64.urlsafe_decode64(encoded_url)
-      rescue ArgumentError
-        nil
       end
     end
   end

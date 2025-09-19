@@ -52,7 +52,7 @@ module Html2rss
         XmlBuilder.build_error_feed(message: 'Internal Server Error')
       end
 
-      def set_auto_source_headers
+      def configure_auto_source_headers
         response['Content-Type'] = 'application/xml'
         response['Cache-Control'] = 'private, must-revalidate, no-cache, no-store, max-age=0'
         response['X-Content-Type-Options'] = 'nosniff'

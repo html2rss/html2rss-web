@@ -118,15 +118,15 @@ export function showView(view) {
   const formLayout = document.querySelector('.form-layout');
 
   if (view === 'auth') {
-    if (authSection) authSection.style.display = 'block';
-    if (mainContent) mainContent.style.display = 'none';
-    if (urlInput) urlInput.style.display = 'none';
-    if (advancedFields) advancedFields.style.display = 'none';
+    if (authSection) authSection.classList.remove('hidden');
+    if (mainContent) mainContent.classList.add('hidden');
+    if (urlInput) urlInput.classList.add('hidden');
+    if (advancedFields) advancedFields.classList.add('hidden');
     if (formLayout) formLayout.classList.remove('authenticated');
   } else {
-    if (authSection) authSection.style.display = 'none';
-    if (mainContent) mainContent.style.display = 'block';
-    if (urlInput) urlInput.style.display = 'block';
+    if (authSection) authSection.classList.add('hidden');
+    if (mainContent) mainContent.classList.remove('hidden');
+    if (urlInput) urlInput.classList.remove('hidden');
     if (formLayout) formLayout.classList.add('authenticated');
     // Don't force show advanced fields - let user toggle them
   }
@@ -142,7 +142,7 @@ export function showFeedResult(feedUrl) {
   const feedProtocolUrl = `feed:${fullUrl}`;
 
   if (resultSection) {
-    resultSection.style.display = 'block';
+    resultSection.classList.remove('hidden');
     resultSection.innerHTML = `
       <h3 id="result-heading">✅ Feed Generated Successfully!</h3>
       <div class="feed-result">
@@ -172,7 +172,7 @@ export function showFeedResult(feedUrl) {
 export function showError(message) {
   const resultSection = document.getElementById('result');
   if (resultSection) {
-    resultSection.style.display = 'block';
+    resultSection.classList.remove('hidden');
     resultSection.innerHTML = `
       <h3 style="color: #d73a49;">❌ Error</h3>
       <p>${message}</p>
@@ -183,7 +183,7 @@ export function showError(message) {
 export function showSuccess(message) {
   const resultSection = document.getElementById('result');
   if (resultSection) {
-    resultSection.style.display = 'block';
+    resultSection.classList.remove('hidden');
     resultSection.innerHTML = `
       <h3 style="color: #28a745;">✅ Success</h3>
       <p>${message}</p>

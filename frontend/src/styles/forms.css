@@ -828,6 +828,36 @@
 }
 
 /* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+/* Hidden utility class */
+.hidden {
+  display: none !important;
+}
+
+/* Show utility class - for elements that should be visible */
+.show {
+  display: block !important;
+}
+
+/* Subscribe link styling */
+.subscribe-link {
+  text-decoration: none !important;
+}
+
+.subscribe-link:hover {
+  text-decoration: none !important;
+}
+
+/* RSS iframe styling */
+.rss-iframe {
+  border: 1px solid var(--form-border);
+  border-radius: var(--form-radius);
+  min-height: 600px;
+}
+
+/* ==========================================================================
    RESPONSIVE DESIGN
    ========================================================================== */
 
