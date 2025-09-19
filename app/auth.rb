@@ -103,10 +103,7 @@ module Html2rss
         return nil unless feed_token && url
 
         token_data = decode_feed_token(feed_token)
-        return nil unless token_data
-
-        return nil unless verify_token_signature(token_data)
-        return nil unless token_valid?(token_data, url)
+        return nil unless token_data && verify_token_signature(token_data) && token_valid?(token_data, url)
 
         get_account_by_username(token_data[:payload][:username])
       rescue StandardError
@@ -141,9 +138,7 @@ module Html2rss
       # @param url [String] the full URL with query parameters
       # @return [String, nil] feed token if found, nil otherwise
       def extract_feed_token_from_url(url)
-        uri = URI.parse(url)
-        params = URI.decode_www_form(uri.query || '').to_h
-        params['token']
+        URI.parse(url).then { |uri| URI.decode_www_form(uri.query || '').to_h['token'] }
       rescue StandardError
         nil
       end
@@ -165,13 +160,10 @@ module Html2rss
       # @param request [Roda::Request] the request object
       # @return [String, nil] token if found, nil otherwise
       def extract_token(request)
-        # Try Authorization header (Bearer token)
         auth_header = request.env['HTTP_AUTHORIZATION']
-        if auth_header&.start_with?('Bearer ')
-          return auth_header[7..] # Remove 'Bearer ' prefix
-        end
+        return unless auth_header&.start_with?('Bearer ')
 
-        nil
+        auth_header.delete_prefix('Bearer ')
       end
 
       ##
@@ -217,7 +209,7 @@ module Html2rss
       # Get the secret key for HMAC signing
       # @return [String, nil] secret key if configured, nil otherwise
       def secret_key
-        ENV.fetch('HTML2RSS_SECRET_KEY', nil)
+        ENV.fetch('HTML2RSS_SECRET_KEY')
       end
 
       ##
@@ -226,18 +218,23 @@ module Html2rss
       # @param patterns [Array<String>] allowed URL patterns
       # @return [Boolean] true if URL matches any pattern
       def url_matches_patterns?(url, patterns)
-        patterns.any? do |pattern|
-          if pattern.include?('*')
-            # Convert wildcard pattern to regex with proper escaping
-            escaped_pattern = Regexp.escape(pattern).gsub('\\*', '.*')
-            url.match?(/\A#{escaped_pattern}\z/)
-          else
-            # Exact match or substring match
-            url.include?(pattern)
-          end
-        end
+        patterns.any? { |pattern| url_matches_pattern?(url, pattern) }
       rescue RegexpError
         false
+      end
+
+      ##
+      # Check if URL matches a single pattern
+      # @param url [String] URL to check
+      # @param pattern [String] pattern to match against
+      # @return [Boolean] true if URL matches pattern
+      def url_matches_pattern?(url, pattern)
+        if pattern.include?('*')
+          escaped_pattern = Regexp.escape(pattern).gsub('\\*', '.*')
+          url.match?(/\A#{escaped_pattern}\z/)
+        else
+          url.include?(pattern)
+        end
       end
 
       ##
@@ -256,15 +253,11 @@ module Html2rss
       # @param url [String] URL to validate
       # @return [Boolean] true if URL is valid and allowed, false otherwise
       def valid_url?(url)
-        return false unless url.is_a?(String)
-        return false if url.empty?
-        return false if url.length > 2048 # Prevent extremely long URLs
+        return false unless url.is_a?(String) && !url.empty? && url.length <= 2048
 
-        begin
-          !Html2rss::Url.for_channel(url).nil?
-        rescue StandardError
-          false
-        end
+        !Html2rss::Url.for_channel(url).nil?
+      rescue StandardError
+        false
       end
     end
   end
