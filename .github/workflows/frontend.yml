@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: '.tool-versions'
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -51,13 +51,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: '.tool-versions'
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version-file: '.tool-versions'
           bundler-cache: true
 
       - name: Install dependencies
