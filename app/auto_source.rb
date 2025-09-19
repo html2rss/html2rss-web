@@ -3,6 +3,7 @@
 require 'uri'
 require_relative 'auth'
 require_relative 'xml_builder'
+require_relative 'local_config'
 
 module Html2rss
   module Web
@@ -13,13 +14,10 @@ module Html2rss
 
       def enabled?
         # Enable by default in development, require explicit setting in production
-        rack_env = ENV.fetch('RACK_ENV', nil)
-        auto_source_enabled = ENV.fetch('AUTO_SOURCE_ENABLED', nil)
-
-        if rack_env == 'development'
-          auto_source_enabled != 'false'
+        if development?
+          ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
         else
-          auto_source_enabled == 'true'
+          ENV.fetch('AUTO_SOURCE_ENABLED', nil) == 'true'
         end
       end
 
@@ -34,7 +32,7 @@ module Html2rss
       end
 
       def allowed_origins
-        if ENV.fetch('RACK_ENV', nil) == 'development'
+        if development?
           default_origins = 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001'
           origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', default_origins)
         else
@@ -61,19 +59,6 @@ module Html2rss
         build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
       end
 
-      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
-        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
-
-        {
-          id: feed_id,
-          name: name,
-          url: url,
-          username: token_data[:username],
-          strategy: strategy,
-          public_url: public_url
-        }
-      end
-
       def generate_feed_from_stable_id(feed_id, token_data)
         return nil unless token_data
 
@@ -84,6 +69,21 @@ module Html2rss
           url: nil, # Will be provided in request
           username: token_data[:username],
           strategy: 'ssrf_filter'
+        }
+      end
+
+      private
+
+      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
+
+        {
+          id: feed_id,
+          name: name,
+          url: url,
+          username: token_data[:username],
+          strategy: strategy,
+          public_url: public_url
         }
       end
 
@@ -111,14 +111,15 @@ module Html2rss
         )
       end
 
-      # rubocop:disable Metrics/MethodLength
       def call_strategy(url, strategy)
+        global_config = LocalConfig.global
+
         config = {
-          stylesheets: [{ href: '/rss.xsl', type: 'text/xsl' }],
+          stylesheets: global_config[:stylesheets],
+          headers: global_config[:headers],
           strategy: strategy.to_sym,
           channel: {
-            url: url,
-            title: extract_channel_title(url)
+            url: url
           },
           auto_source: {
             # Auto source configuration for automatic content detection
@@ -127,11 +128,6 @@ module Html2rss
         }
 
         Html2rss.feed(config)
-      end
-      # rubocop:enable Metrics/MethodLength
-
-      def extract_channel_title(url)
-        Html2rss::Url.for_channel(url).channel_titleized || 'RSS Feed'
       end
 
       def extract_site_title(url)
@@ -146,6 +142,10 @@ module Html2rss
 
       def access_denied_feed(url)
         XmlBuilder.build_access_denied_feed(url)
+      end
+
+      def development?
+        ENV.fetch('RACK_ENV', nil) == 'development'
       end
     end
   end
