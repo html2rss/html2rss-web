@@ -75,6 +75,14 @@ jobs:
 
       - run: bundle exec rspec
 
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
   docker-test:
     needs: [hadolint, frontend]
     runs-on: ubuntu-latest
