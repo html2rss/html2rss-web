@@ -23,17 +23,32 @@ RSpec.describe Html2rss::Web::App do
 
       expect(last_response.headers['Content-Security-Policy']).to eq <<~HEADERS.gsub(/\n\s*/, ' ')
         default-src 'none';
-        style-src 'self';
-        script-src 'self';
+        style-src 'self' 'unsafe-inline';
+        script-src 'self' 'unsafe-inline';
         connect-src 'self';
-        img-src 'self';
+        img-src 'self' data: blob:;
         font-src 'self' data:;
         form-action 'self';
         base-uri 'none';
-        frame-ancestors 'self';
-        frame-src 'self';
+        frame-ancestors 'none';
+        frame-src 'none';
+        object-src 'none';
+        media-src 'none';
+        manifest-src 'none';
+        worker-src 'none';
+        child-src 'none';
         block-all-mixed-content;
+        upgrade-insecure-requests;
       HEADERS
+    end
+
+    it 'sets security headers' do
+      get '/'
+
+      expect(last_response.headers['Strict-Transport-Security']).to eq 'max-age=31536000; includeSubDomains; preload'
+      expect(last_response.headers['Cross-Origin-Embedder-Policy']).to eq 'require-corp'
+      expect(last_response.headers['Cross-Origin-Opener-Policy']).to eq 'same-origin'
+      expect(last_response.headers['Cross-Origin-Resource-Policy']).to eq 'same-origin'
     end
   end
 

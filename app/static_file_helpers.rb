@@ -61,23 +61,6 @@ module Html2rss
         response['Content-Type'] = 'text/html'
         File.read(file_path)
       end
-
-      ##
-      # Validate and decode Base64 string safely
-      # @param encoded_string [String] Base64 encoded string
-      # @return [String, nil] decoded string if valid, nil if invalid
-      def validate_and_decode_base64(encoded_string)
-        return nil unless encoded_string.is_a?(String)
-        return nil if encoded_string.empty?
-
-        # Check if string contains only valid Base64 characters
-        return nil unless encoded_string.match?(%r{\A[A-Za-z0-9+/]*={0,2}\z})
-
-        # Attempt to decode
-        Base64.decode64(encoded_string)
-      rescue ArgumentError
-        nil
-      end
     end
   end
 end

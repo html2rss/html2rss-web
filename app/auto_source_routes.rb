@@ -85,48 +85,33 @@ module Html2rss
         XmlBuilder.build_error_feed(message: error.message)
       end
 
-      # Helper methods that need to be implemented by the main app
+      # Delegate to centralized ResponseHelpers methods
       def bad_request_response(router, message)
-        router.response.status = 400
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_access_denied_feed(message)
+        ResponseHelpers.bad_request_response_with_router(router, message)
       end
 
       def unauthorized_response(router)
-        router.response.status = 401
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Unauthorized')
+        ResponseHelpers.unauthorized_response_with_router(router)
       end
 
       def access_denied_response(router, url)
-        router.response.status = 403
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_access_denied_feed(url)
+        ResponseHelpers.access_denied_response_with_router(router, url)
       end
 
       def method_not_allowed_response(router)
-        router.response.status = 405
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Method Not Allowed')
+        ResponseHelpers.method_not_allowed_response_with_router(router)
       end
 
       def internal_error_response(router)
-        router.response.status = 500
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Internal Server Error')
+        ResponseHelpers.internal_error_response_with_router(router)
       end
 
       def forbidden_origin_response(router)
-        router.response.status = 403
-        router.response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: 'Forbidden Origin')
+        ResponseHelpers.forbidden_origin_response_with_router(router)
       end
 
       def configure_auto_source_headers(router)
-        router.response['Content-Type'] = 'application/xml'
-        router.response['Cache-Control'] = 'public, max-age=3600'
-        router.response['X-Content-Type-Options'] = 'nosniff'
-        router.response['X-XSS-Protection'] = '1; mode=block'
+        ResponseHelpers.configure_auto_source_headers_with_router(router)
       end
 
       def validate_and_decode_base64(encoded_url)
