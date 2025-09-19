@@ -35,7 +35,7 @@ import "../styles/forms.css";
         </div>
 
         <!-- Main Content Section (shown when logged in) -->
-        <div class="main-content-section" id="main-content" style="display: none;">
+        <div class="main-content-section hidden" id="main-content">
           <!-- URL Input Section -->
           <div class="url-section-enhanced">
             <div class="section-header">
@@ -64,13 +64,7 @@ import "../styles/forms.css";
       </div>
     </form>
 
-    <div
-      id="result"
-      class="results-section"
-      style="display: none;"
-      role="region"
-      aria-labelledby="result-heading"
-    >
+    <div id="result" class="results-section hidden" role="region" aria-labelledby="result-heading">
       <!-- Results will be populated by JavaScript -->
     </div>
 
@@ -125,9 +119,14 @@ import "../styles/forms.css";
 
     if (advancedToggle && advancedFields) {
       advancedToggle.addEventListener("click", () => {
-        const isVisible = advancedFields.style.display !== "none";
-        advancedFields.style.display = isVisible ? "none" : "block";
-        advancedToggle.textContent = isVisible ? "Show Advanced Options" : "Hide Advanced Options";
+        const isVisible = !advancedFields.classList.contains("hidden");
+        if (isVisible) {
+          advancedFields.classList.add("hidden");
+          advancedToggle.textContent = "Show Advanced Options";
+        } else {
+          advancedFields.classList.remove("hidden");
+          advancedToggle.textContent = "Hide Advanced Options";
+        }
       });
     }
 

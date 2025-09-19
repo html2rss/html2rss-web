@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'local_config'
+
 module Html2rss
   module Web
     ##
@@ -21,7 +23,12 @@ module Html2rss
       def handle_feed_generation(router, feed_name)
         params = router.params
         rss_content = Feeds.generate_feed(feed_name, params)
-        rss_headers(router)
+
+        # Extract TTL from feed configuration
+        config = LocalConfig.find(feed_name)
+        ttl = config.dig(:channel, :ttl) || 3600
+
+        rss_headers(router, ttl: ttl)
         rss_content.to_s
       rescue StandardError => error
         router.response.status = 500
@@ -29,9 +36,9 @@ module Html2rss
         Feeds.error_feed(error.message)
       end
 
-      def rss_headers(router)
+      def rss_headers(router, ttl: 3600)
         router.response['Content-Type'] = 'application/xml'
-        router.response['Cache-Control'] = 'public, max-age=3600'
+        router.response['Cache-Control'] = "public, max-age=#{ttl}"
       end
     end
   end

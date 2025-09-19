@@ -4,12 +4,12 @@ import "../styles/forms.css";
 ---
 
 <!-- Content Preview -->
-<div class="xml-preview" id="xml-preview" style="display: none;">
+<div class="xml-preview hidden" id="xml-preview">
   <div class="loading">Loading RSS feed preview...</div>
 </div>
 
 <!-- XML Feed Display -->
-<div class="xml-feed-display" id="xml-feed-display" style="display: none;">
+<div class="xml-feed-display hidden" id="xml-feed-display">
   <div class="xml-feed-header">
     <h4>📄 RSS Feed Preview</h4>
     <div class="xml-feed-actions">
@@ -19,17 +19,10 @@ import "../styles/forms.css";
       <button type="button" class="xml-toggle" id="xml-toggle">Show Raw XML</button>
     </div>
   </div>
-  <div class="xml-feed-content" id="xml-feed-content" style="display: none;">
-    <iframe
-      id="rss-iframe"
-      src=""
-      width="100%"
-      height="800"
-      frameborder="0"
-      style="border: 1px solid var(--form-border); border-radius: var(--form-radius); min-height: 600px;"
-    ></iframe>
+  <div class="xml-feed-content hidden" id="xml-feed-content">
+    <iframe id="rss-iframe" src="" width="100%" height="800" frameborder="0" class="rss-iframe"></iframe>
   </div>
-  <div class="xml-raw-content" id="xml-raw-content" style="display: none;">
+  <div class="xml-raw-content hidden" id="xml-raw-content">
     <pre><code id="rss-content" /></pre>
   </div>
 </div>

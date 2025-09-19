@@ -72,6 +72,8 @@ module Html2rss
         ERROR
       end
 
+      def development? = self.class.development?
+
       # Validate environment on class load
       validate_environment!
 
@@ -146,7 +148,7 @@ module Html2rss
       # Stable feed routes (new)
       hash_branch 'feeds' do |r|
         r.on String do |feed_id|
-          handle_stable_feed(r, feed_id)
+          AutoSourceRoutes.handle_stable_feed(r, feed_id)
         end
       end
 

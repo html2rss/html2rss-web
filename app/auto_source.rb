@@ -72,21 +72,6 @@ module Html2rss
         }
       end
 
-      private
-
-      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
-        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
-
-        {
-          id: feed_id,
-          name: name,
-          url: url,
-          username: token_data[:username],
-          strategy: strategy,
-          public_url: public_url
-        }
-      end
-
       def generate_feed_content(url, strategy = 'ssrf_filter')
         feed_content = call_strategy(url, strategy)
 
@@ -102,6 +87,19 @@ module Html2rss
         feed_content
       end
 
+      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
+
+        {
+          id: feed_id,
+          name: name,
+          url: url,
+          username: token_data[:username],
+          strategy: strategy,
+          public_url: public_url
+        }
+      end
+
       def create_empty_feed_warning(url, strategy)
         site_title = extract_site_title(url)
         XmlBuilder.build_empty_feed_warning(
@@ -111,7 +109,7 @@ module Html2rss
         )
       end
 
-      def call_strategy(url, strategy)
+      def call_strategy(url, strategy) # rubocop:disable Metrics/MethodLength
         global_config = LocalConfig.global
 
         config = {

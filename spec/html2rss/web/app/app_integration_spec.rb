@@ -184,7 +184,11 @@ RSpec.describe Html2rss::Web::App do
 
     context 'without any authentication' do
       it 'returns 401 unauthorized', :aggregate_failures do
-        get "/feeds/#{feed_id}?url=#{URI.encode_www_form_component(url)}"
+        # Ensure Auth.authenticate returns nil (no authentication)
+        allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil)
+
+        # Add cache-busting parameter to avoid cached responses
+        get "/feeds/#{feed_id}?url=#{URI.encode_www_form_component(url)}&_t=#{Time.now.to_i}"
 
         expect(last_response.status).to eq(401)
         expect(last_response.body).to include('Unauthorized')

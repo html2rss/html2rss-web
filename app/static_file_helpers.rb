@@ -11,7 +11,8 @@ module Html2rss
         router.on do
           if router.path_info == '/'
             serve_root_path
-          else
+          elsif router.path_info.start_with?('/') && !router.path_info.include?('.')
+            # Only handle frontend routes that don't have file extensions
             serve_astro_files(router)
           end
         end

@@ -13,7 +13,7 @@ export function fetchAndDisplayRSS(feedUrl) {
     const openFeedLink = document.getElementById('open-feed-link');
 
     if (xmlFeedDisplay) {
-      xmlFeedDisplay.style.display = 'block';
+      xmlFeedDisplay.classList.remove('hidden');
     }
 
     // Set the feed URL for the open in new tab link
@@ -29,16 +29,16 @@ export function fetchAndDisplayRSS(feedUrl) {
     // Set up toggle functionality
     if (xmlToggle) {
       xmlToggle.onclick = () => {
-        const isShowingRaw = xmlRawContent?.style.display !== 'none';
+        const isShowingRaw = !xmlRawContent?.classList.contains('hidden');
         if (isShowingRaw) {
           // Switch to styled view
-          xmlFeedContent.style.display = 'block';
-          xmlRawContent.style.display = 'none';
+          xmlFeedContent.classList.remove('hidden');
+          xmlRawContent.classList.add('hidden');
           xmlToggle.textContent = 'Show Raw XML';
         } else {
           // Switch to raw XML view
-          xmlFeedContent.style.display = 'none';
-          xmlRawContent.style.display = 'block';
+          xmlFeedContent.classList.add('hidden');
+          xmlRawContent.classList.remove('hidden');
           xmlToggle.textContent = 'Show Styled Preview';
 
           // Load raw XML content if not already loaded
@@ -52,13 +52,13 @@ export function fetchAndDisplayRSS(feedUrl) {
 
     // Auto-show the styled content
     if (xmlFeedContent) {
-      xmlFeedContent.style.display = 'block';
+      xmlFeedContent.classList.remove('hidden');
     }
   } catch (error) {
     const xmlFeedDisplay = document.getElementById('xml-feed-display');
     if (xmlFeedDisplay) {
       xmlFeedDisplay.innerHTML = `<div class="content-preview-error">Error fetching RSS content: ${error.message}</div>`;
-      xmlFeedDisplay.style.display = 'block';
+      xmlFeedDisplay.classList.remove('hidden');
     }
   }
 }
@@ -118,12 +118,12 @@ export async function showContentPreview(feedUrl) {
       `;
     }
 
-    xmlPreview.classList.add('show');
+    xmlPreview.classList.remove('hidden');
   } catch (error) {
     const xmlPreview = document.getElementById('xml-preview');
     if (xmlPreview) {
       xmlPreview.innerHTML = `<div class="content-preview-error">Error loading content preview: ${error.message}</div>`;
-      xmlPreview.classList.add('show');
+      xmlPreview.classList.remove('hidden');
     }
   }
 }
