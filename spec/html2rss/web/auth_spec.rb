@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/auth'
-require_relative '../../../../app/security_logger'
+require_relative '../../../app/auth'
+require_relative '../../../app/security_logger'
 
 RSpec.describe Html2rss::Web::Auth do
   let(:test_config) do

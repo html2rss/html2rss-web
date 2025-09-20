@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 require 'rack/test'
-require_relative '../../../../app'
+require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::App do
   include Rack::Test::Methods

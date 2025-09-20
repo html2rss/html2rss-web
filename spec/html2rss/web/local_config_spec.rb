@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/local_config'
+require_relative '../../../app/local_config'
 
 RSpec.describe Html2rss::Web::LocalConfig do
   describe '::CONFIG_FILE' do

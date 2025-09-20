@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/auto_source'
+require_relative '../../../app/auto_source'
 
 RSpec.describe Html2rss::Web::AutoSource do
   let(:test_config) do

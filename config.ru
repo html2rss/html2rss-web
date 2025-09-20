@@ -23,7 +23,9 @@ require_relative 'config/rack_attack'
 use Rack::Attack
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
-requires = Dir['app/**/*.rb']
+app_requires = Dir['app/**/*.rb']
+route_requires = Dir['routes/**/*.rb']
+helper_requires = Dir['helpers/**/*.rb']
 
 if dev
   require 'logger'
@@ -37,14 +39,18 @@ if dev
                                     end
   Unreloader.require('app.rb') { 'Html2rss::Web::App' }
 
-  requires.each { |f| Unreloader.require(f) }
+  app_requires.each { |f| Unreloader.require(f) }
+  route_requires.each { |f| Unreloader.require(f) }
+  helper_requires.each { |f| Unreloader.require(f) }
 
   run Unreloader
 else
   use Rack::Timeout
 
   require_relative 'app'
-  requires.each { |f| require_relative f }
+  app_requires.each { |f| require_relative f }
+  route_requires.each { |f| require_relative f }
+  helper_requires.each { |f| require_relative f }
 
   run(Html2rss::Web::App.freeze.app)
 end

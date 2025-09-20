@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/security_logger'
+require_relative '../../../app/security_logger'
 
 RSpec.describe Html2rss::Web::SecurityLogger do
   let(:test_output) { StringIO.new }

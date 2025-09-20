@@ -49,6 +49,11 @@ module Html2rss
       end
 
       def configure_csp(csp)
+        configure_csp_sources(csp)
+        configure_csp_security(csp)
+      end
+
+      def configure_csp_sources(csp)
         csp.default_src :none
         csp.style_src :self, "'unsafe-inline'" # Allow inline styles for Starlight
         csp.script_src :self, "'unsafe-inline'" # Allow inline scripts for progressive enhancement
@@ -57,6 +62,9 @@ module Html2rss
         csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none
+      end
+
+      def configure_csp_security(csp)
         csp.frame_ancestors :none # More restrictive than :self
         csp.frame_src :none # More restrictive than :self
         csp.object_src :none # Prevent object/embed/applet
@@ -69,13 +77,22 @@ module Html2rss
       end
 
       def default_security_headers
+        basic_security_headers.merge(advanced_security_headers)
+      end
+
+      def basic_security_headers
         {
           'Content-Type' => 'text/html',
           'X-Content-Type-Options' => 'nosniff',
           'X-XSS-Protection' => '1; mode=block',
           'X-Frame-Options' => 'DENY',
           'X-Permitted-Cross-Domain-Policies' => 'none',
-          'Referrer-Policy' => 'strict-origin-when-cross-origin',
+          'Referrer-Policy' => 'strict-origin-when-cross-origin'
+        }
+      end
+
+      def advanced_security_headers
+        {
           'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
           'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
           'Cross-Origin-Embedder-Policy' => 'require-corp',

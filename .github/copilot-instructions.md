@@ -43,6 +43,16 @@ Search these pages before using them. Find examples, plugins, UI components, and
 - ✅ **CSS**: Use frontend styles in `frontend/public/styles.css`. Water.css for fallback.
 - ✅ **Specs**: RSpec for Ruby, build tests for frontend.
 
+## Roda Large Applications Structure
+
+This project follows [Roda Large Applications conventions](https://roda.jeremyevans.net/rdoc/files/doc/conventions_rdoc.html#label-Large+Applications):
+
+- **Use `hash_branches` plugin** (not `hash_branch_view_subdir` since we have no views)
+- **Route modules** go in `routes/` directory (one file per prefix)
+- **Helper modules** go in `helpers/` directory with `module_function`
+- **Core app modules** stay in `app/` directory
+- **Load routes/helpers** with `Dir['routes/*.rb'].each { |f| require_relative f }`
+
 ## Don't
 
 - ❌ Don't depend on JS for core flows.
@@ -76,6 +86,11 @@ Search these pages before using them. Find examples, plugins, UI components, and
 - `AUTO_SOURCE_ENABLED`, `AUTO_SOURCE_USERNAME`, `AUTO_SOURCE_PASSWORD`, `AUTO_SOURCE_ALLOWED_ORIGINS`
 - `HEALTH_CHECK_USERNAME`, `HEALTH_CHECK_PASSWORD`
 - `SENTRY_DSN` (optional)
+
+### Verification Steps
+- Run `ruby -c app.rb` to check syntax
+- Run `bundle exec rspec` to verify tests
+- Check `bundle install` removes unused dependencies
 
 ## Style
 
