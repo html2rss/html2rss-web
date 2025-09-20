@@ -132,6 +132,8 @@ GEM
       websocket-driver (>= 0.6.0)
     racc (1.8.1)
     rack (3.2.0)
+    rack-attack (6.7.0)
+      rack (>= 1.0, < 4)
     rack-cache (1.17.0)
       rack (>= 0.4)
     rack-test (2.2.0)
@@ -241,6 +243,7 @@ DEPENDENCIES
   html2rss-configs!
   parallel
   puma
+  rack-attack
   rack-cache
   rack-test
   rack-timeout
@@ -312,6 +315,7 @@ CHECKSUMS
   puppeteer-ruby (0.45.6) sha256=cb86f7b4f6f8658a709ae1a305e820bdb009548e6beff6675489926f9ceb5995
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rack (3.2.0) sha256=79cd21514d696c59d61fae02e62900f087aac2d053fdc77d45f4e91b94fb3612
+  rack-attack (6.7.0) sha256=3ca47e8f66cd33b2c96af53ea4754525cd928ed3fa8da10ee6dad0277791d77c
   rack-cache (1.17.0) sha256=49592f3ef2173b0f5524df98bb801fb411e839869e7ce84ac428dc492bf0eb90
   rack-test (2.2.0) sha256=005a36692c306ac0b4a9350355ee080fd09ddef1148a5f8b2ac636c720f5c463
   rack-timeout (0.7.0) sha256=757337e9793cca999bb73a61fe2a7d4280aa9eefbaf787ce3b98d860749c87d9

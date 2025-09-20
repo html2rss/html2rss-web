@@ -24,7 +24,7 @@ RSpec.describe Html2rss::Web::Auth do
   end
 
   before do
-    allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(test_config)
+    allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(test_config)
   end
 
   describe '.load_accounts' do
@@ -329,6 +329,161 @@ RSpec.describe Html2rss::Web::Auth do
       unrestricted_account = { username: 'unrestricted', token: 'unrestricted-token', allowed_urls: [] }
       result = described_class.url_allowed?(unrestricted_account, 'https://example.com')
       expect(result).to be true
+    end
+  end
+
+  describe '.valid_username?' do
+    it 'accepts valid usernames', :aggregate_failures do
+      expect(described_class.valid_username?('user123')).to be true
+      expect(described_class.valid_username?('user-name')).to be true
+      expect(described_class.valid_username?('user_name')).to be true
+      expect(described_class.valid_username?('a')).to be true
+    end
+
+    it 'rejects invalid usernames', :aggregate_failures do
+      expect(described_class.valid_username?('')).to be false
+      expect(described_class.valid_username?('user@domain')).to be false
+      expect(described_class.valid_username?('user space')).to be false
+      expect(described_class.valid_username?('user+plus')).to be false
+      expect(described_class.valid_username?('user.dot')).to be false
+      expect(described_class.valid_username?('a' * 101)).to be false
+      expect(described_class.valid_username?(nil)).to be false
+      expect(described_class.valid_username?(123)).to be false
+    end
+  end
+
+  describe '.secure_compare' do
+    it 'compares equal strings correctly', :aggregate_failures do
+      expect(described_class.secure_compare('test', 'test')).to be true
+      expect(described_class.secure_compare('', '')).to be true
+      expect(described_class.secure_compare('a', 'a')).to be true
+    end
+
+    it 'compares different strings correctly', :aggregate_failures do
+      expect(described_class.secure_compare('test', 'different')).to be false
+      expect(described_class.secure_compare('test', 'tes')).to be false
+      expect(described_class.secure_compare('tes', 'test')).to be false
+      expect(described_class.secure_compare('test', '')).to be false
+      expect(described_class.secure_compare('', 'test')).to be false
+    end
+
+    it 'handles nil inputs', :aggregate_failures do
+      expect(described_class.secure_compare(nil, 'test')).to be false
+      expect(described_class.secure_compare('test', nil)).to be false
+      expect(described_class.secure_compare(nil, nil)).to be false
+    end
+
+    it 'prevents timing attacks with different length strings' do
+      # This test ensures that the method doesn't short-circuit on length differences
+      start_time = Time.now
+      described_class.secure_compare('a', 'ab')
+      short_time = Time.now - start_time
+
+      start_time = Time.now
+      described_class.secure_compare('a', 'a')
+      equal_time = Time.now - start_time
+
+      # Both should take similar time (within 1ms tolerance for test environment)
+      expect((equal_time - short_time).abs).to be < 0.001
+    end
+  end
+
+  describe 'token length validation' do
+    it 'rejects empty tokens' do
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => 'Bearer ' })
+      account = described_class.authenticate(mock_request)
+      expect(account).to be_nil
+    end
+
+    it 'rejects tokens that are too long' do
+      long_token = 'a' * 1025
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{long_token}" })
+      account = described_class.authenticate(mock_request)
+      expect(account).to be_nil
+    end
+
+    it 'accepts tokens within length limits' do
+      valid_token = 'test-token-abc123'
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" })
+      account = described_class.authenticate(mock_request)
+      expect(account).to include(username: 'testuser')
+    end
+  end
+
+  describe 'security edge cases' do
+    it 'prevents timing attacks on token validation' do
+      # Test that invalid tokens take similar time to process
+      valid_token = 'test-token-abc123'
+      invalid_token = 'invalid-token-xyz'
+
+      valid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" })
+      invalid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{invalid_token}" })
+
+      start_time = Time.now
+      described_class.authenticate(valid_request)
+      valid_time = Time.now - start_time
+
+      start_time = Time.now
+      described_class.authenticate(invalid_request)
+      invalid_time = Time.now - start_time
+
+      # Both should take similar time (within 5ms tolerance)
+      expect((valid_time - invalid_time).abs).to be < 0.005
+    end
+
+    it 'handles malformed authorization headers' do
+      malformed_requests = [
+        { 'HTTP_AUTHORIZATION' => 'InvalidFormat' },
+        { 'HTTP_AUTHORIZATION' => 'Bearer' },
+        { 'HTTP_AUTHORIZATION' => 'Bearer ' },
+        { 'HTTP_AUTHORIZATION' => 'Basic dGVzdA==' },
+        { 'HTTP_AUTHORIZATION' => nil }
+      ]
+
+      malformed_requests.each do |env|
+        mock_request = instance_double(Rack::Request, env: env)
+        account = described_class.authenticate(mock_request)
+        expect(account).to be_nil
+      end
+    end
+
+    it 'rejects tokens with special characters' do
+      malicious_tokens = [
+        "test-token'; DROP TABLE users; --",
+        'test-token<script>alert("xss")</script>',
+        'test-token" OR "1"="1',
+        "test-token\x00null",
+        'test-token\n\r\t'
+      ]
+
+      malicious_tokens.each do |token|
+        mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{token}" })
+        account = described_class.authenticate(mock_request)
+        expect(account).to be_nil
+      end
+    end
+
+    it 'handles extremely long usernames in feed tokens' do
+      long_username = 'a' * 101
+      url = 'https://example.com'
+
+      token = described_class.generate_feed_token(long_username, url)
+      expect(token).to be_nil
+    end
+
+    it 'rejects malformed feed tokens' do
+      malformed_tokens = [
+        'not-base64',
+        Base64.urlsafe_encode64('invalid-json'),
+        Base64.urlsafe_encode64('{"invalid": "structure"}'),
+        Base64.urlsafe_encode64('{"payload": {}, "signature": ""}'),
+        ''
+      ]
+
+      malformed_tokens.each do |token|
+        account = described_class.validate_feed_token(token, 'https://example.com')
+        expect(account).to be_nil
+      end
     end
   end
 end

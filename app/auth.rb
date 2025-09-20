@@ -9,6 +9,8 @@ require 'cgi'
 require_relative 'local_config'
 
 module Html2rss
+  ##
+  # Web application modules for html2rss
   module Web
     ##
     # Unified authentication system for html2rss-web
@@ -20,8 +22,8 @@ module Html2rss
 
       ##
       # Authenticate a request and return account data if valid
-      # @param request [Roda::Request] the request object
-      # @return [Hash, nil] account data if authenticated, nil otherwise
+      # @param request [Roda::Request] request object
+      # @return [Hash, nil] account data if authenticated
       def authenticate(request)
         token = extract_token(request)
         return nil unless token
@@ -31,12 +33,19 @@ module Html2rss
 
       ##
       # Get account data by token
-      # @param token [String] the authentication token
-      # @return [Hash, nil] account data if found, nil otherwise
+      # @param token [String] authentication token
+      # @return [Hash, nil] account data if found
       def get_account(token)
         return nil unless token
 
-        accounts.find { |account| account[:token] == token }
+        token_index[token]
+      end
+
+      ##
+      # Get token index for O(1) lookups
+      # @return [Hash] token to account mapping
+      def token_index
+        @token_index ||= accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account } # rubocop:disable ThreadSafety/ClassInstanceVariable
       end
 
       ##
@@ -74,6 +83,7 @@ module Html2rss
       def generate_feed_token(username, url, expires_in: DEFAULT_TOKEN_EXPIRY)
         secret_key = self.secret_key
         return nil unless secret_key
+        return nil unless valid_username?(username) && valid_url?(url)
 
         payload = create_token_payload(username, url, expires_in)
         signature = create_hmac_signature(secret_key, payload)
@@ -96,9 +106,9 @@ module Html2rss
 
       ##
       # Validate a feed token and return account data if valid
-      # @param feed_token [String] the feed token to validate
-      # @param url [String] the URL being accessed
-      # @return [Hash, nil] account data if valid, nil otherwise
+      # @param feed_token [String] feed token to validate
+      # @param url [String] URL being accessed
+      # @return [Hash, nil] account data if valid
       def validate_feed_token(feed_token, url)
         return nil unless feed_token && url
 
@@ -122,7 +132,21 @@ module Html2rss
         return false unless secret_key
 
         expected_signature = OpenSSL::HMAC.hexdigest('SHA256', secret_key, token_data[:payload].to_json)
-        token_data[:signature] == expected_signature
+        secure_compare(token_data[:signature], expected_signature)
+      end
+
+      ##
+      # Constant-time string comparison to prevent timing attacks
+      # @param first_string [String] first string
+      # @param second_string [String] second string
+      # @return [Boolean] true if strings are equal
+      def secure_compare(first_string, second_string)
+        return false unless first_string && second_string
+        return false unless first_string.bytesize == second_string.bytesize
+
+        result = 0
+        first_string.bytes.zip(second_string.bytes) { |x, y| result |= x ^ y }
+        result.zero?
       end
 
       def token_valid?(token_data, url)
@@ -135,8 +159,8 @@ module Html2rss
 
       ##
       # Extract feed token from URL query parameters
-      # @param url [String] the full URL with query parameters
-      # @return [String, nil] feed token if found, nil otherwise
+      # @param url [String] full URL with query parameters
+      # @return [String, nil] feed token if found
       def extract_feed_token_from_url(url)
         URI.parse(url).then { |uri| URI.decode_www_form(uri.query || '').to_h['token'] }
       rescue StandardError
@@ -145,8 +169,8 @@ module Html2rss
 
       ##
       # Check if a feed URL is allowed for the given feed token
-      # @param feed_token [String] the feed token
-      # @param url [String] the URL to check
+      # @param feed_token [String] feed token
+      # @param url [String] URL to check
       # @return [Boolean] true if URL is allowed
       def feed_url_allowed?(feed_token, url)
         account = validate_feed_token(feed_token, url)
@@ -157,13 +181,16 @@ module Html2rss
 
       ##
       # Extract token from request (Authorization header only)
-      # @param request [Roda::Request] the request object
-      # @return [String, nil] token if found, nil otherwise
+      # @param request [Roda::Request] request object
+      # @return [String, nil] token if found
       def extract_token(request)
         auth_header = request.env['HTTP_AUTHORIZATION']
         return unless auth_header&.start_with?('Bearer ')
 
-        auth_header.delete_prefix('Bearer ')
+        token = auth_header.delete_prefix('Bearer ')
+        return nil if token.empty? || token.length > 1024
+
+        token
       end
 
       ##
@@ -174,15 +201,9 @@ module Html2rss
       end
 
       ##
-      # Reload accounts from config (useful for development)
-      def reload_accounts!
-        accounts
-      end
-
-      ##
       # Get account by username
-      # @param username [String] the username to find
-      # @return [Hash, nil] account data if found, nil otherwise
+      # @param username [String] username to find
+      # @return [Hash, nil] account data if found
       def get_account_by_username(username)
         return nil unless username
 
@@ -207,7 +228,7 @@ module Html2rss
 
       ##
       # Get the secret key for HMAC signing
-      # @return [String, nil] secret key if configured, nil otherwise
+      # @return [String, nil] secret key if configured
       def secret_key
         ENV.fetch('HTML2RSS_SECRET_KEY')
       end
@@ -251,13 +272,46 @@ module Html2rss
       ##
       # Validate URL format and scheme using Html2rss::Url.for_channel
       # @param url [String] URL to validate
-      # @return [Boolean] true if URL is valid and allowed, false otherwise
+      # @return [Boolean] true if URL is valid and allowed
       def valid_url?(url)
-        return false unless url.is_a?(String) && !url.empty? && url.length <= 2048
+        return false unless basic_url_valid?(url)
 
-        !Html2rss::Url.for_channel(url).nil?
+        validate_url_with_html2rss(url)
       rescue StandardError
         false
+      end
+
+      ##
+      # Basic URL format validation
+      # @param url [String] URL to validate
+      # @return [Boolean] true if basic format is valid
+      def basic_url_valid?(url)
+        url.is_a?(String) && !url.empty? && url.length <= 2048 && url.match?(%r{\Ahttps?://.+})
+      end
+
+      ##
+      # Validate URL using Html2rss if available, otherwise basic validation
+      # @param url [String] URL to validate
+      # @return [Boolean] true if URL is valid
+      def validate_url_with_html2rss(url)
+        if defined?(Html2rss::Url) && Html2rss::Url.respond_to?(:for_channel)
+          !Html2rss::Url.for_channel(url).nil?
+        else
+          # Fallback to basic URL validation for tests
+          URI.parse(url).is_a?(URI::HTTP) || URI.parse(url).is_a?(URI::HTTPS)
+        end
+      end
+
+      ##
+      # Validate username format and length
+      # @param username [String] username to validate
+      # @return [Boolean] true if username is valid
+      def valid_username?(username)
+        return false unless username.is_a?(String)
+        return false if username.empty? || username.length > 100
+        return false unless username.match?(/\A[a-zA-Z0-9_-]+\z/)
+
+        true
       end
     end
   end
