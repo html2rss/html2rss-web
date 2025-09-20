@@ -18,7 +18,7 @@ module Html2rss
       def self.load_api_routes(app)
         app.hash_branch 'api' do |r|
           r.response['Content-Type'] = 'application/json'
-          load_api_endpoints(r)
+          Html2rss::Web::AppRoutes.load_api_endpoints(r)
         end
       end
 
@@ -38,33 +38,33 @@ module Html2rss
       def self.load_strategies_endpoint(router)
         router.on 'strategies.json' do
           router.response['Cache-Control'] = 'public, max-age=3600'
-          JSON.generate(ApiRoutes.list_available_strategies)
+          JSON.generate(Html2rss::Web::ApiRoutes.list_available_strategies)
         end
       end
 
       def self.load_feed_generation_endpoint(router)
         router.on String do |feed_name|
-          ApiRoutes.handle_feed_generation(router, feed_name)
+          Html2rss::Web::ApiRoutes.handle_feed_generation(router, feed_name)
         end
       end
 
       def self.load_feed_routes(app)
         app.hash_branch 'feeds' do |r|
           r.on String do |feed_id|
-            AutoSourceRoutes.handle_stable_feed(r, feed_id)
+            Html2rss::Web::AutoSourceRoutes.handle_stable_feed(r, feed_id)
           end
         end
       end
 
       def self.load_auto_source_routes(app)
         app.hash_branch 'auto_source' do |r|
-          AutoSourceRoutes.handle_auto_source_routes(r)
+          Html2rss::Web::AutoSourceRoutes.handle_auto_source_routes(r)
         end
       end
 
       def self.load_health_check_routes(app)
         app.hash_branch 'health_check.txt' do |r|
-          HealthCheckRoutes.handle_health_check_routes(r)
+          Html2rss::Web::HealthCheckRoutes.handle_health_check_routes(r)
         end
       end
     end

@@ -200,7 +200,7 @@ RSpec.describe Html2rss::Web::App do
         get "/feeds/#{feed_id}?token=valid-token"
 
         expect(last_response.status).to eq(400)
-        expect(last_response.body).to include('URL parameter required')
+        expect(last_response.body).to include('url parameter required')
       end
     end
   end
