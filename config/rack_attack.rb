@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rack/attack'
+require_relative '../app/security_logger'
 
 # In-memory store (resets on restart)
 # Note: In production, consider using Redis for persistent rate limiting
@@ -17,21 +18,33 @@ Rack::Attack.safelist('localhost') do |req|
 end
 
 # Rate limiting by IP
-Rack::Attack.throttle('requests per IP', limit: 100, period: 60, &:ip)
+Rack::Attack.throttle('requests per IP', limit: 100, period: 60) do |req|
+  Html2rss::Web::SecurityLogger.log_rate_limit_exceeded(req.ip, req.path, 100) if req.env['rack.attack.throttle_data']
+  req.ip
+end
 
 # Rate limiting for API endpoints
 Rack::Attack.throttle('api requests per IP', limit: 200, period: 60) do |req|
-  req.ip if req.path.start_with?('/api/')
+  if req.path.start_with?('/api/')
+    Html2rss::Web::SecurityLogger.log_rate_limit_exceeded(req.ip, req.path, 200) if req.env['rack.attack.throttle_data']
+    req.ip
+  end
 end
 
 # Rate limiting for feed generation (more restrictive)
 Rack::Attack.throttle('feed generation per IP', limit: 10, period: 60) do |req|
-  req.ip if req.path.include?('/feeds/')
+  if req.path.include?('/feeds/')
+    Html2rss::Web::SecurityLogger.log_rate_limit_exceeded(req.ip, req.path, 10) if req.env['rack.attack.throttle_data']
+    req.ip
+  end
 end
 
 # Block suspicious patterns
 Rack::Attack.blocklist('block bad user agents') do |req|
-  req.user_agent&.match?(/bot|crawler|spider/i) && !req.user_agent&.match?(/googlebot|bingbot/i)
+  if req.user_agent&.match?(/bot|crawler|spider/i) && !req.user_agent&.match?(/googlebot|bingbot/i)
+    Html2rss::Web::SecurityLogger.log_blocked_request(req.ip, 'suspicious_user_agent', req.path)
+    true
+  end
 end
 
 # Custom responses with proper headers

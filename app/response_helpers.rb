@@ -9,7 +9,8 @@ module Html2rss
     module ResponseHelpers
       module_function
 
-      # Methods that work with response object directly (for main app)
+      ##
+      # Return unauthorized response
       def unauthorized_response
         response.status = 401
         response['Content-Type'] = 'application/xml'
@@ -17,24 +18,34 @@ module Html2rss
         XmlBuilder.build_error_feed(message: 'Unauthorized')
       end
 
+      ##
+      # Return forbidden origin response
       def forbidden_origin_response
         response.status = 403
         response['Content-Type'] = 'application/xml'
         XmlBuilder.build_error_feed(message: 'Origin is not allowed.')
       end
 
+      ##
+      # Return access denied response
+      # @param url [String] URL that was denied
       def access_denied_response(url)
         response.status = 403
         response['Content-Type'] = 'application/xml'
         XmlBuilder.build_access_denied_feed(url)
       end
 
+      ##
+      # Return not found response
       def not_found_response
         response.status = 404
         response['Content-Type'] = 'application/xml'
         XmlBuilder.build_error_feed(message: 'Feed not found', title: 'Not Found')
       end
 
+      ##
+      # Return bad request response
+      # @param message [String] error message
       def bad_request_response(message)
         response.status = 400
         response['Content-Type'] = 'application/xml'

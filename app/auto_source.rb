@@ -12,8 +12,10 @@ module Html2rss
     module AutoSource
       module_function
 
+      ##
+      # Check if auto source is enabled
+      # @return [Boolean] true if enabled
       def enabled?
-        # Enable by default in development, require explicit setting in production
         if development?
           ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
         else
@@ -21,16 +23,27 @@ module Html2rss
         end
       end
 
+      ##
+      # Authenticate request with token
+      # @param request [Roda::Request] request object
+      # @return [Hash, nil] account data if authenticated
       def authenticate_with_token(request)
         Auth.authenticate(request)
       end
 
+      ##
+      # Check if origin is allowed
+      # @param request [Roda::Request] request object
+      # @return [Boolean] true if origin is allowed
       def allowed_origin?(request)
         origin = request.env['HTTP_HOST'] || request.env['HTTP_X_FORWARDED_HOST']
         origins = allowed_origins
         origins.empty? || origins.include?(origin)
       end
 
+      ##
+      # Get allowed origins from configuration
+      # @return [Array<String>] list of allowed origins
       def allowed_origins
         if development?
           default_origins = 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001'
@@ -41,8 +54,12 @@ module Html2rss
         origins.split(',').map(&:strip)
       end
 
+      ##
+      # Check if URL is allowed for token
+      # @param token_data [Hash] token data
+      # @param url [String] URL to check
+      # @return [Boolean] true if URL is allowed
       def url_allowed_for_token?(token_data, url)
-        # Get full account data from config
         account = Auth.get_account_by_username(token_data[:username])
         return false unless account
 
