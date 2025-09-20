@@ -9,6 +9,9 @@ module Html2rss
     module ApiRoutes
       module_function
 
+      ##
+      # List available request strategies
+      # @return [Hash] hash with strategies array
       def list_available_strategies
         strategies = Html2rss::RequestService.strategy_names.map do |name|
           {
@@ -20,11 +23,15 @@ module Html2rss
         { strategies: strategies }
       end
 
+      ##
+      # Handle feed generation request
+      # @param router [Roda::Request] request router
+      # @param feed_name [String] name of the feed to generate
+      # @return [String] RSS content
       def handle_feed_generation(router, feed_name)
         params = router.params
         rss_content = Feeds.generate_feed(feed_name, params)
 
-        # Extract TTL from feed configuration
         config = LocalConfig.find(feed_name)
         ttl = config.dig(:channel, :ttl) || 3600
 
@@ -36,6 +43,10 @@ module Html2rss
         Feeds.error_feed(error.message)
       end
 
+      ##
+      # Set RSS response headers
+      # @param router [Roda::Request] request router
+      # @param ttl [Integer] time to live in seconds
       def rss_headers(router, ttl: 3600)
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = "public, max-age=#{ttl}"

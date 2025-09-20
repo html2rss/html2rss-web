@@ -7,6 +7,7 @@ require 'base64'
 require 'json'
 require 'cgi'
 require_relative 'local_config'
+require_relative 'security_logger'
 
 module Html2rss
   ##
@@ -28,7 +29,13 @@ module Html2rss
         token = extract_token(request)
         return nil unless token
 
-        get_account(token)
+        account = get_account(token)
+        if account
+          SecurityLogger.log_auth_failure(request.ip, request.user_agent, 'success')
+        else
+          SecurityLogger.log_auth_failure(request.ip, request.user_agent, 'invalid_token')
+        end
+        account
       end
 
       ##
@@ -113,10 +120,15 @@ module Html2rss
         return nil unless feed_token && url
 
         token_data = decode_feed_token(feed_token)
-        return nil unless token_data && verify_token_signature(token_data) && token_valid?(token_data, url)
+        valid = token_data && verify_token_signature(token_data) && token_valid?(token_data, url)
+
+        SecurityLogger.log_token_usage(feed_token, url, valid)
+
+        return nil unless valid
 
         get_account_by_username(token_data[:payload][:username])
       rescue StandardError
+        SecurityLogger.log_token_usage(feed_token, url, false)
         nil
       end
 

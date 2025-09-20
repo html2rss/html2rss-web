@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require_relative '../../../../app/auth'
+require_relative '../../../../app/security_logger'
 
 RSpec.describe Html2rss::Web::Auth do
   let(:test_config) do
@@ -25,6 +26,11 @@ RSpec.describe Html2rss::Web::Auth do
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(test_config)
+    allow(Html2rss::Web::SecurityLogger).to receive(:log_auth_failure)
+    allow(Html2rss::Web::SecurityLogger).to receive(:log_token_usage)
+    allow(Html2rss::Web::SecurityLogger).to receive(:log_rate_limit_exceeded)
+    allow(Html2rss::Web::SecurityLogger).to receive(:log_blocked_request)
+    allow(Html2rss::Web::SecurityLogger).to receive(:log_config_validation_failure)
   end
 
   describe '.load_accounts' do
@@ -168,6 +174,7 @@ RSpec.describe Html2rss::Web::Auth do
     it 'validates a correct token', :aggregate_failures do
       account = described_class.validate_feed_token(valid_token, url)
 
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_token_usage).with(valid_token, url, true)
       expect(account).to include(
         username: username,
         token: 'test-token-abc123',
@@ -177,7 +184,14 @@ RSpec.describe Html2rss::Web::Auth do
 
     it 'returns nil for invalid token' do
       account = described_class.validate_feed_token('invalid-token', url)
+
       expect(account).to be_nil
+    end
+
+    it 'logs token usage for invalid token' do
+      described_class.validate_feed_token('invalid-token', url)
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_token_usage).with('invalid-token', url, false)
     end
 
     it 'returns nil for token with wrong URL' do
@@ -271,7 +285,9 @@ RSpec.describe Html2rss::Web::Auth do
   describe '.authenticate' do
     let(:valid_token) { 'test-token-abc123' }
     let(:invalid_token) { 'invalid-token' }
-    let(:mock_request) { instance_double(Rack::Request, env: {}, params: {}) }
+    let(:mock_request) do
+      instance_double(Rack::Request, env: {}, params: {}, ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
+    end
 
     it 'authenticates with valid token in Authorization header', :aggregate_failures do
       allow(mock_request).to receive(:env).and_return({ 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" })
@@ -390,21 +406,24 @@ RSpec.describe Html2rss::Web::Auth do
 
   describe 'token length validation' do
     it 'rejects empty tokens' do
-      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => 'Bearer ' })
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => 'Bearer ' }, ip: '192.168.1.1',
+                                                    user_agent: 'Mozilla/5.0')
       account = described_class.authenticate(mock_request)
       expect(account).to be_nil
     end
 
     it 'rejects tokens that are too long' do
       long_token = 'a' * 1025
-      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{long_token}" })
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{long_token}" },
+                                                    ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
       account = described_class.authenticate(mock_request)
       expect(account).to be_nil
     end
 
     it 'accepts tokens within length limits' do
       valid_token = 'test-token-abc123'
-      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" })
+      mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" },
+                                                    ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
       account = described_class.authenticate(mock_request)
       expect(account).to include(username: 'testuser')
     end
@@ -416,8 +435,10 @@ RSpec.describe Html2rss::Web::Auth do
       valid_token = 'test-token-abc123'
       invalid_token = 'invalid-token-xyz'
 
-      valid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" })
-      invalid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{invalid_token}" })
+      valid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{valid_token}" },
+                                                     ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
+      invalid_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{invalid_token}" },
+                                                       ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
 
       start_time = Time.now
       described_class.authenticate(valid_request)
@@ -457,7 +478,8 @@ RSpec.describe Html2rss::Web::Auth do
       ]
 
       malicious_tokens.each do |token|
-        mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{token}" })
+        mock_request = instance_double(Rack::Request, env: { 'HTTP_AUTHORIZATION' => "Bearer #{token}" },
+                                                      ip: '192.168.1.1', user_agent: 'Mozilla/5.0')
         account = described_class.authenticate(mock_request)
         expect(account).to be_nil
       end
