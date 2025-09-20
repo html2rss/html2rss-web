@@ -45,10 +45,12 @@ RSpec.describe Html2rss::Web::App do
     it 'sets security headers' do
       get '/'
 
-      expect(last_response.headers['Strict-Transport-Security']).to eq 'max-age=31536000; includeSubDomains; preload'
-      expect(last_response.headers['Cross-Origin-Embedder-Policy']).to eq 'require-corp'
-      expect(last_response.headers['Cross-Origin-Opener-Policy']).to eq 'same-origin'
-      expect(last_response.headers['Cross-Origin-Resource-Policy']).to eq 'same-origin'
+      expect(last_response.headers).to include(
+        'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
+        'Cross-Origin-Embedder-Policy' => 'require-corp',
+        'Cross-Origin-Opener-Policy' => 'same-origin',
+        'Cross-Origin-Resource-Policy' => 'same-origin'
+      )
     end
   end
 

@@ -23,7 +23,7 @@ if ENV['CI'] || ENV['COVERAGE']
 
     # Print coverage summary at the end
     at_exit do
-      puts "\n" + ('=' * 50)
+      puts "\n#{'=' * 50}"
       puts 'COVERAGE SUMMARY'
       puts '=' * 50
       puts "Total Coverage: #{SimpleCov.result.covered_percent.round(2)}%"
