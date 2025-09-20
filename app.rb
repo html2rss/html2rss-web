@@ -80,9 +80,6 @@ module Html2rss
           </html>
         HTML
       end
-
-      # Load all helper files
-      Dir['helpers/*.rb'].each { |f| require_relative f }
     end
   end
 end

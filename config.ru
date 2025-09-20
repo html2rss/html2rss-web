@@ -23,34 +23,40 @@ require_relative 'config/rack_attack'
 use Rack::Attack
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
-app_requires = Dir['app/**/*.rb']
-route_requires = Dir['routes/**/*.rb']
-helper_requires = Dir['helpers/**/*.rb']
 
 if dev
   require 'logger'
-  logger = Logger.new($stdout)
-
   require 'rack/unreloader'
-  Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
-                                    logger:,
-                                    reload: dev) do
-                                      Html2rss::Web::App
-                                    end
+
+  logger = Logger.new($stdout)
+  logger.level = Logger::INFO
+
+  # Simple Unreloader configuration following official docs
+  Unreloader = Rack::Unreloader.new(
+    subclasses: %w[Roda Html2rss],
+    logger: logger,
+    reload: true
+  ) do
+    Html2rss::Web::App
+  end
+
+  # Load main app file
   Unreloader.require('app.rb') { 'Html2rss::Web::App' }
 
-  app_requires.each { |f| Unreloader.require(f) }
-  route_requires.each { |f| Unreloader.require(f) }
-  helper_requires.each { |f| Unreloader.require(f) }
+  # Load all directories - Unreloader handles the rest
+  Unreloader.require('helpers')
+  Unreloader.require('app')
+  Unreloader.require('routes')
 
   run Unreloader
 else
   use Rack::Timeout
 
+  # Production: load everything upfront for better performance
   require_relative 'app'
-  app_requires.each { |f| require_relative f }
-  route_requires.each { |f| require_relative f }
-  helper_requires.each { |f| require_relative f }
+  Dir['app/**/*.rb'].each { |f| require_relative f }
+  Dir['routes/**/*.rb'].each { |f| require_relative f }
+  Dir['helpers/**/*.rb'].each { |f| require_relative f }
 
   run(Html2rss::Web::App.freeze.app)
 end

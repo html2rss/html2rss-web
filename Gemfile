@@ -17,7 +17,6 @@ gem 'parallel'
 gem 'rack-attack'
 gem 'rack-cache'
 gem 'rack-timeout'
-gem 'rack-unreloader'
 gem 'roda'
 gem 'ssrf_filter'
 
@@ -25,6 +24,7 @@ gem 'puma', require: false
 
 group :development do
   gem 'byebug'
+  gem 'rack-unreloader'
   gem 'rake', require: false
   gem 'rubocop', require: false
   gem 'rubocop-performance', require: false
