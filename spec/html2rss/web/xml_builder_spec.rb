@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/xml_builder'
-require_relative '../../../../app/auth'
+require_relative '../../../app/xml_builder'
+require_relative '../../../app/auth'
 
 RSpec.describe Html2rss::Web::XmlBuilder do
   describe '.build_rss_feed' do

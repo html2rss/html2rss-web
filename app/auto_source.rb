@@ -127,6 +127,8 @@ module Html2rss
       end
 
       def call_strategy(url, strategy) # rubocop:disable Metrics/MethodLength
+        return error_feed('URL parameter required') if url.nil? || url.empty?
+
         global_config = LocalConfig.global
 
         config = {

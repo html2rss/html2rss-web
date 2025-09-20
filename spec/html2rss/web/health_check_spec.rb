@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/health_check'
+require_relative '../../../app/health_check'
 
 RSpec.describe Html2rss::Web::HealthCheck do
   describe '.run' do

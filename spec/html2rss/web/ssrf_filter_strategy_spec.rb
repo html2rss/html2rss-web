@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app/ssrf_filter_strategy'
+require_relative '../../../app/ssrf_filter_strategy'
 
 RSpec.describe Html2rss::Web::SsrfFilterStrategy do
   subject(:instance) { described_class.new(ctx) }

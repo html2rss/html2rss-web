@@ -13,7 +13,7 @@ module Html2rss
 
       # Initialize logger to stdout with structured JSON output
       def logger
-        @logger ||= create_logger
+        Thread.current[:security_logger] ||= create_logger
       end
 
       def create_logger
@@ -31,7 +31,7 @@ module Html2rss
 
       # Reset logger (for testing)
       def reset_logger!
-        @logger = nil
+        Thread.current[:security_logger] = nil
       end
 
       ##

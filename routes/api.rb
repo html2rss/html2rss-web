@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
-require_relative 'local_config'
+require_relative '../app/local_config'
+require_relative '../app/base_route_handler'
 
 module Html2rss
   module Web
     ##
     # API routes for the html2rss-web application
+    # Now uses BaseRouteHandler to eliminate repetitive patterns
     module ApiRoutes
       module_function
 
@@ -29,27 +31,16 @@ module Html2rss
       # @param feed_name [String] name of the feed to generate
       # @return [String] RSS content
       def handle_feed_generation(router, feed_name)
-        params = router.params
-        rss_content = Feeds.generate_feed(feed_name, params)
+        context = BaseRouteHandler.create_context(router)
 
-        config = LocalConfig.find(feed_name)
-        ttl = config.dig(:channel, :ttl) || 3600
+        BaseRouteHandler.with_error_handling(context) do |ctx|
+          rss_content = Feeds.generate_feed(feed_name, ctx.params)
 
-        rss_headers(router, ttl: ttl)
-        rss_content.to_s
-      rescue StandardError => error
-        router.response.status = 500
-        router.response['Content-Type'] = 'application/xml'
-        Feeds.error_feed(error.message)
-      end
+          config = LocalConfig.find(feed_name)
+          ttl = config.dig(:channel, :ttl) || 3600
 
-      ##
-      # Set RSS response headers
-      # @param router [Roda::Request] request router
-      # @param ttl [Integer] time to live in seconds
-      def rss_headers(router, ttl: 3600)
-        router.response['Content-Type'] = 'application/xml'
-        router.response['Cache-Control'] = "public, max-age=#{ttl}"
+          BaseRouteHandler.rss_response(ctx, rss_content, ttl: ttl)
+        end
       end
     end
   end
