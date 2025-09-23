@@ -13,9 +13,11 @@ require_relative 'app/auto_source'
 require_relative 'app/feeds'
 require_relative 'app/health_check'
 require_relative 'app/local_config'
-require_relative 'app/response_context'
+require_relative 'app/exceptions'
 require_relative 'app/xml_builder'
 require_relative 'app/security_logger'
+require_relative 'app/api/v1/router'
+require_relative 'app/api/v1/health'
 
 module Html2rss
   module Web
@@ -41,7 +43,17 @@ module Html2rss
       plugin :error_handler do |error|
         next exception_page(error) if development?
 
-        response.status = 500
+        # Map custom exceptions to HTTP status codes
+        status = case error
+                 when UnauthorizedError then 401
+                 when BadRequestError then 400
+                 when ForbiddenError then 403
+                 when NotFoundError then 404
+                 when MethodNotAllowedError then 405
+                 else 500
+                 end
+
+        response.status = status
         response['Content-Type'] = 'application/xml'
         require_relative 'app/xml_builder'
         XmlBuilder.build_error_feed(message: error.message)
@@ -54,7 +66,12 @@ module Html2rss
       route do |r|
         r.public
 
-        # API routes
+        # RESTful API v1 routes (must come before legacy routes)
+        r.on 'api', 'v1' do
+          Api::V1::Router.route(r)
+        end
+
+        # Legacy API routes (backward compatibility)
         r.on 'api' do
           r.response['Content-Type'] = 'application/json'
 
@@ -68,7 +85,11 @@ module Html2rss
             JSON.generate(list_available_strategies)
           end
 
+          # Only match legacy feed names (not v1 paths)
           r.get String do |feed_name|
+            # Skip if this looks like a v1 path
+            next if feed_name.start_with?('v1/')
+
             handle_feed_generation(r, feed_name)
           end
         end
@@ -276,19 +297,28 @@ module Html2rss
       end
 
       def handle_health_check(router)
-        health_check_account = HealthCheck.find_health_check_account
-        account = Auth.authenticate(router)
+        # Delegate to V1 API health endpoint to eliminate duplication
 
-        if account && health_check_account && account[:token] == health_check_account[:token]
+        health_response = Api::V1::Health.show(router)
+
+        if health_response[:success] && health_response.dig(:data, :health, :status) == 'healthy'
           router.response['Content-Type'] = 'text/plain'
-          HealthCheck.run
+          'success'
         else
-          router.response.status = 401
-          router.response['WWW-Authenticate'] = 'Bearer realm="Health Check"'
-          router.response['Content-Type'] = 'application/xml'
-          require_relative 'app/xml_builder'
-          XmlBuilder.build_error_feed(message: 'Unauthorized', title: 'Health Check Unauthorized')
+          router.response.status = 500
+          router.response['Content-Type'] = 'text/plain'
+          'health check failed'
         end
+      rescue UnauthorizedError
+        router.response.status = 401
+        router.response['WWW-Authenticate'] = 'Bearer realm="Health Check"'
+        router.response['Content-Type'] = 'application/xml'
+        require_relative 'app/xml_builder'
+        XmlBuilder.build_error_feed(message: 'Unauthorized', title: 'Health Check Unauthorized')
+      rescue StandardError => error
+        router.response.status = 500
+        router.response['Content-Type'] = 'text/plain'
+        "health check error: #{error.message}"
       end
     end
   end

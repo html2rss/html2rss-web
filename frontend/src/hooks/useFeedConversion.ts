@@ -4,9 +4,10 @@ interface ConversionResult {
   id: string;
   name: string;
   url: string;
-  username: string;
   strategy: string;
   public_url: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ConversionState {
@@ -35,7 +36,7 @@ export function useFeedConversion() {
     setState((prev) => ({ ...prev, isConverting: true, error: null }));
 
     try {
-      const response = await fetch('/auto_source/create', {
+      const response = await fetch('/api/v1/feeds', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,15 +49,17 @@ export function useFeedConversion() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        throw new Error(errorText || `Request failed with status ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.error?.message || `Request failed with status ${response.status}`;
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
-      if (!result || typeof result !== 'object') {
+      const responseData = await response.json();
+      if (!responseData?.success || !responseData?.data?.feed) {
         throw new Error('Invalid response format');
       }
 
+      const result = responseData.data.feed;
       setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
     } catch (error) {
       setState((prev) => ({

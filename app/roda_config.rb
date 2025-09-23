@@ -55,8 +55,8 @@ module Html2rss
 
       def configure_csp_sources(csp)
         csp.default_src :none
-        csp.style_src :self, "'unsafe-inline'" # Allow inline styles for Starlight
-        csp.script_src :self, "'unsafe-inline'" # Allow inline scripts for progressive enhancement
+        csp.style_src :self, "'unsafe-inline'"
+        csp.script_src :self, "'unsafe-inline'"
         csp.connect_src :self
         csp.img_src :self, 'data:', 'blob:'
         csp.font_src :self, 'data:'
@@ -82,7 +82,6 @@ module Html2rss
 
       def basic_security_headers
         {
-          'Content-Type' => 'text/html',
           'X-Content-Type-Options' => 'nosniff',
           'X-XSS-Protection' => '1; mode=block',
           'X-Frame-Options' => 'SAMEORIGIN',

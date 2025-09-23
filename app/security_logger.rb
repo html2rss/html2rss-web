@@ -2,6 +2,7 @@
 
 require 'logger'
 require 'json'
+require 'digest'
 
 module Html2rss
   module Web

@@ -37,14 +37,21 @@ describe('Auto Source API Integration Tests', () => {
     }
 
     try {
+      // Test legacy API endpoint for backward compatibility
       const astroResponse = await fetch(`${ASTRO_BACKEND_URL}/api/feeds.json`, {
         method: 'GET',
         signal: AbortSignal.timeout(1000),
       });
 
-      if (astroResponse.ok) {
+      // Test new RESTful API endpoint
+      const v1Response = await fetch(`${ASTRO_BACKEND_URL}/api/v1/feeds`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(1000),
+      });
+
+      if (astroResponse.ok && v1Response.ok) {
         backendUrl = ASTRO_BACKEND_URL;
-        console.log('✅ Testing against Astro backend');
+        console.log('✅ Testing against Astro backend (legacy + v1 API)');
         return;
       }
     } catch (error) {

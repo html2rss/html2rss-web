@@ -14,10 +14,11 @@
 
 ### Health Check Configuration
 
-| Variable                | Description           | Default        | Example    |
-| ----------------------- | --------------------- | -------------- | ---------- |
-| `HEALTH_CHECK_USERNAME` | Health check username | Auto-generated | `health`   |
-| `HEALTH_CHECK_PASSWORD` | Health check password | Auto-generated | `changeme` |
+| Variable             | Description        | Default     | Example                     |
+| -------------------- | ------------------ | ----------- | --------------------------- |
+| `HEALTH_CHECK_TOKEN` | Health check token | From config | `health-check-token-xyz789` |
+
+**Note:** Health check authentication now uses Bearer token authentication instead of username/password. The token is configured in `config/feeds.yml` under the `health-check` account.
 
 ### Ruby Integration
 

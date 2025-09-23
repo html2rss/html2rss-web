@@ -46,7 +46,6 @@ if dev
   # Load all directories - Unreloader handles the rest
   Unreloader.require('helpers')
   Unreloader.require('app')
-  Unreloader.require('routes')
 
   run Unreloader
 else
@@ -55,7 +54,6 @@ else
   # Production: load everything upfront for better performance
   require_relative 'app'
   Dir['app/**/*.rb'].each { |f| require_relative f }
-  Dir['routes/**/*.rb'].each { |f| require_relative f }
   Dir['helpers/**/*.rb'].each { |f| require_relative f }
 
   run(Html2rss::Web::App.freeze.app)

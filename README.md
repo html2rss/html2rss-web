@@ -39,13 +39,48 @@ The application can be configured using environment variables. See the [configur
 - **XML Sanitization**: Prevents XML injection attacks in RSS output
 - **CSP Headers**: Content Security Policy headers prevent XSS attacks
 
+## RESTful API
+
+The application now provides a modern RESTful API v1 that follows industry standards:
+
+- **Resource-based URLs**: `/api/v1/feeds`, `/api/v1/strategies`
+- **HTTP methods**: GET, POST, PUT, DELETE
+- **Proper status codes**: 200, 201, 400, 401, 403, 404, 500
+- **JSON responses**: Consistent response format
+- **Content negotiation**: XML for RSS feeds, JSON for metadata
+- **OpenAPI documentation**: Complete API specification
+
+### Quick Start
+
+```bash
+# List available feeds
+curl "https://your-domain.com/api/v1/feeds"
+
+# Create a new feed
+curl -X POST "https://your-domain.com/api/v1/feeds" \
+  -H "Authorization: Bearer your-token" \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "name": "Example Feed"}'
+
+# Get feed metadata
+curl "https://your-domain.com/api/v1/feeds/example"
+
+# Get RSS content
+curl -H "Accept: application/xml" "https://your-domain.com/api/v1/feeds/example"
+```
+
+### Documentation
+
+- [RESTful API v1 Documentation](docs/api/v1/README.md)
+- [OpenAPI Specification](docs/api/v1/openapi.yaml)
+
 ## Public Feed Access
 
-The application now supports secure public access to RSS feeds without requiring authentication headers. This is perfect for sharing feeds with RSS readers and other applications.
+The application supports secure public access to RSS feeds without requiring authentication headers. This is perfect for sharing feeds with RSS readers and other applications.
 
 ### How It Works
 
-1. **Create a Feed**: Use the auto source feature to generate a feed
+1. **Create a Feed**: Use the RESTful API or auto source feature to generate a feed
 2. **Get Public URL**: The system returns a public URL with an embedded token
 3. **Share the URL**: Anyone can access the feed using this URL
 4. **Secure Access**: The token is cryptographically signed and URL-bound
@@ -53,17 +88,23 @@ The application now supports secure public access to RSS feeds without requiring
 ### Example
 
 ```bash
-# Create a feed
-curl -X POST "https://your-domain.com/auto_source/create" \
+# Create a feed via RESTful API
+curl -X POST "https://your-domain.com/api/v1/feeds" \
   -H "Authorization: Bearer your-token" \
-  -d "url=https://example.com&name=Example Feed"
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com", "name": "Example Feed"}'
 
 # Response includes public_url
 {
-  "id": "abc123",
-  "name": "Example Feed", 
-  "url": "https://example.com",
-  "public_url": "/feeds/abc123?token=...&url=https%3A%2F%2Fexample.com"
+  "success": true,
+  "data": {
+    "feed": {
+      "id": "abc123",
+      "name": "Example Feed", 
+      "url": "https://example.com",
+      "public_url": "/feeds/abc123?token=...&url=https%3A%2F%2Fexample.com"
+    }
+  }
 }
 
 # Access the feed publicly
