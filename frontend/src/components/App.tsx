@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'preact/hooks';
-import { AuthForm } from './AuthForm';
-import { FeedForm } from './FeedForm';
 import { DemoButtons } from './DemoButtons';
 import { ResultDisplay } from './ResultDisplay';
 import { QuickLogin } from './QuickLogin';
@@ -22,6 +20,7 @@ export function App() {
   const [currentView, setCurrentView] = useState<'demo' | 'auth' | 'main'>('demo');
   const [showAuthForm, setShowAuthForm] = useState(false);
 
+  // Update view state based on authentication
   useEffect(() => {
     if (isAuthenticated) {
       setCurrentView('main');
@@ -31,41 +30,85 @@ export function App() {
     }
   }, [isAuthenticated]);
 
-  const handleLogin = async (username: string, token: string) => {
-    try {
-      await login(username, token);
-      setCurrentView('main');
-    } catch (error) {
-      throw error;
+  // Initialize form handlers
+  useEffect(() => {
+    initializeFormHandlers();
+  }, [isAuthenticated, token]);
+
+  const initializeFormHandlers = () => {
+    // Auth form handler
+    const authButton = document.getElementById('auth-button');
+    if (authButton) {
+      authButton.onclick = handleAuthSubmit;
     }
+
+    // Feed form handler
+    const feedForm = document.querySelector('#feed-section');
+    if (feedForm) {
+      const form = feedForm.querySelector('form') || feedForm;
+      form.onsubmit = handleFeedSubmit;
+    }
+
+    // Logout button handler
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+      logoutButton.onclick = handleLogout;
+    }
+  };
+
+  const handleAuthSubmit = async () => {
+    const usernameInput = document.getElementById('username') as HTMLInputElement;
+    const tokenInput = document.getElementById('token') as HTMLInputElement;
+
+    if (!usernameInput?.value || !tokenInput?.value) return;
+
+    try {
+      await login(usernameInput.value, tokenInput.value);
+    } catch (error) {
+      // Error handling is done by the useAuth hook
+    }
+  };
+
+  const handleFeedSubmit = async (e: Event) => {
+    e.preventDefault();
+
+    const urlInput = document.getElementById('url') as HTMLInputElement;
+    const strategyInput = document.querySelector('input[name="strategy"]:checked') as HTMLInputElement;
+
+    if (!urlInput?.value) return;
+
+    const strategy = strategyInput?.value || 'ssrf_filter';
+
+    try {
+      await convertFeed(urlInput.value, strategy, token || '');
+    } catch (error) {
+      // Error handling is done by the useFeedConversion hook
+    }
+  };
+
+  // Update user display in static form
+  useEffect(() => {
+    if (isAuthenticated) {
+      const userDisplay = document.getElementById('user-display');
+      if (userDisplay) userDisplay.textContent = username || '';
+    }
+  }, [isAuthenticated, username]);
+
+  const handleShowAuth = () => {
+    setShowAuthForm(true);
   };
 
   const handleLogout = () => {
     logout();
-    setCurrentView('demo');
     setShowAuthForm(false);
     clearResult();
-  };
-
-  const handleShowAuth = () => {
-    setShowAuthForm(true);
   };
 
   const handleDemoConversion = async (url: string) => {
     try {
       await convertFeed(url, 'ssrf_filter', 'self-host-for-full-access');
     } catch (error) {
-    }
-  };
-
-  const handleFeedConversion = async (url: string, strategy: string) => {
-    if (!isAuthenticated) {
-      setCurrentView('auth');
-      return;
-    }
-    try {
-      await convertFeed(url, strategy, token || '');
-    } catch (error) {
+      // Error handling is done by the useFeedConversion hook
     }
   };
 
@@ -116,7 +159,45 @@ export function App() {
             <h3>🔐 Sign In</h3>
             <p class="section-description">Enter your credentials to convert any website.</p>
           </div>
-          <AuthForm onLogin={handleLogin} />
+          <div id="auth-section">
+            <div class="form-group-compact">
+              <label for="username" class="form-label required">
+                Username
+              </label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                class="form-input"
+                placeholder="Enter your username"
+                required
+                autocomplete="username"
+              />
+              <div class="form-error" id="username-error"></div>
+            </div>
+
+            <div class="form-group-compact">
+              <label for="token" class="form-label required">
+                Token
+              </label>
+              <input
+                type="password"
+                id="token"
+                name="token"
+                class="form-input"
+                placeholder="Enter your authentication token"
+                required
+                autocomplete="current-password"
+              />
+              <div class="form-error" id="token-error"></div>
+            </div>
+
+            <div class="form-row">
+              <button type="button" class="form-button" id="auth-button">
+                Authenticate
+              </button>
+            </div>
+          </div>
           <div class="auth-footer">
             <button type="button" class="back-to-demo-btn" onClick={() => setShowAuthForm(false)}>
               ← Back to demo
@@ -140,7 +221,52 @@ export function App() {
               <h3>🌐 Convert Website</h3>
               <p class="section-description">Enter the URL of the website you want to convert to RSS</p>
             </div>
-            <FeedForm onConvert={handleFeedConversion} isConverting={isConverting} />
+            <div id="feed-section">
+              <form onSubmit={handleFeedSubmit}>
+                <div class="form-group-compact">
+                  <label for="url" class="form-label required">
+                    Website URL
+                  </label>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <input
+                        type="url"
+                        id="url"
+                        name="url"
+                        class="form-input"
+                        placeholder="https://example.com"
+                        required
+                        autocomplete="url"
+                      />
+                      <div class="form-error" id="url-error"></div>
+                    </div>
+                    <button type="submit" class="form-button" disabled={isConverting}>
+                      {isConverting ? 'Converting...' : 'Convert'}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="form-group-compact">
+                  <label class="form-label">Strategy</label>
+                  <div class="radio-group" id="strategy-group">
+                    <div class="radio-option selected">
+                      <input type="radio" id="strategy-ssrf" name="strategy" value="ssrf_filter" checked />
+                      <label for="strategy-ssrf">
+                        <strong>SSRF Filter</strong>
+                        <div class="description">Recommended - Safe and secure</div>
+                      </label>
+                    </div>
+                    <div class="radio-option">
+                      <input type="radio" id="strategy-browserless" name="strategy" value="browserless" />
+                      <label for="strategy-browserless">
+                        <strong>Browserless</strong>
+                        <div class="description">For JavaScript-heavy sites</div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

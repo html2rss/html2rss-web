@@ -104,21 +104,11 @@ module Html2rss
       end
 
       def setup_error_handling(app)
-        app.plugin :exception_page
-        app.plugin :error_handler do |error|
-          next exception_page(error) if app.development?
-
-          response.status = 500
-          response['Content-Type'] = 'application/xml'
-          require_relative 'xml_builder'
-          XmlBuilder.build_error_feed(message: error.message)
-        end
+        # Error handling is now configured directly in app.rb for better clarity
       end
 
       def setup_plugins(app)
-        app.plugin :public
-        app.plugin :hash_branches
-        app.plugin :json_parser # Handle JSON request bodies automatically
+        # Plugins are now configured directly in app.rb for better clarity
       end
     end
   end

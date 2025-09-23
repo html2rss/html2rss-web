@@ -27,8 +27,7 @@ export function DemoButtons({ onConvert }: DemoButtonsProps) {
   const handleDemoClick = async (url: string) => {
     try {
       await onConvert(url);
-    } catch (error) {
-    }
+    } catch (error) {}
   };
 
   return (
