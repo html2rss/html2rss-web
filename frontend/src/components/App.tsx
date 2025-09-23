@@ -36,7 +36,6 @@ export function App() {
       await login(username, token);
       setCurrentView('main');
     } catch (error) {
-      // Error will be handled by the AuthForm component
       throw error;
     }
   };
@@ -52,27 +51,24 @@ export function App() {
     setShowAuthForm(true);
   };
 
-  const handleDemoConversion = async (url: string, name: string) => {
+  const handleDemoConversion = async (url: string) => {
     try {
-      await convertFeed(url, name, 'ssrf_filter', 'self-host-for-full-access');
+      await convertFeed(url, 'ssrf_filter', 'self-host-for-full-access');
     } catch (error) {
-      // Error will be displayed in the error section
     }
   };
 
-  const handleFeedConversion = async (url: string, name: string, strategy: string) => {
+  const handleFeedConversion = async (url: string, strategy: string) => {
     if (!isAuthenticated) {
       setCurrentView('auth');
       return;
     }
     try {
-      await convertFeed(url, name, strategy, token || '');
+      await convertFeed(url, strategy, token || '');
     } catch (error) {
-      // Error will be displayed in the error section
     }
   };
 
-  // Show loading state while auth is being checked
   if (authLoading) {
     return (
       <div class="app-container">

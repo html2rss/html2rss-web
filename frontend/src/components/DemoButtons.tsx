@@ -1,5 +1,5 @@
 interface DemoButtonsProps {
-  onConvert: (url: string, name: string) => void;
+  onConvert: (url: string) => void;
 }
 
 const DEMO_SITES = [
@@ -24,11 +24,10 @@ const DEMO_SITES = [
 ];
 
 export function DemoButtons({ onConvert }: DemoButtonsProps) {
-  const handleDemoClick = async (url: string, name: string) => {
+  const handleDemoClick = async (url: string) => {
     try {
-      await onConvert(url, `Demo: ${name}`);
+      await onConvert(url);
     } catch (error) {
-      // Error handling is done in the parent component
     }
   };
 
@@ -39,7 +38,7 @@ export function DemoButtons({ onConvert }: DemoButtonsProps) {
           key={site.url}
           type="button"
           class="demo-button"
-          onClick={() => handleDemoClick(site.url, site.name)}
+          onClick={() => handleDemoClick(site.url)}
           aria-label={`Convert ${site.name} to RSS feed - ${site.description}`}
         >
           <div class="demo-content">

@@ -17,7 +17,6 @@ export function useAuth() {
     error: null,
   });
 
-  // Load auth state from localStorage on mount
   useEffect(() => {
     try {
       const username = localStorage.getItem('html2rss_username');
@@ -44,7 +43,6 @@ export function useAuth() {
   }, []);
 
   const login = async (username: string, token: string) => {
-    // Validate inputs
     if (!username?.trim()) {
       throw new Error('Username is required');
     }
@@ -53,7 +51,6 @@ export function useAuth() {
     }
 
     try {
-      // Store in localStorage
       localStorage.setItem('html2rss_username', username.trim());
       localStorage.setItem('html2rss_token', token.trim());
 
@@ -71,7 +68,6 @@ export function useAuth() {
 
   const logout = () => {
     try {
-      // Clear localStorage
       localStorage.removeItem('html2rss_username');
       localStorage.removeItem('html2rss_token');
 

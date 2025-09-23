@@ -12,7 +12,6 @@ module Html2rss
           if router.path_info == '/'
             serve_root_path
           elsif router.path_info.start_with?('/') && !router.path_info.include?('.')
-            # Only handle frontend routes that don't have file extensions
             serve_astro_files(router)
           end
         end
@@ -35,7 +34,12 @@ module Html2rss
           <html>
           <head>
             <title>html2rss-web</title>
-            <link rel="stylesheet" href="/water.css">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
+              h1 { color: #111827; }
+              code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+            </style>
           </head>
           <body>
             <h1>html2rss-web</h1>

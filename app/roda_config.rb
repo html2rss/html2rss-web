@@ -65,7 +65,7 @@ module Html2rss
       end
 
       def configure_csp_security(csp)
-        csp.frame_ancestors :none # More restrictive than :self
+        csp.frame_ancestors :self # Allow iframe embedding from same origin
         csp.frame_src :self # Allow iframes for RSS feeds
         csp.object_src :none # Prevent object/embed/applet
         csp.media_src :none # Prevent media sources
@@ -118,6 +118,7 @@ module Html2rss
       def setup_plugins(app)
         app.plugin :public
         app.plugin :hash_branches
+        app.plugin :json_parser # Handle JSON request bodies automatically
       end
     end
   end

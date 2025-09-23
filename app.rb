@@ -12,8 +12,6 @@ require_relative 'app/auto_source'
 require_relative 'app/feeds'
 require_relative 'app/health_check'
 require_relative 'app/response_context'
-require_relative 'app/request_context'
-require_relative 'app/base_route_handler'
 require_relative 'app/xml_builder'
 require_relative 'app/security_logger'
 
@@ -29,22 +27,17 @@ module Html2rss
       def self.development? = ENV['RACK_ENV'] == 'development'
       def development? = self.class.development?
 
-      # Validate environment on class load
       EnvironmentValidator.validate_environment!
       EnvironmentValidator.validate_production_security!
 
-      # Configure Roda app
       RodaConfig.configure(self)
 
-      # Load hash_branches plugin for Large Applications
       plugin :hash_branches
 
-      # Load all route files
       Dir['routes/*.rb'].each { |f| require_relative f }
 
       @show_backtrace = development? && !ENV['CI']
 
-      # Load all routes
       AppRoutes.load_routes(self)
 
       route do |r|
@@ -52,7 +45,6 @@ module Html2rss
         r.hash_branches('')
 
         r.root do
-          # Handle root path
           index_path = 'public/frontend/index.html'
           response['Content-Type'] = 'text/html'
 
@@ -70,7 +62,12 @@ module Html2rss
           <html>
           <head>
             <title>html2rss-web</title>
-            <link rel="stylesheet" href="/water.css">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <style>
+              body { font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
+              h1 { color: #111827; }
+              code { background: #f3f4f6; padding: 0.2rem 0.4rem; border-radius: 0.25rem; }
+            </style>
           </head>
           <body>
             <h1>html2rss-web</h1>
