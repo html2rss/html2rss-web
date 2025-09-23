@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../../exceptions'
-require_relative '../../../helpers/api_response_helpers'
 
 module Html2rss
   module Web
@@ -13,12 +12,7 @@ module Html2rss
         module Strategies
           module_function
 
-          ##
-          # List all available strategies
-          # GET /api/v1/strategies
-          # @param request [Roda::Request] request object
-          # @return [Hash] JSON response with strategies list
-          def index(request)
+          def index(_request)
             strategies = Html2rss::RequestService.strategy_names.map do |name|
               {
                 id: name.to_s,
@@ -29,33 +23,22 @@ module Html2rss
               }
             end
 
-            ApiResponseHelpers.success_response(
-              { strategies: strategies },
-              { total: strategies.count }
-            )
+            { success: true, data: { strategies: strategies }, meta: { total: strategies.count } }
           end
 
-          ##
-          # Get a specific strategy
-          # GET /api/v1/strategies/{id}
-          # @param request [Roda::Request] request object
-          # @param strategy_id [String] strategy identifier
-          # @return [Hash] JSON response with strategy details
-          def show(request, strategy_id)
+          def show(_request, strategy_id)
             available_strategies = Html2rss::RequestService.strategy_names
 
             raise NotFoundError, 'Strategy not found' unless available_strategies.include?(strategy_id)
 
-            ApiResponseHelpers.success_response({
-                                                  strategy: {
-                                                    id: strategy_id,
-                                                    name: strategy_id,
-                                                    display_name: strategy_id.split('_').map(&:capitalize).join(' '),
-                                                    description: strategy_description(strategy_id),
-                                                    available: true,
-                                                    default: strategy_id == 'ssrf_filter'
-                                                  }
-                                                })
+            { success: true, data: { strategy: {
+              id: strategy_id,
+              name: strategy_id,
+              display_name: strategy_id.split('_').map(&:capitalize).join(' '),
+              description: strategy_description(strategy_id),
+              available: true,
+              default: strategy_id == 'ssrf_filter'
+            } } }
           end
 
           def strategy_description(strategy_name)

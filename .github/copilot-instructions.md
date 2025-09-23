@@ -32,6 +32,8 @@ Search these pages before using them. Find examples, plugins, UI components, and
 3. https://rspec.info/features/3-13/rspec-expectations/built-in-matchers/
 4. https://www.betterspecs.org/
 
+Fix rubocop `RSpec/MultipleExpectations` adding rspec tag `:aggregate_failures`.
+
 ## Core Rules
 
 - ✅ Use **Roda routing with `hash_branch`**. Keep routes small.
@@ -42,16 +44,6 @@ Search these pages before using them. Find examples, plugins, UI components, and
 - ✅ **Frontend**: Use Astro components in `frontend/src/`. Keep it simple.
 - ✅ **CSS**: Use frontend styles in `frontend/public/styles.css`. Water.css for fallback.
 - ✅ **Specs**: RSpec for Ruby, build tests for frontend.
-
-## Roda Large Applications Structure
-
-This project follows [Roda Large Applications conventions](https://roda.jeremyevans.net/rdoc/files/doc/conventions_rdoc.html#label-Large+Applications):
-
-- **Use `hash_branches` plugin** (not `hash_branch_view_subdir` since we have no views)
-- **Route modules** go in `routes/` directory (one file per prefix)
-- **Helper modules** go in `helpers/` directory with `module_function`
-- **Core app modules** stay in `app/` directory
-- **Load routes/helpers** with `Dir['routes/*.rb'].each { |f| require_relative f }`
 
 ## Don't
 

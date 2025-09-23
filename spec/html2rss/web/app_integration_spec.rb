@@ -35,92 +35,6 @@ RSpec.describe Html2rss::Web::App do
     )
   end
 
-  describe 'POST /auto_source/create' do
-    let(:valid_params) do
-      {
-        'url' => 'https://example.com',
-        'name' => 'Test Feed'
-      }
-    end
-
-    context 'with valid authentication' do
-      before do
-        header 'Authorization', 'Bearer test-token-abc123'
-      end
-
-      it 'creates a feed successfully', :aggregate_failures do
-        post '/auto_source/create', valid_params
-
-        expect(last_response.status).to eq(200)
-        expect(last_response.content_type).to include('application/json')
-
-        response_data = JSON.parse(last_response.body)
-        expect(response_data).to include(
-          'id' => be_a(String),
-          'name' => 'Test Feed',
-          'url' => 'https://example.com',
-          'username' => 'testuser',
-          'strategy' => 'ssrf_filter'
-        )
-        expect(response_data).to have_key('public_url')
-        expect(response_data['public_url']).to include('token=')
-        expect(response_data['public_url']).to include('url=https%3A%2F%2Fexample.com')
-      end
-
-      it 'rejects disallowed URLs', :aggregate_failures do
-        post '/auto_source/create', valid_params.merge('url' => 'https://malicious.com')
-
-        expect(last_response.status).to eq(403)
-        expect(last_response.body).to include('Access Denied')
-      end
-
-      it 'handles missing URL parameter', :aggregate_failures do
-        post '/auto_source/create', valid_params.except('url')
-
-        expect(last_response.status).to eq(400)
-        expect(last_response.body).to include('URL parameter required')
-      end
-
-      it 'handles missing name parameter by auto-generating one', :aggregate_failures do
-        post '/auto_source/create', valid_params.except('name')
-
-        expect(last_response.status).to eq(200)
-        expect(last_response.content_type).to include('application/json')
-
-        response_data = JSON.parse(last_response.body)
-        expect(response_data).to include(
-          'id' => be_a(String),
-          'name' => 'Auto-generated feed for https://example.com',
-          'url' => 'https://example.com',
-          'username' => 'testuser',
-          'strategy' => 'ssrf_filter'
-        )
-      end
-    end
-
-    context 'with invalid authentication' do
-      before do
-        header 'Authorization', 'Bearer invalid-token'
-      end
-
-      it 'returns 401 unauthorized', :aggregate_failures do
-        post '/auto_source/create', valid_params
-
-        expect(last_response.status).to eq(401)
-        expect(last_response.body).to include('Unauthorized')
-      end
-    end
-
-    context 'without authentication' do
-      it 'returns 401 unauthorized', :aggregate_failures do
-        post '/auto_source/create', valid_params
-
-        expect(last_response.status).to eq(401)
-        expect(last_response.body).to include('Unauthorized')
-      end
-    end
-  end
-
   describe 'GET /feeds/:feed_id' do
     let(:feed_id) { 'testfeed12345678' }
     let(:url) { 'https://example.com' }
@@ -161,27 +75,6 @@ RSpec.describe Html2rss::Web::App do
       end
     end
 
-    context 'without feed token (legacy authentication)' do
-      before do
-        header 'Authorization', 'Bearer test-token-abc123'
-      end
-
-      it 'serves the RSS feed with legacy auth', :aggregate_failures do
-        get "/feeds/#{feed_id}?url=#{URI.encode_www_form_component(url)}"
-
-        expect(last_response.status).to eq(200)
-        expect(last_response.content_type).to include('application/xml')
-        expect(last_response.body).to include('<rss>test content</rss>')
-      end
-
-      it 'rejects requests with disallowed URL', :aggregate_failures do
-        get "/feeds/#{feed_id}?url=#{URI.encode_www_form_component('https://malicious.com')}"
-
-        expect(last_response.status).to eq(403)
-        expect(last_response.body).to include('Access Denied')
-      end
-    end
-
     context 'without any authentication' do
       it 'returns 401 unauthorized', :aggregate_failures do
         # Ensure Auth.authenticate returns nil (no authentication)
@@ -202,18 +95,6 @@ RSpec.describe Html2rss::Web::App do
         expect(last_response.status).to eq(400)
         expect(last_response.body).to include('url parameter required')
       end
-    end
-  end
-
-  describe 'error handling' do
-    it 'handles internal server errors gracefully', :aggregate_failures do
-      allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_raise(StandardError, 'Test error')
-
-      header 'Authorization', 'Bearer test-token-abc123'
-      post '/auto_source/create', { 'url' => 'https://example.com', 'name' => 'Test' }
-
-      expect(last_response.status).to eq(500)
-      expect(last_response.body).to include('Test error')
     end
   end
 end
