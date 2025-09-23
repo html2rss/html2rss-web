@@ -48,6 +48,17 @@ module Html2rss
       end
 
       ##
+      # Log authentication success
+      # @param username [String] authenticated username
+      # @param ip [String] client IP address
+      def log_auth_success(username, ip)
+        log_event('auth_success', {
+                    username: username,
+                    ip: ip
+                  })
+      end
+
+      ##
       # Log rate limit exceeded
       # @param ip [String] client IP address
       # @param endpoint [String] endpoint that was rate limited

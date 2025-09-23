@@ -1,12 +1,7 @@
 ---
 // Import the `<StarlightPage>` component first to set up cascade layers
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
-import { Icon, Card, Steps, Aside } from "@astrojs/starlight/components";
-import Hero from "../components/Hero.astro";
-import AuthForm from "../components/AuthForm.astro";
-import FeedForm from "../components/FeedForm.astro";
-import UrlInput from "../components/UrlInput.astro";
-import XmlDisplay from "../components/XmlDisplay.astro";
+import { App } from "../components/App";
 import Bookmarklet from "../components/Bookmarklet.astro";
 import Footer from "../components/Footer.astro";
 import "../styles/forms.css";
@@ -18,132 +13,27 @@ import "../styles/forms.css";
     template: "splash",
   }}
 >
-  <!-- Hero Section -->
-  <Hero />
-
-  <Card title="">
-    <!-- Progressive enhancement: form works without JavaScript -->
-    <form id="auto-source-form" action="/auto_source/create" method="POST" novalidate>
-      <div class="form-layout">
-        <!-- Authentication Section (hidden when logged in) -->
-        <div class="form-section auth-section-enhanced" id="auth-section">
-          <div class="section-header">
-            <h3>🔐 Authentication</h3>
-            <p class="section-description">Enter your credentials to start converting websites</p>
-          </div>
-          <AuthForm />
-        </div>
-
-        <!-- Main Content Section (shown when logged in) -->
-        <div class="main-content-section hidden" id="main-content">
-          <!-- URL Input Section -->
-          <div class="url-section-enhanced">
-            <div class="section-header">
-              <h3>🌐 Convert Website</h3>
-              <p class="section-description">Enter the URL of the website you want to convert to RSS</p>
-            </div>
-            <UrlInput />
-          </div>
-
-          <!-- XML Display Section -->
-          <XmlDisplay />
-
-          <!-- Feed Configuration Section -->
-          <div class="form-section config-section-enhanced">
-            <div class="section-header">
-              <h3>⚙️ Configuration</h3>
-              <p class="section-description">Customize your RSS feed settings</p>
-            </div>
-            <FeedForm />
-          </div>
-        </div>
-
-        <!-- Hidden auth fields for non-JS form submission -->
-        <input type="hidden" id="hidden-username" name="username" />
-        <input type="hidden" id="hidden-token" name="token" />
-      </div>
-    </form>
-
-    <div id="result" class="results-section hidden" role="region" aria-labelledby="result-heading">
-      <!-- Results will be populated by JavaScript -->
-    </div>
-
-    <!-- Bookmarklet Section -->
+  <div class="minimalist-container">
+    <App client:load />
     <Bookmarklet />
-
-    <!-- Footer -->
     <Footer />
-  </Card>
+  </div>
 </StarlightPage>
 
-<script>
-  // Load utility functions
-  import {
-    setupFormHandlers,
-    showView,
-    showFeedResult,
-    showError,
-    showSuccess,
-  } from "../lib/form-handlers.js";
-  import { fetchAndDisplayRSS, showContentPreview } from "../lib/feed-handlers.js";
-  import { loadRSSContent, loadRawXML } from "../lib/rss-utils.js";
+<style>
+  .minimalist-container {
+    margin: 0 auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
 
-  // Make functions globally available through a single namespace
-  (window as any).html2rss = {
-    showView,
-    showFeedResult,
-    showError,
-    showSuccess,
-    fetchAndDisplayRSS,
-    showContentPreview,
-    loadRSSContent,
-    loadRawXML
-  };
-
-  // Initialize the application
-  document.addEventListener("DOMContentLoaded", () => {
-    // Check if user is already authenticated
-    const username = localStorage.getItem("html2rss_username");
-    const token = localStorage.getItem("html2rss_token");
-
-    if (username && token) {
-      showView("main");
-    } else {
-      showView("auth");
+  @media (min-width: 768px) {
+    .minimalist-container {
+      max-width: 720px;
+      padding: 2rem 1rem;
+      gap: 2rem;
     }
-
-    // Set up form handlers
-    setupFormHandlers();
-
-    // Set up advanced options toggle
-    const advancedToggle = document.getElementById("advanced-toggle");
-    const advancedFields = document.getElementById("advanced-fields");
-
-    if (advancedToggle && advancedFields) {
-      advancedToggle.addEventListener("click", () => {
-        const isVisible = !advancedFields.classList.contains("hidden");
-        if (isVisible) {
-          advancedFields.classList.add("hidden");
-          advancedToggle.textContent = "Show Advanced Options";
-        } else {
-          advancedFields.classList.remove("hidden");
-          advancedToggle.textContent = "Hide Advanced Options";
-        }
-      });
-    }
-
-    // Set up strategy radio buttons
-    const strategyRadios = document.querySelectorAll(
-      'input[name="strategy"]',
-    ) as NodeListOf<HTMLInputElement>;
-    strategyRadios.forEach((radio) => {
-      radio.addEventListener("change", () => {
-        // Update hidden field for form submission
-        const hiddenStrategy = document.getElementById("hidden-strategy") as HTMLInputElement;
-        if (hiddenStrategy) {
-          hiddenStrategy.value = radio.value;
-        }
-      });
-    });
-  });
-</script>
+  }
+</style>

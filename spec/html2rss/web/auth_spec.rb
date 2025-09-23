@@ -462,7 +462,7 @@ RSpec.describe Html2rss::Web::Auth do
       ]
 
       malformed_requests.each do |env|
-        mock_request = instance_double(Rack::Request, env: env)
+        mock_request = instance_double(Rack::Request, env: env, ip: '127.0.0.1', user_agent: 'test-agent')
         account = described_class.authenticate(mock_request)
         expect(account).to be_nil
       end

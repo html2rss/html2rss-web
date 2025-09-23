@@ -3,6 +3,7 @@
 export function setupFormHandlers() {
   setupAuthForm();
   setupFeedForm();
+  setupLogoutButton();
   handleUrlParams();
 }
 
@@ -25,6 +26,9 @@ function setupAuthForm() {
     // Store auth data
     localStorage.setItem('html2rss_username', username);
     localStorage.setItem('html2rss_token', token);
+
+    // Update user display
+    updateUserDisplay(username);
 
     // Show main content
     showView('main');
@@ -93,6 +97,43 @@ function setupFeedForm() {
   });
 }
 
+function setupLogoutButton() {
+  const logoutButton = document.getElementById('logout-button');
+  if (!logoutButton) return;
+
+  logoutButton.addEventListener('click', () => {
+    // Clear stored credentials
+    localStorage.removeItem('html2rss_username');
+    localStorage.removeItem('html2rss_token');
+
+    // Clear any results
+    const resultSection = document.getElementById('result');
+    if (resultSection) {
+      resultSection.classList.add('hidden');
+    }
+
+    // Show demo view
+    showView('demo');
+
+    // Clear form fields
+    const urlInput = document.getElementById('url');
+    if (urlInput) urlInput.value = '';
+
+    const nameInput = document.getElementById('name');
+    if (nameInput) nameInput.value = '';
+
+    // Show success message
+    showSuccess('Logged out successfully');
+  });
+}
+
+function updateUserDisplay(username) {
+  const userDisplay = document.getElementById('user-display');
+  if (userDisplay) {
+    userDisplay.textContent = username;
+  }
+}
+
 function handleUrlParams() {
   const params = new URLSearchParams(window.location.search);
   const url = params.get('url');
@@ -111,21 +152,30 @@ function handleUrlParams() {
 
 // View management
 export function showView(view) {
+  const demoSection = document.getElementById('demo-section');
   const authSection = document.getElementById('auth-section');
   const mainContent = document.getElementById('main-content');
   const urlInput = document.getElementById('url');
   const advancedFields = document.getElementById('advanced-fields');
   const formLayout = document.querySelector('.form-layout');
 
-  if (view === 'auth') {
+  // Hide main content first
+  if (mainContent) mainContent.classList.add('hidden');
+
+  if (view === 'demo') {
+    if (demoSection) demoSection.classList.remove('hidden');
     if (authSection) authSection.classList.remove('hidden');
-    if (mainContent) mainContent.classList.add('hidden');
+    if (formLayout) formLayout.classList.remove('authenticated');
+  } else if (view === 'auth') {
+    if (demoSection) demoSection.classList.remove('hidden');
+    if (authSection) authSection.classList.remove('hidden');
     if (urlInput) urlInput.classList.add('hidden');
     if (advancedFields) advancedFields.classList.add('hidden');
     if (formLayout) formLayout.classList.remove('authenticated');
-  } else {
-    if (authSection) authSection.classList.add('hidden');
+  } else if (view === 'main') {
+    if (demoSection) demoSection.classList.add('hidden');
     if (mainContent) mainContent.classList.remove('hidden');
+    if (authSection) authSection.classList.add('hidden');
     if (urlInput) urlInput.classList.remove('hidden');
     if (formLayout) formLayout.classList.add('authenticated');
     // Don't force show advanced fields - let user toggle them
@@ -137,6 +187,12 @@ export function showFeedResult(feedUrl) {
   const resultSection = document.getElementById('result');
   const resultHeading = document.getElementById('result-heading');
 
+  // Validate feedUrl
+  if (!feedUrl) {
+    showError('No feed URL received from server');
+    return;
+  }
+
   // Convert relative URL to absolute URL
   const fullUrl = feedUrl.startsWith('http') ? feedUrl : `${window.location.origin}${feedUrl}`;
   const feedProtocolUrl = `feed:${fullUrl}`;
@@ -144,30 +200,73 @@ export function showFeedResult(feedUrl) {
   if (resultSection) {
     resultSection.classList.remove('hidden');
     resultSection.innerHTML = `
-      <h3 id="result-heading">✅ Feed Generated Successfully!</h3>
+      <div class="success-animation">
+        <div class="success-icon">🎉</div>
+        <h3 id="result-heading">Feed Generated Successfully!</h3>
+        <p class="success-subtitle">Your RSS feed is ready to use</p>
+      </div>
+
       <div class="feed-result">
-        <p><strong>Feed URL:</strong></p>
-        <div class="feed-url-display">
-          <input type="text" value="${fullUrl}" readonly />
-          <button type="button" onclick="navigator.clipboard.writeText('${fullUrl}')">Copy</button>
+        <div class="feed-url-section">
+          <label><strong>📡 Feed URL:</strong></label>
+          <div class="feed-url-display">
+            <input type="text" value="${fullUrl}" readonly />
+            <button type="button" class="copy-btn" onclick="copyToClipboard('${fullUrl}', this)">
+              <span class="copy-text">Copy</span>
+              <span class="copy-success hidden">✓</span>
+            </button>
+          </div>
         </div>
 
         <div class="feed-actions">
           <a href="${feedProtocolUrl}" class="subscribe-button" target="_blank" rel="noopener">
-            📰 Subscribe in RSS Reader
+            <span class="button-icon">📰</span>
+            <span>Subscribe in RSS Reader</span>
           </a>
-          <button type="button" onclick="navigator.clipboard.writeText('${feedProtocolUrl}')" class="copy-feed-button">
-            📋 Copy Feed Link
+          <button type="button" class="copy-feed-button" onclick="copyToClipboard('${fullUrl}', this)">
+            <span class="button-icon">📋</span>
+            <span>Copy Feed Link</span>
           </button>
         </div>
 
-        <p class="feed-instructions">
-          Use the subscribe button to open in your default RSS reader, or copy the URL to use in any RSS reader.
-        </p>
+        <div class="feed-info">
+          <p class="feed-instructions">
+            <strong>How to use:</strong> Click "Subscribe" to open in your RSS reader, or copy the URL to add to any RSS reader manually.
+          </p>
+        </div>
       </div>
     `;
+
+    // Scroll to result section with smooth behavior
+    resultSection.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   }
 }
+
+// Copy to clipboard function
+window.copyToClipboard = function (text, button) {
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      const copyText = button.querySelector('.copy-text');
+      const copySuccess = button.querySelector('.copy-success');
+
+      if (copyText && copySuccess) {
+        copyText.classList.add('hidden');
+        copySuccess.classList.remove('hidden');
+
+        setTimeout(() => {
+          copyText.classList.remove('hidden');
+          copySuccess.classList.add('hidden');
+        }, 2000);
+      }
+    })
+    .catch((err) => {
+      console.error('Failed to copy: ', err);
+    });
+};
 
 export function showError(message) {
   const resultSection = document.getElementById('result');

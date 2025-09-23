@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import preact from "@astrojs/preact";
 
 export default defineConfig({
   output: "static",
@@ -30,6 +31,7 @@ export default defineConfig({
     },
   },
   integrations: [
+    preact(),
     starlight({
       title: "html2rss-web",
       description: "Convert websites to RSS feeds instantly",

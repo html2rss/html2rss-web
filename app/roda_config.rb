@@ -66,7 +66,7 @@ module Html2rss
 
       def configure_csp_security(csp)
         csp.frame_ancestors :none # More restrictive than :self
-        csp.frame_src :none # More restrictive than :self
+        csp.frame_src :self # Allow iframes for RSS feeds
         csp.object_src :none # Prevent object/embed/applet
         csp.media_src :none # Prevent media sources
         csp.manifest_src :none # Prevent manifest
@@ -85,7 +85,7 @@ module Html2rss
           'Content-Type' => 'text/html',
           'X-Content-Type-Options' => 'nosniff',
           'X-XSS-Protection' => '1; mode=block',
-          'X-Frame-Options' => 'DENY',
+          'X-Frame-Options' => 'SAMEORIGIN',
           'X-Permitted-Cross-Domain-Policies' => 'none',
           'Referrer-Policy' => 'strict-origin-when-cross-origin'
         }
