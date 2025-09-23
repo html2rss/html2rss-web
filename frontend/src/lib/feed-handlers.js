@@ -119,11 +119,13 @@ export async function showContentPreview(feedUrl) {
     }
 
     xmlPreview.classList.remove('hidden');
+    xmlPreview.classList.add('show');
   } catch (error) {
     const xmlPreview = document.getElementById('xml-preview');
     if (xmlPreview) {
       xmlPreview.innerHTML = `<div class="content-preview-error">Error loading content preview: ${error.message}</div>`;
       xmlPreview.classList.remove('hidden');
+      xmlPreview.classList.add('show');
     }
   }
 }

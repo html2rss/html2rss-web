@@ -45,7 +45,7 @@ ENV PORT=3000 \
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD curl -f http://${HEALTH_CHECK_USERNAME}:${HEALTH_CHECK_PASSWORD}@localhost:${PORT}/health_check.txt || exit 1
+  CMD curl -f -H "Authorization: Bearer ${HEALTH_CHECK_TOKEN}" http://localhost:${PORT}/health_check.txt || exit 1
 
 ARG USER=html2rss
 ARG UID=991

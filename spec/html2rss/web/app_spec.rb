@@ -31,7 +31,7 @@ RSpec.describe Html2rss::Web::App do
         form-action 'self';
         base-uri 'none';
         frame-ancestors 'none';
-        frame-src 'none';
+        frame-src 'self';
         object-src 'none';
         media-src 'none';
         manifest-src 'none';

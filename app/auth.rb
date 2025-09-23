@@ -23,18 +23,35 @@ module Html2rss
 
       ##
       # Authenticate a request and return account data if valid
-      # @param request [Roda::Request] request object
+      # @param request [Rack::Request] request object
       # @return [Hash, nil] account data if authenticated
       def authenticate(request)
         token = extract_token(request)
-        return nil unless token
+        return log_auth_failure(request, 'missing_token') unless token
 
         account = get_account(token)
-        if account
-          SecurityLogger.log_auth_failure(request.ip, request.user_agent, 'success')
-        else
-          SecurityLogger.log_auth_failure(request.ip, request.user_agent, 'invalid_token')
-        end
+        return log_auth_success(account, request) if account
+
+        log_auth_failure(request, 'invalid_token')
+      end
+
+      ##
+      # Log auth failure and return nil
+      # @param request [Rack::Request] request object
+      # @param reason [String] failure reason
+      # @return [nil]
+      def log_auth_failure(request, reason)
+        SecurityLogger.log_auth_failure(request.ip, request.user_agent, reason)
+        nil
+      end
+
+      ##
+      # Log auth success and return account
+      # @param account [Hash] account data
+      # @param request [Rack::Request] request object
+      # @return [Hash] account data
+      def log_auth_success(account, request)
+        SecurityLogger.log_auth_success(account[:username], request.ip)
         account
       end
 
@@ -43,7 +60,7 @@ module Html2rss
       # @param token [String] authentication token
       # @return [Hash, nil] account data if found
       def get_account(token)
-        return nil unless token
+        return nil unless token && token_index.key?(token)
 
         token_index[token]
       end
@@ -52,7 +69,14 @@ module Html2rss
       # Get token index for O(1) lookups
       # @return [Hash] token to account mapping
       def token_index
-        @token_index ||= accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account } # rubocop:disable ThreadSafety/ClassInstanceVariable
+        @token_index ||= build_token_index # rubocop:disable ThreadSafety/ClassInstanceVariable
+      end
+
+      ##
+      # Build token index in a thread-safe manner
+      # @return [Hash] token to account mapping
+      def build_token_index
+        accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }
       end
 
       ##
@@ -127,7 +151,7 @@ module Html2rss
         return nil unless valid
 
         get_account_by_username(token_data[:payload][:username])
-      rescue StandardError
+      rescue JSON::ParserError, ArgumentError
         SecurityLogger.log_token_usage(feed_token, url, false)
         nil
       end
@@ -174,7 +198,7 @@ module Html2rss
       # @param url [String] full URL with query parameters
       # @return [String, nil] feed token if found
       def extract_feed_token_from_url(url)
-        URI.parse(url).then { |uri| URI.decode_www_form(uri.query || '').to_h['token'] }
+        URI.parse(url).then { |uri| CGI.parse(uri.query || '')['token']&.first }
       rescue StandardError
         nil
       end
@@ -193,7 +217,7 @@ module Html2rss
 
       ##
       # Extract token from request (Authorization header only)
-      # @param request [Roda::Request] request object
+      # @param request [Rack::Request] request object
       # @return [String, nil] token if found
       def extract_token(request)
         auth_header = request.env['HTTP_AUTHORIZATION']
@@ -266,7 +290,8 @@ module Html2rss
           escaped_pattern = Regexp.escape(pattern).gsub('\\*', '.*')
           url.match?(/\A#{escaped_pattern}\z/)
         else
-          url.include?(pattern)
+          # Exact match for non-wildcard patterns
+          url == pattern
         end
       end
 
@@ -282,36 +307,16 @@ module Html2rss
       end
 
       ##
-      # Validate URL format and scheme using Html2rss::Url.for_channel
-      # @param url [String] URL to validate
-      # @return [Boolean] true if URL is valid and allowed
-      def valid_url?(url)
-        return false unless basic_url_valid?(url)
-
-        validate_url_with_html2rss(url)
-      rescue StandardError
-        false
-      end
-
-      ##
-      # Basic URL format validation
-      # @param url [String] URL to validate
-      # @return [Boolean] true if basic format is valid
-      def basic_url_valid?(url)
-        url.is_a?(String) && !url.empty? && url.length <= 2048 && url.match?(%r{\Ahttps?://.+})
-      end
-
-      ##
-      # Validate URL using Html2rss if available, otherwise basic validation
+      # Validate URL format and scheme
       # @param url [String] URL to validate
       # @return [Boolean] true if URL is valid
-      def validate_url_with_html2rss(url)
-        if defined?(Html2rss::Url) && Html2rss::Url.respond_to?(:for_channel)
-          !Html2rss::Url.for_channel(url).nil?
-        else
-          # Fallback to basic URL validation for tests
-          URI.parse(url).is_a?(URI::HTTP) || URI.parse(url).is_a?(URI::HTTPS)
-        end
+      def valid_url?(url)
+        return false unless url.is_a?(String) && !url.empty? && url.length <= 2048
+
+        uri = URI.parse(url)
+        uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+      rescue StandardError
+        false
       end
 
       ##

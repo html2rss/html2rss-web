@@ -236,7 +236,6 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  base64
   byebug
   climate_control
   html2rss!

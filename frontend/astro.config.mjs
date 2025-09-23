@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import preact from "@astrojs/preact";
 
 export default defineConfig({
   output: "static",
@@ -10,26 +11,16 @@ export default defineConfig({
   vite: {
     server: {
       proxy: {
-        "/api": {
-          target: "http://localhost:3000",
-          changeOrigin: true,
-        },
-        "/auto_source": {
-          target: "http://localhost:3000",
-          changeOrigin: true,
-        },
-        "/feeds": {
-          target: "http://localhost:3000",
-          changeOrigin: true,
-        },
-        "/health_check.txt": {
-          target: "http://localhost:3000",
-          changeOrigin: true,
-        },
+        "/api": "http://localhost:3000",
+        "/auto_source": "http://localhost:3000",
+        "/feeds": "http://localhost:3000",
+        "/health_check.txt": "http://localhost:3000",
+        "/rss.xsl": "http://localhost:3000",
       },
     },
   },
   integrations: [
+    preact(),
     starlight({
       title: "html2rss-web",
       description: "Convert websites to RSS feeds instantly",

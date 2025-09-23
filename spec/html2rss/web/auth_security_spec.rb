@@ -25,6 +25,11 @@ RSpec.describe Html2rss::Web::Auth do
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(test_config)
+    Html2rss::Web::SecurityLogger.reset_logger!
+  end
+
+  after do
+    Html2rss::Web::SecurityLogger.reset_logger!
   end
 
   describe 'Token Tampering Protection' do

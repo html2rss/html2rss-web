@@ -2,6 +2,7 @@
 
 require 'logger'
 require 'json'
+require 'digest'
 
 module Html2rss
   module Web
@@ -44,6 +45,17 @@ module Html2rss
                     ip: ip,
                     user_agent: user_agent,
                     reason: reason
+                  })
+      end
+
+      ##
+      # Log authentication success
+      # @param username [String] authenticated username
+      # @param ip [String] client IP address
+      def log_auth_success(username, ip)
+        log_event('auth_success', {
+                    username: username,
+                    ip: ip
                   })
       end
 

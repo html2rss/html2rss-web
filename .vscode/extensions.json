@@ -3,7 +3,6 @@
     "redhat.vscode-yaml",
     "esbenp.prettier-vscode",
     "github.copilot",
-    "github.copilot-chat",
     "shopify.ruby-lsp"
   ]
 }
