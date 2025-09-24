@@ -2,6 +2,7 @@
 
 require 'nokogiri'
 require 'sanitize'
+require 'time'
 
 module Html2rss
   module Web

@@ -120,7 +120,7 @@ Creates a new RSS feed from a website URL.
       "name": "Example Feed",
       "url": "https://example.com",
       "strategy": "ssrf_filter",
-      "public_url": "/feeds/abc123def456?token=...&url=https%3A%2F%2Fexample.com",
+      "public_url": "/api/v1/feeds/eyJwYXlsb2FkIjoi...",
       "created_at": "2024-01-01T12:00:00Z",
       "updated_at": "2024-01-01T12:00:00Z"
     }
@@ -277,14 +277,14 @@ Returns application liveness status (no auth required).
 
 ## Error Codes
 
-| Code | Status | Description |
-|------|--------|-------------|
-| `UNAUTHORIZED` | 401 | Authentication required |
-| `FORBIDDEN` | 403 | Access denied |
-| `NOT_FOUND` | 404 | Resource not found |
-| `BAD_REQUEST` | 400 | Invalid request |
-| `INTERNAL_ERROR` | 500 | Server error |
-| `SERVICE_UNAVAILABLE` | 503 | Service unavailable |
+| Code                  | Status | Description             |
+| --------------------- | ------ | ----------------------- |
+| `UNAUTHORIZED`        | 401    | Authentication required |
+| `FORBIDDEN`           | 403    | Access denied           |
+| `NOT_FOUND`           | 404    | Resource not found      |
+| `BAD_REQUEST`         | 400    | Invalid request         |
+| `INTERNAL_ERROR`      | 500    | Server error            |
+| `SERVICE_UNAVAILABLE` | 503    | Service unavailable     |
 
 ## Rate Limiting
 
@@ -292,12 +292,14 @@ The API implements rate limiting to prevent abuse. See the main application docu
 
 ## Backward Compatibility
 
-The legacy API endpoints remain available for backward compatibility:
+**Legacy API endpoints have been removed.** Use the v1 API endpoints instead:
 
-- `/api/feeds.json` - Legacy feeds list
-- `/api/strategies.json` - Legacy strategies list
-- `/api/{feed_name}` - Legacy feed generation
-- `/auto_source/*` - Legacy auto source endpoints
+- `/api/feeds.json` - **REMOVED** (use `/api/v1/feeds`)
+- `/api/strategies.json` - **REMOVED** (use `/api/v1/strategies`) 
+- `/auto_source/*` - **REMOVED** (use `/api/v1/feeds`)
+
+Still available for backward compatibility:
+- `/{feed_name}` - Legacy feed generation (no auth required, continues to work)
 
 ## OpenAPI Documentation
 
@@ -332,15 +334,15 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
       "name": "Example News",
       "url": "https://example.com",
       "strategy": "ssrf_filter",
-      "public_url": "/feeds/abc123def456?token=...&url=https%3A%2F%2Fexample.com",
+      "public_url": "/api/v1/feeds/eyJwYXlsb2FkIjoi...",
       "created_at": "2024-01-01T12:00:00Z",
       "updated_at": "2024-01-01T12:00:00Z"
     }
   }
 }
 
-# Access the feed publicly (no auth required)
-curl "https://your-domain.com/feeds/abc123def456?token=...&url=https%3A%2F%2Fexample.com"
+# Access the feed publicly using the signed token
+curl "https://your-domain.com/api/v1/feeds/eyJwYXlsb2FkIjoi..."
 ```
 
 ### List Available Strategies

@@ -1,28 +1,28 @@
 # frozen_string_literal: true
 
+require 'time'
+
 require_relative '../../auth'
 require_relative '../../auto_source'
 require_relative '../../feeds'
-require_relative '../../xml_builder'
 require_relative '../../exceptions'
+require_relative '../../feed_token'
 
 module Html2rss
   module Web
     module Api
       module V1
-        ##
-        # RESTful API v1 for feeds resource
-        # Handles CRUD operations for RSS feeds
+        # RESTful API v1 for feeds
         module Feeds
           module_function
 
-          def index(_request)
+          def index(_request) # rubocop:disable Metrics/MethodLength
             feeds = Html2rss::Web::Feeds.list_feeds.map do |feed|
               {
                 id: feed[:name],
                 name: feed[:name],
                 description: feed[:description],
-                url: "/api/v1/feeds/#{feed[:name]}",
+                public_url: "/#{feed[:name]}",
                 created_at: nil,
                 updated_at: nil
               }
@@ -31,29 +31,95 @@ module Html2rss
             { success: true, data: { feeds: feeds }, meta: { total: feeds.count } }
           end
 
-          def show(request, feed_id)
-            if json_request?(request)
-              show_feed_metadata(feed_id)
-            else
-              generate_feed_content(request, feed_id)
-            end
+          def show(request, token)
+            handle_token_based_feed(request, token)
           end
 
           def create(request)
+            raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
+            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
+
+            account = authenticate_request(request)
+            params = extract_create_params(request)
+            validate_create_params(params, account)
+
+            feed_data = AutoSource.create_stable_feed(params[:name], params[:url], account, params[:strategy])
+            raise InternalServerError, 'Failed to create feed' unless feed_data
+
+            build_create_response(request, feed_data)
+          end
+
+          def handle_token_based_feed(request, token)
+            raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
+            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
+
+            feed_token = validate_feed_token(token)
+            account = get_account_for_token(feed_token)
+            validate_account_access(account, feed_token.url)
+
+            generate_feed_response(request, feed_token.url)
+          end
+
+          def extract_site_title(url)
+            AutoSource.extract_site_title(url)
+          end
+
+          def validate_feed_token(token)
+            feed_token = FeedToken.decode(token)
+            raise UnauthorizedError, 'Invalid token' unless feed_token
+
+            validated_token = FeedToken.validate_and_decode(token, feed_token.url, Auth.secret_key)
+            raise UnauthorizedError, 'Invalid token' unless validated_token
+
+            validated_token
+          end
+
+          def get_account_for_token(feed_token)
+            account = Auth.get_account_by_username(feed_token.username)
+            raise UnauthorizedError, 'Account not found' unless account
+
+            account
+          end
+
+          def validate_account_access(account, url)
+            raise ForbiddenError, 'Access Denied' unless Auth.url_allowed?(account, url)
+          end
+
+          def generate_feed_response(request, url)
+            strategy = request.params['strategy'] || 'ssrf_filter'
+            rss_content = AutoSource.generate_feed_content(url, strategy)
+
+            request.response['Content-Type'] = 'application/xml'
+            HttpCache.expires(request.response, 600, cache_control: 'public')
+
+            rss_content.to_s
+          end
+
+          def authenticate_request(request)
             account = Auth.authenticate(request)
             raise UnauthorizedError, 'Authentication required' unless account
 
+            account
+          end
+
+          private
+
+          def extract_create_params(request)
             url = request.params['url']
-            name = request.params['name'] || extract_site_title(url)
-            strategy = request.params['strategy'] || 'ssrf_filter'
+            {
+              url: url,
+              name: request.params['name'] || extract_site_title(url),
+              strategy: request.params['strategy'] || 'ssrf_filter'
+            }
+          end
 
-            raise BadRequestError, 'URL parameter is required' if url.nil? || url.empty?
-            raise BadRequestError, 'Invalid URL format' unless Auth.valid_url?(url)
-            raise ForbiddenError, 'URL not allowed for this account' unless Auth.url_allowed?(account, url)
+          def validate_create_params(params, account)
+            raise BadRequestError, 'URL parameter is required' if params[:url].nil? || params[:url].empty?
+            raise BadRequestError, 'Invalid URL format' unless Auth.valid_url?(params[:url])
+            raise ForbiddenError, 'URL not allowed for this account' unless Auth.url_allowed?(account, params[:url])
+          end
 
-            feed_data = AutoSource.create_stable_feed(name, url, account, strategy)
-            raise InternalServerError, 'Failed to create feed' unless feed_data
-
+          def build_create_response(request, feed_data)
             request.response['Content-Type'] = 'application/json'
             { success: true, data: { feed: {
               id: feed_data[:id],
@@ -64,43 +130,6 @@ module Html2rss
               created_at: Time.now.iso8601,
               updated_at: Time.now.iso8601
             } }, meta: { created: true } }
-          end
-
-          def json_request?(request)
-            accept_header = request.env['HTTP_ACCEPT'].to_s
-            accept_header.include?('application/json') && !accept_header.include?('application/xml')
-          end
-
-          def show_feed_metadata(feed_id)
-            config = LocalConfig.find(feed_id)
-            raise NotFoundError, 'Feed not found' unless config
-
-            { success: true, data: { feed: {
-              id: feed_id,
-              name: feed_id,
-              description: "RSS feed for #{feed_id}",
-              url: "/api/v1/feeds/#{feed_id}",
-              strategy: config[:strategy] || 'ssrf_filter',
-              created_at: nil,
-              updated_at: nil
-            } } }
-          end
-
-          def generate_feed_content(request, feed_id)
-            rss_content = Html2rss::Web::Feeds.generate_feed(feed_id, request.params)
-            config = LocalConfig.find(feed_id)
-            ttl = config&.dig(:channel, :ttl) || 3600
-
-            # Set appropriate headers for XML response
-            request.response['Content-Type'] = 'application/xml'
-            request.response['Cache-Control'] = "public, max-age=#{ttl}"
-
-            # Convert RSS object to string
-            rss_content.to_s
-          end
-
-          def extract_site_title(url)
-            AutoSource.extract_site_title(url)
           end
         end
       end

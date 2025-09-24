@@ -19,22 +19,10 @@ module Html2rss
       # @param name [String, Symbol, #to_sym]
       # @return [Hash<Symbol, Any>]
       def find(name)
-        feed_config = feeds.fetch(name.to_sym) { raise NotFound, "Did not find local feed config at '#{name}'" }
-        merge_global_stylesheets(feed_config)
-      end
+        config = feeds.fetch(name.to_sym) { raise NotFound, "Did not find local feed config at '#{name}'" }
+        config = deep_dup(config)
 
-      ##
-      # Merges global stylesheets into a feed configuration if the feed doesn't already have stylesheets.
-      #
-      # @param config [Hash] The feed configuration to merge stylesheets into
-      # @return [Hash] The configuration with merged stylesheets (duplicated if needed)
-      def merge_global_stylesheets(config)
-        global_config = global
-        return config unless global_config[:stylesheets] && !config.key?(:stylesheets)
-
-        config = config.dup
-        config[:stylesheets] = global_config[:stylesheets]
-        config
+        apply_global_defaults(config)
       end
 
       ##
@@ -61,6 +49,26 @@ module Html2rss
         YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
       rescue Errno::ENOENT => error
         raise NotFound, "Configuration file not found: #{error.message}"
+      end
+
+      def apply_global_defaults(config)
+        global_config = global
+
+        config[:stylesheets] ||= deep_dup(global_config[:stylesheets]) if global_config[:stylesheets]
+        config[:headers] ||= deep_dup(global_config[:headers]) if global_config[:headers]
+
+        config
+      end
+
+      def deep_dup(value)
+        case value
+        when Hash
+          value.transform_values { |val| deep_dup(val) }
+        when Array
+          value.map { |element| deep_dup(element) }
+        else
+          value
+        end
       end
     end
   end

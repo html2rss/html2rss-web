@@ -59,6 +59,12 @@ end
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
+  # Reset SecurityLogger before each test to avoid double leakage
+  config.before do
+    # Only reset if SecurityLogger is defined (loaded)
+    Html2rss::Web::SecurityLogger.reset_logger! if defined?(Html2rss::Web::SecurityLogger)
+  end
+
   # rspec-expectations config goes here. You can use an alternate
   # assertion/expectation library such as wrong or the stdlib/minitest
   # assertions if you prefer.

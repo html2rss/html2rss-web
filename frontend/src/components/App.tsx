@@ -17,53 +17,22 @@ export function App() {
   } = useAuth();
   const { isConverting, result, error, convertFeed, clearResult } = useFeedConversion();
 
-  const [currentView, setCurrentView] = useState<'demo' | 'auth' | 'main'>('demo');
   const [showAuthForm, setShowAuthForm] = useState(false);
+  const [authFormData, setAuthFormData] = useState({ username: '', token: '' });
+  const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
 
   // Update view state based on authentication
   useEffect(() => {
     if (isAuthenticated) {
-      setCurrentView('main');
       setShowAuthForm(false);
-    } else {
-      setCurrentView('demo');
     }
   }, [isAuthenticated]);
 
-  // Initialize form handlers
-  useEffect(() => {
-    initializeFormHandlers();
-  }, [isAuthenticated, token]);
-
-  const initializeFormHandlers = () => {
-    // Auth form handler
-    const authButton = document.getElementById('auth-button');
-    if (authButton) {
-      authButton.onclick = handleAuthSubmit;
-    }
-
-    // Feed form handler
-    const feedForm = document.querySelector('#feed-section');
-    if (feedForm) {
-      const form = feedForm.querySelector('form') || feedForm;
-      form.onsubmit = handleFeedSubmit;
-    }
-
-    // Logout button handler
-    const logoutButton = document.getElementById('logout-button');
-    if (logoutButton) {
-      logoutButton.onclick = handleLogout;
-    }
-  };
-
   const handleAuthSubmit = async () => {
-    const usernameInput = document.getElementById('username') as HTMLInputElement;
-    const tokenInput = document.getElementById('token') as HTMLInputElement;
-
-    if (!usernameInput?.value || !tokenInput?.value) return;
+    if (!authFormData.username || !authFormData.token) return;
 
     try {
-      await login(usernameInput.value, tokenInput.value);
+      await login(authFormData.username, authFormData.token);
     } catch (error) {
       // Error handling is done by the useAuth hook
     }
@@ -72,27 +41,14 @@ export function App() {
   const handleFeedSubmit = async (e: Event) => {
     e.preventDefault();
 
-    const urlInput = document.getElementById('url') as HTMLInputElement;
-    const strategyInput = document.querySelector('input[name="strategy"]:checked') as HTMLInputElement;
-
-    if (!urlInput?.value) return;
-
-    const strategy = strategyInput?.value || 'ssrf_filter';
+    if (!feedFormData.url) return;
 
     try {
-      await convertFeed(urlInput.value, strategy, token || '');
+      await convertFeed(feedFormData.url, feedFormData.strategy, token || '');
     } catch (error) {
       // Error handling is done by the useFeedConversion hook
     }
   };
-
-  // Update user display in static form
-  useEffect(() => {
-    if (isAuthenticated) {
-      const userDisplay = document.getElementById('user-display');
-      if (userDisplay) userDisplay.textContent = username || '';
-    }
-  }, [isAuthenticated, username]);
 
   const handleShowAuth = () => {
     setShowAuthForm(true);
@@ -172,6 +128,10 @@ export function App() {
                 placeholder="Enter your username"
                 required
                 autocomplete="username"
+                value={authFormData.username}
+                onInput={(e) =>
+                  setAuthFormData({ ...authFormData, username: (e.target as HTMLInputElement).value })
+                }
               />
               <div class="form-error" id="username-error"></div>
             </div>
@@ -188,12 +148,16 @@ export function App() {
                 placeholder="Enter your authentication token"
                 required
                 autocomplete="current-password"
+                value={authFormData.token}
+                onInput={(e) =>
+                  setAuthFormData({ ...authFormData, token: (e.target as HTMLInputElement).value })
+                }
               />
               <div class="form-error" id="token-error"></div>
             </div>
 
             <div class="form-row">
-              <button type="button" class="form-button" id="auth-button">
+              <button type="button" class="form-button" id="auth-button" onClick={handleAuthSubmit}>
                 Authenticate
               </button>
             </div>
@@ -237,6 +201,10 @@ export function App() {
                         placeholder="https://example.com"
                         required
                         autocomplete="url"
+                        value={feedFormData.url}
+                        onInput={(e) =>
+                          setFeedFormData({ ...feedFormData, url: (e.target as HTMLInputElement).value })
+                        }
                       />
                       <div class="form-error" id="url-error"></div>
                     </div>
@@ -249,15 +217,33 @@ export function App() {
                 <div class="form-group-compact">
                   <label class="form-label">Strategy</label>
                   <div class="radio-group" id="strategy-group">
-                    <div class="radio-option selected">
-                      <input type="radio" id="strategy-ssrf" name="strategy" value="ssrf_filter" checked />
+                    <div class={`radio-option ${feedFormData.strategy === 'ssrf_filter' ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        id="strategy-ssrf"
+                        name="strategy"
+                        value="ssrf_filter"
+                        checked={feedFormData.strategy === 'ssrf_filter'}
+                        onChange={(e) =>
+                          setFeedFormData({ ...feedFormData, strategy: (e.target as HTMLInputElement).value })
+                        }
+                      />
                       <label for="strategy-ssrf">
                         <strong>SSRF Filter</strong>
                         <div class="description">Recommended - Safe and secure</div>
                       </label>
                     </div>
-                    <div class="radio-option">
-                      <input type="radio" id="strategy-browserless" name="strategy" value="browserless" />
+                    <div class={`radio-option ${feedFormData.strategy === 'browserless' ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        id="strategy-browserless"
+                        name="strategy"
+                        value="browserless"
+                        checked={feedFormData.strategy === 'browserless'}
+                        onChange={(e) =>
+                          setFeedFormData({ ...feedFormData, strategy: (e.target as HTMLInputElement).value })
+                        }
+                      />
                       <label for="strategy-browserless">
                         <strong>Browserless</strong>
                         <div class="description">For JavaScript-heavy sites</div>

@@ -118,13 +118,13 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
       "id": "abc123",
       "name": "Example Feed", 
       "url": "https://example.com",
-      "public_url": "/feeds/abc123?token=...&url=https%3A%2F%2Fexample.com"
+      "public_url": "/api/v1/feeds/eyJwYXlsb2FkIjoi..."
     }
   }
 }
 
-# Access the feed publicly
-curl "https://your-domain.com/feeds/abc123?token=...&url=https%3A%2F%2Fexample.com"
+# Access the feed publicly using the signed token
+curl "https://your-domain.com/api/v1/feeds/eyJwYXlsb2FkIjoi..."
 ```
 
 ### Security Features

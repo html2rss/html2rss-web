@@ -52,7 +52,7 @@ describe('App', () => {
         'Click any button below to instantly convert these websites to RSS feeds - no signup required!'
       )
     ).toBeInTheDocument();
-    expect(screen.getByText('🔐 Full Access')).toBeInTheDocument();
+    expect(screen.getByText('Sign in here')).toBeInTheDocument();
   });
 
   it('should render main content when authenticated', () => {
@@ -144,7 +144,6 @@ describe('App', () => {
 
       await waitFor(() => {
         expect(mockConvertFeed).toHaveBeenCalledWith(
-          expect.any(String),
           expect.any(String),
           'ssrf_filter',
           'self-host-for-full-access'

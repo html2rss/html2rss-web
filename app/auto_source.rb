@@ -2,8 +2,7 @@
 
 require 'uri'
 require_relative 'auth'
-require_relative 'xml_builder'
-require_relative 'local_config'
+require_relative 'feed_generator'
 
 module Html2rss
   module Web
@@ -12,9 +11,7 @@ module Html2rss
     module AutoSource
       module_function
 
-      ##
-      # Check if auto source is enabled
-      # @return [Boolean] true if enabled
+      # @return [Boolean]
       def enabled?
         if development?
           ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
@@ -31,19 +28,15 @@ module Html2rss
         Auth.authenticate(request)
       end
 
-      ##
-      # Check if origin is allowed
-      # @param request [Roda::Request] request object
-      # @return [Boolean] true if origin is allowed
+      # @param request [Roda::Request]
+      # @return [Boolean]
       def allowed_origin?(request)
         origin = request.env['HTTP_HOST'] || request.env['HTTP_X_FORWARDED_HOST']
         origins = allowed_origins
         origins.empty? || origins.include?(origin)
       end
 
-      ##
-      # Get allowed origins from configuration
-      # @return [Array<String>] list of allowed origins
+      # @return [Array<String>]
       def allowed_origins
         if development?
           default_origins = 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001'
@@ -51,14 +44,12 @@ module Html2rss
         else
           origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', '')
         end
-        origins.split(',').map(&:strip)
+        origins.split(',').map(&:strip).reject(&:empty?)
       end
 
-      ##
-      # Check if URL is allowed for token
-      # @param token_data [Hash] token data
-      # @param url [String] URL to check
-      # @return [Boolean] true if URL is allowed
+      # @param token_data [Hash]
+      # @param url [String]
+      # @return [Boolean]
       def url_allowed_for_token?(token_data, url)
         account = Auth.get_account_by_username(token_data[:username])
         return false unless account
@@ -80,7 +71,7 @@ module Html2rss
         return nil unless token_data
 
         # Reconstruct feed data from token and feed_id
-        # This is stateless - we don't store anything permanently
+        # Stateless operation
         {
           id: feed_id,
           url: nil, # Will be provided in request
@@ -91,21 +82,20 @@ module Html2rss
 
       def generate_feed_content(url, strategy = 'ssrf_filter')
         feed_content = call_strategy(url, strategy)
+        FeedGenerator.process_feed_content(url, strategy, feed_content, site_title: extract_site_title(url))
+      end
 
-        # Check if feed is empty and provide better error handling
-        if feed_content.respond_to?(:to_s)
-          feed_xml = feed_content.to_s
-          if feed_xml.include?('<item>') == false
-            # Feed has no items - this might be a content extraction issue
-            return create_empty_feed_warning(url, strategy)
-          end
-        end
+      def call_strategy(url, strategy)
+        FeedGenerator.call_strategy(url, strategy)
+      end
 
-        feed_content
+      def extract_site_title(url)
+        FeedGenerator.extract_site_title(url)
       end
 
       def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
-        public_url = "/feeds/#{feed_id}?token=#{feed_token}&url=#{URI.encode_www_form_component(url)}"
+        # Token is now the path parameter, URL is embedded in the token
+        public_url = "/api/v1/feeds/#{feed_token}"
 
         {
           id: feed_id,
@@ -117,52 +107,16 @@ module Html2rss
         }
       end
 
-      def create_empty_feed_warning(url, strategy)
-        site_title = extract_site_title(url)
-        XmlBuilder.build_empty_feed_warning(
-          url: url,
-          strategy: strategy,
-          site_title: site_title
-        )
-      end
-
-      def call_strategy(url, strategy) # rubocop:disable Metrics/MethodLength
-        return error_feed('URL parameter required') if url.nil? || url.empty?
-
-        global_config = LocalConfig.global
-
-        config = {
-          stylesheets: global_config[:stylesheets],
-          headers: global_config[:headers],
-          strategy: strategy.to_sym,
-          channel: {
-            url: url
-          },
-          auto_source: {
-            # Auto source configuration for automatic content detection
-            # This allows Html2rss to automatically detect content on the page
-          }
-        }
-
-        Html2rss.feed(config)
-      end
-
-      def extract_site_title(url)
-        Html2rss::Url.for_channel(url).channel_titleized
-      rescue StandardError
-        nil
-      end
-
       def error_feed(message)
-        XmlBuilder.build_error_feed(message: message)
+        FeedGenerator.error_feed(message)
       end
 
       def access_denied_feed(url)
-        XmlBuilder.build_access_denied_feed(url)
+        FeedGenerator.access_denied_feed(url)
       end
 
       def development?
-        ENV.fetch('RACK_ENV', nil) == 'development'
+        EnvironmentValidator.development?
       end
     end
   end

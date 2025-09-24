@@ -87,37 +87,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /feeds/{id}:
-    get:
-      operationId: getFeed
-      summary: Get a specific feed
-      description: Returns either feed metadata (JSON) or RSS content (XML) based on Accept header
-      tags:
-        - Feeds
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Feed identifier
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeedResponse'
-            application/xml:
-              schema:
-                type: string
-                description: RSS XML content
-        '404':
-          description: Feed not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /strategies:
     get:
@@ -291,11 +260,11 @@ components:
 
         **Usage:**
         Tokens are included as query parameters in feed URLs:
-        `/feeds/{id}?token={signed-token}&url={encoded-url}`
+        `/api/v1/feeds/{id}`
 
         **Example:**
         ```
-        /feeds/abc123?token=eyJ0eXAiOiJKV1QiLCJhbGc...&url=https%3A%2F%2Fexample.com
+        /api/v1/feeds/abc123
         ```
 
   schemas:

@@ -279,7 +279,7 @@ async function main() {
       MAX_WAIT_TIME,
       "admin:password",
     );
-    const astroReady = await waitForServer(`http://localhost:${ASTRO_SERVER_PORT}/api/feeds.json`);
+    const astroReady = await waitForServer(`http://localhost:${ASTRO_SERVER_PORT}/api/v1/feeds`);
 
     if (!rubyReady && !astroReady) {
       throw new Error(`

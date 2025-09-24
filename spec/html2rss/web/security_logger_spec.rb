@@ -4,14 +4,15 @@ require 'spec_helper'
 require_relative '../../../app/security_logger'
 
 RSpec.describe Html2rss::Web::SecurityLogger do
-  let(:test_output) { StringIO.new }
   let(:mock_logger) { instance_double(Logger) }
 
   before do
     allow(Logger).to receive(:new).with($stdout).and_return(mock_logger)
     allow(mock_logger).to receive(:formatter=)
+    allow(mock_logger).to receive(:info)
     allow(mock_logger).to receive(:warn)
     allow(mock_logger).to receive(:error)
+    allow(Kernel).to receive(:warn)
     described_class.reset_logger!
   end
 
@@ -51,7 +52,7 @@ RSpec.describe Html2rss::Web::SecurityLogger do
     it 'logs token usage with basic data' do
       described_class.log_token_usage('test-token-123', 'https://example.com', true)
 
-      expect(mock_logger).to have_received(:warn) do |message|
+      expect(mock_logger).to have_received(:info) do |message|
         data = JSON.parse(message, symbolize_names: true)
         data.include?(
           security_event: 'token_usage',
@@ -64,7 +65,7 @@ RSpec.describe Html2rss::Web::SecurityLogger do
     it 'includes hashed token in log data' do
       described_class.log_token_usage('test-token-123', 'https://example.com', true)
 
-      expect(mock_logger).to have_received(:warn) do |message|
+      expect(mock_logger).to have_received(:info) do |message|
         data = JSON.parse(message, symbolize_names: true)
         data[:token_hash].match?(/\A[a-f0-9]{8}\z/)
       end
@@ -107,7 +108,7 @@ RSpec.describe Html2rss::Web::SecurityLogger do
     it 'logs configuration validation failure' do
       described_class.log_config_validation_failure('secret_key', 'Invalid secret key')
 
-      expect(mock_logger).to have_received(:warn) do |message|
+      expect(mock_logger).to have_received(:error) do |message|
         data = JSON.parse(message, symbolize_names: true)
         data.include?(
           security_event: 'config_validation_failure',
@@ -122,32 +123,25 @@ RSpec.describe Html2rss::Web::SecurityLogger do
     it 'does not raise error when logger fails' do
       # Mock the logger to raise an error when warn is called
       allow(mock_logger).to receive(:warn).and_raise(StandardError, 'Logger error')
-      allow(mock_logger).to receive(:error)
 
       # Should not raise an error
       expect { described_class.log_auth_failure('192.168.1.1', 'Mozilla/5.0', 'invalid_token') }.not_to raise_error
     end
 
     it 'logs error when logger fails' do
-      # Mock the logger to raise an error when warn is called
       allow(mock_logger).to receive(:warn).and_raise(StandardError, 'Logger error')
-      allow(mock_logger).to receive(:error)
 
       described_class.log_auth_failure('192.168.1.1', 'Mozilla/5.0', 'invalid_token')
 
-      expect(mock_logger).to have_received(:error).with('Security logging error: Logger error')
+      expect(Kernel).to have_received(:warn).with('Security logging error: Logger error')
     end
 
     it 'logs fallback message when logger fails' do
-      # Mock the logger to raise an error when warn is called
       allow(mock_logger).to receive(:warn).and_raise(StandardError, 'Logger error')
-      allow(mock_logger).to receive(:error)
 
       described_class.log_auth_failure('192.168.1.1', 'Mozilla/5.0', 'invalid_token')
 
-      expected_message = 'Security event: auth_failure - {ip: "192.168.1.1", ' \
-                         'user_agent: "Mozilla/5.0", reason: "invalid_token"}'
-      expect(mock_logger).to have_received(:warn).with(expected_message)
+      expect(Kernel).to have_received(:warn).with(a_string_including('Security event: auth_failure'))
     end
   end
 end

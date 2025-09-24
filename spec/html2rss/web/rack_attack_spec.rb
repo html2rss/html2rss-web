@@ -55,8 +55,8 @@ RSpec.describe 'Rack::Attack' do
       expect(Rack::Attack.throttles).to have_key('api requests per IP')
     end
 
-    it 'has feed generation throttling configured' do
-      expect(Rack::Attack.throttles).to have_key('feed generation per IP')
+    it 'has API feed generation throttling configured' do
+      expect(Rack::Attack.throttles).to have_key('api feed generation per IP')
     end
   end
 

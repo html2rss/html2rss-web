@@ -79,11 +79,11 @@ RSpec.describe Html2rss::Web::AutoSource do
       expect(feed).to have_key(:public_url)
     end
 
-    it 'includes feed token in public URL', :aggregate_failures do
+    it 'includes feed token as path parameter in public URL', :aggregate_failures do
       feed = described_class.create_stable_feed(name, url, token_data, strategy)
 
-      expect(feed[:public_url]).to include('token=test-feed-token-xyz')
-      expect(feed[:public_url]).to include("url=#{URI.encode_www_form_component(url)}")
+      expect(feed[:public_url]).to eq('/api/v1/feeds/test-feed-token-xyz')
+      expect(feed[:public_url]).not_to include('?') # No query parameters needed
     end
 
     it 'returns nil when URL is not allowed' do
