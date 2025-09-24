@@ -24,9 +24,7 @@ require_relative 'app/http_cache'
 module Html2rss
   module Web
     ##
-    # This app uses html2rss and serves the feeds via HTTP.
-    #
-    # It is built with [Roda](https://roda.jeremyevans.net/).
+    # Roda app serving RSS feeds via html2rss
     class App < Roda
       CONTENT_TYPE_RSS = 'application/xml'
 
@@ -54,7 +52,7 @@ module Html2rss
         csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none
-        csp.frame_ancestors :none
+        csp.frame_ancestors development? ? ['http://localhost:*', 'https://localhost:*'] : :none
         csp.frame_src :self
         csp.object_src :none
         csp.media_src :none
@@ -66,12 +64,18 @@ module Html2rss
       end
 
       plugin :default_headers, {
-        'X-Content-Type-Options' => 'nosniff', 'X-XSS-Protection' => '1; mode=block',
-        'X-Frame-Options' => 'SAMEORIGIN', 'X-Permitted-Cross-Domain-Policies' => 'none',
-        'Referrer-Policy' => 'strict-origin-when-cross-origin', 'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
+        'X-Content-Type-Options' => 'nosniff',
+        'X-XSS-Protection' => '1; mode=block',
+        'X-Frame-Options' => 'SAMEORIGIN',
+        'X-Permitted-Cross-Domain-Policies' => 'none',
+        'Referrer-Policy' => 'strict-origin-when-cross-origin',
+        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
         'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
-        'Cross-Origin-Embedder-Policy' => 'require-corp', 'Cross-Origin-Opener-Policy' => 'same-origin',
-        'Cross-Origin-Resource-Policy' => 'same-origin', 'X-DNS-Prefetch-Control' => 'off', 'X-Download-Options' => 'noopen'
+        'Cross-Origin-Embedder-Policy' => 'require-corp',
+        'Cross-Origin-Opener-Policy' => 'same-origin',
+        'Cross-Origin-Resource-Policy' => 'same-origin',
+        'X-DNS-Prefetch-Control' => 'off',
+        'X-Download-Options' => 'noopen'
       }
 
       plugin :json_parser
@@ -112,18 +116,6 @@ module Html2rss
       route do |r|
         r.public
 
-        r.get 'feeds.json' do
-          r.response['Cache-Control'] = 'public, max-age=300'
-          JSON.generate(Feeds.list_feeds)
-        end
-
-        r.get 'strategies.json' do
-          r.response['Cache-Control'] = 'public, max-age=3600'
-          JSON.generate({ strategies: Html2rss::RequestService.strategy_names.map do |name|
-            { name: name.to_s, display_name: name.to_s.split('_').map(&:capitalize).join(' ') }
-          end })
-        end
-
         r.on 'api', 'v1' do
           r.response['Content-Type'] = 'application/json'
 
@@ -149,8 +141,8 @@ module Html2rss
           end
 
           r.on 'feeds' do
-            r.get String do |feed_id|
-              result = Api::V1::Feeds.show(r, feed_id)
+            r.get String do |token|
+              result = Api::V1::Feeds.show(r, token)
               result.is_a?(Hash) ? JSON.generate(result) : result
             end
             r.post do
@@ -179,25 +171,13 @@ module Html2rss
           end
         end
 
-        r.on 'auto_source' do
-          if AutoSource.enabled?
-            r.post 'create' do
-              handle_create_feed(r)
-            end
+        # Backward compatibility: /{feed_name} (no auth required)
+        r.get String do |feed_name|
+          # Skip static file requests
+          next if feed_name.include?('.') && !feed_name.end_with?('.xml', '.rss')
 
-            r.get String do |encoded_url|
-              handle_legacy_feed(r, encoded_url)
-            end
-          else
-            r.response.status = 400
-            'Auto source feature is disabled'
-          end
-        end
-
-        r.on 'feeds' do
-          r.get String do |_feed_id|
-            handle_feed_with_auth(r, r.params['token'])
-          end
+          # Route to feed generation without auth for backward compatibility
+          handle_feed_generation(r, feed_name)
         end
         r.get 'health_check.txt' do
           handle_health_check(r)
@@ -210,7 +190,25 @@ module Html2rss
       end
 
       def fallback_html
-        '<!DOCTYPE html><html><head><title>html2rss-web</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:2rem;line-height:1.6}h1{color:#111827}code{background:#f3f4f6;padding:0.2rem 0.4rem;border-radius:0.25rem}</style></head><body><h1>html2rss-web</h1><p>Convert websites to RSS feeds</p><p>API available at <code>/api/</code></p></body></html>'
+        <<~HTML
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>html2rss-web</title>
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <style>
+                body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:2rem;line-height:1.6}
+                h1{color:#111827}
+                code{background:#f3f4f6;padding:0.2rem 0.4rem;border-radius:0.25rem}
+              </style>
+            </head>
+            <body>
+              <h1>html2rss-web</h1>
+              <p>Convert websites to RSS feeds</p>
+              <p>API available at <code>/api/</code></p>
+            </body>
+          </html>
+        HTML
       end
 
       private
@@ -221,65 +219,6 @@ module Html2rss
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = "public, max-age=#{ttl}"
         rss_content
-      end
-
-      def handle_create_feed(router)
-        account = Auth.authenticate(router)
-        unless account
-          router.response.status = 401
-          return 'Unauthorized'
-        end
-
-        url = router.params['url']
-        unless url && Auth.valid_url?(url)
-          router.response.status = 400
-          return 'URL parameter required'
-        end
-
-        unless Auth.url_allowed?(account, url)
-          router.response.status = 403
-          return 'Access Denied'
-        end
-
-        strategy = router.params['strategy'] || 'ssrf_filter'
-        name = router.params['name'] || "Auto-generated feed for #{url}"
-        feed_data = AutoSource.create_stable_feed(name, url, account, strategy)
-        unless feed_data
-          router.response.status = 500
-          return 'Internal Server Error'
-        end
-
-        router.response['Content-Type'] = 'application/json'
-        JSON.generate(feed_data)
-      end
-
-      def handle_legacy_feed(router, encoded_url)
-        account = Auth.authenticate(router)
-        return error_response(router, 401, 'Unauthorized') unless account
-        return error_response(router, 403, 'Access Denied') unless AutoSource.allowed_origin?(router)
-
-        decoded_url = Base64.urlsafe_decode64(encoded_url)
-        return error_response(router, 400, 'Invalid URL') unless decoded_url && Auth.valid_url?(decoded_url)
-        return error_response(router, 403, 'Access Denied') unless AutoSource.url_allowed_for_token?(account,
-                                                                                                     decoded_url)
-
-        generate_rss_response(router, decoded_url)
-      rescue ArgumentError
-        error_response(router, 400, 'Invalid encoded URL')
-      end
-
-      def handle_feed_with_auth(router, feed_token = nil)
-        url = router.params['url']
-        return error_response(router, 400, 'url parameter required') unless url && Auth.valid_url?(url)
-
-        if feed_token
-          return error_response(router, 403, 'Access Denied') unless Auth.feed_url_allowed?(feed_token, url)
-        else
-          account = Auth.authenticate(router)
-          return error_response(router, 401, 'Unauthorized') unless account
-          return error_response(router, 403, 'Access Denied') unless Auth.url_allowed?(account, url)
-        end
-        generate_rss_response(router, url)
       end
 
       def generate_rss_response(router, url)

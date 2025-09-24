@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require_relative '../../../../app'
+require_relative '../../../../app/feed_token'
 
 RSpec.describe Html2rss::Web::App do
   include Rack::Test::Methods
@@ -95,17 +96,15 @@ RSpec.describe Html2rss::Web::App do
     end
   end
 
-  describe 'GET /api/v1/feeds/{id}' do
-    context 'with XML Accept header' do
-      it 'returns RSS content', :aggregate_failures do
-        VCR.use_cassette('example_feed') do
-          header 'Accept', 'application/xml'
-          get '/api/v1/feeds/example'
+  describe 'GET /api/v1/feeds/{token}' do
+    context 'with invalid token' do
+      it 'returns 401 unauthorized', :aggregate_failures do
+        allow(Html2rss::Web::FeedToken).to receive(:validate_and_decode).and_return(nil)
 
-          expect(last_response.status).to eq(200)
-          expect(last_response.content_type).to include('application/xml')
-          expect(last_response.body).to include('<rss')
-        end
+        get '/api/v1/feeds/invalid-token'
+
+        expect(last_response.status).to eq(401)
+        expect(last_response.body).to include('Invalid token')
       end
     end
   end

@@ -31,9 +31,9 @@ Rack::Attack.throttle('api requests per IP', limit: 200, period: 60) do |req|
   end
 end
 
-# Rate limiting for feed generation (more restrictive)
-Rack::Attack.throttle('feed generation per IP', limit: 10, period: 60) do |req|
-  if req.path.include?('/feeds/')
+# Rate limiting for API feed generation (more restrictive)
+Rack::Attack.throttle('api feed generation per IP', limit: 10, period: 60) do |req|
+  if req.path.include?('/api/v1/feeds/') && req.params['token']
     Html2rss::Web::SecurityLogger.log_rate_limit_exceeded(req.ip, req.path, 10) if req.env['rack.attack.throttle_data']
     req.ip
   end

@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'zlib'
+require 'html2rss'
 require_relative '../../../app/auth'
 require_relative '../../../app/security_logger'
+require_relative '../../../app/feed_token'
 
 RSpec.describe Html2rss::Web::Auth do
   let(:test_config) do
@@ -122,9 +125,9 @@ RSpec.describe Html2rss::Web::Auth do
 
     it 'uses the default 10-year expiry', :aggregate_failures do
       token = described_class.generate_feed_token(username, url)
-      decoded = JSON.parse(Base64.urlsafe_decode64(token), symbolize_names: true)
+      decoded = Html2rss::Web::FeedToken.decode(token)
 
-      expires_at = decoded[:payload][:expires_at]
+      expires_at = decoded.expires_at
       current_time = Time.now.to_i
       expected_expiry = current_time + 315_360_000 # 10 years
 
@@ -135,9 +138,9 @@ RSpec.describe Html2rss::Web::Auth do
     it 'uses custom expiry when provided', :aggregate_failures do
       custom_expiry = 3600 # 1 hour
       token = described_class.generate_feed_token(username, url, expires_in: custom_expiry)
-      decoded = JSON.parse(Base64.urlsafe_decode64(token), symbolize_names: true)
+      decoded = Html2rss::Web::FeedToken.decode(token)
 
-      expires_at = decoded[:payload][:expires_at]
+      expires_at = decoded.expires_at
       current_time = Time.now.to_i
       expected_expiry = current_time + custom_expiry
 
@@ -153,17 +156,12 @@ RSpec.describe Html2rss::Web::Auth do
 
     it 'includes correct payload structure', :aggregate_failures do
       token = described_class.generate_feed_token(username, url)
-      decoded = JSON.parse(Base64.urlsafe_decode64(token), symbolize_names: true)
+      decoded = Html2rss::Web::FeedToken.decode(token)
 
-      expect(decoded).to have_key(:payload)
-      expect(decoded).to have_key(:signature)
-
-      payload = decoded[:payload]
-      expect(payload).to include(
-        username: username,
-        url: url
-      )
-      expect(payload).to have_key(:expires_at)
+      expect(decoded.username).to eq(username)
+      expect(decoded.url).to eq(url)
+      expect(decoded.expires_at).to be_a(Integer)
+      expect(decoded.signature).to be_a(String)
     end
   end
 
@@ -208,9 +206,13 @@ RSpec.describe Html2rss::Web::Auth do
 
     it 'returns nil for tampered token' do
       # Create a token and modify its payload
-      token_data = JSON.parse(Base64.urlsafe_decode64(valid_token), symbolize_names: true)
-      token_data[:payload][:username] = 'hacker'
-      tampered_token = Base64.urlsafe_encode64(token_data.to_json)
+      token_data = Html2rss::Web::FeedToken.decode(valid_token)
+      tampered_token = Html2rss::Web::FeedToken.create(
+        username: 'hacker',
+        url: token_data.url,
+        expires_at: token_data.expires_at,
+        signature: token_data.signature
+      ).encode
 
       account = described_class.validate_feed_token(tampered_token, url)
       expect(account).to be_nil
@@ -232,26 +234,6 @@ RSpec.describe Html2rss::Web::Auth do
       invalid_json_token = Base64.urlsafe_encode64('invalid-json')
       account = described_class.validate_feed_token(invalid_json_token, url)
       expect(account).to be_nil
-    end
-  end
-
-  describe '.extract_feed_token_from_url' do
-    it 'extracts token from URL with token parameter' do
-      url = 'https://example.com/feeds/123?token=abc123&url=https://source.com'
-      token = described_class.extract_feed_token_from_url(url)
-      expect(token).to eq('abc123')
-    end
-
-    it 'returns nil when no token parameter' do
-      url = 'https://example.com/feeds/123?url=https://source.com'
-      token = described_class.extract_feed_token_from_url(url)
-      expect(token).to be_nil
-    end
-
-    it 'handles URLs without query parameters' do
-      url = 'https://example.com/feeds/123'
-      token = described_class.extract_feed_token_from_url(url)
-      expect(token).to be_nil
     end
   end
 
@@ -358,34 +340,36 @@ RSpec.describe Html2rss::Web::Auth do
   end
 
   describe '.secure_compare' do
+    let(:test_token) { Html2rss::Web::FeedToken.create(username: 'test', url: 'https://example.com', expires_at: Time.now.to_i + 3600, signature: 'test') }
+
     it 'compares equal strings correctly', :aggregate_failures do
-      expect(described_class.secure_compare('test', 'test')).to be true
-      expect(described_class.secure_compare('', '')).to be true
-      expect(described_class.secure_compare('a', 'a')).to be true
+      expect(test_token.send(:secure_compare, 'test', 'test')).to be true
+      expect(test_token.send(:secure_compare, '', '')).to be true
+      expect(test_token.send(:secure_compare, 'a', 'a')).to be true
     end
 
     it 'compares different strings correctly', :aggregate_failures do
-      expect(described_class.secure_compare('test', 'different')).to be false
-      expect(described_class.secure_compare('test', 'tes')).to be false
-      expect(described_class.secure_compare('tes', 'test')).to be false
-      expect(described_class.secure_compare('test', '')).to be false
-      expect(described_class.secure_compare('', 'test')).to be false
+      expect(test_token.send(:secure_compare, 'test', 'different')).to be false
+      expect(test_token.send(:secure_compare, 'test', 'tes')).to be false
+      expect(test_token.send(:secure_compare, 'tes', 'test')).to be false
+      expect(test_token.send(:secure_compare, 'test', '')).to be false
+      expect(test_token.send(:secure_compare, '', 'test')).to be false
     end
 
     it 'handles nil inputs', :aggregate_failures do
-      expect(described_class.secure_compare(nil, 'test')).to be false
-      expect(described_class.secure_compare('test', nil)).to be false
-      expect(described_class.secure_compare(nil, nil)).to be false
+      expect(test_token.send(:secure_compare, nil, 'test')).to be false
+      expect(test_token.send(:secure_compare, 'test', nil)).to be false
+      expect(test_token.send(:secure_compare, nil, nil)).to be false
     end
 
     it 'prevents timing attacks with different length strings' do
       # This test ensures that the method doesn't short-circuit on length differences
       start_time = Time.now
-      described_class.secure_compare('a', 'ab')
+      test_token.send(:secure_compare, 'a', 'ab')
       short_time = Time.now - start_time
 
       start_time = Time.now
-      described_class.secure_compare('a', 'a')
+      test_token.send(:secure_compare, 'a', 'a')
       equal_time = Time.now - start_time
 
       # Both should take similar time (within 1ms tolerance for test environment)
@@ -460,9 +444,9 @@ RSpec.describe Html2rss::Web::Auth do
     it 'rejects malformed feed tokens' do
       malformed_tokens = [
         'not-base64',
-        Base64.urlsafe_encode64('invalid-json'),
-        Base64.urlsafe_encode64('{"invalid": "structure"}'),
-        Base64.urlsafe_encode64('{"payload": {}, "signature": ""}'),
+        Base64.urlsafe_encode64(Zlib::Deflate.deflate('invalid-json')),
+        Base64.urlsafe_encode64(Zlib::Deflate.deflate('{"invalid": "structure"}')),
+        Base64.urlsafe_encode64(Zlib::Deflate.deflate('{"p": {}, "s": ""}')),
         ''
       ]
 

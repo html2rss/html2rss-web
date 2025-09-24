@@ -28,27 +28,32 @@ describe('useFeedConversion', () => {
 
     (global.fetch as any).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve(mockResult),
+      json: () =>
+        Promise.resolve({
+          success: true,
+          data: {
+            feed: mockResult,
+          },
+        }),
     });
 
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'Test Feed', 'ssrf_filter', 'testtoken');
+      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
     });
 
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toEqual(mockResult);
     expect(result.current.error).toBeNull();
-    expect(global.fetch).toHaveBeenCalledWith('/auto_source/create', {
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/feeds', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
         Authorization: 'Bearer testtoken',
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
         url: 'https://example.com',
-        name: 'Test Feed',
         strategy: 'ssrf_filter',
       }),
     });
@@ -58,18 +63,23 @@ describe('useFeedConversion', () => {
     (global.fetch as any).mockResolvedValueOnce({
       ok: false,
       status: 400,
-      text: () => Promise.resolve('Bad Request'),
+      json: () =>
+        Promise.resolve({
+          error: {
+            message: 'Bad Request',
+          },
+        }),
     });
 
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'Test Feed', 'ssrf_filter', 'testtoken');
+      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
     });
 
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toBeNull();
-    expect(result.current.error).toBe('API call failed: 400 - Bad Request');
+    expect(result.current.error).toBe('Bad Request');
   });
 
   it('should handle network error', async () => {
@@ -78,7 +88,7 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'Test Feed', 'ssrf_filter', 'testtoken');
+      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
     });
 
     expect(result.current.isConverting).toBe(false);
@@ -91,7 +101,7 @@ describe('useFeedConversion', () => {
 
     // Set some state first
     act(() => {
-      result.current.convertFeed('https://example.com', 'Test Feed', 'ssrf_filter', 'testtoken');
+      result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
     });
 
     act(() => {
@@ -109,7 +119,7 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     act(() => {
-      result.current.convertFeed('https://example.com', 'Test Feed', 'ssrf_filter', 'testtoken');
+      result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
     });
 
     expect(result.current.isConverting).toBe(true);

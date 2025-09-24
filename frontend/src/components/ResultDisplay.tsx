@@ -25,7 +25,7 @@ export function ResultDisplay({ result, onClose }: ResultDisplayProps) {
     : `${window.location.origin}${result.public_url}`;
   const feedProtocolUrl = `feed:${fullUrl}`;
 
-  // Load raw XML when switching to raw view
+  // Load raw XML
   useEffect(() => {
     if (showRawXml && !xmlContent) {
       loadRawXml();
@@ -53,7 +53,7 @@ export function ResultDisplay({ result, onClose }: ResultDisplayProps) {
     }
   };
 
-  // Scroll to result when component mounts
+  // Scroll to result
   useEffect(() => {
     const resultElement = document.getElementById('result-display');
     if (resultElement) {

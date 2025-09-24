@@ -1,7 +1,7 @@
 auth:
   accounts:
-    - username: "allow-every-url"
-      token: "allow-any-urls-abcd"
+    - username: "admin"
+      token: "allow-any-urls-abcd-4321"
       allowed_urls:
         - "*" # Full access
     - username: "demo"

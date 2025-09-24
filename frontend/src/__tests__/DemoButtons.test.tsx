@@ -25,10 +25,7 @@ describe('DemoButtons', () => {
     fireEvent.click(chipButton);
 
     await waitFor(() => {
-      expect(mockOnConvert).toHaveBeenCalledWith(
-        'https://www.chip.de/testberichte',
-        'Demo: Hardware Reviews'
-      );
+      expect(mockOnConvert).toHaveBeenCalledWith('https://www.chip.de/testberichte');
     });
   });
 
@@ -39,7 +36,7 @@ describe('DemoButtons', () => {
     fireEvent.click(hnButton);
 
     await waitFor(() => {
-      expect(mockOnConvert).toHaveBeenCalledWith('https://news.ycombinator.com', 'Demo: Hacker News');
+      expect(mockOnConvert).toHaveBeenCalledWith('https://news.ycombinator.com');
     });
   });
 
@@ -50,7 +47,7 @@ describe('DemoButtons', () => {
     fireEvent.click(githubButton);
 
     await waitFor(() => {
-      expect(mockOnConvert).toHaveBeenCalledWith('https://github.com/trending', 'Demo: GitHub Trending');
+      expect(mockOnConvert).toHaveBeenCalledWith('https://github.com/trending');
     });
   });
 
