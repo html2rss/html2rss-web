@@ -13,7 +13,6 @@ export default defineConfig({
       proxy: {
         "/api": "http://localhost:3000",
         "/feeds": "http://localhost:3000",
-        "/health_check.txt": "http://localhost:3000",
         "/rss.xsl": "http://localhost:3000",
       },
     },

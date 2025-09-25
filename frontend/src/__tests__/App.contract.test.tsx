@@ -9,8 +9,8 @@ describe('App contract', () => {
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.localStorage.setItem('html2rss_username', username);
-    window.localStorage.setItem('html2rss_token', token);
+    window.sessionStorage.setItem('html2rss_username', username);
+    window.sessionStorage.setItem('html2rss_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {

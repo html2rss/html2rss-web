@@ -29,19 +29,6 @@ module Html2rss
 
       # @return [Array<Hash>]
       def accounts
-        load_accounts
-      end
-
-      # @param username [String]
-      # @return [Hash, nil]
-      def get_account_by_username(username)
-        return nil unless username
-
-        accounts.find { |account| account[:username] == username }
-      end
-
-      # @return [Array<Hash>]
-      def load_accounts
         auth_config = LocalConfig.global[:auth]
         return [] unless auth_config&.dig(:accounts)
 
@@ -52,6 +39,14 @@ module Html2rss
             allowed_urls: Array(account[:allowed_urls]).map(&:to_s)
           }
         end
+      end
+
+      # @param username [String]
+      # @return [Hash, nil]
+      def get_account_by_username(username)
+        return nil unless username
+
+        accounts.find { |account| account[:username] == username }
       end
     end
   end

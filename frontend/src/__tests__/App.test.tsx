@@ -108,5 +108,4 @@ describe('App', () => {
     expect(screen.getByText('❌ Error')).toBeInTheDocument();
     expect(screen.getByText('Access Denied')).toBeInTheDocument();
   });
-
 });

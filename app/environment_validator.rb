@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'security_logger'
-require_relative 'auth'
+require_relative 'account_manager'
 
 module Html2rss
   module Web
@@ -73,7 +73,7 @@ module Html2rss
       end
 
       def validate_account_configuration!
-        accounts = Auth.accounts
+        accounts = AccountManager.accounts
         weak_tokens = accounts.select { |acc| acc[:token].length < 16 }
         return unless weak_tokens.any?
 

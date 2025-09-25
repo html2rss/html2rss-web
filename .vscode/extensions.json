@@ -2,7 +2,6 @@
   "recommendations": [
     "redhat.vscode-yaml",
     "esbenp.prettier-vscode",
-    "github.copilot",
     "shopify.ruby-lsp"
   ]
 }

@@ -10,7 +10,6 @@ require_relative 'app/environment_validator'
 require_relative 'app/auth'
 require_relative 'app/auto_source'
 require_relative 'app/feeds'
-require_relative 'app/health_check'
 require_relative 'app/local_config'
 require_relative 'app/exceptions'
 require_relative 'app/xml_builder'
@@ -120,21 +119,12 @@ module Html2rss
           r.response['Content-Type'] = 'application/json'
 
           r.on 'health' do
-            r.get 'ready' do
-              JSON.generate(Api::V1::Health.ready(r))
-            end
-            r.get 'live' do
-              JSON.generate(Api::V1::Health.live(r))
-            end
             r.get do
               JSON.generate(Api::V1::Health.show(r))
             end
           end
 
           r.on 'strategies' do
-            r.get String do |strategy_id|
-              JSON.generate(Api::V1::Strategies.show(r, strategy_id))
-            end
             r.get do
               JSON.generate(Api::V1::Strategies.index(r))
             end
@@ -147,9 +137,6 @@ module Html2rss
             end
             r.post do
               JSON.generate(Api::V1::Feeds.create(r))
-            end
-            r.get do
-              JSON.generate(Api::V1::Feeds.index(r))
             end
           end
 
@@ -166,21 +153,17 @@ module Html2rss
 
           r.get do
             JSON.generate({ success: true,
-                            data: { api: { name: 'html2rss-web API', version: '1.0.0',
+                            data: { api: { name: 'html2rss-web API',
                                            description: 'RESTful API for converting websites to RSS feeds' } } })
           end
         end
 
-        # Backward compatibility: /{feed_name} (no auth required)
         r.get String do |feed_name|
-          # Skip static file requests
           next if feed_name.include?('.') && !feed_name.end_with?('.xml', '.rss')
 
           handle_feed_generation(r, feed_name)
         end
-        r.get 'health_check.txt' do
-          handle_health_check(r)
-        end
+
         r.root do
           index_path = 'public/frontend/index.html'
           response['Content-Type'] = 'text/html'
@@ -196,43 +179,6 @@ module Html2rss
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = "public, max-age=#{ttl}"
         rss_content
-      end
-
-      def handle_health_check(router)
-        router.response['Content-Type'] = 'text/plain'
-
-        verify_health_check_authorization!(router)
-        verify_health_status!
-
-        'success'
-      rescue UnauthorizedError => error
-        router.response.status = 401
-        error.message
-      rescue StandardError => error
-        router.response.status = 500
-
-        "health check error: #{error.message}"
-      end
-
-      def verify_health_check_authorization!(router)
-        health_account = HealthCheck.find_health_check_account
-        account = Auth.authenticate(router)
-
-        return if authorized_health_check_account?(account, health_account)
-
-        raise UnauthorizedError, 'health check requires bearer token'
-      end
-
-      def authorized_health_check_account?(account, health_account)
-        account && health_account &&
-          account[:username] == health_account[:username] &&
-          account[:token] == health_account[:token]
-      end
-
-      def verify_health_status!
-        return if HealthCheck.run == 'success'
-
-        raise 'unhealthy'
       end
 
       def fallback_html

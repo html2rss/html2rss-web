@@ -2,7 +2,6 @@
 
 require 'digest'
 require 'cgi'
-require 'html2rss/url'
 
 module Html2rss
   module Web
@@ -27,22 +26,6 @@ module Html2rss
         return '' unless text
 
         CGI.escapeHTML(text.to_s)
-      end
-
-      # @param url [String]
-      # @return [Boolean]
-      def valid_url?(url)
-        Html2rss::Url.for_channel(url)
-        true
-      rescue StandardError
-        false
-      end
-
-      # @param username [String]
-      # @return [Boolean]
-      def valid_username?(username)
-        require_relative 'feed_token'
-        FeedToken.valid_username?(username)
       end
     end
   end
