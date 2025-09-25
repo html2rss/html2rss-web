@@ -28,7 +28,7 @@ module Html2rss
     class App < Roda
       CONTENT_TYPE_RSS = 'application/xml'
 
-      def self.development? = ENV['RACK_ENV'] == 'development'
+      def self.development? = EnvironmentValidator.development?
       def development? = self.class.development?
 
       EnvironmentValidator.validate_environment!
@@ -116,7 +116,7 @@ module Html2rss
       route do |r|
         r.public
 
-        r.on 'api', 'v1' do
+        r.on 'api', 'v1' do # rubocop:disable Metrics/BlockLength
           r.response['Content-Type'] = 'application/json'
 
           r.on 'health' do
@@ -189,28 +189,6 @@ module Html2rss
         end
       end
 
-      def fallback_html
-        <<~HTML
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>html2rss-web</title>
-              <meta name="viewport" content="width=device-width,initial-scale=1">
-              <style>
-                body{font-family:system-ui,sans-serif;max-width:800px;margin:0 auto;padding:2rem;line-height:1.6}
-                h1{color:#111827}
-                code{background:#f3f4f6;padding:0.2rem 0.4rem;border-radius:0.25rem}
-              </style>
-            </head>
-            <body>
-              <h1>html2rss-web</h1>
-              <p>Convert websites to RSS feeds</p>
-              <p>API available at <code>/api/</code></p>
-            </body>
-          </html>
-        HTML
-      end
-
       private
 
       def handle_feed_generation(router, feed_name)
@@ -221,33 +199,35 @@ module Html2rss
         rss_content
       end
 
-      def generate_rss_response(router, url)
-        router.response['Content-Type'] = 'application/xml'
-        HttpCache.expires(router.response, 600, cache_control: 'public')
-
-        AutoSource.generate_feed_content(url, router.params['strategy'] || 'ssrf_filter').to_s
-      end
-
-      def error_response(router, status, message)
-        router.response.status = status
-        message
-      end
-
       def handle_health_check(router)
+        router.response['Content-Type'] = 'text/plain'
+
         health_response = Api::V1::Health.show(router)
-        if health_response[:success] && health_response.dig(:data, :health, :status) == 'healthy'
-          router.response['Content-Type'] = 'text/plain'
-          'success'
-        else
-          router.response.status = 500
-          router.response['Content-Type'] = 'text/plain'
-          'health check failed'
-        end
+
+        raise 'unhealthy' unless health_response[:success] && health_response.dig(:data, :health, :status) == 'healthy'
+
+        'success'
       rescue StandardError => error
         router.response.status = 500
 
-        router.response['Content-Type'] = 'text/plain'
         "health check error: #{error.message}"
+      end
+
+      def fallback_html
+        <<~HTML
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>html2rss-web</title>
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+            </head>
+            <body>
+              <h1>html2rss-web</h1>
+              <p>Convert websites to RSS feeds</p>
+              <p>API available at <code>/api/</code></p>
+            </body>
+          </html>
+        HTML
       end
     end
   end

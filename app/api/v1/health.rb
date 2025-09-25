@@ -14,26 +14,30 @@ module Html2rss
         module Health
           module_function
 
-          def show(request)
+          def show(request) # rubocop:disable Metrics/MethodLength
             health_check_account = HealthCheck.find_health_check_account
             account = Auth.authenticate(request)
 
             unless account && health_check_account && account[:token] == health_check_account[:token]
-              raise UnauthorizedError,
-                    'Health check authentication required'
+              raise UnauthorizedError, 'Health check authentication required'
             end
 
             health_result = HealthCheck.run
 
             raise InternalServerError, 'Health check failed' unless health_result == 'success'
 
-            { success: true, data: { health: {
-              status: 'healthy',
-              timestamp: Time.now.iso8601,
-              version: '1.0.0',
-              environment: ENV['RACK_ENV'] || 'development',
-              checks: {}
-            } } }
+            {
+              success: true,
+              data: {
+                health: {
+                  status: 'healthy',
+                  timestamp: Time.now.iso8601,
+                  version: '1.0.0',
+                  environment: ENV['RACK_ENV'] || 'development',
+                  checks: {}
+                }
+              }
+            }
           end
 
           def ready(_request)

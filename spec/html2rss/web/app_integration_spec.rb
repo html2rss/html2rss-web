@@ -36,7 +36,7 @@ RSpec.describe Html2rss::Web::App do
   end
 
   describe 'GET /api/v1/feeds/:token' do
-    it 'returns 401 for invalid token' do
+    it 'returns 401 for invalid token', :aggregate_failures do
       get '/api/v1/feeds/invalid-token'
 
       expect(last_response.status).to eq(401)

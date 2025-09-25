@@ -1,14 +1,15 @@
 # frozen_string_literal: true
 
 require 'uri'
-require 'digest'
 require 'openssl'
 require 'base64'
 require 'json'
-require 'cgi'
 require_relative 'local_config'
 require_relative 'security_logger'
 require_relative 'feed_token'
+require_relative 'url_validator'
+require_relative 'auth_utils'
+require_relative 'account_manager'
 
 module Html2rss
   ##
@@ -49,32 +50,14 @@ module Html2rss
       # @param token [String]
       # @return [Hash, nil]
       def get_account(token)
-        return nil unless token && token_index.key?(token)
-
-        token_index[token]
-      end
-
-      # @return [Hash] token to account mapping
-      def token_index
-        @token_index ||= build_token_index # rubocop:disable ThreadSafety/ClassInstanceVariable
-      end
-
-      # @return [Hash]
-      def build_token_index
-        accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }
+        AccountManager.get_account(token)
       end
 
       # @param account [Hash]
       # @param url [String]
       # @return [Boolean]
       def url_allowed?(account, url)
-        return false unless account && url
-
-        allowed_urls = account[:allowed_urls] || []
-        return true if allowed_urls.empty? # No restrictions
-        return true if allowed_urls.include?('*') # Full access
-
-        url_matches_patterns?(url, allowed_urls)
+        UrlValidator.url_allowed?(account, url)
       end
 
       # @param username [String]
@@ -82,8 +65,7 @@ module Html2rss
       # @param token [String]
       # @return [String] 16-character hex feed ID
       def generate_feed_id(username, url, token)
-        content = "#{username}:#{url}:#{token}"
-        Digest::SHA256.hexdigest(content)[0..15]
+        AuthUtils.generate_feed_id(username, url, token)
       end
 
       # @param username [String]
@@ -112,7 +94,7 @@ module Html2rss
 
         return nil unless valid
 
-        get_account_by_username(token.username)
+        AccountManager.get_account_by_username(token.username)
       end
 
       # @param feed_token [String]
@@ -139,29 +121,18 @@ module Html2rss
 
       # @return [Array<Hash>]
       def accounts
-        load_accounts
+        AccountManager.accounts
+      end
+
+      # @return [Array<Hash>]
+      def load_accounts
+        AccountManager.accounts
       end
 
       # @param username [String]
       # @return [Hash, nil]
       def get_account_by_username(username)
-        return nil unless username
-
-        accounts.find { |account| account[:username] == username }
-      end
-
-      # @return [Array<Hash>]
-      def load_accounts
-        auth_config = LocalConfig.global[:auth]
-        return [] unless auth_config&.dig(:accounts)
-
-        auth_config[:accounts].map do |account|
-          {
-            username: account[:username].to_s,
-            token: account[:token].to_s,
-            allowed_urls: Array(account[:allowed_urls]).map(&:to_s)
-          }
-        end
+        AccountManager.get_account_by_username(username)
       end
 
       # @return [String, nil]
@@ -173,43 +144,33 @@ module Html2rss
       # @param patterns [Array<String>]
       # @return [Boolean]
       def url_matches_patterns?(url, patterns)
-        patterns.any? { |pattern| url_matches_pattern?(url, pattern) }
-      rescue RegexpError
-        false
+        UrlValidator.url_matches_patterns?(url, patterns)
       end
 
       # @param url [String]
       # @param pattern [String]
       # @return [Boolean]
       def url_matches_pattern?(url, pattern)
-        if pattern.include?('*')
-          escaped_pattern = Regexp.escape(pattern).gsub('\\*', '.*')
-          url.match?(/\A#{escaped_pattern}\z/)
-        else
-          # Exact match for non-wildcard patterns
-          url == pattern
-        end
+        UrlValidator.url_matches_pattern?(url, pattern)
       end
 
       # Escapes XML special characters to prevent injection attacks
       # @param text [String]
       # @return [String]
       def sanitize_xml(text)
-        return '' unless text
-
-        CGI.escapeHTML(text.to_s)
+        AuthUtils.sanitize_xml(text)
       end
 
       # @param url [String]
       # @return [Boolean]
       def valid_url?(url)
-        FeedToken.valid_url?(url)
+        AuthUtils.valid_url?(url)
       end
 
       # @param username [String]
       # @return [Boolean]
       def valid_username?(username)
-        FeedToken.valid_username?(username)
+        AuthUtils.valid_username?(username)
       end
     end
   end

@@ -2,8 +2,7 @@
 
 require 'uri'
 require_relative 'auth'
-require_relative 'xml_builder'
-require_relative 'local_config'
+require_relative 'feed_generator'
 
 module Html2rss
   module Web
@@ -83,17 +82,15 @@ module Html2rss
 
       def generate_feed_content(url, strategy = 'ssrf_filter')
         feed_content = call_strategy(url, strategy)
+        FeedGenerator.process_feed_content(url, strategy, feed_content, site_title: extract_site_title(url))
+      end
 
-        # Handle empty feeds
-        if feed_content.respond_to?(:to_s)
-          feed_xml = feed_content.to_s
-          if feed_xml.include?('<item>') == false
-            # No items extracted
-            return create_empty_feed_warning(url, strategy)
-          end
-        end
+      def call_strategy(url, strategy)
+        FeedGenerator.call_strategy(url, strategy)
+      end
 
-        feed_content
+      def extract_site_title(url)
+        FeedGenerator.extract_site_title(url)
       end
 
       def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
@@ -110,52 +107,16 @@ module Html2rss
         }
       end
 
-      def create_empty_feed_warning(url, strategy)
-        site_title = extract_site_title(url)
-        XmlBuilder.build_empty_feed_warning(
-          url: url,
-          strategy: strategy,
-          site_title: site_title
-        )
-      end
-
-      def call_strategy(url, strategy) # rubocop:disable Metrics/MethodLength
-        return error_feed('URL parameter required') if url.nil? || url.empty?
-
-        global_config = LocalConfig.global
-
-        config = {
-          stylesheets: global_config[:stylesheets],
-          headers: global_config[:headers],
-          strategy: strategy.to_sym,
-          channel: {
-            url: url
-          },
-          auto_source: {
-            # Auto source configuration for automatic content detection
-            # Auto-detect content
-          }
-        }
-
-        Html2rss.feed(config)
-      end
-
-      def extract_site_title(url)
-        Html2rss::Url.for_channel(url).channel_titleized
-      rescue StandardError
-        nil
-      end
-
       def error_feed(message)
-        XmlBuilder.build_error_feed(message: message)
+        FeedGenerator.error_feed(message)
       end
 
       def access_denied_feed(url)
-        XmlBuilder.build_access_denied_feed(url)
+        FeedGenerator.access_denied_feed(url)
       end
 
       def development?
-        ENV.fetch('RACK_ENV', nil) == 'development'
+        EnvironmentValidator.development?
       end
     end
   end

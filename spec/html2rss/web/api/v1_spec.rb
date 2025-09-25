@@ -4,7 +4,7 @@ require 'spec_helper'
 require_relative '../../../../app'
 require_relative '../../../../app/feed_token'
 
-RSpec.describe Html2rss::Web::App do
+RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   include Rack::Test::Methods
 
   def app = described_class

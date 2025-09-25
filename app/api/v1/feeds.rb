@@ -15,7 +15,7 @@ module Html2rss
         module Feeds
           module_function
 
-          def index(_request)
+          def index(_request) # rubocop:disable Metrics/MethodLength
             feeds = Html2rss::Web::Feeds.list_feeds.map do |feed|
               {
                 id: feed[:name],
@@ -50,19 +50,24 @@ module Html2rss
             accept_header.include?('application/json') && !accept_header.include?('application/xml')
           end
 
-          def show_feed_metadata(feed_id)
+          def show_feed_metadata(feed_id) # rubocop:disable Metrics/MethodLength
             config = LocalConfig.find(feed_id)
             raise NotFoundError, 'Feed not found' unless config
 
-            { success: true, data: { feed: {
-              id: feed_id,
-              name: feed_id,
-              description: "RSS feed for #{feed_id}",
-              url: "/api/v1/feeds/#{feed_id}",
-              strategy: config[:strategy] || 'ssrf_filter',
-              created_at: nil,
-              updated_at: nil
-            } } }
+            {
+              success: true,
+              data: {
+                feed: {
+                  id: feed_id,
+                  name: feed_id,
+                  description: "RSS feed for #{feed_id}",
+                  url: "/api/v1/feeds/#{feed_id}",
+                  strategy: config[:strategy] || 'ssrf_filter',
+                  created_at: nil,
+                  updated_at: nil
+                }
+              }
+            }
           end
 
           def generate_feed_content(request, feed_id)
