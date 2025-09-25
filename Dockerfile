@@ -40,7 +40,8 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 ENV PORT=3000 \
   RACK_ENV=production \
-  RUBY_YJIT_ENABLE=1
+  RUBY_YJIT_ENABLE=1 \
+  HEALTH_CHECK_TOKEN=health-check-token-xyz789
 
 EXPOSE $PORT
 

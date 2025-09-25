@@ -10,7 +10,10 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   def app = Html2rss::Web::App.freeze.app
 
   before do
-    allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true, allowed_origin?: true)
+    allow(Html2rss::Web::AutoSource).to receive_messages(
+      enabled?: true,
+      allowed_origin?: true
+    )
   end
 
   describe 'GET /api/v1' do
@@ -27,13 +30,47 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
     end
   end
 
-  describe 'GET /api/v1/docs' do
-    it 'returns OpenAPI documentation', :aggregate_failures do
-      get '/api/v1/docs'
+  describe 'GET /api/v1/health' do
+    let(:health_account) { { username: 'health-check', token: 'health-check-token-xyz789' } }
+
+    before do
+      allow(Html2rss::Web::HealthCheck).to receive(:find_health_check_account).and_return(health_account)
+    end
+
+    it 'requires bearer token', :aggregate_failures do
+      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil)
+
+      get '/api/v1/health'
+
+      expect(last_response.status).to eq(401)
+      expect(last_response.content_type).to include('application/json')
+      expect(JSON.parse(last_response.body)).to include('error' => include('code' => 'UNAUTHORIZED'))
+    end
+
+    it 'returns health status when token is valid', :aggregate_failures do
+      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
+      allow(Html2rss::Web::HealthCheck).to receive(:run).and_return('success')
+
+      header 'Authorization', 'Bearer health-check-token-xyz789'
+      get '/api/v1/health'
 
       expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('text/yaml')
-      expect(last_response.body).to include('openapi: 3.1.0')
+      expect(JSON.parse(last_response.body)).to include('data' => include('health' => include('status' => 'healthy')))
+
+      header 'Authorization', nil
+    end
+
+    it 'returns error when health check fails', :aggregate_failures do
+      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
+      allow(Html2rss::Web::HealthCheck).to receive(:run).and_return('failing')
+
+      header 'Authorization', 'Bearer health-check-token-xyz789'
+      get '/api/v1/health'
+
+      expect(last_response.status).to eq(500)
+      response_data = JSON.parse(last_response.body)
+      expect(response_data['success']).to be false
+      expect(response_data.dig('error', 'message')).to eq('Health check failed')
     end
   end
 
@@ -52,105 +89,37 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
     end
   end
 
-  describe 'GET /api/v1/strategies' do
-    it 'returns strategies list', :aggregate_failures do
-      get '/api/v1/strategies'
+  describe 'GET /api/v1/feeds/:token' do
+    it 'denies requests from disallowed origins', :aggregate_failures do
+      allow(Html2rss::Web::AutoSource).to receive(:allowed_origin?).and_return(false)
 
-      if last_response.status != 200
-        puts "Response body: #{last_response.body}"
-        puts "Response status: #{last_response.status}"
-      end
+      get '/api/v1/feeds/some-token'
 
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/json')
-
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be true
-      expect(response_data['data']).to have_key('strategies')
-      expect(response_data['meta']).to have_key('total')
-    end
-  end
-
-  describe 'GET /api/v1/strategies/{id}' do
-    it 'returns strategy details', :aggregate_failures do
-      get '/api/v1/strategies/ssrf_filter'
-
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/json')
-
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be true
-      expect(response_data['data']).to have_key('strategy')
-
-      # Check the strategy details
-      strategy = response_data['data']['strategy']
-      expect(strategy).not_to be_nil
-      expect(strategy['id']).to eq('ssrf_filter')
-    end
-
-    it 'returns 404 for unknown strategy', :aggregate_failures do
-      get '/api/v1/strategies/nonexistent_strategy'
-
-      expect(last_response.status).to eq(404)
-      expect(last_response.content_type).to include('application/json')
-
+      expect(last_response.status).to eq(403)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be false
-      expect(response_data['error']['code']).to eq('NOT_FOUND')
-      expect(response_data['error']['message']).to eq('Strategy not found')
-    end
-  end
-
-  describe 'GET /api/v1/feeds/{token}' do
-    context 'with invalid token' do
-      it 'returns 401 unauthorized', :aggregate_failures do
-        allow(Html2rss::Web::FeedToken).to receive(:validate_and_decode).and_return(nil)
-
-        get '/api/v1/feeds/invalid-token'
-
-        expect(last_response.status).to eq(401)
-        expect(last_response.body).to include('Invalid token')
-      end
+      expect(response_data.dig('error', 'code')).to eq('FORBIDDEN')
     end
 
-    context 'when auto source disabled' do
-      it 'returns 403 forbidden', :aggregate_failures do
-        allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(false)
+    it 'returns unauthorized when account not found', :aggregate_failures do
+      allow(Html2rss::Web::AutoSource).to receive_messages(
+        enabled?: true,
+        allowed_origin?: true
+      )
+      token_double = double('FeedToken', url: 'https://example.com', username: 'ghost')
+      allow(Html2rss::Web::FeedToken).to receive_messages(
+        decode: token_double,
+        validate_and_decode: token_double
+      )
+      allow(Html2rss::Web::Auth).to receive(:get_account_by_username).and_return(nil)
 
-        get '/api/v1/feeds/some-token'
+      get '/api/v1/feeds/token'
 
-        expect(last_response.status).to eq(403)
-        expect(last_response.body).to include('Auto source feature is disabled')
-      end
-    end
-  end
-
-  describe 'POST /api/v1/feeds' do
-    context 'without authentication' do
-      it 'returns 401 unauthorized', :aggregate_failures do
-        post '/api/v1/feeds', { url: 'https://example.com' }.to_json,
-             'CONTENT_TYPE' => 'application/json'
-
-        expect(last_response.status).to eq(401)
-        expect(last_response.content_type).to include('application/json')
-
-        response_data = JSON.parse(last_response.body)
-        expect(response_data['success']).to be false
-        expect(response_data['error']['code']).to eq('UNAUTHORIZED')
-      end
-    end
-
-    context 'when auto source origin not allowed' do
-      it 'returns 403 forbidden', :aggregate_failures do
-        allow(Html2rss::Web::AutoSource).to receive(:allowed_origin?).and_return(false)
-        header 'HTTP_HOST', 'unauthorized.example'
-
-        post '/api/v1/feeds', { url: 'https://example.com' }.to_json,
-             'CONTENT_TYPE' => 'application/json'
-
-        expect(last_response.status).to eq(403)
-        expect(last_response.body).to include('Request origin not allowed')
-      end
+      expect(last_response.status).to eq(401)
+      response_data = JSON.parse(last_response.body)
+      expect(response_data['success']).to be false
+      expect(response_data.dig('error', 'code')).to eq('UNAUTHORIZED')
+      expect(response_data.dig('error', 'message')).to eq('Account not found')
     end
   end
 

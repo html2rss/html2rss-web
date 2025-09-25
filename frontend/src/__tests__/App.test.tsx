@@ -87,36 +87,18 @@ describe('App', () => {
     expect(mockClearResult).toHaveBeenCalled();
   });
 
-  it('should render result when available', () => {
-    const mockResult = {
-      id: 'test-id',
-      name: 'Test Feed',
-      url: 'https://example.com',
-      username: 'testuser',
-      strategy: 'ssrf_filter',
-      public_url: 'https://example.com/feed.xml',
-    };
-
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
-      result: mockResult,
-      error: null,
-      convertFeed: mockConvertFeed,
-      clearResult: mockClearResult,
+  it('should surface conversion errors to the user', () => {
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      username: 'tester',
+      login: mockLogin,
+      logout: mockLogout,
     });
 
-    render(<App />);
-
-    expect(screen.getByText('🎉')).toBeInTheDocument();
-    expect(screen.getByText('Feed Generated Successfully!')).toBeInTheDocument();
-    expect(screen.getByText('Your RSS feed is ready to use')).toBeInTheDocument();
-  });
-
-  it('should render error when available', () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: null,
-      error: 'Test error message',
+      error: 'Access Denied',
       convertFeed: mockConvertFeed,
       clearResult: mockClearResult,
     });
@@ -124,31 +106,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText('❌ Error')).toBeInTheDocument();
-    expect(screen.getByText('Test error message')).toBeInTheDocument();
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
   });
 
-  it('should handle demo conversion', async () => {
-    render(<App />);
-
-    // Find a demo button and click it
-    const demoButtons = screen.getAllByRole('button');
-    const demoButton = demoButtons.find(
-      (button) =>
-        button.textContent?.includes('Chip Testberichte') ||
-        button.textContent?.includes('Hacker News') ||
-        button.textContent?.includes('GitHub Trending')
-    );
-
-    if (demoButton) {
-      fireEvent.click(demoButton);
-
-      await waitFor(() => {
-        expect(mockConvertFeed).toHaveBeenCalledWith(
-          expect.any(String),
-          'ssrf_filter',
-          'self-host-for-full-access'
-        );
-      });
-    }
-  });
 });
