@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
+require 'time'
+
 require_relative '../../auth'
 require_relative '../../auto_source'
 require_relative '../../feeds'
-require_relative '../../xml_builder'
 require_relative '../../exceptions'
 require_relative '../../feed_token'
 
@@ -21,7 +22,7 @@ module Html2rss
                 id: feed[:name],
                 name: feed[:name],
                 description: feed[:description],
-                url: "/api/v1/feeds/#{feed[:name]}",
+                public_url: "/#{feed[:name]}",
                 created_at: nil,
                 updated_at: nil
               }
@@ -35,6 +36,9 @@ module Html2rss
           end
 
           def create(request)
+            raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
+            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
+
             account = authenticate_request(request)
             params = extract_create_params(request)
             validate_create_params(params, account)
@@ -45,43 +49,10 @@ module Html2rss
             build_create_response(request, feed_data)
           end
 
-          def json_request?(request)
-            accept_header = request.env['HTTP_ACCEPT'].to_s
-            accept_header.include?('application/json') && !accept_header.include?('application/xml')
-          end
-
-          def show_feed_metadata(feed_id) # rubocop:disable Metrics/MethodLength
-            config = LocalConfig.find(feed_id)
-            raise NotFoundError, 'Feed not found' unless config
-
-            {
-              success: true,
-              data: {
-                feed: {
-                  id: feed_id,
-                  name: feed_id,
-                  description: "RSS feed for #{feed_id}",
-                  url: "/api/v1/feeds/#{feed_id}",
-                  strategy: config[:strategy] || 'ssrf_filter',
-                  created_at: nil,
-                  updated_at: nil
-                }
-              }
-            }
-          end
-
-          def generate_feed_content(request, feed_id)
-            rss_content = Html2rss::Web::Feeds.generate_feed(feed_id, request.params)
-            config = LocalConfig.find(feed_id)
-            ttl = config&.dig(:channel, :ttl) || 3600
-
-            request.response['Content-Type'] = 'application/xml'
-            request.response['Cache-Control'] = "public, max-age=#{ttl}"
-
-            rss_content.to_s
-          end
-
           def handle_token_based_feed(request, token)
+            raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
+            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
+
             feed_token = validate_feed_token(token)
             account = get_account_for_token(feed_token)
             validate_account_access(account, feed_token.url)

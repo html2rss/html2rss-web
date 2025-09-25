@@ -3,6 +3,7 @@
 require 'logger'
 require 'json'
 require 'digest'
+require 'time'
 
 module Html2rss
   module Web
@@ -45,7 +46,7 @@ module Html2rss
                     ip: ip,
                     user_agent: user_agent,
                     reason: reason
-                  })
+                  }, severity: :warn)
       end
 
       ##
@@ -56,7 +57,7 @@ module Html2rss
         log_event('auth_success', {
                     username: username,
                     ip: ip
-                  })
+                  }, severity: :info)
       end
 
       ##
@@ -69,7 +70,7 @@ module Html2rss
                     ip: ip,
                     endpoint: endpoint,
                     limit: limit
-                  })
+                  }, severity: :warn)
       end
 
       ##
@@ -78,11 +79,13 @@ module Html2rss
       # @param url [String] URL being accessed
       # @param success [Boolean] whether the token was valid
       def log_token_usage(feed_token, url, success)
+        severity = success ? :info : :warn
+
         log_event('token_usage', {
                     success: success,
                     url: url,
                     token_hash: Digest::SHA256.hexdigest(feed_token)[0..7]
-                  })
+                  }, severity: severity)
       end
 
       ##
@@ -95,7 +98,7 @@ module Html2rss
                     ip: ip,
                     activity: activity,
                     **details
-                  })
+                  }, severity: :warn)
       end
 
       ##
@@ -108,7 +111,7 @@ module Html2rss
                     ip: ip,
                     reason: reason,
                     endpoint: endpoint
-                  })
+                  }, severity: :warn)
       end
 
       ##
@@ -119,18 +122,20 @@ module Html2rss
         log_event('config_validation_failure', {
                     component: component,
                     details: details
-                  })
+                  }, severity: :error)
       end
 
       ##
       # Log a security event
       # @param event_type [String] type of security event
       # @param data [Hash] event data
-      def log_event(event_type, data)
-        logger.warn({
+      def log_event(event_type, data, severity: :warn)
+        payload = {
           security_event: event_type,
           **data
-        }.to_json)
+        }.to_json
+
+        logger.public_send(severity, payload)
       rescue StandardError => error
         handle_logging_error(error, event_type, data)
       end
@@ -141,11 +146,8 @@ module Html2rss
       # @param event_type [String] type of security event
       # @param data [Hash] event data
       def handle_logging_error(error, event_type, data)
-        logger.error("Security logging error: #{error.message}")
-        logger.warn("Security event: #{event_type} - #{data}")
-      rescue StandardError
-        # If even the fallback fails, just print to stderr
-        warn("Security logging failed: #{error.message}")
+        Kernel.warn("Security logging error: #{error.message}")
+        Kernel.warn("Security event: #{event_type} - #{data}")
       end
     end
   end

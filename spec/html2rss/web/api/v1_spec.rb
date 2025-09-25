@@ -7,7 +7,11 @@ require_relative '../../../../app/feed_token'
 RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   include Rack::Test::Methods
 
-  def app = described_class
+  def app = Html2rss::Web::App.freeze.app
+
+  before do
+    allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true, allowed_origin?: true)
+  end
 
   describe 'GET /api/v1' do
     it 'returns API information', :aggregate_failures do
@@ -43,6 +47,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
       expect(response_data['data']).to have_key('feeds')
+      expect(response_data['data']['feeds'].first).to have_key('public_url')
       expect(response_data['meta']).to have_key('total')
     end
   end
@@ -107,6 +112,17 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
         expect(last_response.body).to include('Invalid token')
       end
     end
+
+    context 'when auto source disabled' do
+      it 'returns 403 forbidden', :aggregate_failures do
+        allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(false)
+
+        get '/api/v1/feeds/some-token'
+
+        expect(last_response.status).to eq(403)
+        expect(last_response.body).to include('Auto source feature is disabled')
+      end
+    end
   end
 
   describe 'POST /api/v1/feeds' do
@@ -121,6 +137,19 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
         response_data = JSON.parse(last_response.body)
         expect(response_data['success']).to be false
         expect(response_data['error']['code']).to eq('UNAUTHORIZED')
+      end
+    end
+
+    context 'when auto source origin not allowed' do
+      it 'returns 403 forbidden', :aggregate_failures do
+        allow(Html2rss::Web::AutoSource).to receive(:allowed_origin?).and_return(false)
+        header 'HTTP_HOST', 'unauthorized.example'
+
+        post '/api/v1/feeds', { url: 'https://example.com' }.to_json,
+             'CONTENT_TYPE' => 'application/json'
+
+        expect(last_response.status).to eq(403)
+        expect(last_response.body).to include('Request origin not allowed')
       end
     end
   end

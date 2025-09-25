@@ -44,7 +44,7 @@ module Html2rss
         else
           origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', '')
         end
-        origins.split(',').map(&:strip)
+        origins.split(',').map(&:strip).reject(&:empty?)
       end
 
       # @param token_data [Hash]

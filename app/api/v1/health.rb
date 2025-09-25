@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'time'
+
 require_relative '../../auth'
 require_relative '../../health_check'
 require_relative '../../exceptions'
