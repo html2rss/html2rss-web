@@ -27,7 +27,6 @@ module Html2rss
 
           def create(request)
             raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
-            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
 
             account = authenticate_request(request)
             params = extract_create_params(request)
@@ -41,7 +40,6 @@ module Html2rss
 
           def handle_token_based_feed(request, token)
             raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
-            raise ForbiddenError, 'Request origin not allowed' unless AutoSource.allowed_origin?(request)
 
             feed_token = validate_feed_token(token)
             account = get_account_for_token(feed_token)
@@ -76,7 +74,7 @@ module Html2rss
           end
 
           def generate_feed_response(request, url)
-            strategy = request.params['strategy'] || 'ssrf_filter'
+            strategy = select_strategy(request.params['strategy'])
             rss_content = AutoSource.generate_feed_content(url, strategy)
 
             request.response['Content-Type'] = 'application/xml'
@@ -96,10 +94,11 @@ module Html2rss
 
           def extract_create_params(request)
             url = request.params['url']
+            strategy = select_strategy(request.params['strategy'])
             {
               url: url,
               name: request.params['name'] || extract_site_title(url),
-              strategy: request.params['strategy'] || 'ssrf_filter'
+              strategy: strategy
             }
           end
 
@@ -111,19 +110,49 @@ module Html2rss
 
           def build_create_response(request, feed_data)
             request.response['Content-Type'] = 'application/json'
-            { success: true, data: { feed: {
-              id: feed_data[:id],
-              name: feed_data[:name],
-              url: feed_data[:url],
-              strategy: feed_data[:strategy],
-              public_url: feed_data[:public_url],
-              created_at: Time.now.iso8601,
-              updated_at: Time.now.iso8601
-            } }, meta: { created: true } }
+            request.response.status = 201
+            feed_response_payload(feed_data)
           end
-          module_function :extract_create_params, :validate_create_params, :build_create_response, :authenticate_request
+
+          def select_strategy(raw_strategy)
+            strategy = raw_strategy.to_s.strip
+            strategy = default_strategy if strategy.empty?
+
+            raise BadRequestError, 'Unsupported strategy' unless supported_strategies.include?(strategy)
+
+            strategy
+          end
+
+          def supported_strategies
+            Html2rss::RequestService.strategy_names.map(&:to_s)
+          end
+
+          def default_strategy
+            Html2rss::RequestService.default_strategy_name.to_s
+          end
+
+          def feed_response_payload(feed_data)
+            {
+              success: true,
+              data: { feed: {
+                id: feed_data[:id],
+                name: feed_data[:name],
+                url: feed_data[:url],
+                strategy: feed_data[:strategy],
+                public_url: feed_data[:public_url],
+                created_at: Time.now.iso8601,
+                updated_at: Time.now.iso8601
+              } },
+              meta: { created: true }
+            }
+          end
+
+          module_function :extract_create_params, :validate_create_params, :build_create_response,
+                          :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
+                          :feed_response_payload
           private_class_method :extract_create_params, :validate_create_params, :build_create_response,
-                               :authenticate_request
+                               :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
+                               :feed_response_payload
         end
       end
     end

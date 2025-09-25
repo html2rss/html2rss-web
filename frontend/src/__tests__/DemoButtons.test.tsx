@@ -28,5 +28,4 @@ describe('DemoButtons', () => {
       expect(mockOnConvert).toHaveBeenCalledWith('https://www.chip.de/testberichte');
     });
   });
-
 });

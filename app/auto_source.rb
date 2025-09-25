@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'uri'
 require_relative 'auth'
 require_relative 'feed_generator'
 
@@ -26,25 +25,6 @@ module Html2rss
       # @return [Hash, nil] account data if authenticated
       def authenticate_with_token(request)
         Auth.authenticate(request)
-      end
-
-      # @param request [Roda::Request]
-      # @return [Boolean]
-      def allowed_origin?(request)
-        origin = request.env['HTTP_HOST'] || request.env['HTTP_X_FORWARDED_HOST']
-        origins = allowed_origins
-        origins.empty? || origins.include?(origin)
-      end
-
-      # @return [Array<String>]
-      def allowed_origins
-        if development?
-          default_origins = 'localhost:3000,localhost:3001,127.0.0.1:3000,127.0.0.1:3001'
-          origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', default_origins)
-        else
-          origins = ENV.fetch('AUTO_SOURCE_ALLOWED_ORIGINS', '')
-        end
-        origins.split(',').map(&:strip).reject(&:empty?)
       end
 
       # @param token_data [Hash]

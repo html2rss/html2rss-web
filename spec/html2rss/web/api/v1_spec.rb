@@ -10,10 +10,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   def app = Html2rss::Web::App.freeze.app
 
   before do
-    allow(Html2rss::Web::AutoSource).to receive_messages(
-      enabled?: true,
-      allowed_origin?: true
-    )
+    allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
   end
 
   describe 'GET /api/v1' do
@@ -90,22 +87,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   end
 
   describe 'GET /api/v1/feeds/:token' do
-    it 'denies requests from disallowed origins', :aggregate_failures do
-      allow(Html2rss::Web::AutoSource).to receive(:allowed_origin?).and_return(false)
-
-      get '/api/v1/feeds/some-token'
-
-      expect(last_response.status).to eq(403)
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be false
-      expect(response_data.dig('error', 'code')).to eq('FORBIDDEN')
-    end
-
     it 'returns unauthorized when account not found', :aggregate_failures do
-      allow(Html2rss::Web::AutoSource).to receive_messages(
-        enabled?: true,
-        allowed_origin?: true
-      )
       token_double = double('FeedToken', url: 'https://example.com', username: 'ghost')
       allow(Html2rss::Web::FeedToken).to receive_messages(
         decode: token_double,
@@ -120,6 +102,23 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(response_data['success']).to be false
       expect(response_data.dig('error', 'code')).to eq('UNAUTHORIZED')
       expect(response_data.dig('error', 'message')).to eq('Account not found')
+    end
+
+    it 'returns bad request when strategy is unsupported', :aggregate_failures do
+      token_double = double('FeedToken', url: 'https://example.com', username: 'tester')
+      allow(Html2rss::Web::FeedToken).to receive_messages(
+        decode: token_double,
+        validate_and_decode: token_double
+      )
+      allow(Html2rss::Web::Auth).to receive_messages(get_account_by_username: { username: 'tester' },
+                                                     url_allowed?: true)
+
+      get '/api/v1/feeds/token', strategy: 'bad'
+
+      expect(last_response.status).to eq(400)
+      response_data = JSON.parse(last_response.body)
+      expect(response_data['success']).to be false
+      expect(response_data.dig('error', 'message')).to eq('Unsupported strategy')
     end
   end
 

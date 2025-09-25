@@ -9,15 +9,32 @@ type MockedStorage = Storage & {
   clear: ReturnType<typeof vi.fn>;
 };
 
-const localStorageMock = window.localStorage as MockedStorage;
+const createStorageMock = (): MockedStorage => {
+  return {
+    length: 0,
+    clear: vi.fn(),
+    getItem: vi.fn(),
+    key: vi.fn(),
+    removeItem: vi.fn(),
+    setItem: vi.fn(),
+  } as unknown as MockedStorage;
+};
+
+let sessionStorageMock: MockedStorage;
 
 describe('useAuth', () => {
   beforeEach(() => {
+    sessionStorageMock = createStorageMock();
+    Object.defineProperty(window, 'sessionStorage', {
+      value: sessionStorageMock,
+      configurable: true,
+      writable: true,
+    });
     vi.clearAllMocks();
   });
 
   it('should initialize with unauthenticated state', () => {
-    localStorageMock.getItem.mockReturnValue(null);
+    sessionStorageMock.getItem.mockReturnValue(null);
 
     const { result } = renderHook(() => useAuth());
 
@@ -26,8 +43,8 @@ describe('useAuth', () => {
     expect(result.current.token).toBeNull();
   });
 
-  it('should load auth state from localStorage on mount', () => {
-    localStorageMock.getItem
+  it('should load auth state from sessionStorage on mount', () => {
+    sessionStorageMock.getItem
       .mockReturnValueOnce('testuser') // username
       .mockReturnValueOnce('testtoken'); // token
 
@@ -36,12 +53,12 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.username).toBe('testuser');
     expect(result.current.token).toBe('testtoken');
-    expect(localStorageMock.getItem).toHaveBeenCalledWith('html2rss_username');
-    expect(localStorageMock.getItem).toHaveBeenCalledWith('html2rss_token');
+    expect(sessionStorageMock.getItem).toHaveBeenCalledWith('html2rss_username');
+    expect(sessionStorageMock.getItem).toHaveBeenCalledWith('html2rss_token');
   });
 
   it('should login and store credentials', async () => {
-    localStorageMock.getItem.mockReturnValue(null);
+    sessionStorageMock.getItem.mockReturnValue(null);
 
     const { result } = renderHook(() => useAuth());
 
@@ -52,12 +69,12 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.username).toBe('newuser');
     expect(result.current.token).toBe('newtoken');
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('html2rss_username', 'newuser');
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('html2rss_token', 'newtoken');
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('html2rss_username', 'newuser');
+    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('html2rss_token', 'newtoken');
   });
 
   it('should logout and clear credentials', () => {
-    localStorageMock.getItem.mockReturnValueOnce('testuser').mockReturnValueOnce('testtoken');
+    sessionStorageMock.getItem.mockReturnValueOnce('testuser').mockReturnValueOnce('testtoken');
 
     const { result } = renderHook(() => useAuth());
 
@@ -68,8 +85,7 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.username).toBeNull();
     expect(result.current.token).toBeNull();
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_username');
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_token');
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('html2rss_username');
+    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('html2rss_token');
   });
-
 });

@@ -18,31 +18,55 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Persistent localStorage stub with in-memory backing store
-const localStorageStore = new Map<string, string>();
-const localStorageMock = {
-  getItem: vi.fn((key: string) => (localStorageStore.has(key) ? localStorageStore.get(key)! : null)),
-  setItem: vi.fn((key: string, value: string) => {
-    localStorageStore.set(key, value);
-  }),
-  removeItem: vi.fn((key: string) => {
-    localStorageStore.delete(key);
-  }),
-  clear: vi.fn(() => {
-    localStorageStore.clear();
-  }),
+// Persistent storage stubs with in-memory backing store
+const createStorageMock = () => {
+  const store = new Map<string, string>();
+
+  return {
+    store,
+    api: {
+      get length() {
+        return store.size;
+      },
+      getItem: vi.fn((key: string) => (store.has(key) ? store.get(key)! : null)),
+      setItem: vi.fn((key: string, value: string) => {
+        store.set(key, value);
+      }),
+      removeItem: vi.fn((key: string) => {
+        store.delete(key);
+      }),
+      clear: vi.fn(() => {
+        store.clear();
+      }),
+      key: vi.fn((index: number) => Array.from(store.keys())[index] ?? null),
+    },
+  };
 };
 
+const local = createStorageMock();
+const session = createStorageMock();
+
 Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
+  value: local.api,
+});
+
+Object.defineProperty(window, 'sessionStorage', {
+  value: session.api,
 });
 
 beforeEach(() => {
-  localStorageStore.clear();
-  localStorageMock.getItem.mockClear();
-  localStorageMock.setItem.mockClear();
-  localStorageMock.removeItem.mockClear();
-  localStorageMock.clear.mockClear();
+  local.store.clear();
+  session.store.clear();
+  local.api.getItem.mockClear();
+  local.api.setItem.mockClear();
+  local.api.removeItem.mockClear();
+  local.api.clear.mockClear();
+  local.api.key.mockClear();
+  session.api.getItem.mockClear();
+  session.api.setItem.mockClear();
+  session.api.removeItem.mockClear();
+  session.api.clear.mockClear();
+  session.api.key.mockClear();
 });
 
 // Mock clipboard API
