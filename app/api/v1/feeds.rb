@@ -16,18 +16,8 @@ module Html2rss
         module Feeds
           module_function
 
-          def index(_request) # rubocop:disable Metrics/MethodLength
-            feeds = Html2rss::Web::Feeds.list_feeds.map do |feed|
-              {
-                id: feed[:name],
-                name: feed[:name],
-                description: feed[:description],
-                public_url: "/#{feed[:name]}",
-                created_at: nil,
-                updated_at: nil
-              }
-            end
-
+          def index(_request)
+            feeds = Html2rss::Web::Feeds.list_feeds
             { success: true, data: { feeds: feeds }, meta: { total: feeds.count } }
           end
 
@@ -131,6 +121,9 @@ module Html2rss
               updated_at: Time.now.iso8601
             } }, meta: { created: true } }
           end
+          module_function :extract_create_params, :validate_create_params, :build_create_response, :authenticate_request
+          private_class_method :extract_create_params, :validate_create_params, :build_create_response,
+                               :authenticate_request
         end
       end
     end

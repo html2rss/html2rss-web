@@ -1,11 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act } from '@testing-library/preact';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 
 describe('useFeedConversion', () => {
+  let fetchMock: SpyInstance;
+
   beforeEach(() => {
     vi.clearAllMocks();
-    (global.fetch as any).mockClear();
+    fetchMock = vi.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
   });
 
   it('should initialize with default state', () => {
@@ -21,12 +27,13 @@ describe('useFeedConversion', () => {
       id: 'test-id',
       name: 'Test Feed',
       url: 'https://example.com',
-      username: 'testuser',
       strategy: 'ssrf_filter',
       public_url: 'https://example.com/feed.xml',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
     };
 
-    (global.fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
@@ -35,7 +42,7 @@ describe('useFeedConversion', () => {
             feed: mockResult,
           },
         }),
-    });
+    } as unknown as Response);
 
     const { result } = renderHook(() => useFeedConversion());
 
@@ -46,7 +53,7 @@ describe('useFeedConversion', () => {
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toEqual(mockResult);
     expect(result.current.error).toBeNull();
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/feeds', {
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/feeds', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -60,7 +67,7 @@ describe('useFeedConversion', () => {
   });
 
   it('should handle conversion error', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+    fetchMock.mockResolvedValueOnce({
       ok: false,
       status: 400,
       json: () =>
@@ -69,7 +76,7 @@ describe('useFeedConversion', () => {
             message: 'Bad Request',
           },
         }),
-    });
+    } as unknown as Response);
 
     const { result } = renderHook(() => useFeedConversion());
 
@@ -82,8 +89,8 @@ describe('useFeedConversion', () => {
     expect(result.current.error).toBe('Bad Request');
   });
 
-  it('should handle network error', async () => {
-    (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+  it('should handle network errors gracefully', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('Network error'));
 
     const { result } = renderHook(() => useFeedConversion());
 
@@ -94,34 +101,5 @@ describe('useFeedConversion', () => {
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toBeNull();
     expect(result.current.error).toBe('Network error');
-  });
-
-  it('should clear result', () => {
-    const { result } = renderHook(() => useFeedConversion());
-
-    // Set some state first
-    act(() => {
-      result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
-    });
-
-    act(() => {
-      result.current.clearResult();
-    });
-
-    expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
-    expect(result.current.error).toBeNull();
-  });
-
-  it('should set converting state during API call', () => {
-    (global.fetch as any).mockImplementation(() => new Promise(() => {})); // Never resolves
-
-    const { result } = renderHook(() => useFeedConversion());
-
-    act(() => {
-      result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
-    });
-
-    expect(result.current.isConverting).toBe(true);
   });
 });

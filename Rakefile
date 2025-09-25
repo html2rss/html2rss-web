@@ -40,8 +40,7 @@ task :test do
       '-d',
       '-p 3000:3000',
       '--env PUMA_LOG_CONFIG=1',
-      '--env HEALTH_CHECK_USERNAME=username',
-      '--env HEALTH_CHECK_PASSWORD=password',
+      '--env HEALTH_CHECK_TOKEN=health-check-token-xyz789',
       "--mount type=bind,source=#{current_dir}/config,target=/app/config",
       '--name html2rss-web-test',
       'gilcreator/html2rss-web'].join(' ')
@@ -57,8 +56,12 @@ task :test do
   Output.describe 'Generating example feed from feeds.yml'
   sh 'curl -f http://127.0.0.1:3000/example.rss || exit 1'
 
-  Output.describe 'Authenticated request to GET /health_check.txt'
-  sh 'docker exec html2rss-web-test curl -f http://username:password@127.0.0.1:3000/health_check.txt || exit 1'
+  Output.describe 'Health check endpoint'
+  sh <<~COMMAND
+    docker exec html2rss-web-test curl -f \
+      -H "Authorization: Bearer health-check-token-xyz789" \
+      http://127.0.0.1:3000/health_check.txt || exit 1
+  COMMAND
 
   # skipped as html2rss is used in development version
   # Output.describe 'Print output of `html2rss help`'

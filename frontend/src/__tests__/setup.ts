@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/preact';
+import { server } from './mocks/server';
 
 // Mock window and document for tests
 Object.defineProperty(window, 'matchMedia', {
@@ -16,20 +18,32 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock localStorage
+// Persistent localStorage stub with in-memory backing store
+const localStorageStore = new Map<string, string>();
 const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+  getItem: vi.fn((key: string) => (localStorageStore.has(key) ? localStorageStore.get(key)! : null)),
+  setItem: vi.fn((key: string, value: string) => {
+    localStorageStore.set(key, value);
+  }),
+  removeItem: vi.fn((key: string) => {
+    localStorageStore.delete(key);
+  }),
+  clear: vi.fn(() => {
+    localStorageStore.clear();
+  }),
 };
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
 });
 
-// Make localStorageMock available globally
-(global as any).localStorageMock = localStorageMock;
+beforeEach(() => {
+  localStorageStore.clear();
+  localStorageMock.getItem.mockClear();
+  localStorageMock.setItem.mockClear();
+  localStorageMock.removeItem.mockClear();
+  localStorageMock.clear.mockClear();
+});
 
 // Mock clipboard API
 Object.assign(navigator, {
@@ -38,8 +52,13 @@ Object.assign(navigator, {
   },
 });
 
-// Mock fetch
-global.fetch = vi.fn();
-
-// Mock scrollIntoView
+// Ensure scrollIntoView exists for components relying on it
 Element.prototype.scrollIntoView = vi.fn();
+
+// Wire up MSW in node environment
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => {
+  server.resetHandlers();
+  cleanup();
+});
+afterAll(() => server.close());

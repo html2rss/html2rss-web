@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({
   test: {
@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     testTimeout: 10000,
     hookTimeout: 10000,
+    exclude: [...configDefaults.exclude, 'tests/**'],
   },
   esbuild: {
     jsx: 'automatic',

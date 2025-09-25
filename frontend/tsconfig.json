@@ -1,0 +1,7 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["vitest/globals", "@testing-library/jest-dom", "msw", "@playwright/test"]
+  },
+  "include": ["astro.config.mjs", "src", "tests", "playwright.config.ts"]
+}

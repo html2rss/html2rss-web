@@ -176,7 +176,6 @@ module Html2rss
           # Skip static file requests
           next if feed_name.include?('.') && !feed_name.end_with?('.xml', '.rss')
 
-          # Route to feed generation without auth for backward compatibility
           handle_feed_generation(r, feed_name)
         end
         r.get 'health_check.txt' do
@@ -202,15 +201,38 @@ module Html2rss
       def handle_health_check(router)
         router.response['Content-Type'] = 'text/plain'
 
-        health_response = Api::V1::Health.show(router)
-
-        raise 'unhealthy' unless health_response[:success] && health_response.dig(:data, :health, :status) == 'healthy'
+        verify_health_check_authorization!(router)
+        verify_health_status!
 
         'success'
+      rescue UnauthorizedError => error
+        router.response.status = 401
+        error.message
       rescue StandardError => error
         router.response.status = 500
 
         "health check error: #{error.message}"
+      end
+
+      def verify_health_check_authorization!(router)
+        health_account = HealthCheck.find_health_check_account
+        account = Auth.authenticate(router)
+
+        return if authorized_health_check_account?(account, health_account)
+
+        raise UnauthorizedError, 'health check requires bearer token'
+      end
+
+      def authorized_health_check_account?(account, health_account)
+        account && health_account &&
+          account[:username] == health_account[:username] &&
+          account[:token] == health_account[:token]
+      end
+
+      def verify_health_status!
+        return if HealthCheck.run == 'success'
+
+        raise 'unhealthy'
       end
 
       def fallback_html
@@ -220,6 +242,7 @@ module Html2rss
             <head>
               <title>html2rss-web</title>
               <meta name="viewport" content="width=device-width,initial-scale=1">
+              <meta name="robots" content="noindex,nofollow">
             </head>
             <body>
               <h1>html2rss-web</h1>

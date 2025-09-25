@@ -14,11 +14,11 @@
 
 ### Health Check Configuration
 
-| Variable             | Description        | Default     | Example                     |
-| -------------------- | ------------------ | ----------- | --------------------------- |
-| `HEALTH_CHECK_TOKEN` | Health check token | From config | `health-check-token-xyz789` |
+Health check authentication relies on the `health-check` account defined in `config/feeds.yml`. Expose the token via an environment variable and send it as a Bearer token when calling `/health_check.txt` or `/api/v1/health`.
 
-**Note:** Health check authentication now uses Bearer token authentication instead of username/password. The token is configured in `config/feeds.yml` under the `health-check` account.
+| Variable             | Description                                  | Default                     | Example                     |
+| -------------------- | -------------------------------------------- | --------------------------- | --------------------------- |
+| `HEALTH_CHECK_TOKEN` | Token forwarded to the container health check | `health-check-token-xyz789` | `health-check-token-xyz789` |
 
 ### Ruby Integration
 

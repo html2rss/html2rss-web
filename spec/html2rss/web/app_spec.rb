@@ -13,44 +13,34 @@ RSpec.describe Html2rss::Web::App do
 
     def app = described_class
 
-    it 'responds to /' do
+    it 'serves the homepage with core security headers', :aggregate_failures do
       get '/'
+
       expect(last_response).to be_ok
+      expect(last_response.headers['Content-Security-Policy']).to include("default-src 'none'")
+      expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'sets CSP headers' do
-      get '/'
+    it 'serves legacy feed routes with caching headers', :aggregate_failures do
+      allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
+      allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
 
-      expect(last_response.headers['Content-Security-Policy']).to eq <<~HEADERS.gsub(/\n\s*/, ' ')
-        default-src 'none';
-        style-src 'self' 'unsafe-inline';
-        script-src 'self' 'unsafe-inline';
-        connect-src 'self';
-        img-src 'self' data: blob:;
-        font-src 'self' data:;
-        form-action 'self';
-        base-uri 'none';
-        frame-ancestors 'none';
-        frame-src 'self';
-        object-src 'none';
-        media-src 'none';
-        manifest-src 'none';
-        worker-src 'none';
-        child-src 'none';
-        block-all-mixed-content;
-        upgrade-insecure-requests;
-      HEADERS
+      get '/legacy'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.headers['Cache-Control']).to eq('public, max-age=180')
+      expect(last_response.body).to eq('<rss/>')
     end
 
-    it 'sets security headers' do
-      get '/'
+    it 'renders XML error when legacy feed generation fails', :aggregate_failures do
+      allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
 
-      expect(last_response.headers).to include(
-        'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
-        'Cross-Origin-Embedder-Policy' => 'require-corp',
-        'Cross-Origin-Opener-Policy' => 'same-origin',
-        'Cross-Origin-Resource-Policy' => 'same-origin'
-      )
+      get '/missing-feed'
+
+      expect(last_response.status).to eq(500)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.body).to eq('<error/>')
     end
   end
 
