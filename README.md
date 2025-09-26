@@ -219,7 +219,6 @@ The project includes a modern Astro frontend alongside the Ruby backend:
 | `make test-frontend` | Run frontend unit + contract tests    |
 | `make test-frontend-unit` | Run frontend unit tests only      |
 | `make test-frontend-contract` | Run frontend contract tests (Vitest + MSW) |
-| `make test-frontend-smoke` | Run frontend smoke tests (Playwright) |
 | `make lint`          | Run all linters (Ruby + Frontend)     |
 | `make lint-ruby`     | Run Ruby linter only                  |
 | `make lint-js`       | Run frontend linter only              |
@@ -237,7 +236,6 @@ The project includes a modern Astro frontend alongside the Ruby backend:
 | `cd frontend && npm run build` | Build frontend for production |
 | `cd frontend && npm run test:unit` | Run unit tests (Vitest) |
 | `cd frontend && npm run test:contract` | Run contract tests with MSW |
-| `cd frontend && npm run test:smoke` | Run Playwright smoke tests |
 
 ### Testing Strategy
 
@@ -246,14 +244,7 @@ The project includes a modern Astro frontend alongside the Ruby backend:
 | Ruby API         | RSpec + Rack::Test         | Deterministic request specs for the Roda app |
 | Frontend Unit    | Vitest + Testing Library   | Hook/component behaviour with mocked fetch |
 | Frontend Contract| Vitest + MSW               | Exercises real fetch flows against mocked API responses |
-| Smoke            | Playwright                 | Minimal API smoke checks via the real Puma server |
-
-To execute Playwright smoke tests locally for the first time, install the required browsers:
-
-```bash
-cd frontend
-npx playwright install --with-deps
-```
+| Docker Smoke     | RSpec (tagged `:docker`)   | Net::HTTP checks against a bundled Puma container |
 
 ## Contributing
 

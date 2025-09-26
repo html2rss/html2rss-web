@@ -6,46 +6,61 @@ module Html2rss
     # Custom exceptions for clean error handling
     # These map to HTTP status codes and are handled by Roda's error_handler
 
-    # HTTP 401 - Authentication required
-    class UnauthorizedError < StandardError
-      def initialize(message = 'Authentication required')
+    class HttpError < StandardError
+      DEFAULT_MESSAGE = 'Internal Server Error'
+      STATUS = 500
+      CODE = 'INTERNAL_SERVER_ERROR'
+
+      def initialize(message = self.class::DEFAULT_MESSAGE)
         super
       end
+
+      def status
+        self.class::STATUS
+      end
+
+      def code
+        self.class::CODE
+      end
+    end
+
+    # HTTP 401 - Authentication required
+    class UnauthorizedError < HttpError
+      DEFAULT_MESSAGE = 'Authentication required'
+      STATUS = 401
+      CODE = 'UNAUTHORIZED'
     end
 
     # HTTP 400 - Invalid request
-    class BadRequestError < StandardError
-      def initialize(message = 'Bad Request')
-        super
-      end
+    class BadRequestError < HttpError
+      DEFAULT_MESSAGE = 'Bad Request'
+      STATUS = 400
+      CODE = 'BAD_REQUEST'
     end
 
     # HTTP 403 - Access denied
-    class ForbiddenError < StandardError
-      def initialize(message = 'Forbidden')
-        super
-      end
+    class ForbiddenError < HttpError
+      DEFAULT_MESSAGE = 'Forbidden'
+      STATUS = 403
+      CODE = 'FORBIDDEN'
     end
 
     # HTTP 404 - Resource not found
-    class NotFoundError < StandardError
-      def initialize(message = 'Not Found')
-        super
-      end
+    class NotFoundError < HttpError
+      DEFAULT_MESSAGE = 'Not Found'
+      STATUS = 404
+      CODE = 'NOT_FOUND'
     end
 
     # HTTP 405 - Method not allowed
-    class MethodNotAllowedError < StandardError
-      def initialize(message = 'Method Not Allowed')
-        super
-      end
+    class MethodNotAllowedError < HttpError
+      DEFAULT_MESSAGE = 'Method Not Allowed'
+      STATUS = 405
+      CODE = 'METHOD_NOT_ALLOWED'
     end
 
     # HTTP 500 - Server error
-    class InternalServerError < StandardError
-      def initialize(message = 'Internal Server Error')
-        super
-      end
+    class InternalServerError < HttpError
     end
   end
 end

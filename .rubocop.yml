@@ -7,11 +7,18 @@ require:
 AllCops:
   DisplayCopNames: true
   NewCops: enable
+  Exclude:
+    - '**/*.yml'
+    - '**/*.yaml'
+    - '**/.tool-versions'
+
+Style/Documentation:
+  Enabled: false
 
 Metrics/BlockLength:
   Exclude:
     - Rakefile
-  ExcludedMethods:
+  AllowedMethods:
     - route
 
 Naming/RescuedExceptionsVariableName:

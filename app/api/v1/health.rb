@@ -14,37 +14,45 @@ module Html2rss
         # RESTful API v1 for health check resource
         # Handles application health monitoring
         module Health
-          module_function
+          class << self
+            def show(request)
+              authorize_health_check!(request)
+              verify_configuration!
 
-          def show(request)
-            authorize_health_check!(request)
-            verify_configuration!
+              health_response
+            end
 
-            {
-              success: true,
-              data: {
-                health: {
-                  status: 'healthy',
-                  timestamp: Time.now.iso8601,
-                  environment: ENV.fetch('RACK_ENV', 'development'),
-                  uptime: Process.clock_gettime(Process::CLOCK_MONOTONIC),
-                  checks: {}
-                }
+            private
+
+            def health_response
+              {
+                success: true,
+                data: { health: health_payload }
               }
-            }
-          end
+            end
 
-          def authorize_health_check!(request)
-            account = Auth.authenticate(request)
-            return if account && account[:username] == 'health-check'
+            def health_payload
+              {
+                status: 'healthy',
+                timestamp: Time.now.iso8601,
+                environment: ENV.fetch('RACK_ENV', 'development'),
+                uptime: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+                checks: {}
+              }
+            end
 
-            raise UnauthorizedError, 'Health check authentication required'
-          end
+            def authorize_health_check!(request)
+              account = Auth.authenticate(request)
+              return if account && account[:username] == 'health-check'
 
-          def verify_configuration!
-            LocalConfig.yaml
-          rescue StandardError => error
-            raise InternalServerError, "Health check failed: #{error.message}"
+              raise UnauthorizedError, 'Health check authentication required'
+            end
+
+            def verify_configuration!
+              LocalConfig.yaml
+            rescue StandardError => error
+              raise InternalServerError, "Health check failed: #{error.message}"
+            end
           end
         end
       end

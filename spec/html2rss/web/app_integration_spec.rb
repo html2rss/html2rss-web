@@ -5,13 +5,13 @@ require 'rack/test'
 require 'json'
 require_relative '../../../app'
 
-RSpec.describe Html2rss::Web::App do
+RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHelpers
   include Rack::Test::Methods
 
-  def app = described_class.freeze.app
+  let(:app) { described_class.freeze.app }
 
-  FEED_URL = 'https://example.com/articles'
-  FEED_TOKEN = 'valid-feed-token'
+  let(:feed_url) { 'https://example.com/articles' }
+  let(:feed_token) { 'valid-feed-token' }
 
   let(:account) do
     {
@@ -29,9 +29,13 @@ RSpec.describe Html2rss::Web::App do
     }
   end
 
+  let(:json_headers) { { 'CONTENT_TYPE' => 'application/json' } }
+  let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
+  let(:json_body) { JSON.parse(last_response.body) }
+
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
-    token_payload = instance_double(Html2rss::Web::FeedToken, url: FEED_URL, username: account[:username])
+    token_payload = instance_double(Html2rss::Web::FeedToken, url: feed_url, username: account[:username])
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
       validate_and_decode: token_payload
@@ -42,7 +46,7 @@ RSpec.describe Html2rss::Web::App do
                                                          generate_feed_content: '<rss version="2.0"></rss>')
   end
 
-  describe 'GET /api/v1/feeds/:token' do
+  describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     it 'returns unauthorized for invalid tokens', :aggregate_failures do
       allow(Html2rss::Web::FeedToken).to receive(:decode).and_return(nil)
 
@@ -50,11 +54,11 @@ RSpec.describe Html2rss::Web::App do
 
       expect(last_response.status).to eq(401)
       expect(last_response.content_type).to include('application/json')
-      expect(JSON.parse(last_response.body)).to include('error' => include('code' => 'UNAUTHORIZED'))
+      expect(json_body).to include('error' => include('code' => 'UNAUTHORIZED'))
     end
 
-    it 'renders the XML feed with cache headers', :aggregate_failures do
-      get "/api/v1/feeds/#{FEED_TOKEN}", {}, 'HTTP_HOST' => 'localhost:3000'
+    it 'renders the XML feed with cache headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      get "/api/v1/feeds/#{feed_token}", {}, 'HTTP_HOST' => 'localhost:3000'
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
@@ -65,18 +69,18 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'returns bad request for unsupported strategy', :aggregate_failures do
-      get "/api/v1/feeds/#{FEED_TOKEN}", { 'strategy' => 'invalid' }
+      get "/api/v1/feeds/#{feed_token}", { 'strategy' => 'invalid' }
 
       expect(last_response.status).to eq(400)
       expect(last_response.content_type).to include('application/json')
-      expect(JSON.parse(last_response.body)).to include('error' => include('message' => 'Unsupported strategy'))
+      expect(json_body).to include('error' => include('message' => 'Unsupported strategy'))
     end
   end
 
-  describe 'POST /api/v1/feeds' do
+  describe 'POST /api/v1/feeds' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     let(:request_payload) do
       {
-        url: FEED_URL,
+        url: feed_url,
         strategy: 'ssrf_filter'
       }
     end
@@ -85,99 +89,92 @@ RSpec.describe Html2rss::Web::App do
       {
         id: 'feed-123',
         name: 'Example Feed',
-        url: FEED_URL,
+        url: feed_url,
         strategy: 'ssrf_filter',
-        public_url: "/api/v1/feeds/#{FEED_TOKEN}",
+        public_url: "/api/v1/feeds/#{feed_token}",
         username: account[:username]
       }
     end
 
     before do
-      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(account)
       allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(created_feed)
     end
 
-    it 'returns bad request when JSON payload is invalid', :aggregate_failures do
-      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(account)
+    context 'without authentication' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before { allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil) }
 
-      post '/api/v1/feeds', '{ invalid', 'CONTENT_TYPE' => 'application/json'
+      it 'requires authentication', :aggregate_failures do
+        post '/api/v1/feeds', request_payload.to_json, json_headers
 
-      expect(last_response.status).to eq(400)
-      expect(last_response.body).to be_empty
+        expect(last_response.status).to eq(401)
+        expect(last_response.content_type).to include('application/json')
+        expect(json_body).to include('error' => include('code' => 'UNAUTHORIZED'))
+      end
     end
 
-    it 'requires authentication', :aggregate_failures do
-      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil)
+    context 'with authenticated account' do # rubocop:disable RSpec/MultipleMemoizedHelpers
+      before { allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(account) }
 
-      post '/api/v1/feeds', request_payload.to_json, 'CONTENT_TYPE' => 'application/json'
+      it 'returns bad request when JSON payload is invalid', :aggregate_failures do
+        post '/api/v1/feeds', '{ invalid', json_headers
 
-      expect(last_response.status).to eq(401)
-      expect(last_response.content_type).to include('application/json')
-      expect(JSON.parse(last_response.body)).to include('error' => include('code' => 'UNAUTHORIZED'))
-    end
+        expect(last_response.status).to eq(400)
+        expect(last_response.body).to be_empty
+      end
 
-    it 'returns bad request when URL is missing', :aggregate_failures do
-      allow(Html2rss::Web::Api::V1::Feeds).to receive(:extract_site_title).and_return('Example')
+      it 'returns bad request when URL is missing', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        allow(Html2rss::Web::Api::V1::Feeds).to receive(:extract_site_title).and_return('Example')
 
-      payload = request_payload.merge(url: '')
+        post '/api/v1/feeds', request_payload.merge(url: '').to_json, auth_headers
 
-      post '/api/v1/feeds', payload.to_json, 'CONTENT_TYPE' => 'application/json',
-                                             'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
+        expect(last_response.status).to eq(400)
+        expect(json_body).to include(
+          'error' => include('message' => 'URL parameter is required')
+        )
+      end
 
-      expect(last_response.status).to eq(400)
-      expect(JSON.parse(last_response.body)).to include(
-        'error' => include('message' => 'URL parameter is required')
-      )
-    end
+      it 'returns forbidden when URL is not allowed for account', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(false)
 
-    it 'returns forbidden when URL is not allowed for account', :aggregate_failures do
-      allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(false)
+        post '/api/v1/feeds', request_payload.to_json, auth_headers
 
-      post '/api/v1/feeds', request_payload.to_json, 'CONTENT_TYPE' => 'application/json',
-                                                     'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
+        expect(last_response.status).to eq(403)
+        expect(json_body).to include(
+          'error' => include('message' => 'URL not allowed for this account')
+        )
+      end
 
-      expect(last_response.status).to eq(403)
-      expect(JSON.parse(last_response.body)).to include(
-        'error' => include('message' => 'URL not allowed for this account')
-      )
-    end
+      it 'returns bad request for unsupported strategy', :aggregate_failures do
+        post '/api/v1/feeds', request_payload.merge(strategy: 'unsupported').to_json, auth_headers
 
-    it 'returns bad request for unsupported strategy', :aggregate_failures do
-      payload = request_payload.merge(strategy: 'unsupported')
+        expect(last_response.status).to eq(400)
+        expect(json_body).to include(
+          'error' => include('message' => 'Unsupported strategy')
+        )
+      end
 
-      post '/api/v1/feeds', payload.to_json, 'CONTENT_TYPE' => 'application/json',
-                                             'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
+      it 'returns error when feed creation fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(nil)
 
-      expect(last_response.status).to eq(400)
-      expect(JSON.parse(last_response.body)).to include(
-        'error' => include('message' => 'Unsupported strategy')
-      )
-    end
+        post '/api/v1/feeds', request_payload.to_json, auth_headers
 
-    it 'returns error when feed creation fails', :aggregate_failures do
-      allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(nil)
+        expect(last_response.status).to eq(500)
+        expect(json_body).to include(
+          'error' => include('message' => 'Failed to create feed')
+        )
+      end
 
-      post '/api/v1/feeds', request_payload.to_json, 'CONTENT_TYPE' => 'application/json',
-                                                     'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
+      it 'returns created feed metadata', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        post '/api/v1/feeds', request_payload.to_json, auth_headers
 
-      expect(last_response.status).to eq(500)
-      expect(JSON.parse(last_response.body)).to include(
-        'error' => include('message' => 'Failed to create feed')
-      )
-    end
-
-    it 'returns created feed metadata', :aggregate_failures do
-      post '/api/v1/feeds', request_payload.to_json, 'CONTENT_TYPE' => 'application/json',
-                                                     'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
-
-      expect(last_response.status).to eq(201)
-      response_json = JSON.parse(last_response.body)
-      expect(response_json).to include('success' => true)
-      expect(response_json.dig('data', 'feed')).to include(
-        'id' => 'feed-123',
-        'url' => FEED_URL,
-        'public_url' => "/api/v1/feeds/#{FEED_TOKEN}"
-      )
+        expect(last_response.status).to eq(201)
+        expect(json_body).to include('success' => true)
+        expect(json_body.dig('data', 'feed')).to include(
+          'id' => 'feed-123',
+          'url' => feed_url,
+          'public_url' => "/api/v1/feeds/#{feed_token}"
+        )
+      end
     end
   end
 end
