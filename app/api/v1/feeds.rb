@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 require 'time'
+require 'html2rss/url'
 
+require_relative '../../account_manager'
 require_relative '../../auth'
 require_relative '../../auto_source'
 require_relative '../../feeds'
 require_relative '../../exceptions'
 require_relative '../../feed_token'
+require_relative '../../url_validator'
 
 module Html2rss
   module Web
@@ -15,11 +18,6 @@ module Html2rss
         # RESTful API v1 for feeds
         module Feeds
           module_function
-
-          def index(_request)
-            feeds = Html2rss::Web::Feeds.list_feeds
-            { success: true, data: { feeds: feeds }, meta: { total: feeds.count } }
-          end
 
           def show(request, token)
             handle_token_based_feed(request, token)
@@ -48,10 +46,6 @@ module Html2rss
             generate_feed_response(request, feed_token.url)
           end
 
-          def extract_site_title(url)
-            AutoSource.extract_site_title(url)
-          end
-
           def validate_feed_token(token)
             feed_token = FeedToken.decode(token)
             raise UnauthorizedError, 'Invalid token' unless feed_token
@@ -63,14 +57,14 @@ module Html2rss
           end
 
           def get_account_for_token(feed_token)
-            account = Auth.get_account_by_username(feed_token.username)
+            account = AccountManager.get_account_by_username(feed_token.username)
             raise UnauthorizedError, 'Account not found' unless account
 
             account
           end
 
           def validate_account_access(account, url)
-            raise ForbiddenError, 'Access Denied' unless Auth.url_allowed?(account, url)
+            raise ForbiddenError, 'Access Denied' unless UrlValidator.url_allowed?(account, url)
           end
 
           def generate_feed_response(request, url)
@@ -78,6 +72,8 @@ module Html2rss
             rss_content = AutoSource.generate_feed_content(url, strategy)
 
             request.response['Content-Type'] = 'application/xml'
+
+            # TODO: get ttl from feed
             HttpCache.expires(request.response, 600, cache_control: 'public')
 
             rss_content.to_s
@@ -97,15 +93,16 @@ module Html2rss
             strategy = select_strategy(request.params['strategy'])
             {
               url: url,
-              name: request.params['name'] || extract_site_title(url),
+              name: extract_site_title(url),
               strategy: strategy
             }
           end
 
           def validate_create_params(params, account)
             raise BadRequestError, 'URL parameter is required' if params[:url].nil? || params[:url].empty?
-            raise BadRequestError, 'Invalid URL format' unless Auth.valid_url?(params[:url])
-            raise ForbiddenError, 'URL not allowed for this account' unless Auth.url_allowed?(account, params[:url])
+            raise BadRequestError, 'Invalid URL format' unless UrlValidator.valid_url?(params[:url])
+            raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(account,
+                                                                                                      params[:url])
           end
 
           def build_create_response(request, feed_data)
@@ -147,12 +144,18 @@ module Html2rss
             }
           end
 
+          def extract_site_title(url)
+            Html2rss::Url.for_channel(url).channel_titleized
+          rescue StandardError
+            nil
+          end
+
           module_function :extract_create_params, :validate_create_params, :build_create_response,
                           :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
-                          :feed_response_payload
+                          :feed_response_payload, :extract_site_title
           private_class_method :extract_create_params, :validate_create_params, :build_create_response,
                                :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
-                               :feed_response_payload
+                               :feed_response_payload, :extract_site_title
         end
       end
     end

@@ -24,31 +24,6 @@ security:
 
 paths:
   /feeds:
-    get:
-      operationId: listFeeds
-      summary: List all available feeds
-      description: Returns a list of all available RSS feeds
-      tags:
-        - Feeds
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeedsListResponse'
-          headers:
-            Cache-Control:
-              description: Cache control header
-              schema:
-                type: string
-                example: "public, max-age=300"
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
     post:
       operationId: createFeed
       summary: Create a new feed
@@ -60,33 +35,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateFeedRequest'
+              $ref: "#/components/schemas/CreateFeedRequest"
       responses:
-        '201':
+        "201":
           description: Feed created successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FeedResponse'
-        '400':
+                $ref: "#/components/schemas/FeedResponse"
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
           description: Forbidden
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
+                $ref: "#/components/schemas/ErrorResponse"
 
   /strategies:
     get:
@@ -96,52 +70,24 @@ paths:
       tags:
         - Strategies
       responses:
-        '200':
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StrategiesListResponse'
+                $ref: "#/components/schemas/StrategiesListResponse"
           headers:
             Cache-Control:
               description: Cache control header
               schema:
                 type: string
                 example: "public, max-age=3600"
-        '400':
+        "400":
           description: Bad request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /strategies/{id}:
-    get:
-      operationId: getStrategy
-      summary: Get a specific strategy
-      description: Returns details about a specific extraction strategy
-      tags:
-        - Strategies
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Strategy identifier
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StrategyResponse'
-        '404':
-          description: Strategy not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /health:
     get:
@@ -153,66 +99,24 @@ paths:
       security:
         - BearerAuth: []
       responses:
-        '200':
+        "200":
           description: Application is healthy
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
-        '401':
+                $ref: "#/components/schemas/HealthResponse"
+        "401":
           description: Unauthorized
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '503':
+                $ref: "#/components/schemas/ErrorResponse"
+        "503":
           description: Service unavailable
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/HealthResponse'
-
-  /health/ready:
-    get:
-      operationId: getReadiness
-      summary: Get application readiness status
-      description: Returns whether the application is ready to serve requests
-      tags:
-        - Health
-      responses:
-        '200':
-          description: Application is ready
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReadinessResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /health/live:
-    get:
-      operationId: getLiveness
-      summary: Get application liveness status
-      description: Returns whether the application is alive and running
-      tags:
-        - Health
-      responses:
-        '200':
-          description: Application is alive
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LivenessResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/HealthResponse"
 
 components:
   securitySchemes:
@@ -277,7 +181,7 @@ components:
         data:
           type: object
         meta:
-          $ref: '#/components/schemas/Meta'
+          $ref: "#/components/schemas/Meta"
 
     ErrorResponse:
       type: object
@@ -300,7 +204,7 @@ components:
         data:
           type: object
         meta:
-          $ref: '#/components/schemas/Meta'
+          $ref: "#/components/schemas/Meta"
 
     Meta:
       type: object
@@ -316,7 +220,7 @@ components:
 
     FeedsListResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
@@ -325,10 +229,10 @@ components:
                 feeds:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Feed'
+                    $ref: "#/components/schemas/Feed"
             meta:
               allOf:
-                - $ref: '#/components/schemas/Meta'
+                - $ref: "#/components/schemas/Meta"
                 - type: object
                   properties:
                     total:
@@ -337,14 +241,14 @@ components:
 
     FeedResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
               type: object
               properties:
                 feed:
-                  $ref: '#/components/schemas/Feed'
+                  $ref: "#/components/schemas/Feed"
 
     Feed:
       type: object
@@ -370,11 +274,11 @@ components:
           format: uri
           description: Public URL for accessing the feed (for generated feeds)
         created_at:
-          type: [string, 'null']
+          type: [string, "null"]
           format: date-time
           description: Feed creation timestamp
         updated_at:
-          type: [string, 'null']
+          type: [string, "null"]
           format: date-time
           description: Feed last update timestamp
 
@@ -387,18 +291,14 @@ components:
           type: string
           format: uri
           description: Source URL to convert to RSS feed
-        name:
-          type: string
-          description: Human-readable name for the feed (optional)
         strategy:
           type: string
           description: Extraction strategy to use
           default: ssrf_filter
 
-
     StrategiesListResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
@@ -407,10 +307,10 @@ components:
                 strategies:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Strategy'
+                    $ref: "#/components/schemas/Strategy"
             meta:
               allOf:
-                - $ref: '#/components/schemas/Meta'
+                - $ref: "#/components/schemas/Meta"
                 - type: object
                   properties:
                     total:
@@ -419,14 +319,14 @@ components:
 
     StrategyResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
               type: object
               properties:
                 strategy:
-                  $ref: '#/components/schemas/Strategy'
+                  $ref: "#/components/schemas/Strategy"
 
     Strategy:
       type: object
@@ -452,7 +352,7 @@ components:
 
     HealthResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
@@ -482,7 +382,7 @@ components:
 
     ReadinessResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:
@@ -502,7 +402,7 @@ components:
 
     LivenessResponse:
       allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
+        - $ref: "#/components/schemas/SuccessResponse"
         - type: object
           properties:
             data:

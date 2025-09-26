@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/devcontainers/ruby:3.4-bullseye
 
 # Install Node.js 20
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
   && apt-get install -y nodejs
 
 # Install system dependencies

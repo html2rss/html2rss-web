@@ -15,19 +15,15 @@ module Html2rss
         process_feed_content(url, strategy, feed_content)
       end
 
-      def call_strategy(url, strategy) # rubocop:disable Metrics/MethodLength
+      def call_strategy(url, strategy)
         return error_feed('URL parameter required') if url.nil? || url.empty?
 
         global_config = LocalConfig.global
 
         config = {
           strategy: strategy.to_sym,
-          channel: {
-            url: url
-          },
-          auto_source: {
-            # Auto source configuration placeholder for gem integration
-          }
+          channel: { url: url },
+          auto_source: {}
         }
 
         config[:stylesheets] = global_config[:stylesheets] if global_config[:stylesheets]
@@ -36,35 +32,25 @@ module Html2rss
         Html2rss.feed(config)
       end
 
-      def process_feed_content(url, strategy, feed_content, site_title: nil)
+      def process_feed_content(url, strategy, feed_content)
         return feed_content unless feed_content.respond_to?(:to_s)
 
         feed_xml = feed_content.to_s
         return feed_content if feed_xml.include?('<item>')
 
-        create_empty_feed_warning(url: url, strategy: strategy, site_title: site_title)
+        create_empty_feed_warning(url: url, strategy: strategy)
       end
 
-      def create_empty_feed_warning(url:, strategy:, site_title: nil)
+      def create_empty_feed_warning(url:, strategy:)
         XmlBuilder.build_empty_feed_warning(
           url: url,
           strategy: strategy,
-          site_title: site_title || extract_site_title(url)
+          site_title: Html2rss::Url.for_channel(url).channel_titleized
         )
-      end
-
-      def extract_site_title(url)
-        Html2rss::Url.for_channel(url).channel_titleized
-      rescue StandardError
-        nil
       end
 
       def error_feed(message)
         XmlBuilder.build_error_feed(message: message)
-      end
-
-      def access_denied_feed(url)
-        XmlBuilder.build_access_denied_feed(url)
       end
     end
   end

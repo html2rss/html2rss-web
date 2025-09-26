@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
+require_relative 'account_manager'
 require_relative 'auth'
+require_relative 'auth_utils'
 require_relative 'feed_generator'
+require_relative 'url_validator'
 
 module Html2rss
   module Web
@@ -12,39 +15,31 @@ module Html2rss
 
       # @return [Boolean]
       def enabled?
-        if development?
+        if EnvironmentValidator.development?
           ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
         else
           ENV.fetch('AUTO_SOURCE_ENABLED', nil) == 'true'
         end
       end
 
-      ##
-      # Authenticate request with token
-      # @param request [Roda::Request] request object
-      # @return [Hash, nil] account data if authenticated
-      def authenticate_with_token(request)
-        Auth.authenticate(request)
+      def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
+        return nil unless url_allowed_for_token?(token_data, url)
+
+        feed_id = AuthUtils.generate_feed_id(token_data[:username], url, token_data[:token])
+        feed_token = Auth.generate_feed_token(token_data[:username], url)
+        return nil unless feed_token
+
+        build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
       end
 
       # @param token_data [Hash]
       # @param url [String]
       # @return [Boolean]
       def url_allowed_for_token?(token_data, url)
-        account = Auth.get_account_by_username(token_data[:username])
+        account = AccountManager.get_account_by_username(token_data[:username])
         return false unless account
 
-        Auth.url_allowed?(account, url)
-      end
-
-      def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
-        return nil unless url_allowed_for_token?(token_data, url)
-
-        feed_id = Auth.generate_feed_id(token_data[:username], url, token_data[:token])
-        feed_token = Auth.generate_feed_token(token_data[:username], url)
-        return nil unless feed_token
-
-        build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+        UrlValidator.url_allowed?(account, url)
       end
 
       def generate_feed_from_stable_id(feed_id, token_data)
@@ -61,20 +56,11 @@ module Html2rss
       end
 
       def generate_feed_content(url, strategy = 'ssrf_filter')
-        feed_content = call_strategy(url, strategy)
-        FeedGenerator.process_feed_content(url, strategy, feed_content, site_title: extract_site_title(url))
-      end
-
-      def call_strategy(url, strategy)
-        FeedGenerator.call_strategy(url, strategy)
-      end
-
-      def extract_site_title(url)
-        FeedGenerator.extract_site_title(url)
+        feed_content = FeedGenerator.call_strategy(url, strategy)
+        FeedGenerator.process_feed_content(url, strategy, feed_content)
       end
 
       def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
-        # Token is now the path parameter, URL is embedded in the token
         public_url = "/api/v1/feeds/#{feed_token}"
 
         {
@@ -85,18 +71,6 @@ module Html2rss
           strategy: strategy,
           public_url: public_url
         }
-      end
-
-      def error_feed(message)
-        FeedGenerator.error_feed(message)
-      end
-
-      def access_denied_feed(url)
-        FeedGenerator.access_denied_feed(url)
-      end
-
-      def development?
-        EnvironmentValidator.development?
       end
     end
   end

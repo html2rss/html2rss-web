@@ -7,7 +7,15 @@ module Html2rss
     ##
     # URL validation and pattern matching utilities built on Html2rss::Url
     module UrlValidator
+      MAX_URL_LENGTH = 2048
+
       module_function
+
+      # @param url [String]
+      # @return [Boolean]
+      def valid_url?(url)
+        !normalize_url(url).nil?
+      end
 
       # @param account [Hash]
       # @param url [String]
@@ -63,6 +71,8 @@ module Html2rss
       end
 
       def normalize_url(url)
+        return nil unless url.is_a?(String) && !url.empty? && url.length <= MAX_URL_LENGTH
+
         Html2rss::Url.for_channel(url).to_s
       rescue StandardError
         nil

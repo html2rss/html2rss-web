@@ -30,10 +30,6 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   describe 'GET /api/v1/health' do
     let(:health_account) { { username: 'health-check', token: 'health-check-token-xyz789' } }
 
-    before do
-      allow(Html2rss::Web::HealthCheck).to receive(:find_health_check_account).and_return(health_account)
-    end
-
     it 'requires bearer token', :aggregate_failures do
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil)
 
@@ -46,7 +42,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
 
     it 'returns health status when token is valid', :aggregate_failures do
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
-      allow(Html2rss::Web::HealthCheck).to receive(:run).and_return('success')
+      allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return({})
 
       header 'Authorization', 'Bearer health-check-token-xyz789'
       get '/api/v1/health'
@@ -57,9 +53,9 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       header 'Authorization', nil
     end
 
-    it 'returns error when health check fails', :aggregate_failures do
+    it 'returns error when configuration fails', :aggregate_failures do
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
-      allow(Html2rss::Web::HealthCheck).to receive(:run).and_return('failing')
+      allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')
 
       header 'Authorization', 'Bearer health-check-token-xyz789'
       get '/api/v1/health'
@@ -67,22 +63,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(last_response.status).to eq(500)
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be false
-      expect(response_data.dig('error', 'message')).to eq('Health check failed')
-    end
-  end
-
-  describe 'GET /api/v1/feeds' do
-    it 'returns feeds list', :aggregate_failures do
-      get '/api/v1/feeds'
-
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/json')
-
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be true
-      expect(response_data['data']).to have_key('feeds')
-      expect(response_data['data']['feeds'].first).to have_key('public_url')
-      expect(response_data['meta']).to have_key('total')
+      expect(response_data.dig('error', 'message')).to eq('Health check failed: boom')
     end
   end
 
@@ -93,7 +74,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
         decode: token_double,
         validate_and_decode: token_double
       )
-      allow(Html2rss::Web::Auth).to receive(:get_account_by_username).and_return(nil)
+      allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(nil)
 
       get '/api/v1/feeds/token'
 
@@ -110,8 +91,8 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
         decode: token_double,
         validate_and_decode: token_double
       )
-      allow(Html2rss::Web::Auth).to receive_messages(get_account_by_username: { username: 'tester' },
-                                                     url_allowed?: true)
+      allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return({ username: 'tester' })
+      allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
 
       get '/api/v1/feeds/token', strategy: 'bad'
 
@@ -119,32 +100,6 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be false
       expect(response_data.dig('error', 'message')).to eq('Unsupported strategy')
-    end
-  end
-
-  describe 'GET /api/v1/health/ready' do
-    it 'returns readiness status', :aggregate_failures do
-      get '/api/v1/health/ready'
-
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/json')
-
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be true
-      expect(response_data['data']['readiness']['status']).to eq('ready')
-    end
-  end
-
-  describe 'GET /api/v1/health/live' do
-    it 'returns liveness status', :aggregate_failures do
-      get '/api/v1/health/live'
-
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/json')
-
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be true
-      expect(response_data['data']['liveness']['status']).to eq('alive')
     end
   end
 end

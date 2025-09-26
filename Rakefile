@@ -60,7 +60,7 @@ task :test do
   sh <<~COMMAND
     docker exec html2rss-web-test curl -f \
       -H "Authorization: Bearer health-check-token-xyz789" \
-      http://127.0.0.1:3000/health_check.txt || exit 1
+      http://127.0.0.1:3000/api/v1/health || exit 1
   COMMAND
 
   # skipped as html2rss is used in development version

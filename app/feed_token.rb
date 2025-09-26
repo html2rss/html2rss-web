@@ -4,6 +4,7 @@ require 'base64'
 require 'json'
 require 'zlib'
 require 'openssl'
+require_relative 'url_validator'
 
 module Html2rss
   module Web
@@ -96,7 +97,7 @@ module Html2rss
       # @param secret_key [String]
       # @return [Boolean]
       def self.valid_inputs?(username, url, secret_key)
-        valid_username?(username) && valid_url?(url) && secret_key
+        valid_username?(username) && UrlValidator.valid_url?(url) && secret_key
       end
 
       # @param secret_key [String]
@@ -185,12 +186,7 @@ module Html2rss
       # @param url [String]
       # @return [Boolean]
       def self.valid_url?(url)
-        return false unless url.is_a?(String) && !url.empty? && url.length <= 2048
-
-        Html2rss::Url.for_channel(url)
-        true
-      rescue StandardError
-        false
+        UrlValidator.valid_url?(url)
       end
 
       # Constant-time comparison to prevent timing attacks

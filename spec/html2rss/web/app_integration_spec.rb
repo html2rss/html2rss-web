@@ -31,15 +31,13 @@ RSpec.describe Html2rss::Web::App do
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
-    token_payload = instance_double('FeedToken', url: FEED_URL, username: account[:username])
+    token_payload = instance_double(Html2rss::Web::FeedToken, url: FEED_URL, username: account[:username])
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
       validate_and_decode: token_payload
     )
-    allow(Html2rss::Web::Auth).to receive_messages(
-      get_account_by_username: account,
-      url_allowed?: true
-    )
+    allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
+    allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
     allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true,
                                                          generate_feed_content: '<rss version="2.0"></rss>')
   end
@@ -133,7 +131,7 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'returns forbidden when URL is not allowed for account', :aggregate_failures do
-      allow(Html2rss::Web::Auth).to receive(:url_allowed?).and_return(false)
+      allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(false)
 
       post '/api/v1/feeds', request_payload.to_json, 'CONTENT_TYPE' => 'application/json',
                                                      'HTTP_AUTHORIZATION' => "Bearer #{account[:token]}"
