@@ -54,7 +54,6 @@ module Html2rss
       # Build an access denied RSS feed
       # @param url [String] The denied URL
       # @return [String] Valid RSS XML
-      # rubocop:disable Metrics/MethodLength
       def build_access_denied_feed(url)
         title = 'Access Denied'
         description = 'This URL is not allowed for public auto source generation.'
@@ -71,7 +70,6 @@ module Html2rss
           ]
         )
       end
-      # rubocop:enable Metrics/MethodLength
 
       ##
       # Build an empty feed warning RSS
@@ -79,38 +77,42 @@ module Html2rss
       # @param strategy [String] The strategy that was used
       # @param site_title [String, nil] Extracted site title
       # @return [String] Valid RSS XML
-      # rubocop:disable Metrics/MethodLength
       def build_empty_feed_warning(url:, strategy:, site_title: nil)
         display_title = site_title ? "#{site_title} - Content Extraction Issue" : 'Content Extraction Issue'
-        description = <<~DESC
-          Unable to extract content from #{url} using #{strategy} strategy.
-          The site may use JavaScript, have anti-bot protection, or have a
-          structure that's difficult to parse.
-        DESC
-
-        item_description = "No content could be extracted from #{url}. This could be due to:
-• JavaScript-heavy site (try browserless strategy)
-• Anti-bot protection
-• Complex page structure
-• Site blocking automated requests
-
-Try a different strategy or contact the site administrator."
-
         build_rss_feed(
           title: display_title,
-          description: description,
+          description: empty_feed_description(url, strategy),
           link: url,
           items: [
             {
               title: 'Content Extraction Failed',
-              description: item_description,
+              description: empty_feed_item_description(url),
               link: url,
               pubDate: Time.now.rfc2822
             }
           ]
         )
       end
-      # rubocop:enable Metrics/MethodLength
+
+      def empty_feed_description(url, strategy)
+        <<~DESC
+          Unable to extract content from #{url} using #{strategy} strategy.
+          The site may use JavaScript, have anti-bot protection, or have a
+          structure that's difficult to parse.
+        DESC
+      end
+
+      def empty_feed_item_description(url)
+        <<~DESC
+          No content could be extracted from #{url}. This could be due to:
+          • JavaScript-heavy site (try browserless strategy)
+          • Anti-bot protection
+          • Complex page structure
+          • Site blocking automated requests
+
+          Try a different strategy or contact the site administrator.
+        DESC
+      end
 
       def build_channel_content(xml, title, description, link)
         xml.title title.to_s

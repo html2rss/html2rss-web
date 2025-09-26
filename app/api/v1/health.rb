@@ -20,17 +20,23 @@ module Html2rss
             authorize_health_check!(request)
             verify_configuration!
 
+            health_response
+          end
+
+          def health_response
             {
               success: true,
-              data: {
-                health: {
-                  status: 'healthy',
-                  timestamp: Time.now.iso8601,
-                  environment: ENV.fetch('RACK_ENV', 'development'),
-                  uptime: Process.clock_gettime(Process::CLOCK_MONOTONIC),
-                  checks: {}
-                }
-              }
+              data: { health: health_payload }
+            }
+          end
+
+          def health_payload
+            {
+              status: 'healthy',
+              timestamp: Time.now.iso8601,
+              environment: ENV.fetch('RACK_ENV', 'development'),
+              uptime: Process.clock_gettime(Process::CLOCK_MONOTONIC),
+              checks: {}
             }
           end
 

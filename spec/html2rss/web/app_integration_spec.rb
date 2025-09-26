@@ -8,10 +8,10 @@ require_relative '../../../app'
 RSpec.describe Html2rss::Web::App do
   include Rack::Test::Methods
 
-  def app = described_class.freeze.app
+  let(:app) { described_class.freeze.app }
 
-  FEED_URL = 'https://example.com/articles'
-  FEED_TOKEN = 'valid-feed-token'
+  let(:feed_url) { 'https://example.com/articles' }
+  let(:feed_token) { 'valid-feed-token' }
 
   let(:account) do
     {
@@ -31,7 +31,7 @@ RSpec.describe Html2rss::Web::App do
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
-    token_payload = instance_double(Html2rss::Web::FeedToken, url: FEED_URL, username: account[:username])
+    token_payload = instance_double(Html2rss::Web::FeedToken, url: feed_url, username: account[:username])
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
       validate_and_decode: token_payload
@@ -54,7 +54,7 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'renders the XML feed with cache headers', :aggregate_failures do
-      get "/api/v1/feeds/#{FEED_TOKEN}", {}, 'HTTP_HOST' => 'localhost:3000'
+      get "/api/v1/feeds/#{feed_token}", {}, 'HTTP_HOST' => 'localhost:3000'
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
@@ -65,7 +65,7 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'returns bad request for unsupported strategy', :aggregate_failures do
-      get "/api/v1/feeds/#{FEED_TOKEN}", { 'strategy' => 'invalid' }
+      get "/api/v1/feeds/#{feed_token}", { 'strategy' => 'invalid' }
 
       expect(last_response.status).to eq(400)
       expect(last_response.content_type).to include('application/json')
@@ -73,10 +73,10 @@ RSpec.describe Html2rss::Web::App do
     end
   end
 
-  describe 'POST /api/v1/feeds' do
+  describe 'POST /api/v1/feeds' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     let(:request_payload) do
       {
-        url: FEED_URL,
+        url: feed_url,
         strategy: 'ssrf_filter'
       }
     end
@@ -85,9 +85,9 @@ RSpec.describe Html2rss::Web::App do
       {
         id: 'feed-123',
         name: 'Example Feed',
-        url: FEED_URL,
+        url: feed_url,
         strategy: 'ssrf_filter',
-        public_url: "/api/v1/feeds/#{FEED_TOKEN}",
+        public_url: "/api/v1/feeds/#{feed_token}",
         username: account[:username]
       }
     end
@@ -175,8 +175,8 @@ RSpec.describe Html2rss::Web::App do
       expect(response_json).to include('success' => true)
       expect(response_json.dig('data', 'feed')).to include(
         'id' => 'feed-123',
-        'url' => FEED_URL,
-        'public_url' => "/api/v1/feeds/#{FEED_TOKEN}"
+        'url' => feed_url,
+        'public_url' => "/api/v1/feeds/#{feed_token}"
       )
     end
   end

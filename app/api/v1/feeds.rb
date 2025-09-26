@@ -131,16 +131,22 @@ module Html2rss
           def feed_response_payload(feed_data)
             {
               success: true,
-              data: { feed: {
-                id: feed_data[:id],
-                name: feed_data[:name],
-                url: feed_data[:url],
-                strategy: feed_data[:strategy],
-                public_url: feed_data[:public_url],
-                created_at: Time.now.iso8601,
-                updated_at: Time.now.iso8601
-              } },
+              data: { feed: feed_attributes(feed_data) },
               meta: { created: true }
+            }
+          end
+
+          def feed_attributes(feed_data)
+            timestamp = Time.now.iso8601
+
+            {
+              id: feed_data[:id],
+              name: feed_data[:name],
+              url: feed_data[:url],
+              strategy: feed_data[:strategy],
+              public_url: feed_data[:public_url],
+              created_at: timestamp,
+              updated_at: timestamp
             }
           end
 
@@ -152,10 +158,10 @@ module Html2rss
 
           module_function :extract_create_params, :validate_create_params, :build_create_response,
                           :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
-                          :feed_response_payload, :extract_site_title
+                          :feed_response_payload, :feed_attributes, :extract_site_title
           private_class_method :extract_create_params, :validate_create_params, :build_create_response,
                                :authenticate_request, :select_strategy, :supported_strategies, :default_strategy,
-                               :feed_response_payload, :extract_site_title
+                               :feed_response_payload, :feed_attributes, :extract_site_title
         end
       end
     end

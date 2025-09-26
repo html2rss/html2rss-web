@@ -37,6 +37,7 @@ end
 
 module Html2rss
   module Web
+    # Provides consistent throttled responses for Rack::Attack
     module RackAttackResponse
       module_function
 
@@ -58,15 +59,9 @@ module Html2rss
           success: false,
           error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests. Please try again later.' }
         }.to_json
+        headers = { 'Content-Type' => 'application/json', 'Retry-After' => retry_after.to_s }
 
-        [
-          429,
-          {
-            'Content-Type' => 'application/json',
-            'Retry-After' => retry_after.to_s
-          },
-          [body]
-        ]
+        [429, headers, [body]]
       end
 
       def text_response(retry_after)

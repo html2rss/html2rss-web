@@ -18,10 +18,10 @@
     "test:smoke": "playwright test"
   },
   "dependencies": {
-    "@astrojs/preact": "^4.0.0",
-    "@astrojs/starlight": "^0.35.3",
-    "astro": "^5.13.8",
-    "preact": "^10.19.0",
+    "@astrojs/preact": "^4.1.1",
+    "@astrojs/starlight": "^0.36.0",
+    "astro": "^5.14.1",
+    "preact": "^10.27.2",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
@@ -32,6 +32,6 @@
     "msw": "^2.11.3",
     "prettier": "^3.x.x",
     "prettier-plugin-astro": "^0.x.x",
-    "vitest": "^1.0.0"
+    "vitest": "^3.2.4"
   }
 }

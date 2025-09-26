@@ -69,7 +69,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
 
   describe 'GET /api/v1/feeds/:token' do
     it 'returns unauthorized when account not found', :aggregate_failures do
-      token_double = double('FeedToken', url: 'https://example.com', username: 'ghost')
+      token_double = instance_double(Html2rss::Web::FeedToken, url: 'https://example.com', username: 'ghost')
       allow(Html2rss::Web::FeedToken).to receive_messages(
         decode: token_double,
         validate_and_decode: token_double
@@ -86,7 +86,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
     end
 
     it 'returns bad request when strategy is unsupported', :aggregate_failures do
-      token_double = double('FeedToken', url: 'https://example.com', username: 'tester')
+      token_double = instance_double(Html2rss::Web::FeedToken, url: 'https://example.com', username: 'tester')
       allow(Html2rss::Web::FeedToken).to receive_messages(
         decode: token_double,
         validate_and_decode: token_double

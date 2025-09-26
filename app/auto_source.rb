@@ -29,7 +29,9 @@ module Html2rss
         feed_token = Auth.generate_feed_token(token_data[:username], url)
         return nil unless feed_token
 
-        build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
+        identifiers = { feed_id: feed_id, feed_token: feed_token }
+
+        build_feed_data(name, url, token_data, strategy, identifiers)
       end
 
       # @param token_data [Hash]
@@ -60,11 +62,11 @@ module Html2rss
         FeedGenerator.process_feed_content(url, strategy, feed_content)
       end
 
-      def build_feed_data(name, url, token_data, strategy, feed_id, feed_token)
-        public_url = "/api/v1/feeds/#{feed_token}"
+      def build_feed_data(name, url, token_data, strategy, identifiers)
+        public_url = "/api/v1/feeds/#{identifiers[:feed_token]}"
 
         {
-          id: feed_id,
+          id: identifiers[:feed_id],
           name: name,
           url: url,
           username: token_data[:username],
