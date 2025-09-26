@@ -1,38 +1,34 @@
-FROM mcr.microsoft.com/devcontainers/ruby:3.4-bullseye
+FROM ruby:3.4.6-alpine3.21
 
-# Install Node.js 20
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-  && apt-get install -y nodejs
+SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-  build-essential \
-  git \
-  curl \
-  && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache \
+    bash \
+    build-base \
+    curl \
+    git \
+    libxml2-dev \
+    libxslt-dev \
+    nodejs \
+    npm \
+    openssl-dev \
+    python3 \
+    tzdata
 
-# Install development gems
-RUN gem install rubocop
+ARG USER=vscode
+ARG UID=1000
+ARG GID=1000
 
-# Install global npm packages
-RUN npm install -g prettier
+RUN addgroup -g "$GID" "$USER" \
+  && adduser -D -G "$USER" -u "$UID" "$USER"
 
-# Create vscode user
-RUN groupadd --gid 1000 vscode \
-  && useradd --uid 1000 --gid vscode --shell /bin/bash --create-home vscode
-
-# Set up workspace
 WORKDIR /workspace
-RUN chown -R vscode:vscode /workspace
+RUN chown -R "$USER":"$USER" /workspace
 
-# Switch to vscode user
-USER vscode
+ENV BUNDLE_PATH=/usr/local/bundle
 
-# Set up environment
-RUN echo 'export BUNDLE_PATH="/usr/local/bundle"' >> ~/.bashrc
+USER "$USER"
 
-# Expose port
 EXPOSE 3000
 
-# Keep container running
 CMD ["sleep", "infinity"]

@@ -153,7 +153,7 @@ module Html2rss
 
           r.get do
             JSON.generate({ success: true,
-                            data: { api: { name: 'html2rss-web API', version: '1.0.0',
+                            data: { api: { name: 'html2rss-web API',
                                            description: 'RESTful API for converting websites to RSS feeds' } } })
           end
         end

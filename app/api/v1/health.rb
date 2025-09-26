@@ -26,7 +26,6 @@ module Html2rss
                 health: {
                   status: 'healthy',
                   timestamp: Time.now.iso8601,
-                  version: '1.0.0',
                   environment: ENV.fetch('RACK_ENV', 'development'),
                   uptime: Process.clock_gettime(Process::CLOCK_MONOTONIC),
                   checks: {}
