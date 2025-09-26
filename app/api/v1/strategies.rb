@@ -10,19 +10,19 @@ module Html2rss
         # RESTful API v1 for strategies resource
         # Handles listing available extraction strategies
         module Strategies
-          module_function
+          class << self
+            def index(_request)
+              strategies = Html2rss::RequestService.strategy_names.map do |name|
+                {
+                  id: name.to_s,
+                  name: name.to_s,
+                  display_name: name.to_s.split('_').map(&:capitalize).join(' '),
+                  available: true
+                }
+              end
 
-          def index(_request)
-            strategies = Html2rss::RequestService.strategy_names.map do |name|
-              {
-                id: name.to_s,
-                name: name.to_s,
-                display_name: name.to_s.split('_').map(&:capitalize).join(' '),
-                available: true
-              }
+              { success: true, data: { strategies: strategies }, meta: { total: strategies.count } }
             end
-
-            { success: true, data: { strategies: strategies }, meta: { total: strategies.count } }
           end
         end
       end

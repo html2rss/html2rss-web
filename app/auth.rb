@@ -12,90 +12,109 @@ module Html2rss
   module Web
     # Authentication system
     module Auth
-      module_function
+      class << self
+        # @param request [Rack::Request]
+        # @return [Hash, nil] account data if authenticated
+        def authenticate(request)
+          token = extract_token(request)
+          return audit_auth(request, nil, 'missing_token') unless token
 
-      # @param request [Rack::Request]
-      # @return [Hash, nil] account data if authenticated
-      def authenticate(request)
-        token = extract_token(request)
-        return log_auth_failure(request, 'missing_token') unless token
+          account = AccountManager.get_account(token)
+          audit_auth(request, account, 'invalid_token')
+        end
 
-        account = AccountManager.get_account(token)
-        return log_auth_success(account, request) if account
+        # @param username [String]
+        # @param url [String]
+        # @param expires_in [Integer] seconds (default: 10 years)
+        # @return [String] HMAC-signed compressed feed token
+        def generate_feed_token(username, url, expires_in: Html2rss::Web::DEFAULT_EXPIRY)
+          token = FeedToken.create_with_validation(
+            username: username,
+            url: url,
+            expires_in: expires_in,
+            secret_key: secret_key
+          )
+          token&.encode
+        end
 
-        log_auth_failure(request, 'invalid_token')
-      end
+        # @param feed_token [String]
+        # @param url [String]
+        # @return [Hash, nil]
+        def validate_feed_token(feed_token, url)
+          with_validated_token(feed_token, url) do |token|
+            AccountManager.get_account_by_username(token.username)
+          end
+        end
 
-      # @param request [Rack::Request]
-      # @param reason [String]
-      # @return [nil]
-      def log_auth_failure(request, reason)
-        SecurityLogger.log_auth_failure(request.ip, request.user_agent, reason)
-        nil
-      end
+        # @param feed_token [String]
+        # @param url [String]
+        # @return [Boolean]
+        def feed_url_allowed?(feed_token, url)
+          account = validate_feed_token(feed_token, url)
+          return false unless account
 
-      # @param account [Hash]
-      # @param request [Rack::Request]
-      # @return [Hash]
-      def log_auth_success(account, request)
-        SecurityLogger.log_auth_success(account[:username], request.ip)
-        account
-      end
+          UrlValidator.url_allowed?(account, url)
+        end
 
-      # @param username [String]
-      # @param url [String]
-      # @param expires_in [Integer] seconds (default: 10 years)
-      # @return [String] HMAC-signed compressed feed token
-      def generate_feed_token(username, url, expires_in: Html2rss::Web::DEFAULT_EXPIRY)
-        token = FeedToken.create_with_validation(
-          username: username,
-          url: url,
-          expires_in: expires_in,
-          secret_key: secret_key
-        )
-        token&.encode
-      end
+        # @param token [String]
+        # @return [Html2rss::Web::FeedToken, nil]
+        def validate_and_decode_feed_token(token)
+          decoded = FeedToken.decode(token)
+          return unless decoded
 
-      # @param feed_token [String]
-      # @param url [String]
-      # @return [Hash, nil]
-      def validate_feed_token(feed_token, url)
-        return nil unless feed_token && url
+          with_validated_token(token, decoded.url) { |validated| validated }
+        end
 
-        token = FeedToken.validate_and_decode(feed_token, url, secret_key)
-        valid = !token.nil?
-        SecurityLogger.log_token_usage(feed_token, url, valid)
+        private
 
-        return nil unless valid
+        # @param request [Rack::Request]
+        # @param reason [String]
+        # @return [nil]
+        def log_auth_failure(request, reason)
+          SecurityLogger.log_auth_failure(request.ip, request.user_agent, reason)
+          nil
+        end
 
-        AccountManager.get_account_by_username(token.username)
-      end
+        # @param account [Hash]
+        # @param request [Rack::Request]
+        # @return [Hash]
+        def log_auth_success(account, request)
+          SecurityLogger.log_auth_success(account[:username], request.ip)
+          account
+        end
 
-      # @param feed_token [String]
-      # @param url [String]
-      # @return [Boolean]
-      def feed_url_allowed?(feed_token, url)
-        account = validate_feed_token(feed_token, url)
-        return false unless account
+        # @param request [Rack::Request]
+        # @return [String, nil]
+        def extract_token(request)
+          auth_header = request.env['HTTP_AUTHORIZATION']
+          return unless auth_header&.start_with?('Bearer ')
 
-        UrlValidator.url_allowed?(account, url)
-      end
+          token = auth_header.delete_prefix('Bearer ')
+          return nil if token.empty? || token.length > 1024
 
-      # @param request [Rack::Request]
-      # @return [String, nil]
-      def extract_token(request)
-        auth_header = request.env['HTTP_AUTHORIZATION']
-        return unless auth_header&.start_with?('Bearer ')
+          token
+        end
 
-        token = auth_header.delete_prefix('Bearer ')
-        return nil if token.empty? || token.length > 1024
+        def audit_auth(request, account, failure_reason)
+          return log_auth_success(account, request) if account
 
-        token
-      end
+          log_auth_failure(request, failure_reason)
+        end
 
-      # @return [String, nil]
-      def secret_key
-        ENV.fetch('HTML2RSS_SECRET_KEY')
+        def with_validated_token(feed_token, url)
+          return nil unless feed_token && url
+
+          token = FeedToken.validate_and_decode(feed_token, url, secret_key)
+          SecurityLogger.log_token_usage(feed_token, url, !token.nil?)
+          return nil unless token
+
+          yield token
+        end
+
+        # @return [String]
+        def secret_key
+          ENV.fetch('HTML2RSS_SECRET_KEY')
+        end
       end
     end
   end

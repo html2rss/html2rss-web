@@ -19,6 +19,8 @@ require_relative 'app/api/v1/health'
 require_relative 'app/api/v1/strategies'
 require_relative 'app/ssrf_filter_strategy'
 require_relative 'app/http_cache'
+require_relative 'app/routes/api_v1'
+require_relative 'app/routes/static'
 
 module Html2rss
   module Web
@@ -115,60 +117,10 @@ module Html2rss
       route do |r|
         r.public
 
-        r.on 'api', 'v1' do # rubocop:disable Metrics/BlockLength
-          r.response['Content-Type'] = 'application/json'
-
-          r.on 'health' do
-            r.get do
-              JSON.generate(Api::V1::Health.show(r))
-            end
-          end
-
-          r.on 'strategies' do
-            r.get do
-              JSON.generate(Api::V1::Strategies.index(r))
-            end
-          end
-
-          r.on 'feeds' do
-            r.get String do |token|
-              result = Api::V1::Feeds.show(r, token)
-              result.is_a?(Hash) ? JSON.generate(result) : result
-            end
-            r.post do
-              JSON.generate(Api::V1::Feeds.create(r))
-            end
-          end
-
-          r.get 'docs' do
-            docs_path = 'docs/api/v1/openapi.yaml'
-            if File.exist?(docs_path)
-              r.response['Content-Type'] = 'text/yaml'
-              File.read(docs_path)
-            else
-              r.response.status = 404
-              JSON.generate({ success: false, error: { message: 'Documentation not found' } })
-            end
-          end
-
-          r.get do
-            JSON.generate({ success: true,
-                            data: { api: { name: 'html2rss-web API',
-                                           description: 'RESTful API for converting websites to RSS feeds' } } })
-          end
-        end
-
-        r.get String do |feed_name|
-          next if feed_name.include?('.') && !feed_name.end_with?('.xml', '.rss')
-
-          handle_feed_generation(r, feed_name)
-        end
-
-        r.root do
-          index_path = 'public/frontend/index.html'
-          response['Content-Type'] = 'text/html'
-          File.exist?(index_path) ? File.read(index_path) : fallback_html
-        end
+        Routes::ApiV1.call(r)
+        Routes::Static.call(r,
+                            feed_handler: ->(router_ctx, feed_name) { handle_feed_generation(router_ctx, feed_name) },
+                            index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
 
       private
@@ -179,6 +131,12 @@ module Html2rss
         router.response['Content-Type'] = 'application/xml'
         router.response['Cache-Control'] = "public, max-age=#{ttl}"
         rss_content
+      end
+
+      def render_index_page(router)
+        index_path = 'public/frontend/index.html'
+        router.response['Content-Type'] = 'text/html'
+        File.exist?(index_path) ? File.read(index_path) : fallback_html
       end
 
       def fallback_html
