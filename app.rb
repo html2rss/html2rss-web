@@ -86,25 +86,13 @@ module Html2rss
         next exception_page(error) if development?
 
         # Simple error handling for production
-        status = case error
-                 when UnauthorizedError then 401
-                 when BadRequestError then 400
-                 when ForbiddenError then 403
-                 when NotFoundError then 404
-                 else 500
-                 end
+        http_status = error.respond_to?(:status) ? error.status : 500
+        error_code = error.respond_to?(:code) ? error.code : 'INTERNAL_SERVER_ERROR'
 
-        response.status = status
+        response.status = http_status
 
         if request.path.start_with?('/api/v1/')
           response['Content-Type'] = 'application/json'
-          error_code = case error
-                       when UnauthorizedError then 'UNAUTHORIZED'
-                       when BadRequestError then 'BAD_REQUEST'
-                       when ForbiddenError then 'FORBIDDEN'
-                       when NotFoundError then 'NOT_FOUND'
-                       else 'INTERNAL_SERVER_ERROR'
-                       end
           JSON.generate({ success: false, error: { message: error.message, code: error_code } })
         else
           response['Content-Type'] = 'application/xml'

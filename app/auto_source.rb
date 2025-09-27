@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
+require 'digest'
 require_relative 'account_manager'
 require_relative 'auth'
-require_relative 'auth_utils'
 require_relative 'feed_generator'
 require_relative 'url_validator'
 
@@ -24,7 +24,7 @@ module Html2rss
         def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
           return nil unless url_allowed_for_token?(token_data, url)
 
-          feed_id = AuthUtils.generate_feed_id(token_data[:username], url, token_data[:token])
+          feed_id = generate_feed_id(token_data[:username], url, token_data[:token])
           feed_token = Auth.generate_feed_token(token_data[:username], url)
           return nil unless feed_token
 
@@ -61,6 +61,11 @@ module Html2rss
           return false unless account
 
           UrlValidator.url_allowed?(account, url)
+        end
+
+        def generate_feed_id(username, url, token)
+          content = "#{username}:#{url}:#{token}"
+          Digest::SHA256.hexdigest(content)[0..15]
         end
 
         def build_feed_data(name, url, token_data, strategy, identifiers)
