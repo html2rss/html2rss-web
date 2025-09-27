@@ -1,4 +1,4 @@
-require:
+plugins:
   - rubocop-performance
   - rubocop-rspec
   - rubocop-rake
@@ -11,9 +11,6 @@ AllCops:
     - '**/*.yml'
     - '**/*.yaml'
     - '**/.tool-versions'
-
-Style/Documentation:
-  Enabled: false
 
 Metrics/BlockLength:
   Exclude:
@@ -28,6 +25,7 @@ Layout/ClassStructure:
   Enabled: true
 
 Style/Documentation:
+  Enabled: false
   AllowedConstants:
     - App
 
