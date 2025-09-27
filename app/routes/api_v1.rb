@@ -12,7 +12,6 @@ module Html2rss
               mount_health(router)
               mount_strategies(router)
               mount_feeds(router)
-              mount_docs(router)
               mount_root(router)
             end
           end
@@ -44,19 +43,6 @@ module Html2rss
 
               router.post do
                 JSON.generate(Api::V1::Feeds.create(router))
-              end
-            end
-          end
-
-          def mount_docs(router)
-            router.get 'docs' do
-              docs_path = 'docs/api/v1/openapi.yaml'
-              if File.exist?(docs_path)
-                router.response['Content-Type'] = 'text/yaml'
-                File.read(docs_path)
-              else
-                router.response.status = 404
-                JSON.generate({ success: false, error: { message: 'Documentation not found' } })
               end
             end
           end

@@ -28,7 +28,7 @@ module Html2rss
           return true if allowed_urls.empty?
 
           allowed_urls.any? do |pattern|
-            wildcard?(pattern) ? match_wildcard(pattern, normalized_url) : match_exact(pattern, normalized_url)
+            wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
           end
         end
 
@@ -39,7 +39,7 @@ module Html2rss
           return false unless (normalized_url = normalize_url(url))
 
           Array(patterns).any? do |pattern|
-            wildcard?(pattern) ? match_wildcard(pattern, normalized_url) : match_exact(pattern, normalized_url)
+            wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
           end
         end
 
@@ -49,19 +49,19 @@ module Html2rss
         def url_matches_pattern?(url, pattern)
           return false unless (normalized_url = normalize_url(url))
 
-          wildcard?(pattern) ? match_wildcard(pattern, normalized_url) : match_exact(pattern, normalized_url)
+          wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
         end
 
         private
 
-        def match_exact(pattern, normalized_url)
+        def match_exact?(pattern, normalized_url)
           return true if pattern == normalized_url
 
           normalized_pattern = normalize_url(pattern)
           normalized_pattern ? normalized_pattern == normalized_url : false
         end
 
-        def match_wildcard(pattern, normalized_url)
+        def match_wildcard?(pattern, normalized_url)
           return true if pattern == '*'
 
           File.fnmatch?(pattern, normalized_url, File::FNM_CASEFOLD)

@@ -27,7 +27,21 @@ module Html2rss
     ##
     # Roda app serving RSS feeds via html2rss
     class App < Roda
-      CONTENT_TYPE_RSS = 'application/xml'
+      FALLBACK_HTML = <<~HTML
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>html2rss-web</title>
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <meta name="robots" content="noindex,nofollow">
+          </head>
+          <body>
+            <h1>html2rss-web</h1>
+            <p>Convert websites to RSS feeds</p>
+            <p>API available at <code>/api/</code></p>
+          </body>
+        </html>
+      HTML
 
       def self.development? = EnvironmentValidator.development?
       def development? = self.class.development?
@@ -47,13 +61,18 @@ module Html2rss
       plugin :content_security_policy do |csp|
         csp.default_src :none
         csp.style_src :self, "'unsafe-inline'"
-        csp.script_src :self, "'unsafe-inline'"
+        csp.script_src :self
         csp.connect_src :self
         csp.img_src :self
-        csp.font_src :self, 'data:'
+        csp.font_src :self
         csp.form_action :self
         csp.base_uri :none
-        csp.frame_ancestors development? ? ['http://localhost:*', 'https://localhost:*'] : :none
+        if development?
+          csp.frame_ancestors 'http://localhost:*', 'https://localhost:*',
+                              'http://127.0.0.1:*', 'https://127.0.0.1:*'
+        else
+          csp.frame_ancestors :none
+        end
         csp.frame_src :self
         csp.object_src :none
         csp.media_src :none
@@ -85,11 +104,9 @@ module Html2rss
       plugin :error_handler do |error|
         next exception_page(error) if development?
 
-        # Simple error handling for production
-        http_status = error.respond_to?(:status) ? error.status : 500
         error_code = error.respond_to?(:code) ? error.code : 'INTERNAL_SERVER_ERROR'
 
-        response.status = http_status
+        response.status = error.respond_to?(:status) ? error.status : 500
 
         if request.path.start_with?('/api/v1/')
           response['Content-Type'] = 'application/json'
@@ -124,25 +141,7 @@ module Html2rss
       def render_index_page(router)
         index_path = 'public/frontend/index.html'
         router.response['Content-Type'] = 'text/html'
-        File.exist?(index_path) ? File.read(index_path) : fallback_html
-      end
-
-      def fallback_html
-        <<~HTML
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>html2rss-web</title>
-              <meta name="viewport" content="width=device-width,initial-scale=1">
-              <meta name="robots" content="noindex,nofollow">
-            </head>
-            <body>
-              <h1>html2rss-web</h1>
-              <p>Convert websites to RSS feeds</p>
-              <p>API available at <code>/api/</code></p>
-            </body>
-          </html>
-        HTML
+        File.exist?(index_path) ? File.read(index_path) : FALLBACK_HTML
       end
     end
   end

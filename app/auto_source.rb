@@ -46,6 +46,10 @@ module Html2rss
           }
         end
 
+        def generate_feed_object(url, strategy = 'ssrf_filter')
+          FeedGenerator.call_strategy(url, strategy)
+        end
+
         def generate_feed_content(url, strategy = 'ssrf_filter')
           feed_content = FeedGenerator.call_strategy(url, strategy)
           FeedGenerator.process_feed_content(url, strategy, feed_content)

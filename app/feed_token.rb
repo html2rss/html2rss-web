@@ -81,7 +81,7 @@ module Html2rss
         { p: { u: username, l: url, e: expires_at }, s: signature }
       end
 
-      def secure_compare(first, second)
+      def secure_compare(first, second) # rubocop:disable Naming/PredicateMethod
         return false unless first && second && first.bytesize == second.bytesize
 
         first.each_byte.zip(second.each_byte).reduce(0) { |acc, (a, b)| acc | (a ^ b) }.zero?

@@ -6,6 +6,7 @@ require 'html2rss/url'
 require_relative '../../account_manager'
 require_relative '../../auth'
 require_relative '../../auto_source'
+require_relative '../../feed_generator'
 require_relative '../../feeds'
 require_relative '../../exceptions'
 require_relative '../../feed_token'
@@ -17,6 +18,8 @@ module Html2rss
       module V1
         # RESTful API v1 for feeds
         module Feeds
+          DEFAULT_TTL_SECONDS = 3600 # 1 hour
+
           class << self
             def show(request, token)
               ensure_auto_source_enabled!
@@ -93,14 +96,16 @@ module Html2rss
             end
 
             def render_generated_feed(request, url)
-              rss_content = AutoSource.generate_feed_content(url, normalize_strategy(request.params['strategy']))
+              strategy = normalize_strategy(request.params['strategy'])
+              feed_object = AutoSource.generate_feed_object(url, strategy)
+              rendered_feed = FeedGenerator.process_feed_content(url, strategy, feed_object)
 
               request.response['Content-Type'] = 'application/xml'
 
-              # TODO: get ttl from feed
-              HttpCache.expires(request.response, 600, cache_control: 'public')
+              ttl = extract_ttl_from_feed_object(feed_object)
+              HttpCache.expires(request.response, ttl, cache_control: 'public')
 
-              rss_content.to_s
+              rendered_feed.to_s
             end
 
             def require_account(request)
@@ -144,6 +149,14 @@ module Html2rss
               Html2rss::Url.for_channel(url).channel_titleized
             rescue StandardError
               nil
+            end
+
+            def extract_ttl_from_feed_object(feed_object)
+              ttl_value = feed_object.respond_to?(:channel) ? feed_object.channel&.ttl : nil
+              ttl_minutes = ttl_value.respond_to?(:to_i) ? ttl_value.to_i : 0
+              return DEFAULT_TTL_SECONDS if ttl_minutes <= 0
+
+              ttl_minutes * 60
             end
           end
         end

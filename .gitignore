@@ -41,4 +41,12 @@
 /frontend/.astro/
 /frontend/node_modules/
 /public/frontend
+
+# Frontend generated files
+*.min.js
+*.min.css
+
+# Frontend logs
+*.log
+
 .yardoc
