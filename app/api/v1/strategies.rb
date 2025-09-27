@@ -16,8 +16,7 @@ module Html2rss
                 {
                   id: name.to_s,
                   name: name.to_s,
-                  display_name: name.to_s.split('_').map(&:capitalize).join(' '),
-                  available: true
+                  display_name: name.to_s.split('_').map(&:capitalize).join(' ')
                 }
               end
 

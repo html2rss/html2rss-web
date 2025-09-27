@@ -74,11 +74,6 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Verify build output
-        run: |
-          grep -q "html2rss-web" dist/index.html
-          grep -q "Feed Gallery" dist/gallery/index.html
-
   docker-test:
     if: github.event_name == 'push'
     needs:

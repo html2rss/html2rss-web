@@ -14,7 +14,7 @@
     "test:run": "vitest run",
     "test:unit": "vitest run --reporter=verbose --config vitest.unit.config.ts",
     "test:contract": "vitest run --reporter=verbose --config vitest.contract.config.ts",
-    "test:ci": "npm run test:unit && npm run test:contract",
+    "test:ci": "npm run test:unit && npm run test:contract && npm run test:smoke",
     "test:smoke": "playwright test"
   },
   "dependencies": {

@@ -91,7 +91,6 @@ module Html2rss
 end
 
 # In-memory store (resets on restart)
-# Note: In production, consider using Redis for persistent rate limiting
 module Html2rss
   module Web
     # Provides consistent throttled responses for Rack::Attack

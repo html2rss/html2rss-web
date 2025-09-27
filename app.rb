@@ -42,14 +42,14 @@ module Html2rss
       opts[:check_dynamic_arity] = false
       opts[:check_arity] = :warn
       use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
-                       verbose: false
+                       verbose: development?
 
       plugin :content_security_policy do |csp|
         csp.default_src :none
         csp.style_src :self, "'unsafe-inline'"
         csp.script_src :self, "'unsafe-inline'"
         csp.connect_src :self
-        csp.img_src :self, 'data:', 'blob:'
+        csp.img_src :self
         csp.font_src :self, 'data:'
         csp.form_action :self
         csp.base_uri :none

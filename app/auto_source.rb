@@ -11,68 +11,70 @@ module Html2rss
     ##
     # Auto source functionality for generating RSS feeds from any website
     module AutoSource
-      module_function
-
-      # @return [Boolean]
-      def enabled?
-        if EnvironmentValidator.development?
-          ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
-        else
-          ENV.fetch('AUTO_SOURCE_ENABLED', nil) == 'true'
+      class << self
+        # @return [Boolean]
+        def enabled?
+          if EnvironmentValidator.development?
+            ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
+          else
+            ENV.fetch('AUTO_SOURCE_ENABLED', nil) == 'true'
+          end
         end
-      end
 
-      def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
-        return nil unless url_allowed_for_token?(token_data, url)
+        def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
+          return nil unless url_allowed_for_token?(token_data, url)
 
-        feed_id = AuthUtils.generate_feed_id(token_data[:username], url, token_data[:token])
-        feed_token = Auth.generate_feed_token(token_data[:username], url)
-        return nil unless feed_token
+          feed_id = AuthUtils.generate_feed_id(token_data[:username], url, token_data[:token])
+          feed_token = Auth.generate_feed_token(token_data[:username], url)
+          return nil unless feed_token
 
-        identifiers = { feed_id: feed_id, feed_token: feed_token }
+          identifiers = { feed_id: feed_id, feed_token: feed_token }
 
-        build_feed_data(name, url, token_data, strategy, identifiers)
-      end
+          build_feed_data(name, url, token_data, strategy, identifiers)
+        end
 
-      # @param token_data [Hash]
-      # @param url [String]
-      # @return [Boolean]
-      def url_allowed_for_token?(token_data, url)
-        account = AccountManager.get_account_by_username(token_data[:username])
-        return false unless account
+        def generate_feed_from_stable_id(feed_id, token_data)
+          return nil unless token_data
 
-        UrlValidator.url_allowed?(account, url)
-      end
+          # Reconstruct feed data from token and feed_id
+          # Stateless operation
+          {
+            id: feed_id,
+            url: nil, # Will be provided in request
+            username: token_data[:username],
+            strategy: 'ssrf_filter'
+          }
+        end
 
-      def generate_feed_from_stable_id(feed_id, token_data)
-        return nil unless token_data
+        def generate_feed_content(url, strategy = 'ssrf_filter')
+          feed_content = FeedGenerator.call_strategy(url, strategy)
+          FeedGenerator.process_feed_content(url, strategy, feed_content)
+        end
 
-        # Reconstruct feed data from token and feed_id
-        # Stateless operation
-        {
-          id: feed_id,
-          url: nil, # Will be provided in request
-          username: token_data[:username],
-          strategy: 'ssrf_filter'
-        }
-      end
+        private
 
-      def generate_feed_content(url, strategy = 'ssrf_filter')
-        feed_content = FeedGenerator.call_strategy(url, strategy)
-        FeedGenerator.process_feed_content(url, strategy, feed_content)
-      end
+        # @param token_data [Hash]
+        # @param url [String]
+        # @return [Boolean]
+        def url_allowed_for_token?(token_data, url)
+          account = AccountManager.get_account_by_username(token_data[:username])
+          return false unless account
 
-      def build_feed_data(name, url, token_data, strategy, identifiers)
-        public_url = "/api/v1/feeds/#{identifiers[:feed_token]}"
+          UrlValidator.url_allowed?(account, url)
+        end
 
-        {
-          id: identifiers[:feed_id],
-          name: name,
-          url: url,
-          username: token_data[:username],
-          strategy: strategy,
-          public_url: public_url
-        }
+        def build_feed_data(name, url, token_data, strategy, identifiers)
+          public_url = "/api/v1/feeds/#{identifiers[:feed_token]}"
+
+          {
+            id: identifiers[:feed_id],
+            name: name,
+            url: url,
+            username: token_data[:username],
+            strategy: strategy,
+            public_url: public_url
+          }
+        end
       end
     end
   end

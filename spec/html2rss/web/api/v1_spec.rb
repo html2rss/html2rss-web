@@ -14,7 +14,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   end
 
   describe 'GET /api/v1' do
-    it 'returns API information', :aggregate_failures do
+    it 'returns API information', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       get '/api/v1'
 
       expect(last_response.status).to eq(200)
@@ -22,7 +22,6 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
 
       response_data = JSON.parse(last_response.body)
       expect(response_data['success']).to be true
-      expect(response_data['data']['api']['version']).to eq('1.0.0')
       expect(response_data['data']['api']['name']).to eq('html2rss-web API')
     end
   end
@@ -40,7 +39,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(JSON.parse(last_response.body)).to include('error' => include('code' => 'UNAUTHORIZED'))
     end
 
-    it 'returns health status when token is valid', :aggregate_failures do
+    it 'returns health status when token is valid', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return({})
 
@@ -53,7 +52,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       header 'Authorization', nil
     end
 
-    it 'returns error when configuration fails', :aggregate_failures do
+    it 'returns error when configuration fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(health_account)
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')
 
@@ -68,7 +67,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   end
 
   describe 'GET /api/v1/feeds/:token' do
-    it 'returns unauthorized when account not found', :aggregate_failures do
+    it 'returns unauthorized when account not found', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token_double = instance_double(Html2rss::Web::FeedToken, url: 'https://example.com', username: 'ghost')
       allow(Html2rss::Web::FeedToken).to receive_messages(
         decode: token_double,
@@ -85,7 +84,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(response_data.dig('error', 'message')).to eq('Account not found')
     end
 
-    it 'returns bad request when strategy is unsupported', :aggregate_failures do
+    it 'returns bad request when strategy is unsupported', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token_double = instance_double(Html2rss::Web::FeedToken, url: 'https://example.com', username: 'tester')
       allow(Html2rss::Web::FeedToken).to receive_messages(
         decode: token_double,

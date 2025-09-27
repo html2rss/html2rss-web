@@ -29,14 +29,6 @@ module Html2rss
         new(username: username, url: url, expires_at: expires_at, signature: signature)
       end
 
-      # @param username [String]
-      # @param url [String]
-      # @param expires_at [Integer]
-      # @param signature [String]
-      def self.create(username:, url:, expires_at:, signature:)
-        new(username: username, url: url, expires_at: expires_at, signature: signature)
-      end
-
       # @param encoded_token [String]
       # @return [FeedToken, nil]
       def self.decode(encoded_token)

@@ -13,25 +13,8 @@ if ENV['CI'] || ENV['COVERAGE']
 
     track_files '**/*.rb'
 
-    # Display more detailed output
     minimum_coverage 80
     maximum_coverage_drop 5
-
-    # Show detailed coverage info
-    add_group 'App', 'app'
-    add_group 'Routes', 'app'
-
-    # Print coverage summary at the end
-    at_exit do
-      puts "\n#{'=' * 50}"
-      puts 'COVERAGE SUMMARY'
-      puts '=' * 50
-      puts "Total Coverage: #{SimpleCov.result.covered_percent.round(2)}%"
-      puts "Lines Covered: #{SimpleCov.result.covered_lines}"
-      puts "Lines Missed: #{SimpleCov.result.missed_lines}"
-      puts "Total Lines: #{SimpleCov.result.total_lines}"
-      puts '=' * 50
-    end
   end
 end
 
