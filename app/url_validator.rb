@@ -32,26 +32,6 @@ module Html2rss
           end
         end
 
-        # @param url [String]
-        # @param patterns [Array<String>]
-        # @return [Boolean]
-        def url_matches_patterns?(url, patterns)
-          return false unless (normalized_url = normalize_url(url))
-
-          Array(patterns).any? do |pattern|
-            wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
-          end
-        end
-
-        # @param url [String]
-        # @param pattern [String]
-        # @return [Boolean]
-        def url_matches_pattern?(url, pattern)
-          return false unless (normalized_url = normalize_url(url))
-
-          wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
-        end
-
         private
 
         def match_exact?(pattern, normalized_url)

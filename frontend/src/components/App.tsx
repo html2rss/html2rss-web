@@ -43,7 +43,7 @@ export function App() {
 
     try {
       await login(authFormData.username, authFormData.token);
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const handleFeedSubmit = async (event: Event) => {
@@ -53,7 +53,7 @@ export function App() {
 
     try {
       await convertFeed(feedFormData.url, feedFormData.strategy, token || '');
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const handleShowAuth = () => {
@@ -70,7 +70,7 @@ export function App() {
     try {
       const demoStrategy = strategies.length > 0 ? strategies[0].id : 'ssrf_filter';
       await convertFeed(url, demoStrategy, 'self-host-for-full-access');
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const showResultExperience = Boolean(result);

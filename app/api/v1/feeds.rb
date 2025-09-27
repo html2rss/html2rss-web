@@ -17,10 +17,10 @@ module Html2rss
     module Api
       module V1
         # RESTful API v1 for feeds
-        module Feeds
+        module Feeds # rubocop:disable Metrics/ModuleLength
           DEFAULT_TTL_SECONDS = 3600 # 1 hour
 
-          class << self
+          class << self # rubocop:disable Metrics/ClassLength
             def show(request, token)
               ensure_auto_source_enabled!
 

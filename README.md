@@ -24,9 +24,9 @@ The in-repo docs live under `frontend/src/content/docs/` and are published by As
 
 ## REST API Snapshot
 ```bash
-# List feeds available to the token
+# List available strategies
 curl -H "Authorization: Bearer <token>" \
-  "https://your-domain.com/api/v1/feeds"
+  "https://your-domain.com/api/v1/strategies"
 
 # Create a feed and capture the signed public URL
 curl -X POST "https://your-domain.com/api/v1/feeds" \
@@ -60,37 +60,37 @@ The Ruby server continues to serve the production build while Astro runs with ho
 
 ## Make Targets
 
-| Command | Purpose |
-| --- | --- |
-| `make help` | List available shortcuts. |
-| `make setup` | Install Ruby and Node dependencies. |
-| `make dev` | Run Ruby (port 3000) and Astro (port 4321) dev servers. |
-| `make dev-ruby` | Start only the Ruby server. |
-| `make dev-frontend` | Start only the Astro dev server. |
-| `make test` | Run Ruby and frontend test suites. |
-| `make test-ruby` | Run Ruby specs. |
-| `make test-frontend` | Run frontend unit and contract tests. |
-| `make lint` | Run all linters. |
-| `make lintfix` | Auto-fix lint warnings where possible. |
-| `make clean` | Remove build artefacts. |
+| Command              | Purpose                                                 |
+| -------------------- | ------------------------------------------------------- |
+| `make help`          | List available shortcuts.                               |
+| `make setup`         | Install Ruby and Node dependencies.                     |
+| `make dev`           | Run Ruby (port 3000) and Astro (port 4321) dev servers. |
+| `make dev-ruby`      | Start only the Ruby server.                             |
+| `make dev-frontend`  | Start only the Astro dev server.                        |
+| `make test`          | Run Ruby and frontend test suites.                      |
+| `make test-ruby`     | Run Ruby specs.                                         |
+| `make test-frontend` | Run frontend unit and contract tests.                   |
+| `make lint`          | Run all linters.                                        |
+| `make lintfix`       | Auto-fix lint warnings where possible.                  |
+| `make clean`         | Remove build artefacts.                                 |
 
 ## Frontend npm Scripts
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Astro dev server with hot reload. |
-| `npm run build` | Production build. |
-| `npm run test:run` | Unit tests (Vitest). |
-| `npm run test:contract` | Contract tests with MSW. |
+| Command                 | Purpose                           |
+| ----------------------- | --------------------------------- |
+| `npm run dev`           | Astro dev server with hot reload. |
+| `npm run build`         | Production build.                 |
+| `npm run test:run`      | Unit tests (Vitest).              |
+| `npm run test:contract` | Contract tests with MSW.          |
 
 ## Testing Strategy
 
-| Layer | Tooling | Focus |
-| --- | --- | --- |
-| Ruby API | RSpec + Rack::Test | Feed creation, retrieval, auth paths. |
-| Frontend unit | Vitest + Testing Library | Component rendering and hooks with mocked fetch. |
-| Frontend contract | Vitest + MSW | End-to-end fetch flows against mocked API responses. |
-| Docker smoke | RSpec (`:docker`) | Net::HTTP probes against the containerised service. |
+| Layer             | Tooling                  | Focus                                                |
+| ----------------- | ------------------------ | ---------------------------------------------------- |
+| Ruby API          | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
+| Frontend unit     | Vitest + Testing Library | Component rendering and hooks with mocked fetch.     |
+| Frontend contract | Vitest + MSW             | End-to-end fetch flows against mocked API responses. |
+| Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
 
 ## Contributing
 
