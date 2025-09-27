@@ -1,6 +1,30 @@
 import { setupServer } from 'msw/node';
+import { rest } from 'msw';
 
-export const server = setupServer();
+export const server = setupServer(
+  rest.get('/api/v1/strategies', (req, res, ctx) => {
+    return res(
+      ctx.json({
+        success: true,
+        data: {
+          strategies: [
+            {
+              id: 'ssrf_filter',
+              name: 'ssrf_filter',
+              display_name: 'SSRF Filter',
+            },
+            {
+              id: 'browserless',
+              name: 'browserless',
+              display_name: 'Browserless',
+            },
+          ],
+        },
+        meta: { total: 2 },
+      })
+    );
+  })
+);
 
 export interface FeedResponseOverrides {
   id?: string;

@@ -42,8 +42,13 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
     )
     allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
     allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
-    allow(Html2rss::Web::AutoSource).to receive_messages(enabled?: true,
-                                                         generate_feed_content: '<rss version="2.0"></rss>')
+    feed_channel = instance_double('Html2rss::FeedChannel', ttl: 10)
+    feed_object = instance_double('Html2rss::Feed', channel: feed_channel)
+
+    allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
+    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object).and_return(feed_object)
+    allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
+      .and_return('<rss version="2.0"></rss>')
   end
 
   describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers

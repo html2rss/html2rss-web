@@ -23,7 +23,9 @@ describe('ResultDisplay', () => {
 
     expect(screen.getByText('🎉')).toBeInTheDocument();
     expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
-    expect(screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')
+    ).toBeInTheDocument();
   });
 
   it('should call onClose when convert-another button is clicked', () => {

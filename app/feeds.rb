@@ -8,20 +8,9 @@ require_relative 'local_config'
 module Html2rss
   module Web
     ##
-    # Feeds functionality for listing and generating RSS feeds
+    # Feeds functionality for generating RSS feeds
     module Feeds
       class << self
-        def list_feeds
-          LocalConfig.feed_names.map do |name|
-            {
-              id: name.to_s,
-              name: name.to_s,
-              description: "RSS feed for #{name}",
-              public_url: "/#{name}"
-            }
-          end
-        end
-
         def generate_feed(feed_name, params = {})
           config = LocalConfig.find(feed_name)
           config[:params] = (config[:params] || {}).merge(params) if params.any?

@@ -37,12 +37,6 @@ module Html2rss
         end
 
         ##
-        # @return [Array<Symbol>] names of locally available feeds
-        def feed_names
-          feeds.keys
-        end
-
-        ##
         # @return [Hash<Symbol, Any>]
         def yaml
           YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
