@@ -42,8 +42,10 @@ describe('App contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Feed Generated Successfully!')).toBeInTheDocument();
-      expect(screen.getByText('Your RSS feed is ready to use')).toBeInTheDocument();
+      expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
+      expect(
+        screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')
+      ).toBeInTheDocument();
     });
   });
 });
