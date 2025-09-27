@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import styles from './ResultDisplay.module.css';
 
 interface ConversionResult {
   id: string;
@@ -9,28 +10,41 @@ interface ConversionResult {
   public_url: string;
 }
 
+type PreviewMode = 'preview' | 'xml';
+
 interface ResultDisplayProps {
   result: ConversionResult;
   onClose: () => void;
+  isAuthenticated?: boolean;
+  username?: string;
+  onLogout?: () => void;
 }
 
-export function ResultDisplay({ result, onClose }: ResultDisplayProps) {
-  const [showRawXml, setShowRawXml] = useState(false);
+export function ResultDisplay({ result, onClose, isAuthenticated, username, onLogout }: ResultDisplayProps) {
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('preview');
   const [xmlContent, setXmlContent] = useState<string>('');
   const [isLoadingXml, setIsLoadingXml] = useState(false);
+  const previewTabId = 'result-preview-tab-preview';
+  const xmlTabId = 'result-preview-tab-xml';
+  const panelId = 'result-preview-panel';
 
-  // Convert relative URL to absolute URL
   const fullUrl = result.public_url.startsWith('http')
     ? result.public_url
     : `${window.location.origin}${result.public_url}`;
   const feedProtocolUrl = `feed:${fullUrl}`;
 
-  // Load raw XML
   useEffect(() => {
-    if (showRawXml && !xmlContent) {
+    const resultElement = document.getElementById('result-display');
+    if (resultElement) {
+      resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (previewMode === 'xml' && !xmlContent) {
       loadRawXml();
     }
-  }, [showRawXml]);
+  }, [previewMode]);
 
   const loadRawXml = async () => {
     setIsLoadingXml(true);
@@ -53,95 +67,113 @@ export function ResultDisplay({ result, onClose }: ResultDisplayProps) {
     }
   };
 
-  // Scroll to result
-  useEffect(() => {
-    const resultElement = document.getElementById('result-display');
-    if (resultElement) {
-      resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
-
   return (
-    <div id="result-display" class="result-section">
-      <div class="success-animation">
-        <div class="success-icon">🎉</div>
-        <h3>Feed Generated Successfully!</h3>
-        <p class="success-subtitle">Your RSS feed is ready to use</p>
+    <section id="result-display" class={`surface ${styles.result}`} aria-live="polite">
+      <header class={styles.hero}>
+        <div class={styles.heroHeadline}>
+          <span class={styles.heroIcon} aria-hidden="true">
+            🎉
+          </span>
+          <span class={styles.heroText}>
+            <p class={styles.heroEyebrow}>Feed ready</p>
+            <h2 class={styles.heroTitle}>Your RSS feed is live!</h2>
+            <p class={styles.heroSubtitle}>
+              Drop it straight into your reader or explore the preview without leaving this page.
+            </p>
+          </span>
+        </div>
+        <div class={styles.heroActions}>
+          <a href={feedProtocolUrl} class="btn btn--accent" target="_blank" rel="noopener">
+            <span aria-hidden="true">📰</span>
+            <span>Subscribe in RSS reader</span>
+          </a>
+          <button type="button" class="btn btn--ghost" onClick={() => copyToClipboard(feedProtocolUrl)}>
+            <span aria-hidden="true">📋</span>
+            <span>Copy feed link</span>
+          </button>
+          <a href={fullUrl} target="_blank" rel="noopener" class="btn btn--ghost">
+            <span aria-hidden="true">🔗</span>
+            <span>Open feed in new tab</span>
+          </a>
+        </div>
+      </header>
+
+      {isAuthenticated && (
+        <div class={styles.accountBar}>
+          <span>
+            Signed in as <strong>{username ?? 'your account'}</strong>
+          </span>
+          {onLogout && (
+            <button type="button" class="btn btn--link" onClick={onLogout}>
+              Logout
+            </button>
+          )}
+        </div>
+      )}
+
+      <div class={styles.feedCard}>
+        <span class={styles.feedLabel}>Feed URL</span>
+        <div class={styles.feedInputRow}>
+          <input type="text" value={fullUrl} readOnly aria-label="Feed URL" class="input" />
+          <button type="button" class="btn btn--ghost" onClick={() => copyToClipboard(fullUrl)}>
+            Copy URL
+          </button>
+        </div>
       </div>
 
-      <div class="feed-result">
-        <div class="feed-url-section">
-          <label>
-            <strong>📡 Feed URL:</strong>
-          </label>
-          <div class="feed-url-display">
-            <input type="text" value={fullUrl} readonly />
-            <button type="button" class="copy-btn" onClick={() => copyToClipboard(fullUrl)}>
-              Copy
-            </button>
-          </div>
-        </div>
-
-        <div class="feed-actions">
-          <a href={feedProtocolUrl} class="subscribe-button" target="_blank" rel="noopener">
-            <span class="button-icon">📰</span>
-            <span>Subscribe in RSS Reader</span>
-          </a>
-          <button type="button" class="copy-feed-button" onClick={() => copyToClipboard(feedProtocolUrl)}>
-            <span class="button-icon">📋</span>
-            <span>Copy Feed Link</span>
+      <div class={styles.preview}>
+        <div class={styles.previewTabs} role="tablist" aria-label="Feed preview mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={previewMode === 'preview'}
+            id={previewTabId}
+            aria-controls={panelId}
+            class={`${styles.tab} ${previewMode === 'preview' ? styles.tabActive : ''}`}
+            onClick={() => setPreviewMode('preview')}
+          >
+            Reader preview
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={previewMode === 'xml'}
+            id={xmlTabId}
+            aria-controls={panelId}
+            class={`${styles.tab} ${previewMode === 'xml' ? styles.tabActive : ''}`}
+            onClick={() => setPreviewMode('xml')}
+          >
+            Raw XML
           </button>
         </div>
 
-        <div class="feed-info">
-          <p class="feed-instructions">
-            <strong>How to use:</strong> Click "Subscribe" to open in your RSS reader, or copy the URL to add
-            to any RSS reader manually.
-          </p>
-          <div class="rss-readers">
-            <span class="readers-label">Works with:</span>
-            <span class="reader-tag">Feedly</span>
-            <span class="reader-tag">Inoreader</span>
-            <span class="reader-tag">Thunderbird</span>
-            <span class="reader-tag">Apple News</span>
-          </div>
+        <div
+          class={styles.previewSurface}
+          role="tabpanel"
+          id={panelId}
+          aria-labelledby={previewMode === 'preview' ? previewTabId : xmlTabId}
+        >
+          {previewMode === 'preview' ? (
+            <iframe src={fullUrl} class={styles.previewFrame} title="RSS feed preview" />
+          ) : (
+            <div class={styles.previewXml}>
+              {isLoadingXml ? (
+                <div class={styles.previewLoading}>Loading raw XML...</div>
+              ) : (
+                <pre>
+                  <code>{xmlContent}</code>
+                </pre>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* XML Preview Section */}
-      <div class="xml-preview-section">
-        <div class="xml-preview-header">
-          <h4>📄 RSS Feed Preview</h4>
-          <div class="xml-preview-controls">
-            <a href={fullUrl} target="_blank" rel="noopener" class="open-feed-btn">
-              🔗 Open in New Tab
-            </a>
-            <button type="button" class="xml-toggle-btn" onClick={() => setShowRawXml(!showRawXml)}>
-              {showRawXml ? 'Show Styled Preview' : 'Show Raw XML'}
-            </button>
-          </div>
-        </div>
-
-        {!showRawXml ? (
-          <div class="xml-iframe-container">
-            <iframe src={fullUrl} class="rss-iframe" title="RSS Feed Preview" />
-          </div>
-        ) : (
-          <div class="xml-raw-container">
-            {isLoadingXml ? (
-              <div class="loading">Loading raw XML...</div>
-            ) : (
-              <pre class="xml-content">
-                <code>{xmlContent}</code>
-              </pre>
-            )}
-          </div>
-        )}
+      <div class={styles.footer}>
+        <button type="button" class="btn btn--accent" onClick={onClose}>
+          Convert another website
+        </button>
       </div>
-
-      <button onClick={onClose} class="close-result-btn">
-        Close
-      </button>
-    </div>
+    </section>
   );
 }

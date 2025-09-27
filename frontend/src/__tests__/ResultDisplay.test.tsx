@@ -22,15 +22,15 @@ describe('ResultDisplay', () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
     expect(screen.getByText('🎉')).toBeInTheDocument();
-    expect(screen.getByText('Feed Generated Successfully!')).toBeInTheDocument();
-    expect(screen.getByText('Your RSS feed is ready to use')).toBeInTheDocument();
+    expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
+    expect(screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')).toBeInTheDocument();
   });
 
-  it('should call onClose when close button is clicked', () => {
+  it('should call onClose when convert-another button is clicked', () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
-    const closeButton = screen.getByText('Close');
-    fireEvent.click(closeButton);
+    const resetButton = screen.getByRole('button', { name: 'Convert another website' });
+    fireEvent.click(resetButton);
 
     expect(mockOnClose).toHaveBeenCalled();
   });
@@ -38,8 +38,8 @@ describe('ResultDisplay', () => {
   it('should copy feed URL to clipboard when copy button is clicked', async () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
-    const copyButton = screen.getByText('📋');
-    fireEvent.click(copyButton);
+    const copyLinkButton = screen.getByRole('button', { name: 'Copy feed link' });
+    fireEvent.click(copyLinkButton);
 
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('feed:https://example.com/feed.xml');

@@ -72,6 +72,8 @@ export function useFeedConversion() {
   };
 
   const clearResult = () => {
+    window.document.body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
     setState({
       isConverting: false,
       result: null,

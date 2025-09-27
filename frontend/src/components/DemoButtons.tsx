@@ -1,3 +1,5 @@
+import styles from './DemoButtons.module.css';
+
 interface DemoButtonsProps {
   onConvert: (url: string) => void;
 }
@@ -31,23 +33,23 @@ export function DemoButtons({ onConvert }: DemoButtonsProps) {
   };
 
   return (
-    <div class="demo-examples" role="group" aria-label="Demo website conversions">
+    <div class="tile-grid" role="group" aria-label="Demo website conversions">
       {DEMO_SITES.map((site) => (
         <button
           key={site.url}
           type="button"
-          class="demo-button"
+          class={styles.button}
           onClick={() => handleDemoClick(site.url)}
           aria-label={`Convert ${site.name} to RSS feed - ${site.description}`}
         >
-          <div class="demo-content">
-            <span class="demo-icon" aria-hidden="true">
+          <div class={styles.content}>
+            <span class={styles.icon} aria-hidden="true">
               {site.icon}
             </span>
-            <div class="demo-text">
-              <div class="demo-name">{site.name}</div>
-              <div class="demo-description">{site.description}</div>
-            </div>
+            <span class={styles.text}>
+              <span class={styles.name}>{site.name}</span>
+              <span class={styles.description}>{site.description}</span>
+            </span>
           </div>
         </button>
       ))}

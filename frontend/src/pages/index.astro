@@ -3,7 +3,7 @@ import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { App } from "../components/App";
 import Bookmarklet from "../components/Bookmarklet.astro";
 import Footer from "../components/Footer.astro";
-import "../styles/forms.css";
+import "../styles/main.css";
 ---
 
 <StarlightPage
@@ -12,27 +12,7 @@ import "../styles/forms.css";
     template: "splash",
   }}
 >
-  <div class="minimalist-container">
-    <App client:load />
-    <Bookmarklet />
-    <Footer />
-  </div>
+  <App client:load />
+  <Bookmarklet />
+  <Footer />
 </StarlightPage>
-
-<style>
-  .minimalist-container {
-    margin: 0 auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 768px) {
-    .minimalist-container {
-      max-width: 720px;
-      padding: 2rem 1rem;
-      gap: 2rem;
-    }
-  }
-</style>
