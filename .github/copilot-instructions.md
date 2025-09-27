@@ -43,6 +43,7 @@ Fix rubocop `RSpec/MultipleExpectations` adding rspec tag `:aggregate_failures`.
 - ✅ **Frontend**: Use Astro components in `frontend/src/`. Keep it simple.
 - ✅ **CSS**: Use frontend styles provided by Astro Starlight.
 - ✅ **Specs**: RSpec for Ruby, build tests for frontend.
+- ✅ When a spec needs to tweak environment variables, wrap the example in `ClimateControl.modify` so state is restored automatically.
 
 ## Don't
 

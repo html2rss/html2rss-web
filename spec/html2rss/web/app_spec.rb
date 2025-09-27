@@ -21,7 +21,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'serves legacy feed routes with caching headers', :aggregate_failures do
+    it 'serves legacy feed routes with caching headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
       allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
 

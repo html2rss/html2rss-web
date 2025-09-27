@@ -20,8 +20,9 @@ module Html2rss
         def accounts
           @accounts ||= begin # rubocop:disable ThreadSafety/ClassInstanceVariable
             auth_config = LocalConfig.global[:auth]
+            raw_accounts = auth_config&.dig(:accounts)
 
-            auth_config&.dig(:accounts) ? auth_config[:accounts].transform_keys(&:to_sym) : []
+            Array(raw_accounts).map { |account| account.transform_keys(&:to_sym) }
           end
         end
 

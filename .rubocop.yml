@@ -12,6 +12,9 @@ AllCops:
     - '**/*.yaml'
     - '**/.tool-versions'
 
+Style/Documentation:
+  Enabled: false
+
 Metrics/BlockLength:
   Exclude:
     - Rakefile

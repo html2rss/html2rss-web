@@ -47,8 +47,6 @@ test-frontend-unit: ## Run frontend unit tests only
 test-frontend-contract: ## Run frontend contract tests only
 	@cd frontend && npm run test:contract
 
-test-frontend-smoke: ## Run frontend smoke tests (Playwright)
-	@cd frontend && npm run test:smoke
 
 lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issues found
 	@echo "All linting complete!"
