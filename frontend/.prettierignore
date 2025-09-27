@@ -1,20 +1,3 @@
-# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-.astro/
-
-# Generated files
-*.min.js
-*.min.css
-
-# Package files
+# Frontend package files
 package-lock.json
 yarn.lock
-
-# Test coverage
-coverage/
-
-# Logs
-*.log

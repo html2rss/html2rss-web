@@ -71,9 +71,6 @@ jobs:
       - name: Run frontend tests
         run: npm run test:ci
 
-      - name: Build frontend
-        run: npm run build
-
   docker-test:
     if: github.event_name == 'push'
     needs:
