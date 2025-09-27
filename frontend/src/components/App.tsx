@@ -4,6 +4,7 @@ import { ResultDisplay } from './ResultDisplay';
 import { QuickLogin } from './QuickLogin';
 import { useAuth } from '../hooks/useAuth';
 import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useStrategies } from '../hooks/useStrategies';
 import styles from './App.module.css';
 
 export function App() {
@@ -17,6 +18,7 @@ export function App() {
     error: authError,
   } = useAuth();
   const { isConverting, result, error, convertFeed, clearResult } = useFeedConversion();
+  const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies(token);
 
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authFormData, setAuthFormData] = useState({ username: '', token: '' });
@@ -28,6 +30,12 @@ export function App() {
     }
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (strategies.length > 0 && !feedFormData.strategy) {
+      setFeedFormData((prev) => ({ ...prev, strategy: strategies[0].id }));
+    }
+  }, [strategies]);
+
   const handleAuthSubmit = async (event?: Event) => {
     event?.preventDefault();
 
@@ -35,7 +43,7 @@ export function App() {
 
     try {
       await login(authFormData.username, authFormData.token);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleFeedSubmit = async (event: Event) => {
@@ -45,7 +53,7 @@ export function App() {
 
     try {
       await convertFeed(feedFormData.url, feedFormData.strategy, token || '');
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleShowAuth = () => {
@@ -60,8 +68,9 @@ export function App() {
 
   const handleDemoConversion = async (url: string) => {
     try {
-      await convertFeed(url, 'ssrf_filter', 'self-host-for-full-access');
-    } catch (error) {}
+      const demoStrategy = strategies.length > 0 ? strategies[0].id : 'ssrf_filter';
+      await convertFeed(url, demoStrategy, 'self-host-for-full-access');
+    } catch (error) { }
   };
 
   const showResultExperience = Boolean(result);

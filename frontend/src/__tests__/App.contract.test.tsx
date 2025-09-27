@@ -44,7 +44,9 @@ describe('App contract', () => {
     await waitFor(() => {
       expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
       expect(
-        screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')
+        screen.getByText(
+          'Drop it straight into your reader or explore the preview without leaving this page.'
+        )
       ).toBeInTheDocument();
     });
   });
