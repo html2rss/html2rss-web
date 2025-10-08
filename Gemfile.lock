@@ -1,12 +1,14 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 680028ada2efa86557d81d5bebae2783365d2b20
+  revision: f722d9d556ab5351744be216d009e8205272c8bc
   specs:
     html2rss (0.17.0)
       addressable (~> 2.7)
+      brotli
       dry-validation
       faraday (> 2.0.1, < 3.0)
       faraday-follow_redirects
+      faraday-gzip (~> 3)
       kramdown
       mime-types (> 3.0)
       nokogiri (>= 1.10, < 2.0)
@@ -35,6 +37,7 @@ GEM
     ast (2.4.3)
     base64 (0.3.0)
     bigdecimal (3.3.0)
+    brotli (0.7.0)
     byebug (12.0.0)
     climate_control (1.2.0)
     concurrent-ruby (1.3.5)
@@ -86,6 +89,9 @@ GEM
       logger
     faraday-follow_redirects (0.4.0)
       faraday (>= 1, < 3)
+    faraday-gzip (3.0.4)
+      faraday (>= 2.0, < 3)
+      zlib (~> 3.0)
     faraday-net_http (3.4.1)
       net-http (>= 0.5.0)
     hashdiff (1.2.0)
@@ -223,6 +229,7 @@ GEM
     websocket-extensions (0.1.5)
     yard (0.9.37)
     zeitwerk (2.7.3)
+    zlib (3.2.1)
 
 PLATFORMS
   aarch64-linux-gnu
@@ -269,6 +276,7 @@ CHECKSUMS
   ast (2.4.3) sha256=954615157c1d6a382bc27d690d973195e79db7f55e9765ac7c481c60bdb4d383
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   bigdecimal (3.3.0) sha256=e116f692049da02a180f7b1d49859e828eb3a70d01e2efd8f78fb675738554f5
+  brotli (0.7.0) sha256=e9e4fa5036e59e344798be8e35f44301ed8d10dc94d68195b6587e9c78b63a41
   byebug (12.0.0) sha256=d4a150d291cca40b66ec9ca31f754e93fed8aa266a17335f71bb0afa7fca1a1e
   climate_control (1.2.0) sha256=36b21896193fa8c8536fa1cd843a07cf8ddbd03aaba43665e26c53ec1bd70aa5
   concurrent-ruby (1.3.5) sha256=813b3e37aca6df2a21a3b9f1d497f8cbab24a2b94cab325bffe65ee0f6cbebc6
@@ -287,6 +295,7 @@ CHECKSUMS
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
   faraday (2.14.0) sha256=8699cfe5d97e55268f2596f9a9d5a43736808a943714e3d9a53e6110593941cd
   faraday-follow_redirects (0.4.0) sha256=d3fa1118ab1350e24035a272b4cff64948643bb7182846db89acaf87abadd5d9
+  faraday-gzip (3.0.4) sha256=3553d0e3805c060a680f1c2f47d6768482df1f68134c1233837f243f2e4051dc
   faraday-net_http (3.4.1) sha256=095757fae7872b94eac839c08a1a4b8d84fd91d6886cfbe75caa2143de64ab3b
   hashdiff (1.2.0) sha256=c984f13e115bfc9953332e8e83bd9d769cfde9944e2d54e07eb9df7b76e140b5
   html2rss (0.17.0)
@@ -358,6 +367,7 @@ CHECKSUMS
   websocket-extensions (0.1.5) sha256=1c6ba63092cda343eb53fc657110c71c754c56484aad42578495227d717a8241
   yard (0.9.37) sha256=a6e910399e78e613f80ba9add9ba7c394b1a935f083cccbef82903a3d2a26992
   zeitwerk (2.7.3) sha256=b2e86b4a9b57d26ba68a15230dcc7fe6f040f06831ce64417b0621ad96ba3e85
+  zlib (3.2.1) sha256=6301546b5f108c358304c3095d20e45ddebb31d5079341f95e08e9049770aa6a
 
 BUNDLED WITH
    2.6.6
