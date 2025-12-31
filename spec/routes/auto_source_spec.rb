@@ -7,6 +7,7 @@ require 'html2rss'
 
 RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/SpecFilePathFormat
   include Rack::Test::Methods
+
   def app = described_class
 
   let(:request_headers) do
