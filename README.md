@@ -47,6 +47,22 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
 
 UI + API run on `http://localhost:3000`. The app exits if the secret key is missing.
 
+## Development (Dev Container only)
+We support a single, batteries-included workflow based on the repository's
+[Dev Container](.devcontainer/README.md). Always work inside the Dev Container locally or in
+GitHub Codespaces—running the app directly on the host is no longer documented or supported.
+All agents and automation must run inside the Dev Container as well.
+
+Inside the Dev Container, use:
+
+```
+make setup
+make dev
+make test
+bundle exec rubocop -F
+bundle exec rspec
+```
+
 ## Frontend Development
 ```
 cd frontend
