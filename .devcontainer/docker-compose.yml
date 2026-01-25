@@ -9,7 +9,7 @@ services:
       - ../:/workspace:cached
       - bundle-cache:/usr/local/bundle
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - RACK_ENV=development
       - BUNDLE_PATH=/usr/local/bundle

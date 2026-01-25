@@ -64,6 +64,8 @@ bundle exec rubocop -F
 bundle exec rspec
 ```
 
+Dev Container app URL: `http://localhost:3001`.
+
 ## Frontend Development
 ```
 cd frontend

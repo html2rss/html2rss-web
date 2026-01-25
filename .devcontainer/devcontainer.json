@@ -27,9 +27,9 @@
       }
     }
   },
-  "forwardPorts": [3000, 4321],
+  "forwardPorts": [3001, 4321],
   "portsAttributes": {
-    "3000": {
+    "3001": {
       "label": "Ruby App",
       "onAutoForward": "notify"
     },
@@ -38,6 +38,6 @@
       "onAutoForward": "silent"
     }
   },
-  "postCreateCommand": "make setup",
+  "postCreateCommand": "bash -lc \"make setup || (echo 'make setup failed; rerun once network access is available.' && exit 0)\"",
   "remoteUser": "vscode"
 }

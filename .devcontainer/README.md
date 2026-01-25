@@ -7,7 +7,7 @@ Containers extension) or GitHub Codespaces and use that environment for all work
 
 The devcontainer starts one service named `app` and exposes:
 
-- **Port 3000:** Ruby app
+- **Port 3001:** Ruby app (forwarded from container port 3000)
 - **Port 4321:** Astro dev server
 
 The repo is mounted at `/workspace`. Bundler gems are cached in a Docker volume to speed up
@@ -22,6 +22,9 @@ make setup
 ```
 
 This installs Ruby and frontend dependencies inside the container.
+
+If setup fails due to missing network access (e.g., GitHub DNS), rerun `make setup` once
+network access is available.
 
 ## Common commands (run inside the container)
 
