@@ -64,6 +64,11 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
   end
 
   describe 'GET /api/v1/feeds/:token' do
+    before do
+      stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
+      stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
+    end
+
     it 'returns unauthorized when account not found', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       ghost_token = Html2rss::Web::FeedToken
                     .create_with_validation(
@@ -87,7 +92,9 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
       allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object)
-        .and_return(instance_double('Html2rss::Feed', channel: instance_double('Html2rss::FeedChannel', ttl: 10)))
+        .and_return(
+          instance_double(Html2rss::Feed, channel: instance_double(Html2rss::FeedChannel, ttl: 10))
+        )
       allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
         .and_return('<rss version="2.0"></rss>')
 

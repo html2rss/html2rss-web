@@ -35,19 +35,27 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
-    token_payload = instance_double(Html2rss::Web::FeedToken, url: feed_url, username: account[:username],
-                                                           strategy: 'ssrf_filter')
+    stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
+    stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
+    token_payload = instance_double(
+      Html2rss::Web::FeedToken,
+      url: feed_url,
+      username: account[:username],
+      strategy: 'ssrf_filter'
+    )
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
       validate_and_decode: token_payload
     )
     allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
     allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
-    feed_channel = instance_double('Html2rss::FeedChannel', ttl: 10)
-    feed_object = instance_double('Html2rss::Feed', channel: feed_channel)
+    feed_channel = instance_double(Html2rss::FeedChannel, ttl: 10)
+    feed_object = instance_double(Html2rss::Feed, channel: feed_channel)
 
-    allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
-    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object).and_return(feed_object)
+    allow(Html2rss::Web::AutoSource).to receive_messages(
+      enabled?: true,
+      generate_feed_object: feed_object
+    )
     allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
       .and_return('<rss version="2.0"></rss>')
   end
