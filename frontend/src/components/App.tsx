@@ -22,7 +22,10 @@ export function App() {
 
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authFormData, setAuthFormData] = useState({ username: '', token: '' });
+  const [authFieldErrors, setAuthFieldErrors] = useState({ username: '', token: '', form: '' });
   const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
+  const [feedFieldErrors, setFeedFieldErrors] = useState({ url: '', form: '' });
+  const [demoError, setDemoError] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -39,21 +42,47 @@ export function App() {
   const handleAuthSubmit = async (event?: Event) => {
     event?.preventDefault();
 
-    if (!authFormData.username || !authFormData.token) return;
+    setAuthFieldErrors({ username: '', token: '', form: '' });
+
+    if (!authFormData.username.trim()) {
+      setAuthFieldErrors({ username: 'Username is required.', token: '', form: '' });
+      return;
+    }
+    if (!authFormData.token.trim()) {
+      setAuthFieldErrors({ username: '', token: 'Token is required.', form: '' });
+      return;
+    }
 
     try {
       await login(authFormData.username, authFormData.token);
-    } catch (error) {}
+    } catch (error) {
+      setAuthFieldErrors({
+        username: '',
+        token: '',
+        form: error instanceof Error ? error.message : 'Unable to authenticate. Please try again.',
+      });
+    }
   };
 
   const handleFeedSubmit = async (event: Event) => {
     event.preventDefault();
 
-    if (!feedFormData.url) return;
+    setFeedFieldErrors({ url: '', form: '' });
+    if (!feedFormData.url.trim()) {
+      setFeedFieldErrors({ url: 'Website URL is required.', form: '' });
+      return;
+    }
 
     try {
       await convertFeed(feedFormData.url, feedFormData.strategy, token || '');
-    } catch (error) {}
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to start conversion.';
+      if (message.toLowerCase().includes('url')) {
+        setFeedFieldErrors({ url: message, form: '' });
+      } else {
+        setFeedFieldErrors({ url: '', form: message });
+      }
+    }
   };
 
   const handleShowAuth = () => {
@@ -67,10 +96,13 @@ export function App() {
   };
 
   const handleDemoConversion = async (url: string) => {
+    setDemoError('');
     try {
       const demoStrategy = strategies.length > 0 ? strategies[0].id : 'ssrf_filter';
       await convertFeed(url, demoStrategy, 'self-host-for-full-access');
-    } catch (error) {}
+    } catch (error) {
+      setDemoError(error instanceof Error ? error.message : 'Demo conversion failed. Please try again.');
+    }
   };
 
   const showResultExperience = Boolean(result);
@@ -126,6 +158,11 @@ export function App() {
             <p class="surface-header__hint">
               Launch a demo conversion to see the results instantly. No sign-in required.
             </p>
+            {demoError && (
+              <div class="notice notice--error" role="alert">
+                <p>{demoError}</p>
+              </div>
+            )}
           </header>
           <DemoButtons onConvert={handleDemoConversion} />
           <QuickLogin onShowLogin={handleShowAuth} />
@@ -136,10 +173,24 @@ export function App() {
         <section class="surface">
           <header class="surface-header">
             <h3 class="surface-header__title">🔐 Sign in</h3>
-            <p class="surface-header__hint">Use your html2rss credentials to convert any website.</p>
+            <p class="surface-header__hint">
+              Use your html2rss credentials to convert any website. Tokens are stored for this browser session.
+            </p>
+            <p class="surface-header__hint">
+              Need a token? Ask your html2rss-web admin or see the{' '}
+              <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
+                official docs
+              </a>
+              .
+            </p>
           </header>
 
           <form id="auth-section" class="form" onSubmit={handleAuthSubmit}>
+            {authFieldErrors.form && (
+              <div class="notice notice--error" role="alert">
+                <p>{authFieldErrors.form}</p>
+              </div>
+            )}
             <div class="field">
               <label for="username" class="label" data-required>
                 Username
@@ -157,7 +208,9 @@ export function App() {
                   setAuthFormData({ ...authFormData, username: (e.target as HTMLInputElement).value })
                 }
               />
-              <div class="field-error" id="username-error"></div>
+              <div class="field-error" id="username-error">
+                {authFieldErrors.username}
+              </div>
             </div>
 
             <div class="field">
@@ -177,7 +230,9 @@ export function App() {
                   setAuthFormData({ ...authFormData, token: (e.target as HTMLInputElement).value })
                 }
               />
-              <div class="field-error" id="token-error"></div>
+              <div class="field-error" id="token-error">
+                {authFieldErrors.token}
+              </div>
             </div>
 
             <div class="form-actions">
@@ -231,7 +286,9 @@ export function App() {
                   {isConverting ? 'Converting...' : 'Convert'}
                 </button>
               </div>
-              <div class="field-error" id="url-error"></div>
+              <div class="field-error" id="url-error">
+                {feedFieldErrors.url}
+              </div>
             </div>
 
             <fieldset class="fieldset">
@@ -280,6 +337,11 @@ export function App() {
               )}
             </fieldset>
           </form>
+          {feedFieldErrors.form && (
+            <div class="notice notice--error" role="alert">
+              <p>{feedFieldErrors.form}</p>
+            </div>
+          )}
         </section>
       )}
 
@@ -287,6 +349,7 @@ export function App() {
         <section class="notice notice--error">
           <h3>Conversion error</h3>
           <p>{error}</p>
+          <p>Double-check your token if this keeps happening.</p>
           <button type="button" class="btn btn--outline" onClick={clearResult}>
             Close
           </button>

@@ -24,6 +24,8 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
   const [previewMode, setPreviewMode] = useState<PreviewMode>('preview');
   const [xmlContent, setXmlContent] = useState<string>('');
   const [isLoadingXml, setIsLoadingXml] = useState(false);
+  const [xmlError, setXmlError] = useState('');
+  const [copyNotice, setCopyNotice] = useState('');
   const previewTabId = 'result-preview-tab-preview';
   const xmlTabId = 'result-preview-tab-xml';
   const panelId = 'result-preview-panel';
@@ -48,12 +50,14 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
 
   const loadRawXml = async () => {
     setIsLoadingXml(true);
+    setXmlError('');
     try {
       const response = await fetch(fullUrl);
       const content = await response.text();
       setXmlContent(content);
     } catch (error) {
-      setXmlContent(`Error loading XML: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setXmlError(error instanceof Error ? error.message : 'Unable to load XML preview.');
+      setXmlContent('');
     } finally {
       setIsLoadingXml(false);
     }
@@ -62,8 +66,10 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      setCopyNotice('Copied to clipboard.');
+      window.setTimeout(() => setCopyNotice(''), 3000);
     } catch (error) {
-      console.error('Failed to copy:', error);
+      setCopyNotice('Clipboard copy failed. Please copy the URL manually.');
     }
   };
 
@@ -96,6 +102,11 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
             <span>Open feed in new tab</span>
           </a>
         </div>
+        {copyNotice && (
+          <div class="notice" role="status">
+            <p>{copyNotice}</p>
+          </div>
+        )}
       </header>
 
       {isAuthenticated && (
@@ -159,6 +170,10 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
             <div class={styles.previewXml}>
               {isLoadingXml ? (
                 <div class={styles.previewLoading}>Loading raw XML...</div>
+              ) : xmlError ? (
+                <div class="notice notice--error" role="alert">
+                  <p>Failed to load XML preview: {xmlError}</p>
+                </div>
               ) : (
                 <pre>
                   <code>{xmlContent}</code>
