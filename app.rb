@@ -42,19 +42,15 @@ module Html2rss
           </body>
         </html>
       HTML
-
       def self.development? = EnvironmentValidator.development?
       def development? = self.class.development?
-
       EnvironmentValidator.validate_environment!
       EnvironmentValidator.validate_production_security!
 
-      # Inline Roda configuration
       Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
       Html2rss::RequestService.default_strategy_name = :ssrf_filter
       Html2rss::RequestService.unregister_strategy(:faraday)
-      opts[:check_dynamic_arity] = false
-      opts[:check_arity] = :warn
+      opts.merge!(check_dynamic_arity: false, check_arity: :warn)
       use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
                        verbose: development?
 
@@ -132,9 +128,10 @@ module Html2rss
 
       def handle_feed_generation(router, feed_name)
         rss_content = Feeds.generate_feed(feed_name, router.params)
-        ttl = LocalConfig.find(feed_name)&.dig(:channel, :ttl) || 3600
+        ttl_minutes = LocalConfig.find(feed_name)&.dig(:channel, :ttl)
+        ttl_seconds = ttl_minutes ? ttl_minutes * 60 : 3600
         router.response['Content-Type'] = 'application/xml'
-        router.response['Cache-Control'] = "public, max-age=#{ttl}"
+        HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
         rss_content
       end
 

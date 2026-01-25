@@ -18,7 +18,10 @@ module Html2rss
         # @param name [String, Symbol, #to_sym]
         # @return [Hash<Symbol, Any>]
         def find(name)
-          config = feeds.fetch(name.to_sym) { raise NotFound, "Did not find local feed config at '#{name}'" }
+          normalized_name = normalize_name(name)
+          config = feeds.fetch(normalized_name.to_sym) do
+            raise NotFound, "Did not find local feed config at '#{normalized_name}'"
+          end
           config = deep_dup(config)
 
           apply_global_defaults(config)
@@ -53,6 +56,10 @@ module Html2rss
           config[:headers] ||= deep_dup(global_config[:headers]) if global_config[:headers]
 
           config
+        end
+
+        def normalize_name(name)
+          File.basename(name.to_s, '.*')
         end
 
         def deep_dup(value)

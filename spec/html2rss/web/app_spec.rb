@@ -29,7 +29,9 @@ RSpec.describe Html2rss::Web::App do
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
-      expect(last_response.headers['Cache-Control']).to eq('public, max-age=180')
+      cache_control = last_response.headers['Cache-Control']
+      expect(cache_control).to include('public')
+      expect(cache_control).to include('max-age=10800')
       expect(last_response.body).to eq('<rss/>')
     end
 

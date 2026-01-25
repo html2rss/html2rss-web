@@ -5,29 +5,35 @@
 html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby backend and an Astro-powered frontend.
 
 ## Links
+
 - Docs & feed directory: https://html2rss.github.io
 - Discussions: https://github.com/orgs/html2rss/discussions
 - Sponsor: https://github.com/sponsors/gildesmarais
 
 ## Highlights
+
 - Responsive Astro interface with gallery and custom feed creation.
 - Automatic source discovery with token-scoped permissions.
 - Signed public feed URLs that work in standard RSS readers.
 - Built-in SSRF defences, input validation, and HMAC-protected tokens.
 
 ## Architecture
+
 - **Backend:** Ruby + Roda, backed by the `html2rss` gem for extraction.
 - **Frontend:** Astro static site with progressive enhancement.
 - **Distribution:** Docker Compose by default; other deployments require manual wiring.
 
 ## Documentation
+
 In-repo docs live under `frontend/src/content/docs/` and are published by Astro.
+
 - [Configuration Guide](frontend/src/content/docs/configuration.md)
 - [Security Guide](frontend/src/content/docs/security.md)
 - [REST API v1](frontend/src/content/docs/api/v1.md)
 - [Testing Overview](frontend/src/content/docs/testing.md)
 
 ## REST API Snapshot
+
 ```bash
 # List available strategies
 curl -H "Authorization: Bearer <token>" \
@@ -41,6 +47,7 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
 ```
 
 ## Deploy (Docker Compose)
+
 1. Generate a key: `openssl rand -hex 32`.
 2. Set `HTML2RSS_SECRET_KEY` in `docker-compose.yml`.
 3. Start: `docker-compose up`.
@@ -48,6 +55,7 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
 UI + API run on `http://localhost:4000`. The app exits if the secret key is missing.
 
 ## Development (Dev Container)
+
 Use the repository's [Dev Container](.devcontainer/README.md) for all local development and tests.
 Running the app directly on the host is not supported.
 
@@ -82,12 +90,12 @@ Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://local
 
 ## Frontend npm Scripts (inside Dev Container)
 
-| Command                 | Purpose                           |
-| ----------------------- | --------------------------------- |
+| Command                 | Purpose                                       |
+| ----------------------- | --------------------------------------------- |
 | `npm run dev`           | Astro dev server with hot reload (port 4001). |
-| `npm run build`         | Production build.                 |
-| `npm run test:run`      | Unit tests (Vitest).              |
-| `npm run test:contract` | Contract tests with MSW.          |
+| `npm run build`         | Production build.                             |
+| `npm run test:run`      | Unit tests (Vitest).                          |
+| `npm run test:contract` | Contract tests with MSW.                      |
 
 ## Testing Strategy
 
@@ -99,4 +107,5 @@ Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://local
 | Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
 
 ## Contributing
+
 See the [html2rss project guidelines](https://html2rss.github.io/get-involved/contributing).
