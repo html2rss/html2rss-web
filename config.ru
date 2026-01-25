@@ -18,10 +18,6 @@ if ENV.key?('SENTRY_DSN')
   use Sentry::Rack::CaptureExceptions
 end
 
-require 'rack/attack'
-require_relative 'config/rack_attack'
-use Rack::Attack
-
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
 
 if dev
