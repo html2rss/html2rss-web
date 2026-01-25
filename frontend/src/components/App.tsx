@@ -174,7 +174,8 @@ export function App() {
           <header class="surface-header">
             <h3 class="surface-header__title">🔐 Sign in</h3>
             <p class="surface-header__hint">
-              Use your html2rss credentials to convert any website. Tokens are stored for this browser session.
+              Use your html2rss credentials to convert any website. Tokens are stored for this browser
+              session.
             </p>
             <p class="surface-header__hint">
               Need a token? Ask your html2rss-web admin or see the{' '}
