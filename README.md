@@ -4,21 +4,10 @@
 
 html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby backend and an Astro-powered frontend.
 
-## 🌐 Community & Resources
-
-| Resource                              | Description                                                 | Link                                                               |
-| ------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
-| **📚 Documentation & Feed Directory** | Complete guides, tutorials, and browse 100+ pre-built feeds | [html2rss.github.io](https://html2rss.github.io)                   |
-| **💬 Community Discussions**          | Get help, share ideas, and connect with other users         | [GitHub Discussions](https://github.com/orgs/html2rss/discussions) |
-| **📋 Project Board**                  | Track development progress and upcoming features            | [View Project Board](https://github.com/orgs/html2rss/projects)    |
-| **💖 Support Development**            | Help fund ongoing development and maintenance               | [Sponsor on GitHub](https://github.com/sponsors/gildesmarais)      |
-
-**Quick Start Options:**
-
-- **New to RSS?** → Start with the [web application guide](https://html2rss.github.io/web-application)
-- **Need a specific feed?** → Browse the [feed directory](https://html2rss.github.io/feed-directory)
-- **Want to deploy?** → Check out [deployment guides](https://html2rss.github.io/web-application/how-to/deployment)
-- **Want to contribute?** → See our [contributing guide](https://html2rss.github.io/get-involved/contributing)
+## Links
+- Docs & feed directory: https://html2rss.github.io
+- Discussions: https://github.com/orgs/html2rss/discussions
+- Sponsor: https://github.com/sponsors/gildesmarais
 
 ## Highlights
 - Responsive Astro interface with gallery and custom feed creation.
@@ -32,7 +21,7 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 - **Distribution:** Docker Compose by default; other deployments require manual wiring.
 
 ## Documentation
-The in-repo docs live under `frontend/src/content/docs/` and are published by Astro.
+In-repo docs live under `frontend/src/content/docs/` and are published by Astro.
 - [Configuration Guide](frontend/src/content/docs/configuration.md)
 - [Security Guide](frontend/src/content/docs/security.md)
 - [REST API v1](frontend/src/content/docs/api/v1.md)
@@ -51,20 +40,12 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
   -d '{"url":"https://example.com","name":"Example Feed"}'
 ```
 
-## Deploy with Docker Compose
-The supported path is Docker Compose.
+## Deploy (Docker Compose)
+1. Generate a key: `openssl rand -hex 32`.
+2. Set `HTML2RSS_SECRET_KEY` in `docker-compose.yml`.
+3. Start: `docker-compose up`.
 
-### Prerequisites
-- Docker Engine and Docker Compose
-- Git for cloning the repository
-
-### Steps
-1. Clone the repository and change into the directory.
-2. Generate a 64-character hexadecimal key: `openssl rand -hex 32`.
-3. Update `docker-compose.yml` with the key via the `HTML2RSS_SECRET_KEY` environment variable.
-4. Start the stack: `docker-compose up`.
-
-The application serves the UI and API at `http://localhost:3000`. It fails fast if the secret key is missing.
+UI + API run on `http://localhost:3000`. The app exits if the secret key is missing.
 
 ## Frontend Development
 ```
@@ -109,9 +90,4 @@ The Ruby server continues to serve the production build while Astro runs with ho
 | Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
 
 ## Contributing
-
-Contributions are welcome. See the [html2rss project guidelines](https://html2rss.github.io/get-involved/contributing) before opening a pull request.
-
-## Sponsoring
-
-Support ongoing development via [GitHub Sponsors](https://github.com/sponsors/gildesmarais).
+See the [html2rss project guidelines](https://html2rss.github.io/get-involved/contributing).
