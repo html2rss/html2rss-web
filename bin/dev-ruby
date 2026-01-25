@@ -11,10 +11,10 @@ fi
 export RACK_ENV=${RACK_ENV:-development}
 
 # Prevent silent failures from port conflicts
-if lsof -Pi :${PORT:-3000} -sTCP:LISTEN -t >/dev/null 2>&1; then
-  echo "❌ Port ${PORT:-3000} is already in use. Run: pkill -f 'puma.*html2rss-web'"
+if lsof -Pi :${PORT:-4000} -sTCP:LISTEN -t >/dev/null 2>&1; then
+  echo "❌ Port ${PORT:-4000} is already in use. Run: pkill -f 'puma.*html2rss-web'"
   exit 1
 fi
 
 echo "Starting Ruby server (code reloading enabled)"
-bundle exec puma -p ${PORT:-3000} -C config/puma.rb
+bundle exec puma -p ${PORT:-4000} -C config/puma.rb

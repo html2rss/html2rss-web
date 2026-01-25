@@ -27,13 +27,13 @@
       }
     }
   },
-  "forwardPorts": [3001, 4321],
+  "forwardPorts": [4000, 4001],
   "portsAttributes": {
-    "3001": {
+    "4000": {
       "label": "Ruby App",
       "onAutoForward": "notify"
     },
-    "4321": {
+    "4001": {
       "label": "Astro Dev Server",
       "onAutoForward": "silent"
     }

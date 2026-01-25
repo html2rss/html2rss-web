@@ -6,7 +6,7 @@ services:
     image: gilcreator/html2rss-web
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:4000:4000"
     volumes:
       - type: bind
         source: ./config/feeds.yml
@@ -14,9 +14,10 @@ services:
         read_only: true
     environment:
       RACK_ENV: production
+      PORT: 4000
       HTML2RSS_SECRET_KEY: your-generated-secret-key-here
       HEALTH_CHECK_TOKEN: health-check-token-xyz789
-      BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:3001
+      BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:4002
       BROWSERLESS_IO_API_TOKEN: 6R0W53R135510
 
   watchtower:
@@ -30,7 +31,9 @@ services:
   browserless:
     image: "ghcr.io/browserless/chromium"
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:4002:4002"
     environment:
-      PORT: 3001
+      PORT: 4002
       CONCURRENT: 10
       TOKEN: 6R0W53R135510

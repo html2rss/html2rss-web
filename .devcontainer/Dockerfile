@@ -29,6 +29,6 @@ ENV BUNDLE_PATH=/usr/local/bundle
 
 USER "$USER"
 
-EXPOSE 3000
+EXPOSE 4000
 
 CMD ["sleep", "infinity"]

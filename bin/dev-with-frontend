@@ -14,9 +14,9 @@ export RACK_ENV=${RACK_ENV:-development}
 
 echo "Starting html2rss-web development environment..."
 echo "Environment: $RACK_ENV"
-echo "Ruby server: http://localhost:3000"
-echo "Astro dev server: http://localhost:4321 (with live reload)"
-echo "Main development URL: http://localhost:4321"
+echo "Ruby server: http://localhost:4000"
+echo "Astro dev server: http://localhost:4001 (with live reload)"
+echo "Main development URL: http://localhost:4001"
 echo ""
 
 # Function to cleanup background processes
@@ -38,7 +38,7 @@ trap cleanup SIGINT SIGTERM
 
 # Start Ruby server in background
 echo "Starting Ruby server..."
-bundle exec puma -p ${PORT:-3000} -C config/puma.rb &
+bundle exec puma -p ${PORT:-4000} -C config/puma.rb &
 RUBY_PID=$!
 
 # Wait a moment for Ruby server to start

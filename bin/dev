@@ -31,7 +31,7 @@ cleanup() {
 
   # Clean up any remaining processes on our ports
   pkill -f "puma.*html2rss-web" 2>/dev/null || true
-  pkill -f "astro.*dev.*3001" 2>/dev/null || true
+  pkill -f "astro.*dev.*4001" 2>/dev/null || true
 
   echo "✅ Development servers stopped"
   exit 0
@@ -40,18 +40,18 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Prevent silent failures from port conflicts
-if lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-  echo "❌ Port 3000 is already in use. Run: \`pkill -f 'puma.*html2rss-web'\`"
+if lsof -Pi :4000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+  echo "❌ Port 4000 is already in use. Run: \`pkill -f 'puma.*html2rss-web'\`"
   exit 1
 fi
 
 # Start Ruby server
-bundle exec puma -p 3000 -C config/puma.rb &
+bundle exec puma -p 4000 -C config/puma.rb &
 RUBY_PID=$!
 
 # Verify Ruby server started successfully
 sleep 3
-if ! kill -0 $RUBY_PID 2>/dev/null || ! lsof -Pi :3000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+if ! kill -0 $RUBY_PID 2>/dev/null || ! lsof -Pi :4000 -sTCP:LISTEN -t >/dev/null 2>&1; then
   echo "❌ Ruby server failed to start"
   exit 1
 fi
@@ -69,5 +69,5 @@ if ! kill -0 $ASTRO_PID 2>/dev/null; then
   exit 1
 fi
 
-echo "✅ Development environment ready at http://localhost:3001"
+echo "✅ Development environment ready at http://localhost:4001"
 wait $RUBY_PID $ASTRO_PID

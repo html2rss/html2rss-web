@@ -45,15 +45,13 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
 2. Set `HTML2RSS_SECRET_KEY` in `docker-compose.yml`.
 3. Start: `docker-compose up`.
 
-UI + API run on `http://localhost:3000`. The app exits if the secret key is missing.
+UI + API run on `http://localhost:4000`. The app exits if the secret key is missing.
 
-## Development (Dev Container only)
-We support a single, batteries-included workflow based on the repository's
-[Dev Container](.devcontainer/README.md). Always work inside the Dev Container locally or in
-GitHub Codespaces—running the app directly on the host is no longer documented or supported.
-All agents and automation must run inside the Dev Container as well.
+## Development (Dev Container)
+Use the repository's [Dev Container](.devcontainer/README.md) for all local development and tests.
+Running the app directly on the host is not supported.
 
-Inside the Dev Container, use:
+Quick start inside the Dev Container:
 
 ```
 make setup
@@ -64,15 +62,7 @@ bundle exec rubocop -F
 bundle exec rspec
 ```
 
-Dev Container app URL: `http://localhost:3001`.
-
-## Frontend Development
-```
-cd frontend
-npm install
-npm run dev
-```
-The Ruby server continues to serve the production build while Astro runs with hot reload on port 4321.
+Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://localhost:4001`.
 
 ## Make Targets
 
@@ -80,9 +70,9 @@ The Ruby server continues to serve the production build while Astro runs with ho
 | -------------------- | ------------------------------------------------------- |
 | `make help`          | List available shortcuts.                               |
 | `make setup`         | Install Ruby and Node dependencies.                     |
-| `make dev`           | Run Ruby (port 3000) and Astro (port 4321) dev servers. |
+| `make dev`           | Run Ruby (port 4000) and Astro (port 4001) dev servers. |
 | `make dev-ruby`      | Start only the Ruby server.                             |
-| `make dev-frontend`  | Start only the Astro dev server.                        |
+| `make dev-frontend`  | Start only the Astro dev server (port 4001).            |
 | `make test`          | Run Ruby and frontend test suites.                      |
 | `make test-ruby`     | Run Ruby specs.                                         |
 | `make test-frontend` | Run frontend unit and contract tests.                   |
@@ -90,11 +80,11 @@ The Ruby server continues to serve the production build while Astro runs with ho
 | `make lintfix`       | Auto-fix lint warnings where possible.                  |
 | `make clean`         | Remove build artefacts.                                 |
 
-## Frontend npm Scripts
+## Frontend npm Scripts (inside Dev Container)
 
 | Command                 | Purpose                           |
 | ----------------------- | --------------------------------- |
-| `npm run dev`           | Astro dev server with hot reload. |
+| `npm run dev`           | Astro dev server with hot reload (port 4001). |
 | `npm run build`         | Production build.                 |
 | `npm run test:run`      | Unit tests (Vitest).              |
 | `npm run test:contract` | Contract tests with MSW.          |

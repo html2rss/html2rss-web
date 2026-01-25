@@ -5,14 +5,14 @@ import preact from "@astrojs/preact";
 export default defineConfig({
   output: "static",
   server: {
-    port: 3001,
+    port: 4001,
     host: true,
   },
   vite: {
     server: {
       proxy: {
-        "/api": "http://localhost:3000",
-        "/rss.xsl": "http://localhost:3000",
+        "/api": "http://localhost:4000",
+        "/rss.xsl": "http://localhost:4000",
       },
     },
   },
