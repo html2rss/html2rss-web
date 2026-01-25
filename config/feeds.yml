@@ -1,9 +1,27 @@
+auth:
+  accounts:
+    - username: "admin"
+      token: "allow-any-urls-abcd-4321"
+      allowed_urls:
+        - "*" # Full access
+    - username: "demo"
+      token: "self-host-for-full-access"
+      allowed_urls:
+        - "https://www.chip.de/testberichte"
+        - "https://news.ycombinator.com"
+        - "https://github.com/trending"
+    - username: "health-check"
+      token: "health-check-token-xyz789"
+      allowed_urls: [] # Health check doesn't need URL access
+
 stylesheets:
   - href: "/rss.xsl"
     media: "all"
     type: "text/xsl"
+
 headers:
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"
+
 feeds:
   # your custom feeds go here:
   example:

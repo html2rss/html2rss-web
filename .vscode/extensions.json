@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "redhat.vscode-yaml",
+    "esbenp.prettier-vscode",
+    "shopify.ruby-lsp"
+  ]
+}

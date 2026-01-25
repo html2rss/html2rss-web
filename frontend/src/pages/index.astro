@@ -1,0 +1,18 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { App } from "../components/App";
+import Bookmarklet from "../components/Bookmarklet.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/main.css";
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Turn Any Website Into an RSS Feed - Instantly",
+    template: "splash",
+  }}
+>
+  <App client:load />
+  <Bookmarklet />
+  <Footer />
+</StarlightPage>

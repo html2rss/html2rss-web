@@ -1,0 +1,73 @@
+---
+import { Aside, Icon } from "@astrojs/starlight/components";
+
+// Bookmarklet.astro - Drag-to-bookmark functionality
+---
+
+<Aside type="tip" title="🚀 Quick Convert">
+  <p><strong>Drag this link to your bookmarks bar</strong> to instantly convert any website to RSS:</p>
+  <div class="bookmarklet-container">
+    <a id="bookmarklet" class="bookmarklet-link" href="#">
+      <Icon name="rss" />
+      Convert to RSS
+    </a>
+  </div>
+  <p class="bookmarklet-help">Then visit any website and click the bookmark!</p>
+</Aside>
+
+<style>
+  .bookmarklet-container {
+    text-align: center;
+    margin: 1rem 0;
+  }
+
+  .bookmarklet-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--sl-color-accent);
+    color: var(--sl-color-white);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+  }
+
+  .bookmarklet-link:hover {
+    background: var(--sl-color-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+  }
+
+  .bookmarklet-help {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.8rem;
+    color: var(--sl-color-text-accent);
+    font-style: italic;
+  }
+</style>
+
+<script>
+  // Bookmarklet functionality
+  function initBookmarklet() {
+    const bookmarklet = document.getElementById("bookmarklet") as HTMLAnchorElement;
+    if (bookmarklet) {
+      // Use the current origin (should be the Astro dev server)
+      const baseUrl = new URL(window.location.origin);
+      baseUrl.pathname = "/";
+      baseUrl.search = "?url=";
+      bookmarklet.href = `javascript:window.location.href='${baseUrl.toString()}'+encodeURIComponent(window.location.href);`;
+    }
+  }
+
+  // Initialize on page load
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initBookmarklet);
+  } else {
+    initBookmarklet();
+  }
+</script>

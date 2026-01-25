@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+set -e
+
+# Load .env if exists
+if [ -f .env ]; then
+  export $(cat .env | grep -v '^#' | xargs)
+fi
+
+export RACK_ENV=${RACK_ENV:-development}
+
+# Prevent silent failures from port conflicts
+if lsof -Pi :${PORT:-4000} -sTCP:LISTEN -t >/dev/null 2>&1; then
+  echo "❌ Port ${PORT:-4000} is already in use. Run: pkill -f 'puma.*html2rss-web'"
+  exit 1
+fi
+
+echo "Starting Ruby server (code reloading enabled)"
+bundle exec puma -p ${PORT:-4000} -C config/puma.rb

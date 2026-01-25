@@ -13,54 +13,65 @@ module Html2rss
 
       CONFIG_FILE = 'config/feeds.yml'
 
-      module_function
+      class << self
+        ##
+        # @param name [String, Symbol, #to_sym]
+        # @return [Hash<Symbol, Any>]
+        def find(name)
+          normalized_name = normalize_name(name)
+          config = feeds.fetch(normalized_name.to_sym) do
+            raise NotFound, "Did not find local feed config at '#{normalized_name}'"
+          end
+          config = deep_dup(config)
 
-      ##
-      # @param name [String, Symbol, #to_sym]
-      # @return [Hash<Symbol, Any>]
-      def find(name)
-        feed_config = feeds.fetch(name.to_sym) { raise NotFound, "Did not find local feed config at '#{name}'" }
-        merge_global_stylesheets(feed_config)
-      end
+          apply_global_defaults(config)
+        end
 
-      ##
-      # Merges global stylesheets into a feed configuration if the feed doesn't already have stylesheets.
-      #
-      # @param config [Hash] The feed configuration to merge stylesheets into
-      # @return [Hash] The configuration with merged stylesheets (duplicated if needed)
-      def merge_global_stylesheets(config)
-        global_config = global
-        return config unless global_config[:stylesheets] && !config.key?(:stylesheets)
+        ##
+        # @return [Hash<Symbol, Any>]
+        def feeds
+          yaml.fetch(:feeds, {})
+        end
 
-        config = config.dup
-        config[:stylesheets] = global_config[:stylesheets]
-        config
-      end
+        ##
+        # @return [Hash<Symbol, Any>]
+        def global
+          yaml.reject { |key| key == :feeds }
+        end
 
-      ##
-      # @return [Hash<Symbol, Any>]
-      def feeds
-        yaml.fetch(:feeds, {})
-      end
+        ##
+        # @return [Hash<Symbol, Any>]
+        def yaml
+          YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
+        rescue Errno::ENOENT => error
+          raise NotFound, "Configuration file not found: #{error.message}"
+        end
 
-      ##
-      # @return [Hash<Symbol, Any>]
-      def global
-        yaml.reject { |key| key == :feeds }
-      end
+        private
 
-      ##
-      # @return [Array<Symbol>] names of locally available feeds
-      def feed_names
-        feeds.keys
-      end
+        def apply_global_defaults(config)
+          global_config = global
 
-      ##
-      # @return [Hash<Symbol, Any>]
-      def yaml
-        YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
-      rescue Errno::ENOENT => error
-        raise NotFound, "Configuration file not found: #{error.message}"
+          config[:stylesheets] ||= deep_dup(global_config[:stylesheets]) if global_config[:stylesheets]
+          config[:headers] ||= deep_dup(global_config[:headers]) if global_config[:headers]
+
+          config
+        end
+
+        def normalize_name(name)
+          File.basename(name.to_s, '.*')
+        end
+
+        def deep_dup(value)
+          case value
+          when Hash
+            value.transform_values { |val| deep_dup(val) }
+          when Array
+            value.map { |element| deep_dup(element) }
+          else
+            value
+          end
+        end
       end
     end
   end

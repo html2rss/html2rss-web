@@ -1,0 +1,24 @@
+{
+  "files.associations": {
+    "*.yml": "yaml",
+    "*.yaml": "yaml",
+    "Rakefile": "ruby",
+    "Gemfile": "ruby",
+    "gemspec": "ruby"
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.rubocop": "explicit"
+  },
+  "search.exclude": {
+    "**/coverage": true,
+    "**/tmp": true,
+    "**/vendor": true,
+    "**/.git": true,
+    "**/node_modules": true
+  },
+  "files.exclude": {
+    "**/coverage": true,
+    "**/tmp": true
+  },
+}

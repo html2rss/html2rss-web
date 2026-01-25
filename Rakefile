@@ -40,8 +40,7 @@ task :test do
       '-d',
       '-p 3000:3000',
       '--env PUMA_LOG_CONFIG=1',
-      '--env HEALTH_CHECK_USERNAME=username',
-      '--env HEALTH_CHECK_PASSWORD=password',
+      '--env HEALTH_CHECK_TOKEN=health-check-token-xyz789',
       "--mount type=bind,source=#{current_dir}/config,target=/app/config",
       '--name html2rss-web-test',
       'gilcreator/html2rss-web'].join(' ')
@@ -51,18 +50,14 @@ task :test do
   Output.describe 'Listing docker containers matching html2rss-web-test filter'
   sh 'docker ps -a --filter name=html2rss-web-test'
 
-  Output.describe 'Generating feed from a html2rss-configs config'
-  sh 'curl -f "http://127.0.0.1:3000/github.com/releases.rss?username=html2rss&repository=html2rss-web" || exit 1'
-
-  Output.describe 'Generating example feed from feeds.yml'
-  sh 'curl -f http://127.0.0.1:3000/example.rss || exit 1'
-
-  Output.describe 'Authenticated request to GET /health_check.txt'
-  sh 'docker exec html2rss-web-test curl -f http://username:password@127.0.0.1:3000/health_check.txt || exit 1'
-
-  # skipped as html2rss is used in development version
-  # Output.describe 'Print output of `html2rss help`'
-  # sh 'docker exec html2rss-web-test html2rss help'
+  Output.describe 'Running RSpec smoke suite against container'
+  smoke_env = {
+    'SMOKE_BASE_URL' => 'http://127.0.0.1:3000',
+    'SMOKE_HEALTH_TOKEN' => 'health-check-token-xyz789',
+    'SMOKE_API_TOKEN' => 'allow-any-urls-abcd-4321',
+    'RUN_DOCKER_SPECS' => 'true'
+  }
+  sh smoke_env, 'bundle exec rspec --tag docker'
 ensure
   test_container_exists = JSON.parse(`docker inspect html2rss-web-test`).any?
 

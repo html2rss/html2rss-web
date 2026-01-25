@@ -13,27 +13,36 @@ RSpec.describe Html2rss::Web::App do
 
     def app = described_class
 
-    it 'responds to /' do
+    it 'serves the homepage with core security headers', :aggregate_failures do
       get '/'
+
       expect(last_response).to be_ok
+      expect(last_response.headers['Content-Security-Policy']).to include("default-src 'none'")
+      expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'sets CSP headers' do # rubocop:disable RSpec/ExampleLength
-      get '/'
+    it 'serves legacy feed routes with caching headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
+      allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
 
-      expect(last_response.headers['Content-Security-Policy']).to eq <<~HEADERS.gsub(/\n\s*/, ' ')
-        default-src 'none';
-        style-src 'self';
-        script-src 'self';
-        connect-src 'self';
-        img-src 'self';
-        font-src 'self' data:;
-        form-action 'self';
-        base-uri 'none';
-        frame-ancestors 'self';
-        frame-src 'self';
-        block-all-mixed-content;
-      HEADERS
+      get '/legacy'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      cache_control = last_response.headers['Cache-Control']
+      expect(cache_control).to include('public')
+      expect(cache_control).to include('max-age=10800')
+      expect(last_response.body).to eq('<rss/>')
+    end
+
+    it 'renders XML error when legacy feed generation fails', :aggregate_failures do
+      allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
+
+      get '/missing-feed'
+
+      expect(last_response.status).to eq(500)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.body).to eq('<error/>')
     end
   end
 

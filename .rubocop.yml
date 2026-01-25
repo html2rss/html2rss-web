@@ -1,4 +1,4 @@
-require:
+plugins:
   - rubocop-performance
   - rubocop-rspec
   - rubocop-rake
@@ -7,11 +7,15 @@ require:
 AllCops:
   DisplayCopNames: true
   NewCops: enable
+  Exclude:
+    - '**/*.yml'
+    - '**/*.yaml'
+    - '**/.tool-versions'
 
 Metrics/BlockLength:
   Exclude:
     - Rakefile
-  ExcludedMethods:
+  AllowedMethods:
     - route
 
 Naming/RescuedExceptionsVariableName:
@@ -21,6 +25,7 @@ Layout/ClassStructure:
   Enabled: true
 
 Style/Documentation:
+  Enabled: false
   AllowedConstants:
     - App
 

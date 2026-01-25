@@ -11,17 +11,7 @@ if ENV.key?('SENTRY_DSN')
   Sentry.init do |config|
     config.dsn = ENV.fetch('SENTRY_DSN')
 
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for tracing.
-    # We recommend adjusting this value in production.
     config.traces_sample_rate = 1.0
-    # or
-    # config.traces_sampler = lambda do |_context|
-    #   true
-    # end
-    # Set profiles_sample_rate to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
     config.profiles_sample_rate = 1.0
   end
 
@@ -29,28 +19,38 @@ if ENV.key?('SENTRY_DSN')
 end
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
-requires = Dir['app/**/*.rb']
 
 if dev
   require 'logger'
-  logger = Logger.new($stdout)
-
   require 'rack/unreloader'
-  Unreloader = Rack::Unreloader.new(subclasses: %w[Roda Html2rss],
-                                    logger:,
-                                    reload: dev) do
-                                      Html2rss::Web::App
-                                    end
+
+  logger = Logger.new($stdout)
+  logger.level = Logger::INFO
+
+  # Simple Unreloader configuration following official docs
+  Unreloader = Rack::Unreloader.new(
+    subclasses: %w[Roda Html2rss],
+    logger: logger,
+    reload: true
+  ) do
+    Html2rss::Web::App
+  end
+
+  # Load main app file
   Unreloader.require('app.rb') { 'Html2rss::Web::App' }
 
-  requires.each { |f| Unreloader.require(f) }
+  # Load all directories - Unreloader handles the rest
+  Unreloader.require('helpers')
+  Unreloader.require('app')
 
   run Unreloader
 else
   use Rack::Timeout
 
+  # Production: load everything upfront for better performance
   require_relative 'app'
-  requires.each { |f| require_relative f }
+  Dir['app/**/*.rb'].each { |f| require_relative f }
+  Dir['helpers/**/*.rb'].each { |f| require_relative f }
 
   run(Html2rss::Web::App.freeze.app)
 end

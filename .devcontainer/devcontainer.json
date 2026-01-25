@@ -1,41 +1,43 @@
 {
   "name": "html2rss-web",
-  "image": "mcr.microsoft.com/devcontainers/ruby:3.4",
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
       "extensions": [
-        "redhat.vscode-yaml",
-        "esbenp.prettier-vscode",
-        "github.copilot",
-        "github.copilot-chat",
-        "shopify.ruby-lsp"
+        "rebornix.ruby",
+        "astro-build.astro-vscode",
+        "esbenp.prettier-vscode"
       ],
       "settings": {
-        "ruby.rubocop.executePath": "bundle exec",
-        "ruby.format": "rubocop",
-        "ruby.lint": {
-          "rubocop": true
-        },
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
         "files.associations": {
-          "*.erb": "erb"
-        }
+          "*.astro": "astro"
+        },
+        "prettier.configPath": "./frontend/.prettierrc",
+        "ruby.format": "rubocop",
+        "ruby.lint": { "rubocop": true },
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true
       }
     }
   },
-  "postCreateCommand": "make setup",
-  "postStartCommand": "echo '🚀 html2rss-web Development Environment Ready!' && echo '' && echo '📋 Quick Start Commands:' && echo '  make dev         # Start development server' && echo '  make test        # Run tests' && echo '  make lint        # Run linter' && echo '  make fix         # Auto-fix linting issues' && echo '  make help        # Show all commands' && echo '' && echo '🌐 Server will be available at: http://localhost:3000' && echo '📁 Project files are in: /workspaces/html2rss-web' && echo '' && echo '💡 Tip: Use Ctrl+C to stop the development server' && echo ''",
-  "forwardPorts": [
-    3000
-  ],
+  "forwardPorts": [4000, 4001],
   "portsAttributes": {
-    "3000": {
-      "label": "html2rss-web",
+    "4000": {
+      "label": "Ruby App",
       "onAutoForward": "notify"
+    },
+    "4001": {
+      "label": "Astro Dev Server",
+      "onAutoForward": "silent"
     }
   },
+  "postCreateCommand": "bash -lc \"make setup || (echo 'make setup failed; rerun once network access is available.' && exit 0)\"",
   "remoteUser": "vscode"
 }

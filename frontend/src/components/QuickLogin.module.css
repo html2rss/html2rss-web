@@ -1,0 +1,15 @@
+.wrapper {
+  border-radius: 0.6rem;
+  background: var(--sl-color-accent-low);
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--sl-color-text);
+}
+
+.text {
+  font-size: 0.9rem;
+  color: var(--sl-color-text-accent);
+}
