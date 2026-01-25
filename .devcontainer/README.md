@@ -30,6 +30,7 @@ make dev          # Ruby + Astro
 make dev-ruby     # Ruby only
 make dev-frontend # Astro only
 make test         # Ruby + frontend tests
+make ready        # RuboCop + RSpec (pre-commit gate)
 ```
 
 ## Lint and tests

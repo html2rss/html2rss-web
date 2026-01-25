@@ -17,9 +17,17 @@ docker compose -f .devcontainer/docker-compose.yml exec -T app make dev
 
 docker compose -f .devcontainer/docker-compose.yml exec -T app make test
 
+docker compose -f .devcontainer/docker-compose.yml exec -T app make ready
+
 docker compose -f .devcontainer/docker-compose.yml exec -T app bundle exec rubocop -F
 
 docker compose -f .devcontainer/docker-compose.yml exec -T app bundle exec rspec
+```
+
+Pre-commit gate (required):
+
+```
+docker compose -f .devcontainer/docker-compose.yml exec -T app make ready
 ```
 
 If you need an interactive shell:

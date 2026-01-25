@@ -59,6 +59,7 @@ Inside the Dev Container, use:
 make setup
 make dev
 make test
+make ready
 bundle exec rubocop -F
 bundle exec rspec
 ```

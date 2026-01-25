@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready
 
 # Default target
 help: ## Show this help message
@@ -73,6 +73,12 @@ lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
 	@echo "Running Prettier formatting..."
 	@cd frontend && npm run format
 	@echo "JavaScript lintfix complete!"
+
+ready: ## Pre-commit gate (RuboCop + RSpec)
+	@echo "Running pre-commit checks..."
+	bundle exec rubocop -F
+	bundle exec rspec
+	@echo "Pre-commit checks complete!"
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/
