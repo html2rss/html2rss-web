@@ -13,15 +13,15 @@ module Html2rss
     REQUIRED_TOKEN_KEYS = %i[p s].freeze
     COMPRESSED_PAYLOAD_KEYS = %i[u l e].freeze
 
-    FeedToken = Data.define(:username, :url, :expires_at, :signature) do
-      def self.create_with_validation(username:, url:, secret_key:, expires_in: DEFAULT_EXPIRY)
-        return unless valid_inputs?(username, url, secret_key)
+    FeedToken = Data.define(:username, :url, :expires_at, :signature, :strategy) do
+      def self.create_with_validation(username:, url:, secret_key:, strategy:, expires_in: DEFAULT_EXPIRY)
+        return unless valid_inputs?(username, url, secret_key, strategy)
 
         expires_at = Time.now.to_i + expires_in.to_i
-        payload = build_payload(username, url, expires_at)
+        payload = build_payload(username, url, expires_at, strategy)
         signature = generate_signature(secret_key, payload)
 
-        new(username: username, url: url, expires_at: expires_at, signature: signature)
+        new(username: username, url: url, expires_at: expires_at, signature: signature, strategy: strategy)
       end
 
       def self.decode(encoded_token) # rubocop:disable Metrics/MethodLength
@@ -35,7 +35,8 @@ module Html2rss
           username: payload[:u],
           url: payload[:l],
           expires_at: payload[:e],
-          signature: token_data[:s]
+          signature: token_data[:s],
+          strategy: payload[:t]
         )
       rescue JSON::ParserError, ArgumentError, Zlib::DataError, Zlib::BufError
         nil
@@ -74,11 +75,15 @@ module Html2rss
       private
 
       def payload_for_signature
-        { username: username, url: url, expires_at: expires_at }
+        payload = { username: username, url: url, expires_at: expires_at }
+        payload[:strategy] = strategy if strategy
+        payload
       end
 
       def build_token_data
-        { p: { u: username, l: url, e: expires_at }, s: signature }
+        payload = { u: username, l: url, e: expires_at }
+        payload[:t] = strategy if strategy
+        { p: payload, s: signature }
       end
 
       def secure_compare(first, second) # rubocop:disable Naming/PredicateMethod
@@ -88,8 +93,8 @@ module Html2rss
       end
 
       class << self
-        def build_payload(username, url, expires_at)
-          { username: username, url: url, expires_at: expires_at }
+        def build_payload(username, url, expires_at, strategy)
+          { username: username, url: url, expires_at: expires_at, strategy: strategy }
         end
 
         def generate_signature(secret_key, payload)
@@ -112,8 +117,9 @@ module Html2rss
             COMPRESSED_PAYLOAD_KEYS.all? { |key| payload[key] }
         end
 
-        def valid_inputs?(username, url, secret_key)
-          valid_username?(username) && UrlValidator.valid_url?(url) && valid_secret_key?(secret_key)
+        def valid_inputs?(username, url, secret_key, strategy)
+          valid_username?(username) && UrlValidator.valid_url?(url) && valid_secret_key?(secret_key) &&
+            valid_strategy?(strategy)
         end
 
         def valid_username?(username)
@@ -122,6 +128,10 @@ module Html2rss
 
         def valid_secret_key?(secret_key)
           secret_key.is_a?(String) && !secret_key.empty?
+        end
+
+        def valid_strategy?(strategy)
+          strategy.is_a?(String) && !strategy.empty? && strategy.length <= 50 && strategy.match?(/\A[a-z0-9_]+\z/)
         end
       end
     end

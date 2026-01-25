@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'time'
+require 'json'
 require 'html2rss/url'
 
 require_relative '../../account_manager'
@@ -28,14 +29,15 @@ module Html2rss
               account = account_for(feed_token)
               ensure_access!(account, feed_token.url)
 
-              render_generated_feed(request, feed_token.url)
+              strategy = resolve_token_strategy(feed_token)
+              render_generated_feed(request, feed_token.url, strategy)
             end
 
             def create(request)
               ensure_auto_source_enabled!
 
               account = require_account(request)
-              params = build_create_params(request, account)
+              params = build_create_params(request_params(request), account)
 
               feed_data = AutoSource.create_stable_feed(params[:name], params[:url], account, params[:strategy])
               raise InternalServerError, 'Failed to create feed' unless feed_data
@@ -55,8 +57,8 @@ module Html2rss
               payload
             end
 
-            def build_create_params(request, account)
-              url = request.params['url'].to_s.strip
+            def build_create_params(params, account)
+              url = params['url'].to_s.strip
               raise BadRequestError, 'URL parameter is required' if url.empty?
               raise BadRequestError, 'Invalid URL format' unless UrlValidator.valid_url?(url)
               raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(account, url)
@@ -64,7 +66,7 @@ module Html2rss
               {
                 url: url,
                 name: extract_site_title(url),
-                strategy: normalize_strategy(request.params['strategy'])
+                strategy: normalize_strategy(params['strategy'])
               }
             end
 
@@ -95,8 +97,7 @@ module Html2rss
               raise ForbiddenError, 'Access Denied' unless UrlValidator.url_allowed?(account, url)
             end
 
-            def render_generated_feed(request, url)
-              strategy = normalize_strategy(request.params['strategy'])
+            def render_generated_feed(request, url, strategy)
               feed_object = AutoSource.generate_feed_object(url, strategy)
               rendered_feed = FeedGenerator.process_feed_content(url, strategy, feed_object)
 
@@ -157,6 +158,35 @@ module Html2rss
               return DEFAULT_TTL_SECONDS if ttl_minutes <= 0
 
               ttl_minutes * 60
+            end
+
+            def resolve_token_strategy(feed_token)
+              strategy = feed_token.strategy.to_s.strip
+              strategy = default_strategy if strategy.empty?
+
+              raise BadRequestError, 'Unsupported strategy' unless supported_strategies.include?(strategy)
+
+              strategy
+            end
+
+            def request_params(request)
+              return request.params unless json_request?(request)
+
+              raw_body = request.body.read
+              request.body.rewind
+              return request.params if raw_body.strip.empty?
+
+              parsed = JSON.parse(raw_body)
+              raise BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
+
+              request.params.merge(parsed)
+            rescue JSON::ParserError
+              raise BadRequestError, 'Invalid JSON payload'
+            end
+
+            def json_request?(request)
+              content_type = request.env['CONTENT_TYPE'].to_s
+              content_type.include?('application/json')
             end
           end
         end

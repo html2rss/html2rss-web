@@ -69,6 +69,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
                     .create_with_validation(
                       username: 'ghost',
                       url: feed_url,
+                      strategy: 'ssrf_filter',
                       secret_key: ENV.fetch('HTML2RSS_SECRET_KEY')
                     )
                     .encode
@@ -82,15 +83,18 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(response_data.dig('error', 'message')).to eq('Account not found')
     end
 
-    it 'returns bad request when strategy is unsupported', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url)
+    it 'ignores query param strategy overrides', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+
+      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object)
+        .and_return(instance_double('Html2rss::Feed', channel: instance_double('Html2rss::FeedChannel', ttl: 10)))
+      allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
+        .and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}", strategy: 'bad'
 
-      expect(last_response.status).to eq(400)
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be false
-      expect(response_data.dig('error', 'message')).to eq('Unsupported strategy')
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/xml')
     end
   end
 

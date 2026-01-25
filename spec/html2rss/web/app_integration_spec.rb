@@ -35,7 +35,8 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
-    token_payload = instance_double(Html2rss::Web::FeedToken, url: feed_url, username: account[:username])
+    token_payload = instance_double(Html2rss::Web::FeedToken, url: feed_url, username: account[:username],
+                                                           strategy: 'ssrf_filter')
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
       validate_and_decode: token_payload
@@ -73,12 +74,11 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       expect(last_response.body).to eq('<rss version="2.0"></rss>')
     end
 
-    it 'returns bad request for unsupported strategy', :aggregate_failures do
+    it 'ignores query param strategy overrides', :aggregate_failures do
       get "/api/v1/feeds/#{feed_token}", { 'strategy' => 'invalid' }
 
-      expect(last_response.status).to eq(400)
-      expect(last_response.content_type).to include('application/json')
-      expect(json_body).to include('error' => include('message' => 'Unsupported strategy'))
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/xml')
     end
   end
 
@@ -124,7 +124,8 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         post '/api/v1/feeds', '{ invalid', json_headers
 
         expect(last_response.status).to eq(400)
-        expect(last_response.body).to be_empty
+        expect(last_response.content_type).to include('application/json')
+        expect(json_body).to include('error' => include('message' => 'Invalid JSON payload'))
       end
 
       it 'returns bad request when URL is missing', :aggregate_failures do # rubocop:disable RSpec/ExampleLength

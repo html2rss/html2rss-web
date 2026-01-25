@@ -27,10 +27,11 @@ module Html2rss
         # @param url [String]
         # @param expires_in [Integer] seconds (default: 10 years)
         # @return [String] HMAC-signed compressed feed token
-        def generate_feed_token(username, url, expires_in: Html2rss::Web::DEFAULT_EXPIRY)
+        def generate_feed_token(username, url, strategy:, expires_in: Html2rss::Web::DEFAULT_EXPIRY)
           token = FeedToken.create_with_validation(
             username: username,
             url: url,
+            strategy: strategy,
             expires_in: expires_in,
             secret_key: secret_key
           )

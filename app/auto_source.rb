@@ -25,7 +25,7 @@ module Html2rss
           return nil unless url_allowed_for_token?(token_data, url)
 
           feed_id = generate_feed_id(token_data[:username], url, token_data[:token])
-          feed_token = Auth.generate_feed_token(token_data[:username], url)
+          feed_token = Auth.generate_feed_token(token_data[:username], url, strategy: strategy)
           return nil unless feed_token
 
           identifiers = { feed_id: feed_id, feed_token: feed_token }
