@@ -2,6 +2,7 @@
 
 require 'time'
 require 'json'
+require 'html2rss/url'
 
 require_relative '../../../auth'
 require_relative '../../../auto_source'

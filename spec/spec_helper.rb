@@ -49,6 +49,7 @@ RSpec.configure do |config|
   config.before do
     # Only reset if SecurityLogger is defined (loaded)
     Html2rss::Web::SecurityLogger.reset_logger! if defined?(Html2rss::Web::SecurityLogger)
+    Html2rss::Web::AccountManager.reload! if defined?(Html2rss::Web::AccountManager)
   end
 
   # rspec-expectations config goes here. You can use an alternate

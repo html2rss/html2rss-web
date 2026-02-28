@@ -50,6 +50,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
     end
 
     it 'returns error when configuration fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::Auth).to receive(:authenticate).and_return({ username: 'health-check' })
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')
       header 'Authorization', "Bearer #{health_token}"
 

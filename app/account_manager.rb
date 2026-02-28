@@ -8,22 +8,22 @@ module Html2rss
     # Account management functionality
     module AccountManager
       class << self
+        def reload!
+          nil
+        end
+
         # @param token [String]
         # @return [Hash, nil]
         def get_account(token)
-          return nil unless token && token_index.key?(token)
+          return nil unless token
 
           token_index[token]
         end
 
         # @return [Array<Hash>]
         def accounts
-          @accounts ||= begin # rubocop:disable ThreadSafety/ClassInstanceVariable
-            auth_config = LocalConfig.global[:auth]
-            raw_accounts = auth_config&.dig(:accounts)
-
-            Array(raw_accounts).map { |account| account.transform_keys(&:to_sym) }
-          end
+          raw_accounts = LocalConfig.global.dig(:auth, :accounts)
+          Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
         end
 
         # @param username [String]
@@ -36,9 +36,8 @@ module Html2rss
 
         private
 
-        # @return [Hash] token to account mapping
         def token_index
-          @token_index ||= accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account } # rubocop:disable ThreadSafety/ClassInstanceVariable
+          accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }.freeze
         end
       end
     end
