@@ -15,7 +15,7 @@ module Html2rss
         def validate_environment!
           return if ENV['HTML2RSS_SECRET_KEY']
 
-          if development? || ENV['RACK_ENV'] == 'test'
+          if non_production?
             set_development_key
           else
             show_production_error
@@ -25,13 +25,25 @@ module Html2rss
         ##
         # Validate production security configuration
         def validate_production_security!
-          return if development? || ENV['RACK_ENV'] == 'test'
+          return if non_production?
 
           validate_secret_key!
           validate_account_configuration!
         end
 
         def development? = ENV['RACK_ENV'] == 'development'
+        def test? = ENV['RACK_ENV'] == 'test'
+
+        def non_production?
+          development? || test?
+        end
+
+        def auto_source_enabled?
+          flag = ENV.fetch('AUTO_SOURCE_ENABLED', nil)
+          return flag != 'false' if development?
+
+          flag == 'true'
+        end
 
         private
 

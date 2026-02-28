@@ -14,11 +14,7 @@ module Html2rss
       class << self
         # @return [Boolean]
         def enabled?
-          if EnvironmentValidator.development?
-            ENV.fetch('AUTO_SOURCE_ENABLED', nil) != 'false'
-          else
-            ENV.fetch('AUTO_SOURCE_ENABLED', nil) == 'true'
-          end
+          EnvironmentValidator.auto_source_enabled?
         end
 
         def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
