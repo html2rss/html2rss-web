@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready openapi openapi-verify
 
 # Default target
 help: ## Show this help message
@@ -79,6 +79,12 @@ ready: ## Pre-commit gate (RuboCop + RSpec)
 	bundle exec rubocop -F
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
+
+openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
+	bundle exec rake openapi:generate
+
+openapi-verify: ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml is stale
+	bundle exec rake openapi:verify
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/

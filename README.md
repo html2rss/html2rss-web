@@ -69,6 +69,7 @@ make test
 make ready
 bundle exec rubocop -F
 bundle exec rspec
+make openapi
 ```
 
 Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://localhost:4001`.
@@ -87,7 +88,16 @@ Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://local
 | `make test-frontend` | Run frontend unit and contract tests.                   |
 | `make lint`          | Run all linters.                                        |
 | `make lintfix`       | Auto-fix lint warnings where possible.                  |
+| `make openapi`       | Regenerate `docs/api/v1/openapi.yaml` from request specs. |
+| `make openapi-verify`| Regenerate + fail if OpenAPI file is stale.             |
 | `make clean`         | Remove build artefacts.                                 |
+
+## OpenAPI Contract
+
+The OpenAPI file is generated from Ruby request specs only.
+
+- Regenerate: `make openapi`
+- Verify drift (CI behavior): `make openapi-verify`
 
 ## Frontend npm Scripts (inside Dev Container)
 

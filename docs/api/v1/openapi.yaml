@@ -177,12 +177,6 @@ paths:
       tags:
       - Feeds
       responses:
-        '200':
-          description: renders feed for a valid token
-          content:
-            application/xml:
-              schema:
-                type: string
         '403':
           description: returns forbidden when auto source is disabled
           content:
@@ -205,6 +199,12 @@ paths:
                 required:
                 - success
                 - error
+        '200':
+          description: renders feed for a valid token
+          content:
+            application/xml:
+              schema:
+                type: string
         '401':
           description: returns unauthorized for invalid tokens
           content:
