@@ -39,7 +39,7 @@ task :test do
   sh 'docker build -t gilcreator/html2rss-web -f Dockerfile .'
   sh ['docker run',
       '-d',
-      '-p 3000:3000',
+      '-p 4000:4000',
       '--env PUMA_LOG_CONFIG=1',
       '--env HEALTH_CHECK_TOKEN=health-check-token-xyz789',
       "--env AUTO_SOURCE_ENABLED=#{smoke_auto_source_enabled}",
@@ -54,7 +54,7 @@ task :test do
 
   Output.describe 'Running RSpec smoke suite against container'
   smoke_env = {
-    'SMOKE_BASE_URL' => 'http://127.0.0.1:3000',
+    'SMOKE_BASE_URL' => 'http://127.0.0.1:4000',
     'SMOKE_HEALTH_TOKEN' => 'health-check-token-xyz789',
     'SMOKE_API_TOKEN' => 'allow-any-urls-abcd-4321',
     'SMOKE_AUTO_SOURCE_ENABLED' => smoke_auto_source_enabled,

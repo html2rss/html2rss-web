@@ -18,12 +18,25 @@ RSpec.describe Html2rss::Web::AccountManager do
   end
 
   describe '.reload!' do
-    it 'is a compatibility no-op that keeps interface stable' do
+    it 'keeps memoized snapshot before reload' do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
-        auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] }
+        { auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] } },
+        { auth: { accounts: [{ username: 'bob', token: 'token-2', allowed_urls: ['*'] }] } }
       )
 
-      expect(described_class.reload!).to be_nil
+      described_class.get_account('token-1')
+      expect(described_class.get_account('token-2')).to be_nil
+    end
+
+    it 'clears memoized snapshot after reload' do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
+        { auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] } },
+        { auth: { accounts: [{ username: 'bob', token: 'token-2', allowed_urls: ['*'] }] } }
+      )
+
+      described_class.get_account('token-1')
+      described_class.reload!
+      expect(described_class.get_account('token-2')).to include(username: 'bob')
     end
   end
 end

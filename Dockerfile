@@ -38,7 +38,7 @@ LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
-ENV PORT=3000 \
+ENV PORT=4000 \
   RACK_ENV=production \
   RUBY_YJIT_ENABLE=1 \
   HEALTH_CHECK_TOKEN=health-check-token-xyz789

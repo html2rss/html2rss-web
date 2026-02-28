@@ -31,6 +31,7 @@ In-repo docs live under `frontend/src/content/docs/` and are published by Astro.
 - [Security Guide](frontend/src/content/docs/security.md)
 - [REST API v1](frontend/src/content/docs/api/v1.md)
 - [Testing Overview](frontend/src/content/docs/testing.md)
+- [v2 Migration Guide](docs/migrations/v2.md)
 
 ## REST API Snapshot
 

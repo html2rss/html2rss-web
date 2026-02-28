@@ -9,6 +9,7 @@ module Html2rss
     module AccountManager
       class << self
         def reload!
+          @snapshot = nil # rubocop:disable ThreadSafety/ClassInstanceVariable
           nil
         end
 
@@ -17,13 +18,12 @@ module Html2rss
         def get_account(token)
           return nil unless token
 
-          token_index[token]
+          snapshot[:token_index][token]
         end
 
         # @return [Array<Hash>]
         def accounts
-          raw_accounts = LocalConfig.global.dig(:auth, :accounts)
-          Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
+          snapshot[:accounts]
         end
 
         # @param username [String]
@@ -36,8 +36,28 @@ module Html2rss
 
         private
 
+        def snapshot
+          return @snapshot if @snapshot # rubocop:disable ThreadSafety/ClassInstanceVariable
+
+          mutex.synchronize do
+            @snapshot ||= build_snapshot
+          end
+        end
+
+        def mutex
+          @mutex ||= Mutex.new # rubocop:disable ThreadSafety/ClassInstanceVariable
+        end
+
+        def build_snapshot
+          raw_accounts = LocalConfig.global.dig(:auth, :accounts)
+          accounts = Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
+          token_index = accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }.freeze
+
+          { accounts: accounts, token_index: token_index }.freeze
+        end
+
         def token_index
-          accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }.freeze
+          snapshot[:token_index]
         end
       end
     end
