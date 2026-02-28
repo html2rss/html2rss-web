@@ -74,12 +74,15 @@ jobs:
         run: npm run test:ci
 
   docker-test:
-    if: github.event_name == 'push'
     needs:
       - hadolint
       - ruby
       - frontend
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        smoke_auto_source_enabled: ["false", "true"]
     steps:
       - uses: actions/checkout@v5
 
@@ -104,6 +107,8 @@ jobs:
         working-directory: frontend
 
       - name: Run Docker smoke test
+        env:
+          SMOKE_AUTO_SOURCE_ENABLED: ${{ matrix.smoke_auto_source_enabled }}
         run: bundle exec rake
 
   docker-publish:
