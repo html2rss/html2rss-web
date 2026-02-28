@@ -101,19 +101,18 @@ module Html2rss
         next exception_page(error) if development?
 
         error_code = error.respond_to?(:code) ? error.code : 'INTERNAL_SERVER_ERROR'
-
         response.status = error.respond_to?(:status) ? error.status : 500
+        client_message = error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
+        request.env['rack.errors']&.puts(error.message) unless error.is_a?(HttpError)
 
-        if request.path.start_with?('/api/v1/')
+        if request.path == '/api/v1' || request.path.start_with?('/api/v1/')
           response['Content-Type'] = 'application/json'
-          JSON.generate({ success: false, error: { message: error.message, code: error_code } })
-        else
-          response['Content-Type'] = 'application/xml'
-          XmlBuilder.build_error_feed(message: error.message)
+          return JSON.generate({ success: false, error: { message: client_message, code: error_code } })
         end
-      end
 
-      @show_backtrace = development? && !ENV['CI']
+        response['Content-Type'] = 'application/xml'
+        XmlBuilder.build_error_feed(message: client_message)
+      end
 
       route do |r|
         r.public

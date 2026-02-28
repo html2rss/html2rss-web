@@ -59,7 +59,7 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
 
       expect(last_response.status).to eq(500)
       json = expect_error_response(last_response, code: 'INTERNAL_SERVER_ERROR')
-      expect(json.dig('error', 'message')).to include('boom')
+      expect(json.dig('error', 'message')).to eq('Health check failed')
     end
   end
 

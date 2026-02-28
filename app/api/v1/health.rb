@@ -67,8 +67,8 @@ module Html2rss
 
             def verify_configuration!
               LocalConfig.yaml
-            rescue StandardError => error
-              raise InternalServerError, "Health check failed: #{error.message}"
+            rescue StandardError
+              raise InternalServerError, 'Health check failed'
             end
           end
         end

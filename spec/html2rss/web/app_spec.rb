@@ -54,6 +54,18 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Content-Type']).to eq('application/xml')
       expect(last_response.body).to eq('<error/>')
     end
+
+    it 'hides unexpected internal error details from API responses', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::Routes::ApiV1).to receive(:call).and_raise(StandardError, 'boom')
+
+      get '/api/v1'
+
+      expect(last_response.status).to eq(500)
+      expect(last_response.headers['Content-Type']).to include('application/json')
+      json = JSON.parse(last_response.body)
+      expect(json.dig('error', 'code')).to eq('INTERNAL_SERVER_ERROR')
+      expect(json.dig('error', 'message')).to eq('Internal Server Error')
+    end
   end
 
   describe '.development?' do
