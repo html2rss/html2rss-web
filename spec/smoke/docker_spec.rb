@@ -56,19 +56,19 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     }
 
     response, body = post_json('/api/v1/feeds', body: payload)
-    if auto_source_enabled
-      expect(response).to be_a(Net::HTTPUnauthorized)
-      expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
-    else
+    expect(response).to be_a(Net::HTTPUnauthorized)
+    expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
+
+    response, body = post_json('/api/v1/feeds',
+                               body: payload,
+                               headers: { 'Authorization' => "Bearer #{feed_token}" })
+
+    unless auto_source_enabled
       expect(response).to be_a(Net::HTTPForbidden)
       expect(body.dig('error', 'code')).to eq('FORBIDDEN')
       expect(body.dig('error', 'message')).to eq('Auto source feature is disabled')
       next
     end
-
-    response, body = post_json('/api/v1/feeds',
-                               body: payload,
-                               headers: { 'Authorization' => "Bearer #{feed_token}" })
 
     expect(response.code).to eq('201')
     expect(body.fetch('success')).to be(true)

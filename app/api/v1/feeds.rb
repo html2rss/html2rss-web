@@ -23,20 +23,18 @@ module Html2rss
 
           class << self # rubocop:disable Metrics/ClassLength
             def show(request, token)
-              ensure_auto_source_enabled!
-
               feed_token = validated_token_for(token)
               account = account_for(feed_token)
               ensure_access!(account, feed_token.url)
+              ensure_auto_source_enabled!
 
               strategy = resolve_token_strategy(feed_token)
               render_generated_feed(request, feed_token.url, strategy)
             end
 
             def create(request)
-              ensure_auto_source_enabled!
-
               account = require_account(request)
+              ensure_auto_source_enabled!
               params = build_create_params(request_params(request), account)
 
               feed_data = AutoSource.create_stable_feed(params[:name], params[:url], account, params[:strategy])

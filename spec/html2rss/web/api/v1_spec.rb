@@ -125,6 +125,15 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('application/xml')
     end
+
+    it 'returns unauthorized for invalid tokens even when auto source is disabled', :aggregate_failures do
+      ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
+        get '/api/v1/feeds/invalid-token'
+      end
+
+      expect(last_response.status).to eq(401)
+      expect_error_response(last_response, code: 'UNAUTHORIZED')
+    end
   end
 
   describe 'POST /api/v1/feeds' do
@@ -154,6 +163,18 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       json = expect_success_response(last_response)
       expect_feed_payload(json)
       expect(last_response.headers['Content-Type']).to include('application/json')
+    end
+
+    it 'returns forbidden for authenticated requests when auto source is disabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      header 'Authorization', "Bearer #{admin_token}"
+
+      ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
+        post '/api/v1/feeds', request_params
+      end
+
+      expect(last_response.status).to eq(403)
+      json = expect_error_response(last_response, code: 'FORBIDDEN')
+      expect(json.dig('error', 'message')).to eq('Auto source feature is disabled')
     end
   end
 end
