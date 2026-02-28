@@ -13,6 +13,7 @@ require_relative 'app/feeds'
 require_relative 'app/local_config'
 require_relative 'app/exceptions'
 require_relative 'app/xml_builder'
+require_relative 'app/error_responder'
 require_relative 'app/security_logger'
 require_relative 'app/api/v1/feeds'
 require_relative 'app/api/v1/health'
@@ -100,18 +101,7 @@ module Html2rss
       plugin :error_handler do |error|
         next exception_page(error) if development?
 
-        error_code = error.respond_to?(:code) ? error.code : 'INTERNAL_SERVER_ERROR'
-        response.status = error.respond_to?(:status) ? error.status : 500
-        client_message = error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
-        request.env['rack.errors']&.puts(error.message) unless error.is_a?(HttpError)
-
-        if request.path == '/api/v1' || request.path.start_with?('/api/v1/')
-          response['Content-Type'] = 'application/json'
-          return JSON.generate({ success: false, error: { message: client_message, code: error_code } })
-        end
-
-        response['Content-Type'] = 'application/xml'
-        XmlBuilder.build_error_feed(message: client_message)
+        ErrorResponder.respond(request: request, response: response, error: error)
       end
 
       route do |r|
