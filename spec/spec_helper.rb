@@ -24,6 +24,7 @@ require 'vcr'
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/fixtures/vcr_cassettes'
   config.hook_into :faraday, :webmock
+  config.ignore_localhost = true
 end
 
 Dir[File.join(__dir__, 'support/**/*.rb')].each { |support_file| require support_file }

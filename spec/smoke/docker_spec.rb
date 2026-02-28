@@ -8,6 +8,9 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
   let(:base_url) { ENV.fetch('SMOKE_BASE_URL', 'http://127.0.0.1:4000') }
   let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN', 'health-check-token-xyz789') }
   let(:feed_token) { ENV.fetch('SMOKE_API_TOKEN', 'allow-any-urls-abcd-4321') }
+  let(:auto_source_enabled) do
+    ENV.fetch('SMOKE_AUTO_SOURCE_ENABLED', ENV.fetch('AUTO_SOURCE_ENABLED', 'false')) == 'true'
+  end
 
   def get_json(path, headers: {})
     uri = URI.join(base_url, path)
@@ -54,8 +57,15 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     }
 
     response, body = post_json('/api/v1/feeds', body: payload)
-    expect(response).to be_a(Net::HTTPUnauthorized)
-    expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
+    if auto_source_enabled
+      expect(response).to be_a(Net::HTTPUnauthorized)
+      expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
+    else
+      expect(response).to be_a(Net::HTTPForbidden)
+      expect(body.dig('error', 'code')).to eq('FORBIDDEN')
+      expect(body.dig('error', 'message')).to eq('Auto source feature is disabled')
+      next
+    end
 
     response, body = post_json('/api/v1/feeds',
                                body: payload,
