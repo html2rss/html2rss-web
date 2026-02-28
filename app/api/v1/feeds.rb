@@ -10,6 +10,7 @@ require_relative '../../auto_source'
 require_relative '../../feed_generator'
 require_relative '../../feeds'
 require_relative '../../exceptions'
+require_relative '../../cache_ttl'
 require_relative '../../feed_token'
 require_relative '../../url_validator'
 
@@ -152,10 +153,7 @@ module Html2rss
 
             def extract_ttl_from_feed_object(feed_object)
               ttl_value = feed_object.respond_to?(:channel) ? feed_object.channel&.ttl : nil
-              ttl_minutes = ttl_value.respond_to?(:to_i) ? ttl_value.to_i : 0
-              return DEFAULT_TTL_SECONDS if ttl_minutes <= 0
-
-              ttl_minutes * 60
+              CacheTtl.seconds_from_minutes(ttl_value, default: DEFAULT_TTL_SECONDS)
             end
 
             def resolve_token_strategy(feed_token)
