@@ -1,53 +1,63 @@
 ---
-import { Aside, Icon } from "@astrojs/starlight/components";
-
-// Bookmarklet.astro - Drag-to-bookmark functionality
+import { Icon } from "@astrojs/starlight/components";
 ---
 
-<Aside type="tip" title="🚀 Quick Convert">
-  <p><strong>Drag this link to your bookmarks bar</strong> to instantly convert any website to RSS:</p>
-  <div class="bookmarklet-container">
-    <a id="bookmarklet" class="bookmarklet-link" href="#">
-      <Icon name="rss" />
-      Convert to RSS
-    </a>
+<section class="bookmarklet-panel" aria-label="Quick convert bookmark">
+  <h3>Quick convert</h3>
+  <p>Drag this bookmark once, then use it on any page you want to convert.</p>
+  <div class="bookmarklet-actions">
+    <a id="bookmarklet" class="bookmarklet-link" href="#"><Icon name="rss" /> Convert to RSS</a>
   </div>
-  <p class="bookmarklet-help">Then visit any website and click the bookmark!</p>
-</Aside>
+  <p class="bookmarklet-help">After saving it, visit a site and click the bookmark.</p>
+</section>
 
 <style>
-  .bookmarklet-container {
-    text-align: center;
-    margin: 1rem 0;
+  .bookmarklet-panel {
+    margin-top: 1.25rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--sl-color-bg) 88%, var(--sl-color-bg-nav) 12%);
+    padding: 1rem 1.25rem;
+  }
+
+  .bookmarklet-panel h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--sl-color-text);
+  }
+
+  .bookmarklet-panel p {
+    margin: 0.35rem 0 0;
+    color: var(--sl-color-text-accent);
+    font-size: 0.9rem;
+  }
+
+  .bookmarklet-actions {
+    margin-top: 0.85rem;
   }
 
   .bookmarklet-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: var(--sl-color-accent);
-    color: var(--sl-color-white);
+    gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px dashed var(--sl-color-hairline);
+    border-radius: 0.5rem;
+    color: var(--sl-color-text);
     text-decoration: none;
-    border-radius: 8px;
     font-weight: 600;
-    font-size: 1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    background: transparent;
   }
 
   .bookmarklet-link:hover {
-    background: var(--sl-color-accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: var(--sl-color-accent);
     text-decoration: none;
   }
 
   .bookmarklet-help {
-    margin: 0.5rem 0 0 0;
-    font-size: 0.8rem;
-    color: var(--sl-color-text-accent);
-    font-style: italic;
+    margin-top: 0.65rem;
+    font-size: 0.82rem;
   }
 </style>
 

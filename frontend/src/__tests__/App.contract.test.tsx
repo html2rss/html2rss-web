@@ -34,7 +34,7 @@ describe('App contract', () => {
 
     render(<App />);
 
-    await screen.findByText(`Welcome, ${username}!`);
+    await screen.findByText(`Signed in as ${username}`);
 
     const urlInput = screen.getByLabelText('Website URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });

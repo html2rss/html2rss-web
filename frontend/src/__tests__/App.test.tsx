@@ -58,11 +58,9 @@ describe('App', () => {
   it('should render demo section when not authenticated', () => {
     render(<App />);
 
-    expect(screen.getByText('🚀 Try it out')).toBeInTheDocument();
-    expect(
-      screen.getByText('Launch a demo conversion to see the results instantly. No sign-in required.')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Sign in here')).toBeInTheDocument();
+    expect(screen.getByText('Convert website to RSS')).toBeInTheDocument();
+    expect(screen.getByText('Try a demo source instantly. Sign in to convert your own URLs.')).toBeInTheDocument();
+    expect(screen.getByText('Run demo')).toBeInTheDocument();
   });
 
   it('should render main content when authenticated', () => {
@@ -85,9 +83,9 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Welcome, testuser!')).toBeInTheDocument();
-    expect(screen.getByText('🌐 Convert website')).toBeInTheDocument();
-    expect(screen.getByText('Enter a URL to generate an RSS feed.')).toBeInTheDocument();
+    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    expect(screen.getByText('Convert website to RSS')).toBeInTheDocument();
+    expect(screen.getByText('Paste a URL and convert.')).toBeInTheDocument();
   });
 
   it('should call logout when logout button is clicked', () => {
@@ -107,7 +105,7 @@ describe('App', () => {
 
     render(<App />);
 
-    const logoutButton = screen.getByText('Logout');
+    const logoutButton = screen.getByText('Log out');
     fireEvent.click(logoutButton);
 
     expect(mockLogout).toHaveBeenCalled();

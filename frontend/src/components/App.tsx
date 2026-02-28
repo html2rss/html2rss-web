@@ -1,11 +1,25 @@
-import { useState, useEffect } from 'preact/hooks';
-import { DemoButtons } from './DemoButtons';
+import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
-import { QuickLogin } from './QuickLogin';
+import {
+  GuestOnboardingPanel,
+  MemberConvertPanel,
+  type Strategy,
+} from './AppPanels';
 import { useAuth } from '../hooks/useAuth';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 import styles from './App.module.css';
+
+type ViewMode = 'result' | 'guest-demo' | 'guest-auth' | 'member';
+
+const QUICK_URLS = [
+  'https://news.ycombinator.com',
+  'https://github.com/trending',
+  'https://www.reddit.com/r/programming/',
+];
+
+const EMPTY_AUTH_ERRORS = { username: '', token: '', form: '' };
+const EMPTY_FEED_ERRORS = { url: '', form: '' };
 
 export function App() {
   const {
@@ -22,34 +36,53 @@ export function App() {
 
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authFormData, setAuthFormData] = useState({ username: '', token: '' });
-  const [authFieldErrors, setAuthFieldErrors] = useState({ username: '', token: '', form: '' });
+  const [authFieldErrors, setAuthFieldErrors] = useState(EMPTY_AUTH_ERRORS);
   const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
-  const [feedFieldErrors, setFeedFieldErrors] = useState({ url: '', form: '' });
+  const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
   const [demoError, setDemoError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      setShowAuthForm(false);
-    }
+    if (isAuthenticated) setShowAuthForm(false);
   }, [isAuthenticated]);
 
   useEffect(() => {
     if (strategies.length > 0 && !feedFormData.strategy) {
       setFeedFormData((prev) => ({ ...prev, strategy: strategies[0].id }));
     }
-  }, [strategies]);
+  }, [strategies, feedFormData.strategy]);
 
-  const handleAuthSubmit = async (event?: Event) => {
-    event?.preventDefault();
+  const mode: ViewMode = result
+    ? 'result'
+    : isAuthenticated
+      ? 'member'
+      : showAuthForm
+        ? 'guest-auth'
+        : 'guest-demo';
 
-    setAuthFieldErrors({ username: '', token: '', form: '' });
+  const setAuthField = (key: 'username' | 'token', value: string) => {
+    setAuthFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const setFeedField = (key: 'url' | 'strategy', value: string) => {
+    setFeedFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const strategyHint = (strategy: Strategy) => {
+    if (strategy.id === 'ssrf_filter') return 'Recommended - safe and secure';
+    if (strategy.id === 'browserless') return 'Great for pages that rely on JavaScript';
+    return `Strategy: ${strategy.name}`;
+  };
+
+  const handleAuthSubmit = async (event: Event) => {
+    event.preventDefault();
+    setAuthFieldErrors(EMPTY_AUTH_ERRORS);
 
     if (!authFormData.username.trim()) {
-      setAuthFieldErrors({ username: 'Username is required.', token: '', form: '' });
+      setAuthFieldErrors({ ...EMPTY_AUTH_ERRORS, username: 'Username is required.' });
       return;
     }
     if (!authFormData.token.trim()) {
-      setAuthFieldErrors({ username: '', token: 'Token is required.', form: '' });
+      setAuthFieldErrors({ ...EMPTY_AUTH_ERRORS, token: 'Token is required.' });
       return;
     }
 
@@ -57,8 +90,7 @@ export function App() {
       await login(authFormData.username, authFormData.token);
     } catch (error) {
       setAuthFieldErrors({
-        username: '',
-        token: '',
+        ...EMPTY_AUTH_ERRORS,
         form: error instanceof Error ? error.message : 'Unable to authenticate. Please try again.',
       });
     }
@@ -66,27 +98,23 @@ export function App() {
 
   const handleFeedSubmit = async (event: Event) => {
     event.preventDefault();
+    setFeedFieldErrors(EMPTY_FEED_ERRORS);
 
-    setFeedFieldErrors({ url: '', form: '' });
     if (!feedFormData.url.trim()) {
-      setFeedFieldErrors({ url: 'Website URL is required.', form: '' });
+      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Website URL is required.' });
       return;
     }
 
     try {
-      await convertFeed(feedFormData.url, feedFormData.strategy, token || '');
+      await convertFeed(feedFormData.url, feedFormData.strategy, token ?? '');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unable to start conversion.';
       if (message.toLowerCase().includes('url')) {
-        setFeedFieldErrors({ url: message, form: '' });
+        setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: message });
       } else {
-        setFeedFieldErrors({ url: '', form: message });
+        setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: message });
       }
     }
-  };
-
-  const handleShowAuth = () => {
-    setShowAuthForm(true);
   };
 
   const handleLogout = () => {
@@ -98,14 +126,12 @@ export function App() {
   const handleDemoConversion = async (url: string) => {
     setDemoError('');
     try {
-      const demoStrategy = strategies.length > 0 ? strategies[0].id : 'ssrf_filter';
+      const demoStrategy = strategies[0]?.id ?? 'ssrf_filter';
       await convertFeed(url, demoStrategy, 'CHANGE_ME_DEMO_TOKEN');
     } catch (error) {
       setDemoError(error instanceof Error ? error.message : 'Demo conversion failed. Please try again.');
     }
   };
-
-  const showResultExperience = Boolean(result);
 
   if (authLoading) {
     return (
@@ -119,8 +145,10 @@ export function App() {
   }
 
   return (
-    <div class={`app-shell${showResultExperience ? ' app-shell--wide' : ''}`}>
-      {authError && !showResultExperience && (
+    <div
+      class={`app-shell${mode === 'result' ? ' app-shell--wide' : ''}${mode === 'guest-demo' || mode === 'guest-auth' ? ' app-shell--onboarding' : ''}`}
+    >
+      {authError && mode !== 'result' && (
         <section class="notice notice--error" role="alert">
           <h3>Authentication error</h3>
           <p>{authError}</p>
@@ -130,7 +158,7 @@ export function App() {
         </section>
       )}
 
-      {showResultExperience && result && (
+      {mode === 'result' && result && (
         <>
           {isAuthenticated && (
             <div class="user-bar">
@@ -140,7 +168,6 @@ export function App() {
               </button>
             </div>
           )}
-
           <ResultDisplay
             result={result}
             onClose={clearResult}
@@ -151,210 +178,36 @@ export function App() {
         </>
       )}
 
-      {!showResultExperience && !isAuthenticated && !showAuthForm && !authError && (
-        <section class="surface">
-          <header class="surface-header">
-            <h3 class="surface-header__title">🚀 Try it out</h3>
-            <p class="surface-header__hint">
-              Launch a demo conversion to see the results instantly. No sign-in required.
-            </p>
-            {demoError && (
-              <div class="notice notice--error" role="alert">
-                <p>{demoError}</p>
-              </div>
-            )}
-          </header>
-          <DemoButtons onConvert={handleDemoConversion} />
-          <QuickLogin onShowLogin={handleShowAuth} />
-        </section>
+      {(mode === 'guest-demo' || mode === 'guest-auth') && !authError && (
+        <GuestOnboardingPanel
+          mode={mode}
+          demoError={demoError}
+          authFormData={authFormData}
+          authFieldErrors={authFieldErrors}
+          onModeChange={(nextMode) => setShowAuthForm(nextMode === 'guest-auth')}
+          onConvert={handleDemoConversion}
+          onAuthSubmit={handleAuthSubmit}
+          onAuthFieldChange={setAuthField}
+          onBackToDemo={() => setShowAuthForm(false)}
+        />
       )}
 
-      {!showResultExperience && !isAuthenticated && showAuthForm && (
-        <section class="surface">
-          <header class="surface-header">
-            <h3 class="surface-header__title">🔐 Sign in</h3>
-            <p class="surface-header__hint">
-              Use your html2rss credentials to convert any website. Tokens are stored for this browser
-              session.
-            </p>
-            <p class="surface-header__hint">
-              Need a token? Ask your html2rss-web admin or see the{' '}
-              <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
-                official docs
-              </a>
-              .
-            </p>
-          </header>
-
-          <form id="auth-section" class="form" onSubmit={handleAuthSubmit}>
-            {authFieldErrors.form && (
-              <div class="notice notice--error" role="alert">
-                <p>{authFieldErrors.form}</p>
-              </div>
-            )}
-            <div class="field">
-              <label for="username" class="label" data-required>
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                class="input"
-                placeholder="Enter your username"
-                required
-                autocomplete="username"
-                value={authFormData.username}
-                onInput={(e) =>
-                  setAuthFormData({ ...authFormData, username: (e.target as HTMLInputElement).value })
-                }
-              />
-              <div class="field-error" id="username-error">
-                {authFieldErrors.username}
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="token" class="label" data-required>
-                Token
-              </label>
-              <input
-                type="password"
-                id="token"
-                name="token"
-                class="input"
-                placeholder="Enter your authentication token"
-                required
-                autocomplete="current-password"
-                value={authFormData.token}
-                onInput={(e) =>
-                  setAuthFormData({ ...authFormData, token: (e.target as HTMLInputElement).value })
-                }
-              />
-              <div class="field-error" id="token-error">
-                {authFieldErrors.token}
-              </div>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn--accent">
-                Authenticate
-              </button>
-            </div>
-          </form>
-
-          <button type="button" class="btn btn--link back-link" onClick={() => setShowAuthForm(false)}>
-            ← Back to demo
-          </button>
-        </section>
-      )}
-
-      {!showResultExperience && isAuthenticated && (
-        <section class="surface">
-          <div class="user-bar">
-            <span>Welcome, {username}!</span>
-            <button type="button" onClick={handleLogout} class="btn btn--link">
-              Logout
-            </button>
-          </div>
-
-          <header class="surface-header">
-            <h3 class="surface-header__title">🌐 Convert website</h3>
-            <p class="surface-header__hint">Enter a URL to generate an RSS feed.</p>
-          </header>
-
-          <form id="feed-section" class="form form--spacious" onSubmit={handleFeedSubmit}>
-            <div class="field">
-              <label for="url" class="label" data-required>
-                Website URL
-              </label>
-              <div class="field field--inline">
-                <input
-                  type="url"
-                  id="url"
-                  name="url"
-                  class="input"
-                  placeholder="https://example.com"
-                  required
-                  autofocus
-                  autocomplete="url"
-                  value={feedFormData.url}
-                  onInput={(e) =>
-                    setFeedFormData({ ...feedFormData, url: (e.target as HTMLInputElement).value })
-                  }
-                />
-                <button type="submit" class="btn btn--accent" disabled={isConverting}>
-                  {isConverting ? 'Converting...' : 'Convert'}
-                </button>
-              </div>
-              <div class="field-error" id="url-error">
-                {feedFieldErrors.url}
-              </div>
-            </div>
-
-            <fieldset class="fieldset">
-              <legend class="legend">Strategy</legend>
-              {strategiesError && (
-                <div class="notice notice--error" role="alert">
-                  <p>Failed to load strategies: {strategiesError}</p>
-                </div>
-              )}
-              {strategiesLoading ? (
-                <div class={styles.loading}>
-                  <div class={styles.loadingSpinner} aria-label="Loading strategies" />
-                  <p>Loading strategies...</p>
-                </div>
-              ) : (
-                <div class="radio-list" id="strategy-group">
-                  {strategies.map((strategy) => (
-                    <label
-                      key={strategy.id}
-                      class={`radio-card ${feedFormData.strategy === strategy.id ? 'is-selected' : ''}`}
-                    >
-                      <input
-                        type="radio"
-                        id={`strategy-${strategy.id}`}
-                        name="strategy"
-                        value={strategy.id}
-                        class="radio-card__input"
-                        checked={feedFormData.strategy === strategy.id}
-                        onChange={(e) =>
-                          setFeedFormData({ ...feedFormData, strategy: (e.target as HTMLInputElement).value })
-                        }
-                      />
-                      <span class="radio-card__content">
-                        <span class="radio-card__title">{strategy.display_name}</span>
-                        <span class="radio-card__hint">
-                          {strategy.id === 'ssrf_filter'
-                            ? 'Recommended - safe and secure'
-                            : strategy.id === 'browserless'
-                              ? 'Great for pages that rely on JavaScript'
-                              : `Strategy: ${strategy.name}`}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </fieldset>
-          </form>
-          {feedFieldErrors.form && (
-            <div class="notice notice--error" role="alert">
-              <p>{feedFieldErrors.form}</p>
-            </div>
-          )}
-        </section>
-      )}
-
-      {!showResultExperience && error && (
-        <section class="notice notice--error">
-          <h3>Conversion error</h3>
-          <p>{error}</p>
-          <p>Double-check your token if this keeps happening.</p>
-          <button type="button" class="btn btn--outline" onClick={clearResult}>
-            Close
-          </button>
-        </section>
+      {mode === 'member' && (
+        <MemberConvertPanel
+          username={username}
+          onLogout={handleLogout}
+          feedFormData={feedFormData}
+          feedFieldErrors={feedFieldErrors}
+          conversionError={error}
+          quickUrls={QUICK_URLS}
+          isConverting={isConverting}
+          strategies={strategies}
+          strategiesLoading={strategiesLoading}
+          strategiesError={strategiesError}
+          onFeedSubmit={handleFeedSubmit}
+          onFeedFieldChange={setFeedField}
+          strategyHint={strategyHint}
+        />
       )}
     </div>
   );
