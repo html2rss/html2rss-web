@@ -9,6 +9,7 @@ module Html2rss
             router.on 'api', 'v1' do
               router.response['Content-Type'] = 'application/json'
 
+              mount_openapi_spec(router)
               mount_health(router)
               mount_strategies(router)
               mount_feeds(router)
@@ -17,6 +18,15 @@ module Html2rss
           end
 
           private
+
+          def mount_openapi_spec(router)
+            router.on 'openapi.yaml' do
+              router.get do
+                router.response['Content-Type'] = 'application/yaml'
+                openapi_spec_contents
+              end
+            end
+          end
 
           def mount_health(router)
             router.on 'health' do
@@ -71,15 +81,16 @@ module Html2rss
 
           def mount_root(router)
             router.get do
-              render_json(Api::V1::Response.success(data: api_root_payload))
+              render_json(Api::V1::Response.success(data: api_root_payload(router)))
             end
           end
 
-          def api_root_payload
+          def api_root_payload(router)
             {
               api: {
                 name: 'html2rss-web API',
-                description: 'RESTful API for converting websites to RSS feeds'
+                description: 'RESTful API for converting websites to RSS feeds',
+                openapi_url: "#{router.base_url}/api/v1/openapi.yaml"
               }
             }
           end
@@ -90,6 +101,22 @@ module Html2rss
 
           def render_json(payload)
             JSON.generate(payload)
+          end
+
+          def openapi_spec_path
+            File.expand_path('../../docs/api/v1/openapi.yaml', __dir__)
+          end
+
+          def openapi_spec_contents
+            return File.read(openapi_spec_path) if File.exist?(openapi_spec_path)
+
+            <<~YAML
+              openapi: 3.0.3
+              info:
+                title: html2rss-web API
+                version: 1.0.0
+              paths: {}
+            YAML
           end
         end
       end

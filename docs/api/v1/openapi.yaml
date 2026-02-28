@@ -11,9 +11,9 @@ info:
     name: MIT
     url: https://opensource.org/licenses/MIT
 servers:
-- url: https://html2rss-web.example.com/api/v1
+- url: https://api.html2rss.dev/api/v1
   description: Production server
-- url: http://localhost:4000/api/v1
+- url: http://127.0.0.1:4000/api/v1
   description: Development server
 paths:
   "/":
@@ -21,9 +21,11 @@ paths:
       summary: API metadata
       tags:
       - Root
+      operationId: getApiMetadata
+      security: []
       responses:
         '200':
-          description: returns API information
+          description: returns OpenAPI document URL in metadata
           content:
             application/json:
               schema:
@@ -41,19 +43,24 @@ paths:
                             type: string
                           description:
                             type: string
+                          openapi_url:
+                            type: string
                         required:
                         - name
                         - description
+                        - openapi_url
                     required:
                     - api
                 required:
                 - success
                 - data
+      description: API metadata
   "/feeds":
     post:
       summary: Create a feed
       tags:
       - Feeds
+      operationId: createFeed
       security:
       - BearerAuth: []
       parameters:
@@ -171,11 +178,14 @@ paths:
                 required:
                 - success
                 - error
+      description: Create a feed
   "/feeds/{token}":
     get:
       summary: Render feed by token
       tags:
       - Feeds
+      operationId: renderFeedByToken
+      security: []
       responses:
         '403':
           description: returns forbidden when auto source is disabled
@@ -227,6 +237,7 @@ paths:
                 required:
                 - success
                 - error
+      description: Render feed by token
       parameters:
       - name: token
         in: path
@@ -238,6 +249,7 @@ paths:
       summary: Authenticated health check
       tags:
       - Health
+      operationId: getHealthStatus
       security:
       - BearerAuth: []
       parameters:
@@ -329,11 +341,14 @@ paths:
                 required:
                 - success
                 - error
+      description: Authenticated health check
   "/health/live":
     get:
       summary: Liveness probe
       tags:
       - Health
+      operationId: getLivenessProbe
+      security: []
       responses:
         '200':
           description: returns liveness status without authentication
@@ -362,11 +377,14 @@ paths:
                 required:
                 - success
                 - data
+      description: Liveness probe
   "/health/ready":
     get:
       summary: Readiness probe
       tags:
       - Health
+      operationId: getReadinessProbe
+      security: []
       responses:
         '200':
           description: returns readiness status without authentication
@@ -406,11 +424,29 @@ paths:
                 required:
                 - success
                 - data
+      description: Readiness probe
+  "/openapi.yaml":
+    get:
+      summary: OpenAPI specification
+      tags:
+      - Root
+      operationId: getOpenApiSpec
+      security: []
+      responses:
+        '200':
+          description: serves the OpenAPI document as YAML
+          content:
+            application/yaml:
+              schema:
+                type: string
+      description: OpenAPI specification
   "/strategies":
     get:
       summary: List extraction strategies
       tags:
       - Strategies
+      operationId: listStrategies
+      security: []
       responses:
         '200':
           description: returns available strategies
@@ -452,6 +488,7 @@ paths:
                 - success
                 - data
                 - meta
+      description: List extraction strategies
 components:
   securitySchemes:
     BearerAuth:
@@ -459,3 +496,12 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+tags:
+- name: Root
+  description: API metadata and service-level information.
+- name: Health
+  description: Health and readiness endpoints.
+- name: Strategies
+  description: Feed extraction strategy discovery.
+- name: Feeds
+  description: Feed creation and feed rendering operations.

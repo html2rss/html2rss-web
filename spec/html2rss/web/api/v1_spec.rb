@@ -17,7 +17,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   let(:admin_token) { 'allow-any-urls-abcd-4321' }
   let(:feed_url) { 'https://example.com/articles' }
 
-  describe 'GET /api/v1', openapi: { summary: 'API metadata', tags: ['Root'] } do
+  describe 'GET /api/v1', openapi: {
+    summary: 'API metadata',
+    operation_id: 'getApiMetadata',
+    tags: ['Root'],
+    security: []
+  } do
     it 'returns API information', :aggregate_failures do
       get '/api/v1'
 
@@ -27,10 +32,34 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       json = expect_success_response(last_response)
       expect(json.dig('data', 'api', 'name')).to eq('html2rss-web API')
     end
+
+    it 'returns OpenAPI document URL in metadata', :aggregate_failures do
+      get '/api/v1'
+
+      expect(last_response.status).to eq(200)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'api', 'openapi_url')).to eq('http://example.org/api/v1/openapi.yaml')
+    end
+  end
+
+  describe 'GET /api/v1/openapi.yaml', openapi: {
+    summary: 'OpenAPI specification',
+    operation_id: 'getOpenApiSpec',
+    tags: ['Root'],
+    security: []
+  } do
+    it 'serves the OpenAPI document as YAML', :aggregate_failures do
+      get '/api/v1/openapi.yaml'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/yaml')
+      expect(last_response.body).to include('openapi: 3.0.3')
+    end
   end
 
   describe 'GET /api/v1/health', openapi: {
     summary: 'Authenticated health check',
+    operation_id: 'getHealthStatus',
     tags: ['Health'],
     security: [{ 'BearerAuth' => [] }]
   } do
@@ -67,7 +96,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
   end
 
-  describe 'GET /api/v1/health/ready', openapi: { summary: 'Readiness probe', tags: ['Health'] } do
+  describe 'GET /api/v1/health/ready', openapi: {
+    summary: 'Readiness probe',
+    operation_id: 'getReadinessProbe',
+    tags: ['Health'],
+    security: []
+  } do
     it 'returns readiness status without authentication', :aggregate_failures do
       get '/api/v1/health/ready'
 
@@ -78,7 +112,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
   end
 
-  describe 'GET /api/v1/health/live', openapi: { summary: 'Liveness probe', tags: ['Health'] } do
+  describe 'GET /api/v1/health/live', openapi: {
+    summary: 'Liveness probe',
+    operation_id: 'getLivenessProbe',
+    tags: ['Health'],
+    security: []
+  } do
     it 'returns liveness status without authentication', :aggregate_failures do
       get '/api/v1/health/live'
 
@@ -89,7 +128,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
   end
 
-  describe 'GET /api/v1/strategies', openapi: { summary: 'List extraction strategies', tags: ['Strategies'] } do
+  describe 'GET /api/v1/strategies', openapi: {
+    summary: 'List extraction strategies',
+    operation_id: 'listStrategies',
+    tags: ['Strategies'],
+    security: []
+  } do
     it 'returns available strategies', :aggregate_failures do
       get '/api/v1/strategies'
 
@@ -100,7 +144,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
   end
 
-  describe 'GET /api/v1/feeds/:token', openapi: { summary: 'Render feed by token', tags: ['Feeds'] } do
+  describe 'GET /api/v1/feeds/:token', openapi: {
+    summary: 'Render feed by token',
+    operation_id: 'renderFeedByToken',
+    tags: ['Feeds'],
+    security: []
+  } do
     before do
       stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
       stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
@@ -179,6 +228,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'POST /api/v1/feeds', openapi: {
     summary: 'Create a feed',
+    operation_id: 'createFeed',
     tags: ['Feeds'],
     security: [{ 'BearerAuth' => [] }]
   } do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready openapi openapi-verify
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready openapi openapi-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
 
 # Default target
 help: ## Show this help message
@@ -85,6 +85,16 @@ openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
 
 openapi-verify: ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml is stale
 	bundle exec rake openapi:verify
+
+openapi-lint: openapi-lint-redocly openapi-lint-spectral ## Lint docs/api/v1/openapi.yaml with Redocly and Spectral
+
+openapi-lint-redocly: ## Lint OpenAPI using Redocly recommended rules
+	npx --yes @redocly/cli lint --config .redocly.yaml docs/api/v1/openapi.yaml
+
+openapi-lint-spectral: ## Lint OpenAPI using Spectral OAS rules
+	npx --yes @stoplight/spectral-cli lint --ruleset .spectral.yaml docs/api/v1/openapi.yaml
+
+openai-lint-spectral: openapi-lint-spectral ## Alias for openapi-lint-spectral
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/

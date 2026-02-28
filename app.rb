@@ -40,7 +40,7 @@ module Html2rss
           <body>
             <h1>html2rss-web</h1>
             <p>Convert websites to RSS feeds</p>
-            <p>API available at <code>/api/</code></p>
+            <p>API available at <a href="/api/v1"><code>/api/v1</code></a></p>
           </body>
         </html>
       HTML

@@ -12,8 +12,8 @@ RSpec::OpenAPI.enable_example_summary = false
 RSpec::OpenAPI.example_types = [:request]
 RSpec::OpenAPI.request_headers = ['Authorization']
 RSpec::OpenAPI.servers = [
-  { url: 'https://html2rss-web.example.com/api/v1', description: 'Production server' },
-  { url: 'http://localhost:4000/api/v1', description: 'Development server' }
+  { url: 'https://api.html2rss.dev/api/v1', description: 'Production server' },
+  { url: 'http://127.0.0.1:4000/api/v1', description: 'Development server' }
 ]
 RSpec::OpenAPI.info = {
   description: 'RESTful API for converting websites to RSS feeds.',
@@ -40,6 +40,9 @@ RSpec::OpenAPI.summary_builder = lambda { |example|
 }
 RSpec::OpenAPI.tags_builder = lambda { |example|
   example.metadata.dig(:example_group, :openapi, :tags) || example.metadata[:tags]
+}
+RSpec::OpenAPI.description_builder = lambda { |example|
+  example.metadata.dig(:example_group, :openapi, :description) || example.metadata[:description] || example.description
 }
 
 # Keep path keys relative to /api/v1 because servers include the versioned base path.
@@ -84,6 +87,8 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
         normalized_paths[normalized][verb] = operation_doc
       end
 
+      normalized_paths[normalized][verb]['description'] ||= normalized_paths[normalized][verb]['summary']
+
       next unless normalized == '/feeds/{token}'
 
       normalized_paths[normalized][verb]['parameters'] ||= []
@@ -105,5 +110,18 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
     spec['paths'] = normalized_paths
   else
     spec[:paths] = normalized_paths
+  end
+
+  tags = [
+    { 'name' => 'Root', 'description' => 'API metadata and service-level information.' },
+    { 'name' => 'Health', 'description' => 'Health and readiness endpoints.' },
+    { 'name' => 'Strategies', 'description' => 'Feed extraction strategy discovery.' },
+    { 'name' => 'Feeds', 'description' => 'Feed creation and feed rendering operations.' }
+  ]
+
+  if spec.key?('tags')
+    spec['tags'] = tags
+  else
+    spec[:tags] = tags
   end
 end
