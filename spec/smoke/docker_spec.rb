@@ -5,7 +5,7 @@ require 'json'
 require 'uri'
 
 RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/DescribeClass
-  let(:base_url) { ENV.fetch('SMOKE_BASE_URL', 'http://127.0.0.1:3000') }
+  let(:base_url) { ENV.fetch('SMOKE_BASE_URL', 'http://127.0.0.1:4000') }
   let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN', 'health-check-token-xyz789') }
   let(:feed_token) { ENV.fetch('SMOKE_API_TOKEN', 'allow-any-urls-abcd-4321') }
 

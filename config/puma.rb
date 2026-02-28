@@ -15,5 +15,5 @@ else
   log_requests false
 end
 
-port        ENV.fetch('PORT', 3000)
+port        ENV.fetch('PORT', 4000)
 environment ENV.fetch('RACK_ENV', 'development')
