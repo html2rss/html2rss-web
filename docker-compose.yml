@@ -16,7 +16,7 @@ services:
       RACK_ENV: production
       PORT: 4000
       HTML2RSS_SECRET_KEY: your-generated-secret-key-here
-      HEALTH_CHECK_TOKEN: health-check-token-xyz789
+      HEALTH_CHECK_TOKEN: CHANGE_ME_HEALTH_CHECK_TOKEN
       BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:4002
       BROWSERLESS_IO_API_TOKEN: 6R0W53R135510
 

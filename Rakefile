@@ -42,7 +42,7 @@ task :test do
       '-d',
       '-p 4000:4000',
       '--env PUMA_LOG_CONFIG=1',
-      '--env HEALTH_CHECK_TOKEN=health-check-token-xyz789',
+      '--env HEALTH_CHECK_TOKEN=CHANGE_ME_HEALTH_CHECK_TOKEN',
       "--env AUTO_SOURCE_ENABLED=#{smoke_auto_source_enabled}",
       "--mount type=bind,source=#{current_dir}/config,target=/app/config",
       '--name html2rss-web-test',
@@ -56,8 +56,8 @@ task :test do
   Output.describe 'Running RSpec smoke suite against container'
   smoke_env = {
     'SMOKE_BASE_URL' => 'http://127.0.0.1:4000',
-    'SMOKE_HEALTH_TOKEN' => 'health-check-token-xyz789',
-    'SMOKE_API_TOKEN' => 'allow-any-urls-abcd-4321',
+    'SMOKE_HEALTH_TOKEN' => 'CHANGE_ME_HEALTH_CHECK_TOKEN',
+    'SMOKE_API_TOKEN' => 'CHANGE_ME_ADMIN_TOKEN',
     'SMOKE_AUTO_SOURCE_ENABLED' => smoke_auto_source_enabled,
     'RUN_DOCKER_SPECS' => 'true'
   }

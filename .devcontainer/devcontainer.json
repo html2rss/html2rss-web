@@ -17,7 +17,7 @@
         "files.associations": {
           "*.astro": "astro"
         },
-        "prettier.configPath": "./frontend/.prettierrc",
+        "prettier.configPath": "./frontend/prettier.config.js",
         "ruby.format": "rubocop",
         "ruby.lint": { "rubocop": true },
         "editor.tabSize": 2,

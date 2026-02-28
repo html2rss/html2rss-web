@@ -13,8 +13,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     ClimateControl.modify(AUTO_SOURCE_ENABLED: 'true') { example.run }
   end
 
-  let(:health_token) { 'health-check-token-xyz789' }
-  let(:admin_token) { 'allow-any-urls-abcd-4321' }
+  let(:health_token) { 'CHANGE_ME_HEALTH_CHECK_TOKEN' }
+  let(:admin_token) { 'CHANGE_ME_ADMIN_TOKEN' }
   let(:feed_url) { 'https://example.com/articles' }
 
   describe 'GET /api/v1', openapi: {

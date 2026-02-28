@@ -25,7 +25,7 @@ module Html2rss
           allowed_urls = Array(account[:allowed_urls])
           return false unless (normalized_url = normalize_url(url))
 
-          return true if allowed_urls.empty?
+          return false if allowed_urls.empty?
 
           allowed_urls.any? do |pattern|
             wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)

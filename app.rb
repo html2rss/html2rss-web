@@ -108,10 +108,10 @@ module Html2rss
       route do |r|
         r.public
 
-        Routes::ApiV1.call(r)
-        Routes::Static.call(r,
-                            feed_handler: ->(router_ctx, feed_name) { handle_feed_generation(router_ctx, feed_name) },
-                            index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
+        Routes::ApiV1.call(r) ||
+          Routes::Static.call(r,
+                              feed_handler: ->(router_ctx, feed_name) { handle_feed_generation(router_ctx, feed_name) },
+                              index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
 
       private
@@ -122,7 +122,7 @@ module Html2rss
         ttl_seconds = CacheTtl.seconds_from_minutes(ttl_value)
         router.response['Content-Type'] = 'application/xml'
         HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
-        rss_content
+        rss_content.to_s
       end
 
       def render_index_page(router)

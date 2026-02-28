@@ -99,7 +99,7 @@ export function App() {
     setDemoError('');
     try {
       const demoStrategy = strategies.length > 0 ? strategies[0].id : 'ssrf_filter';
-      await convertFeed(url, demoStrategy, 'self-host-for-full-access');
+      await convertFeed(url, demoStrategy, 'CHANGE_ME_DEMO_TOKEN');
     } catch (error) {
       setDemoError(error instanceof Error ? error.message : 'Demo conversion failed. Please try again.');
     }

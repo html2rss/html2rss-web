@@ -22,7 +22,7 @@ Expose the health-check account token as `HEALTH_CHECK_TOKEN` and forward it as 
 
 | Variable             | Required | Default                     | Purpose                                                         |
 | -------------------- | -------- | --------------------------- | --------------------------------------------------------------- |
-| `HEALTH_CHECK_TOKEN` | ✅       | `health-check-token-xyz789` | Token forwarded to the container health probe. Keep it private. |
+| `HEALTH_CHECK_TOKEN` | ✅       | `CHANGE_ME_HEALTH_CHECK_TOKEN` | Token forwarded to the container health probe. Keep it private. |
 
 ## Account Policy
 
