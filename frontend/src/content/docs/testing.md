@@ -24,6 +24,7 @@ The project keeps a lean set of tests that cover the core request paths. Run the
 - Location: `spec/smoke`
 - Requires the Docker task via `bundle exec rake`
 - Command: `RUN_DOCKER_SPECS=true bundle exec rspec --tag docker`
+- Set `SMOKE_AUTO_SOURCE_ENABLED=true` when validating feed-creation success paths.
 
 ## Recommended Flow
 
