@@ -58,20 +58,39 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     response, body = post_json('/api/v1/feeds', body: payload)
     expect(response).to be_a(Net::HTTPUnauthorized)
     expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
+  end
+
+  it 'creates feed when auto source is enabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    next unless auto_source_enabled
+
+    payload = {
+      url: 'https://example.com/articles',
+      strategy: 'ssrf_filter'
+    }
 
     response, body = post_json('/api/v1/feeds',
                                body: payload,
                                headers: { 'Authorization' => "Bearer #{feed_token}" })
 
-    unless auto_source_enabled
-      expect(response).to be_a(Net::HTTPForbidden)
-      expect(body.dig('error', 'code')).to eq('FORBIDDEN')
-      expect(body.dig('error', 'message')).to eq('Auto source feature is disabled')
-      next
-    end
-
     expect(response.code).to eq('201')
     expect(body.fetch('success')).to be(true)
     expect(body.dig('data', 'feed', 'public_url')).to match(%r{^/api/v1/feeds/})
+  end
+
+  it 'returns forbidden for authenticated creation when auto source is disabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    next if auto_source_enabled
+
+    payload = {
+      url: 'https://example.com/articles',
+      strategy: 'ssrf_filter'
+    }
+
+    response, body = post_json('/api/v1/feeds',
+                               body: payload,
+                               headers: { 'Authorization' => "Bearer #{feed_token}" })
+
+    expect(response).to be_a(Net::HTTPForbidden)
+    expect(body.dig('error', 'code')).to eq('FORBIDDEN')
+    expect(body.dig('error', 'message')).to eq('Auto source feature is disabled')
   end
 end
