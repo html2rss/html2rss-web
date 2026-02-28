@@ -22,6 +22,23 @@ module Html2rss
               health_response
             end
 
+            def ready(_request)
+              verify_configuration!
+              health_response
+            end
+
+            def live(_request)
+              {
+                success: true,
+                data: {
+                  health: {
+                    status: 'alive',
+                    timestamp: Time.now.iso8601
+                  }
+                }
+              }
+            end
+
             private
 
             def health_response

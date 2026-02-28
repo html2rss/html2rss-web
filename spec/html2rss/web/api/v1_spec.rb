@@ -63,6 +63,28 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
     end
   end
 
+  describe 'GET /api/v1/health/ready' do
+    it 'returns readiness status without authentication', :aggregate_failures do
+      get '/api/v1/health/ready'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/json')
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'health', 'status')).to eq('healthy')
+    end
+  end
+
+  describe 'GET /api/v1/health/live' do
+    it 'returns liveness status without authentication', :aggregate_failures do
+      get '/api/v1/health/live'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/json')
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'health', 'status')).to eq('alive')
+    end
+  end
+
   describe 'GET /api/v1/feeds/:token' do
     before do
       stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })

@@ -20,8 +20,27 @@ module Html2rss
 
           def mount_health(router)
             router.on 'health' do
+              mount_readiness_health(router)
+              mount_liveness_health(router)
+
               router.get do
                 JSON.generate(Api::V1::Health.show(router))
+              end
+            end
+          end
+
+          def mount_readiness_health(router)
+            router.on 'ready' do
+              router.get do
+                JSON.generate(Api::V1::Health.ready(router))
+              end
+            end
+          end
+
+          def mount_liveness_health(router)
+            router.on 'live' do
+              router.get do
+                JSON.generate(Api::V1::Health.live(router))
               end
             end
           end
