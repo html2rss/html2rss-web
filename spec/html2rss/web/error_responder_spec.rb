@@ -23,7 +23,7 @@ RSpec.describe Html2rss::Web::ErrorResponder do
         expect(JSON.parse(body)).to eq(
           'success' => false,
           'error' => {
-            'code' => 'INTERNAL_SERVER_ERROR',
+            'code' => Html2rss::Web::Api::V1::Contract::CODES[:internal_server_error],
             'message' => 'Internal Server Error'
           }
         )

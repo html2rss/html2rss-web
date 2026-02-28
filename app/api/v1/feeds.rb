@@ -13,6 +13,7 @@ require_relative '../../exceptions'
 require_relative '../../cache_ttl'
 require_relative '../../feed_token'
 require_relative '../../url_validator'
+require_relative 'contract'
 
 module Html2rss
   module Web
@@ -47,7 +48,7 @@ module Html2rss
             private
 
             def ensure_auto_source_enabled!
-              raise ForbiddenError, 'Auto source feature is disabled' unless AutoSource.enabled?
+              raise ForbiddenError, Contract::MESSAGES[:auto_source_disabled] unless AutoSource.enabled?
             end
 
             def json_response(request, payload, status: 200)

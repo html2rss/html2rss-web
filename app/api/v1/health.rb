@@ -5,6 +5,7 @@ require 'time'
 require_relative '../../auth'
 require_relative '../../exceptions'
 require_relative '../../local_config'
+require_relative 'contract'
 
 module Html2rss
   module Web
@@ -68,7 +69,7 @@ module Html2rss
             def verify_configuration!
               LocalConfig.yaml
             rescue StandardError
-              raise InternalServerError, 'Health check failed'
+              raise InternalServerError, Contract::MESSAGES[:health_check_failed]
             end
           end
         end

@@ -63,7 +63,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.status).to eq(500)
       expect(last_response.headers['Content-Type']).to include('application/json')
       json = JSON.parse(last_response.body)
-      expect(json.dig('error', 'code')).to eq('INTERNAL_SERVER_ERROR')
+      expect(json.dig('error', 'code')).to eq(Html2rss::Web::Api::V1::Contract::CODES[:internal_server_error])
       expect(json.dig('error', 'message')).to eq('Internal Server Error')
     end
   end
