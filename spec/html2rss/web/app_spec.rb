@@ -35,6 +35,16 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<rss/>')
     end
 
+    it 'coerces string ttl values before cache expiry math', :aggregate_failures do
+      allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
+      allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: '180' } })
+
+      get '/legacy'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Cache-Control']).to include('max-age=10800')
+    end
+
     it 'renders XML error when legacy feed generation fails', :aggregate_failures do
       allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
 

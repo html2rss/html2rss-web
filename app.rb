@@ -128,8 +128,8 @@ module Html2rss
 
       def handle_feed_generation(router, feed_name)
         rss_content = Feeds.generate_feed(feed_name, router.params)
-        ttl_minutes = LocalConfig.find(feed_name)&.dig(:channel, :ttl)
-        ttl_seconds = ttl_minutes ? ttl_minutes * 60 : 3600
+        ttl_minutes = LocalConfig.find(feed_name)&.dig(:channel, :ttl).to_i
+        ttl_seconds = ttl_minutes.positive? ? ttl_minutes * 60 : 3600
         router.response['Content-Type'] = 'application/xml'
         HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
         rss_content
