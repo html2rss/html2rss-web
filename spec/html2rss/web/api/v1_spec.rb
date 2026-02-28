@@ -34,13 +34,11 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       header 'Authorization', nil
     end
 
-    it 'requires bearer token', :aggregate_failures do
-      get '/api/v1/health'
+    let(:perform_request) { -> { get '/api/v1/health' } }
 
-      expect(last_response.status).to eq(401)
-      expect(last_response.content_type).to include('application/json')
-      expect_error_response(last_response, code: 'UNAUTHORIZED')
-    end
+    it_behaves_like 'api error contract',
+                    status: 401,
+                    code: Html2rss::Web::Api::V1::Contract::CODES[:unauthorized]
 
     it 'returns health status when token is valid', :aggregate_failures do
       header 'Authorization', "Bearer #{health_token}"
@@ -53,13 +51,14 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
 
     it 'returns error when configuration fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')
-
       header 'Authorization', "Bearer #{health_token}"
+
       get '/api/v1/health'
 
       expect(last_response.status).to eq(500)
-      json = expect_error_response(last_response, code: 'INTERNAL_SERVER_ERROR')
-      expect(json.dig('error', 'message')).to eq('Health check failed')
+      json = expect_error_response(last_response,
+                                   code: Html2rss::Web::Api::V1::Contract::CODES[:internal_server_error])
+      expect(json.dig('error', 'message')).to eq(Html2rss::Web::Api::V1::Contract::MESSAGES[:health_check_failed])
     end
   end
 
@@ -144,16 +143,15 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       }
     end
 
+    let(:perform_request) { -> { post '/api/v1/feeds', request_params } }
+
     after do
       header 'Authorization', nil
     end
 
-    it 'requires authentication', :aggregate_failures do
-      post '/api/v1/feeds', request_params
-
-      expect(last_response.status).to eq(401)
-      expect_error_response(last_response, code: 'UNAUTHORIZED')
-    end
+    it_behaves_like 'api error contract',
+                    status: 401,
+                    code: Html2rss::Web::Api::V1::Contract::CODES[:unauthorized]
 
     it 'creates a feed when request is valid', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       header 'Authorization', "Bearer #{admin_token}"
@@ -173,8 +171,8 @@ RSpec.describe 'api/v1' do # rubocop:disable RSpec/DescribeClass
       end
 
       expect(last_response.status).to eq(403)
-      json = expect_error_response(last_response, code: 'FORBIDDEN')
-      expect(json.dig('error', 'message')).to eq('Auto source feature is disabled')
+      json = expect_error_response(last_response, code: Html2rss::Web::Api::V1::Contract::CODES[:forbidden])
+      expect(json.dig('error', 'message')).to eq(Html2rss::Web::Api::V1::Contract::MESSAGES[:auto_source_disabled])
     end
   end
 end
