@@ -8,6 +8,7 @@ require_relative '../../../auth'
 require_relative '../../../auto_source'
 require_relative '../../../exceptions'
 require_relative '../../../url_validator'
+require_relative '../response'
 
 module Html2rss
   module Web
@@ -24,7 +25,10 @@ module Html2rss
                 feed_data = AutoSource.create_stable_feed(params[:name], params[:url], account, params[:strategy])
                 raise InternalServerError, 'Failed to create feed' unless feed_data
 
-                json_response(request, feed_response_payload(feed_data), status: 201)
+                Response.success(response: request.response,
+                                 status: 201,
+                                 data: { feed: feed_attributes(feed_data) },
+                                 meta: { created: true })
               end
 
               def extract_site_title(url)
@@ -76,14 +80,6 @@ module Html2rss
                 Html2rss::RequestService.default_strategy_name.to_s
               end
 
-              def feed_response_payload(feed_data)
-                {
-                  success: true,
-                  data: { feed: feed_attributes(feed_data) },
-                  meta: { created: true }
-                }
-              end
-
               def feed_attributes(feed_data)
                 timestamp = Time.now.iso8601
 
@@ -116,12 +112,6 @@ module Html2rss
               def json_request?(request)
                 content_type = request.env['CONTENT_TYPE'].to_s
                 content_type.include?('application/json')
-              end
-
-              def json_response(request, payload, status: 200)
-                request.response['Content-Type'] = 'application/json'
-                request.response.status = status
-                payload
               end
             end
           end

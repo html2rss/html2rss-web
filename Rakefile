@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require 'fileutils'
 
 ##
 # Helper methods used during :test run
@@ -73,4 +74,18 @@ ensure
   end
 
   exit 1 if $ERROR_INFO
+end
+
+namespace :openapi do
+  desc 'Generate OpenAPI YAML from request specs'
+  task :generate do
+    FileUtils.mkdir_p('docs/api/v1')
+    FileUtils.rm_f('docs/api/v1/openapi.yaml')
+    sh({ 'OPENAPI' => '1' }, 'bundle exec rspec spec/html2rss/web/api/v1_spec.rb --order defined')
+  end
+
+  desc 'Verify generated OpenAPI YAML is up to date'
+  task verify: :generate do
+    sh 'git diff --exit-code -- docs/api/v1/openapi.yaml'
+  end
 end

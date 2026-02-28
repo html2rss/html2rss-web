@@ -111,6 +111,18 @@ module Html2rss
                     }, severity: :error)
         end
 
+        # Log lifecycle events for in-memory config/cache snapshots
+        # @param component [String] component name
+        # @param event [String] lifecycle event name
+        # @param details [Hash] optional extra context
+        def log_cache_lifecycle(component, event, details = {})
+          log_event('cache_lifecycle', {
+                      component: component,
+                      event: event,
+                      **details
+                    }, severity: :info)
+        end
+
         private
 
         def create_logger

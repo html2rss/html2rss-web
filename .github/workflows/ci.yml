@@ -46,6 +46,19 @@ jobs:
           path: coverage/
           retention-days: 30
 
+  openapi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version-file: ".tool-versions"
+          bundler-cache: true
+
+      - name: Verify generated OpenAPI is up to date
+        run: bundle exec rake openapi:verify
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -77,6 +90,7 @@ jobs:
     needs:
       - hadolint
       - ruby
+      - openapi
       - frontend
     runs-on: ubuntu-latest
     strategy:

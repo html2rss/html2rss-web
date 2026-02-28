@@ -6,6 +6,7 @@ require_relative '../../auth'
 require_relative '../../exceptions'
 require_relative '../../local_config'
 require_relative 'contract'
+require_relative 'response'
 
 module Html2rss
   module Web
@@ -29,24 +30,13 @@ module Html2rss
             end
 
             def live(_request)
-              {
-                success: true,
-                data: {
-                  health: {
-                    status: 'alive',
-                    timestamp: Time.now.iso8601
-                  }
-                }
-              }
+              Response.success(data: { health: { status: 'alive', timestamp: Time.now.iso8601 } })
             end
 
             private
 
             def health_response
-              {
-                success: true,
-                data: { health: health_payload }
-              }
+              Response.success(data: { health: health_payload })
             end
 
             def health_payload

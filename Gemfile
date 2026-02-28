@@ -37,6 +37,7 @@ group :test do
   gem 'climate_control'
   gem 'rack-test'
   gem 'rspec'
+  gem 'rspec-openapi', require: false
   gem 'simplecov', require: false
   gem 'vcr'
   gem 'webmock'

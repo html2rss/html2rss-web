@@ -1,430 +1,461 @@
-openapi: 3.1.0
+---
+openapi: 3.0.3
 info:
   title: html2rss-web API
-  description: |
-    RESTful API for converting websites to RSS feeds. This API provides endpoints for managing feeds,
-    listing available extraction strategies, and monitoring application health.
   version: 1.0.0
+  description: RESTful API for converting websites to RSS feeds.
   contact:
     name: html2rss-web Support
     url: https://github.com/html2rss/html2rss-web
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-
 servers:
-  - url: https://html2rss-web.example.com/api/v1
-    description: Production server
-  - url: http://localhost:4000/api/v1
-    description: Development server
-
-security:
-  - BearerAuth: []
-  - FeedToken: []
-
+- url: https://html2rss-web.example.com/api/v1
+  description: Production server
+- url: http://localhost:4000/api/v1
+  description: Development server
 paths:
-  /feeds:
-    post:
-      operationId: createFeed
-      summary: Create a new feed
-      description: Creates a new RSS feed from a website URL
+  "/":
+    get:
+      summary: API metadata
       tags:
-        - Feeds
-      requestBody:
+      - Root
+      responses:
+        '200':
+          description: returns API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      api:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          description:
+                            type: string
+                        required:
+                        - name
+                        - description
+                    required:
+                    - api
+                required:
+                - success
+                - data
+  "/feeds":
+    post:
+      summary: Create a feed
+      tags:
+      - Feeds
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: Authorization
+        in: header
         required: true
+        schema:
+          type: string
+      requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateFeedRequest"
+              type: object
+              properties:
+                url:
+                  type: string
+                strategy:
+                  type: string
+              required:
+              - url
+              - strategy
       responses:
-        "201":
-          description: Feed created successfully
+        '201':
+          description: creates a feed when request is valid
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FeedResponse"
-        "400":
-          description: Bad request
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      feed:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          url:
+                            type: string
+                          strategy:
+                            type: string
+                          public_url:
+                            type: string
+                          created_at:
+                            type: string
+                          updated_at:
+                            type: string
+                        required:
+                        - id
+                        - name
+                        - url
+                        - strategy
+                        - public_url
+                        - created_at
+                        - updated_at
+                    required:
+                    - feed
+                  meta:
+                    type: object
+                    properties:
+                      created:
+                        type: boolean
+                    required:
+                    - created
+                required:
+                - success
+                - data
+                - meta
+        '401':
+          description: returns 401 with UNAUTHORIZED error payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "401":
-          description: Unauthorized
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+        '403':
+          description: returns forbidden for authenticated requests when auto source
+            is disabled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Forbidden
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /strategies:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+  "/feeds/{token}":
     get:
-      operationId: listStrategies
-      summary: List all available strategies
-      description: Returns a list of all available extraction strategies
+      summary: Render feed by token
       tags:
-        - Strategies
+      - Feeds
       responses:
-        "200":
-          description: Successful response
+        '200':
+          description: renders feed for a valid token
           content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/StrategiesListResponse"
-          headers:
-            Cache-Control:
-              description: Cache control header
+            application/xml:
               schema:
                 type: string
-                example: "public, max-age=3600"
-        "400":
-          description: Bad request
+        '403':
+          description: returns forbidden when auto source is disabled
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-  /health:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+        '401':
+          description: returns unauthorized for invalid tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+      parameters:
+      - name: token
+        in: path
+        required: true
+        schema:
+          type: string
+  "/health":
     get:
-      operationId: getHealth
-      summary: Get application health status
-      description: Returns the current health status of the application
+      summary: Authenticated health check
       tags:
-        - Health
+      - Health
       security:
-        - BearerAuth: []
+      - BearerAuth: []
+      parameters:
+      - name: Authorization
+        in: header
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
-          description: Application is healthy
+        '200':
+          description: returns health status when token is valid
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
-        "401":
-          description: Unauthorized
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      health:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          timestamp:
+                            type: string
+                          environment:
+                            type: string
+                          uptime:
+                            type: number
+                            format: float
+                          checks:
+                            type: object
+                            properties: {}
+                        required:
+                        - status
+                        - timestamp
+                        - environment
+                        - uptime
+                        - checks
+                    required:
+                    - health
+                required:
+                - success
+                - data
+        '401':
+          description: returns 401 with UNAUTHORIZED error payload
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "503":
-          description: Service unavailable
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+        '500':
+          description: returns error when configuration fails
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/HealthResponse"
-
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  error:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      code:
+                        type: string
+                    required:
+                    - message
+                    - code
+                required:
+                - success
+                - error
+  "/health/live":
+    get:
+      summary: Liveness probe
+      tags:
+      - Health
+      responses:
+        '200':
+          description: returns liveness status without authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      health:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          timestamp:
+                            type: string
+                        required:
+                        - status
+                        - timestamp
+                    required:
+                    - health
+                required:
+                - success
+                - data
+  "/health/ready":
+    get:
+      summary: Readiness probe
+      tags:
+      - Health
+      responses:
+        '200':
+          description: returns readiness status without authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      health:
+                        type: object
+                        properties:
+                          status:
+                            type: string
+                          timestamp:
+                            type: string
+                          environment:
+                            type: string
+                          uptime:
+                            type: number
+                            format: float
+                          checks:
+                            type: object
+                            properties: {}
+                        required:
+                        - status
+                        - timestamp
+                        - environment
+                        - uptime
+                        - checks
+                    required:
+                    - health
+                required:
+                - success
+                - data
+  "/strategies":
+    get:
+      summary: List extraction strategies
+      tags:
+      - Strategies
+      responses:
+        '200':
+          description: returns available strategies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      strategies:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            display_name:
+                              type: string
+                          required:
+                          - id
+                          - name
+                          - display_name
+                    required:
+                    - strategies
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                    required:
+                    - total
+                required:
+                - success
+                - data
+                - meta
 components:
   securitySchemes:
     BearerAuth:
+      description: Bearer token authentication for API access.
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: |
-        Bearer token authentication for API access. Include your token in the Authorization header:
-        `Authorization: Bearer your-token-here`
-
-        This token is used for:
-        - Creating new feeds
-        - Accessing health check endpoints
-
-        The token must be configured in the application's feed configuration file.
-
-    FeedToken:
-      type: apiKey
-      in: query
-      name: token
-      description: |
-        Signed feed token for public RSS access without authentication headers.
-        This is a cryptographically signed token that provides secure, stateless access to RSS feeds.
-
-        **Security Features:**
-        - **HMAC-SHA256 Signed**: Tokens are signed with a secret key to prevent tampering
-        - **URL Binding**: Each token is bound to a specific source URL
-        - **Long Expiry**: Tokens are valid for 10 years (perfect for RSS readers)
-        - **Stateless**: No server-side storage required
-        - **Read-Only**: Tokens only provide access to RSS content, not API management
-
-        **Token Structure:**
-        The token is a Base64-encoded JSON object containing:
-        ```json
-        {
-          "payload": {
-            "username": "account-username",
-            "url": "https://example.com",
-            "expires_at": 1234567890
-          },
-          "signature": "hmac-sha256-signature"
-        }
-        ```
-
-        **Usage:**
-        Tokens are included as query parameters in feed URLs:
-        `/api/v1/feeds/{id}`
-
-        **Example:**
-        ```
-        /api/v1/feeds/abc123
-        ```
-
-  schemas:
-    SuccessResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          type: object
-        meta:
-          $ref: "#/components/schemas/Meta"
-
-    ErrorResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: false
-        error:
-          type: object
-          properties:
-            message:
-              type: string
-              description: Human-readable error message
-            code:
-              type: string
-              description: Machine-readable error code
-            status:
-              type: integer
-              description: HTTP status code
-        data:
-          type: object
-        meta:
-          $ref: "#/components/schemas/Meta"
-
-    Meta:
-      type: object
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-          description: Response timestamp in ISO 8601 format
-        version:
-          type: string
-          description: API version
-          example: "1.0.0"
-
-    FeedsListResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                feeds:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Feed"
-            meta:
-              allOf:
-                - $ref: "#/components/schemas/Meta"
-                - type: object
-                  properties:
-                    total:
-                      type: integer
-                      description: Total number of feeds
-
-    FeedResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                feed:
-                  $ref: "#/components/schemas/Feed"
-
-    Feed:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Unique feed identifier
-        name:
-          type: string
-          description: Human-readable feed name
-        description:
-          type: string
-          description: Feed description
-        url:
-          type: string
-          format: uri
-          description: Source URL for the feed
-        strategy:
-          type: string
-          description: Extraction strategy used
-        public_url:
-          type: string
-          format: uri
-          description: Public URL for accessing the feed (for generated feeds)
-        created_at:
-          type: [string, "null"]
-          format: date-time
-          description: Feed creation timestamp
-        updated_at:
-          type: [string, "null"]
-          format: date-time
-          description: Feed last update timestamp
-
-    CreateFeedRequest:
-      type: object
-      required:
-        - url
-      properties:
-        url:
-          type: string
-          format: uri
-          description: Source URL to convert to RSS feed
-        strategy:
-          type: string
-          description: Extraction strategy to use
-          default: ssrf_filter
-
-    StrategiesListResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                strategies:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Strategy"
-            meta:
-              allOf:
-                - $ref: "#/components/schemas/Meta"
-                - type: object
-                  properties:
-                    total:
-                      type: integer
-                      description: Total number of strategies
-
-    StrategyResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                strategy:
-                  $ref: "#/components/schemas/Strategy"
-
-    Strategy:
-      type: object
-      properties:
-        id:
-          type: string
-          description: Strategy identifier
-        name:
-          type: string
-          description: Strategy name
-        display_name:
-          type: string
-          description: Human-readable strategy name
-        description:
-          type: string
-          description: Strategy description
-        available:
-          type: boolean
-          description: Whether the strategy is available
-        default:
-          type: boolean
-          description: Whether this is the default strategy
-
-    HealthResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                health:
-                  type: object
-                  properties:
-                    status:
-                      type: string
-                      enum: [healthy, unhealthy]
-                    timestamp:
-                      type: string
-                      format: date-time
-                    version:
-                      type: string
-                    environment:
-                      type: string
-                    checks:
-                      type: object
-                      description: Health check results
-                    errors:
-                      type: array
-                      items:
-                        type: string
-                      description: Error messages (only present when unhealthy)
-
-    ReadinessResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                readiness:
-                  type: object
-                  properties:
-                    status:
-                      type: string
-                      enum: [ready]
-                    timestamp:
-                      type: string
-                      format: date-time
-                    version:
-                      type: string
-
-    LivenessResponse:
-      allOf:
-        - $ref: "#/components/schemas/SuccessResponse"
-        - type: object
-          properties:
-            data:
-              type: object
-              properties:
-                liveness:
-                  type: object
-                  properties:
-                    status:
-                      type: string
-                      enum: [alive]
-                    timestamp:
-                      type: string
-                      format: date-time
-                    uptime:
-                      type: number
-                      description: Application uptime in seconds
-
-tags:
-  - name: Feeds
-    description: Operations for managing RSS feeds
-  - name: Strategies
-    description: Operations for listing extraction strategies
-  - name: Health
-    description: Application health monitoring endpoints

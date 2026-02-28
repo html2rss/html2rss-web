@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'local_config'
+require_relative 'security_logger'
 
 module Html2rss
   module Web
@@ -8,8 +9,11 @@ module Html2rss
     # Account management functionality
     module AccountManager
       class << self
-        def reload!
+        # Forces account snapshot refresh on next access.
+        # Used by tests and can be used by runtime reload hooks.
+        def reload!(reason: 'manual')
           @snapshot = nil # rubocop:disable ThreadSafety/ClassInstanceVariable
+          SecurityLogger.log_cache_lifecycle('account_manager', 'reload', reason: reason)
           nil
         end
 
@@ -53,6 +57,7 @@ module Html2rss
           accounts = Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
           token_index = accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }.freeze
 
+          SecurityLogger.log_cache_lifecycle('account_manager', 'build', accounts_count: accounts.length)
           { accounts: accounts, token_index: token_index }.freeze
         end
 

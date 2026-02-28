@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../../exceptions'
+require_relative 'response'
 
 module Html2rss
   module Web
@@ -20,7 +21,7 @@ module Html2rss
                 }
               end
 
-              { success: true, data: { strategies: strategies }, meta: { total: strategies.count } }
+              Response.success(data: { strategies: strategies }, meta: { total: strategies.count })
             end
           end
         end

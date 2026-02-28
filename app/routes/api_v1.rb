@@ -71,14 +71,17 @@ module Html2rss
 
           def mount_root(router)
             router.get do
-              render_json(success: true,
-                          data: {
-                            api: {
-                              name: 'html2rss-web API',
-                              description: 'RESTful API for converting websites to RSS feeds'
-                            }
-                          })
+              render_json(Api::V1::Response.success(data: api_root_payload))
             end
+          end
+
+          def api_root_payload
+            {
+              api: {
+                name: 'html2rss-web API',
+                description: 'RESTful API for converting websites to RSS feeds'
+              }
+            }
           end
 
           def render_feed_response(result)
