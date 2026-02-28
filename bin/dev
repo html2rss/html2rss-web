@@ -10,6 +10,11 @@ fi
 
 export RACK_ENV=${RACK_ENV:-development}
 
+# BusyBox lsof in this image reports internal FDs and exits 0, so prefer netstat.
+port_in_use() {
+  netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1$"
+}
+
 # Cleanup function for graceful shutdown
 cleanup() {
   echo ""
@@ -40,7 +45,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 # Prevent silent failures from port conflicts
-if lsof -Pi :4000 -sTCP:LISTEN -t >/dev/null 2>&1; then
+if port_in_use 4000; then
   echo "❌ Port 4000 is already in use. Run: \`pkill -f 'puma.*html2rss-web'\`"
   exit 1
 fi
@@ -49,10 +54,26 @@ fi
 bundle exec puma -p 4000 -C config/puma.rb &
 RUBY_PID=$!
 
-# Verify Ruby server started successfully
-sleep 3
-if ! kill -0 $RUBY_PID 2>/dev/null || ! lsof -Pi :4000 -sTCP:LISTEN -t >/dev/null 2>&1; then
-  echo "❌ Ruby server failed to start"
+# Verify Ruby server started successfully (allow slower boots in containers)
+RUBY_STARTUP_TIMEOUT=${RUBY_STARTUP_TIMEOUT:-30}
+ruby_started=false
+for _ in $(seq 1 "$RUBY_STARTUP_TIMEOUT"); do
+  if ! kill -0 $RUBY_PID 2>/dev/null; then
+    echo "❌ Ruby server failed to start"
+    exit 1
+  fi
+
+  if port_in_use 4000; then
+    ruby_started=true
+    break
+  fi
+
+  sleep 1
+done
+
+if [ "$ruby_started" != "true" ]; then
+  echo "❌ Ruby server did not start listening on port 4000 within ${RUBY_STARTUP_TIMEOUT}s"
+  kill $RUBY_PID 2>/dev/null || true
   exit 1
 fi
 
