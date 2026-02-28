@@ -20,19 +20,23 @@ module Html2rss
 
           def mount_health(router)
             router.on 'health' do
-              mount_readiness_health(router)
-              mount_liveness_health(router)
+              mount_health_subroutes(router)
 
               router.get do
-                JSON.generate(Api::V1::Health.show(router))
+                render_json(Api::V1::Health.show(router))
               end
             end
+          end
+
+          def mount_health_subroutes(router)
+            mount_readiness_health(router)
+            mount_liveness_health(router)
           end
 
           def mount_readiness_health(router)
             router.on 'ready' do
               router.get do
-                JSON.generate(Api::V1::Health.ready(router))
+                render_json(Api::V1::Health.ready(router))
               end
             end
           end
@@ -40,7 +44,7 @@ module Html2rss
           def mount_liveness_health(router)
             router.on 'live' do
               router.get do
-                JSON.generate(Api::V1::Health.live(router))
+                render_json(Api::V1::Health.live(router))
               end
             end
           end
@@ -48,7 +52,7 @@ module Html2rss
           def mount_strategies(router)
             router.on 'strategies' do
               router.get do
-                JSON.generate(Api::V1::Strategies.index(router))
+                render_json(Api::V1::Strategies.index(router))
               end
             end
           end
@@ -56,26 +60,33 @@ module Html2rss
           def mount_feeds(router)
             router.on 'feeds' do
               router.get String do |token|
-                result = Api::V1::Feeds.show(router, token)
-                result.is_a?(Hash) ? JSON.generate(result) : result
+                render_feed_response(Api::V1::Feeds.show(router, token))
               end
 
               router.post do
-                JSON.generate(Api::V1::Feeds.create(router))
+                render_json(Api::V1::Feeds.create(router))
               end
             end
           end
 
           def mount_root(router)
             router.get do
-              JSON.generate(success: true,
-                            data: {
-                              api: {
-                                name: 'html2rss-web API',
-                                description: 'RESTful API for converting websites to RSS feeds'
-                              }
-                            })
+              render_json(success: true,
+                          data: {
+                            api: {
+                              name: 'html2rss-web API',
+                              description: 'RESTful API for converting websites to RSS feeds'
+                            }
+                          })
             end
+          end
+
+          def render_feed_response(result)
+            result.is_a?(Hash) ? render_json(result) : result
+          end
+
+          def render_json(payload)
+            JSON.generate(payload)
           end
         end
       end
