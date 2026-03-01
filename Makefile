@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready openapi openapi-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready yard-verify-public-docs openapi openapi-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
 
 # Default target
 help: ## Show this help message
@@ -54,6 +54,8 @@ lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issue
 lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	@echo "Running RuboCop linting..."
 	bundle exec rubocop
+	@echo "Running YARD public-method docs check..."
+	bundle exec rake yard:verify_public_docs
 	@echo "Ruby linting complete!"
 
 lint-js: ## Run JavaScript/Frontend linter (Prettier) - errors when issues found
@@ -77,8 +79,12 @@ lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
 ready: ## Pre-commit gate (RuboCop + RSpec)
 	@echo "Running pre-commit checks..."
 	bundle exec rubocop -F
+	bundle exec rake yard:verify_public_docs
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
+
+yard-verify-public-docs: ## Verify essential YARD docs for all public methods in app/
+	bundle exec rake yard:verify_public_docs
 
 openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
 	bundle exec rake openapi:generate

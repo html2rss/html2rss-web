@@ -13,6 +13,7 @@ module Html2rss
         # @param response [Hash]
         # @param seconds [Integer]
         # @param cache_control [String, nil]
+        # @return [void]
         def expires(response, seconds, cache_control: nil)
           expires_now(response) and return if seconds <= 0
 
@@ -27,6 +28,7 @@ module Html2rss
         # Sets Expires and Cache-Control headers to invalidate existing cache and
         # prevent caching.
         # @param response [Hash]
+        # @return [void]
         def expires_now(response)
           response['Expires'] = '0'
           response['Cache-Control'] = 'private,max-age=0,no-cache,no-store,must-revalidate'

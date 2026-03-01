@@ -80,3 +80,5 @@ Expert recommendation: keep workflows terminal-first and keyboard-focused (clear
 ## Non-Negotiables
 
 - Security first.
+- YARD docs are strict for public Ruby methods in `app/`: every public method must have a YARD docstring with typed `@param` tags (for all params) and typed `@return`.
+- When touching non-public methods, add YARD docs when it improves maintenance or clarifies invariants/edge handling.

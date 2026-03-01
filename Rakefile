@@ -89,3 +89,53 @@ namespace :openapi do
     sh 'git diff --exit-code -- docs/api/v1/openapi.yaml'
   end
 end
+
+namespace :yard do
+  desc 'Fail when public methods in app/ are missing essential YARD docs'
+  task :verify_public_docs do
+    require 'yard'
+
+    files = Dir.glob(File.join(__dir__, 'app/**/*.rb'))
+    YARD::Registry.clear
+    YARD::Registry.load(files, true)
+
+    violations = []
+
+    YARD::Registry.all(:method).each do |method_object|
+      next unless method_object.visibility == :public
+      next unless method_object.file&.include?('/app/')
+
+      location = "#{method_object.path} (#{method_object.file}:#{method_object.line})"
+      normalize_param_name = lambda do |name|
+        name.to_s.sub(/\A[*&]/, '').sub(/:$/, '')
+      end
+
+      param_tags = method_object.tags(:param)
+      params = method_object.parameters.map(&:first).map { |name| normalize_param_name.call(name) }
+      params.reject! { |name| name == 'block' }
+
+      param_tag_names = param_tags.map { |tag| normalize_param_name.call(tag.name) }
+      missing_params = params - param_tag_names
+      violations << "#{location} missing @param for: #{missing_params.join(', ')}" unless missing_params.empty?
+
+      param_tags.each do |tag|
+        violations << "#{location} @param #{tag.name} missing type" if tag.types.nil? || tag.types.empty?
+      end
+
+      return_tag = method_object.tag(:return)
+      if return_tag.nil?
+        violations << "#{location} missing @return"
+      elsif return_tag.types.nil? || return_tag.types.empty?
+        violations << "#{location} @return missing type"
+      end
+    end
+
+    if violations.any?
+      puts 'YARD public method documentation check failed:'
+      violations.sort.each { |violation| puts "  - #{violation}" }
+      abort "\nFound #{violations.count} YARD documentation violation(s)."
+    end
+
+    puts 'YARD public method documentation check passed.'
+  end
+end

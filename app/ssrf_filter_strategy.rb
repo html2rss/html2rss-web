@@ -9,6 +9,9 @@ module Html2rss
     ##
     # Strategy to fetch a URL using the SSRF filter.
     class SsrfFilterStrategy < Html2rss::RequestService::Strategy
+      # Executes a URL fetch through `ssrf_filter` and adapts response shape.
+      #
+      # @return [Html2rss::RequestService::Response]
       def execute
         headers = LocalConfig.global.fetch(:headers, {}).merge(
           ctx.headers.transform_keys(&:to_sym)

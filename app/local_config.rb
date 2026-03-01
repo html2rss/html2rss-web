@@ -5,12 +5,16 @@ require 'yaml'
 module Html2rss
   module Web
     ##
-    # Provides helper methods to deal with the local config file at `CONFIG_FILE`.
+    # Loads and normalizes feed configuration from disk.
+    #
+    # Keeping lookup/defaulting here gives the rest of the app one predictable
+    # config shape instead of repeating file parsing and fallback logic.
     module LocalConfig
       ##
       # raised when the local config wasn't found
       class NotFound < RuntimeError; end
 
+      # Path to local feed configuration file.
       CONFIG_FILE = 'config/feeds.yml'
 
       class << self
@@ -49,6 +53,10 @@ module Html2rss
 
         private
 
+        # Applies global defaults only when feed-level keys are absent.
+        #
+        # @param config [Hash{Symbol=>Object}]
+        # @return [Hash{Symbol=>Object}]
         def apply_global_defaults(config)
           global_config = global
 
@@ -58,10 +66,16 @@ module Html2rss
           config
         end
 
+        # @param name [String, Symbol, #to_s]
+        # @return [String] basename without extension for feed lookup.
         def normalize_name(name)
           File.basename(name.to_s, '.*')
         end
 
+        # Deep-duplicates nested config structures to avoid mutating shared data.
+        #
+        # @param value [Object]
+        # @return [Object]
         def deep_dup(value)
           case value
           when Hash

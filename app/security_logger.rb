@@ -13,11 +13,13 @@ module Html2rss
     module SecurityLogger
       class << self
         # Initialize logger to stdout with structured JSON output
+        # @return [Logger]
         def logger
           Thread.current[:security_logger] ||= create_logger
         end
 
         # Reset logger (for testing)
+        # @return [void]
         def reset_logger!
           Thread.current[:security_logger] = nil
         end
@@ -27,6 +29,7 @@ module Html2rss
         # @param ip [String] client IP address
         # @param user_agent [String] client user agent
         # @param reason [String] failure reason
+        # @return [void]
         def log_auth_failure(ip, user_agent, reason)
           log_event('auth_failure', {
                       ip: ip,
@@ -39,6 +42,7 @@ module Html2rss
         # Log authentication success
         # @param username [String] authenticated username
         # @param ip [String] client IP address
+        # @return [void]
         def log_auth_success(username, ip)
           log_event('auth_success', {
                       username: username,
@@ -51,6 +55,7 @@ module Html2rss
         # @param ip [String] client IP address
         # @param endpoint [String] endpoint that was rate limited
         # @param limit [Integer] rate limit that was exceeded
+        # @return [void]
         def log_rate_limit_exceeded(ip, endpoint, limit)
           log_event('rate_limit_exceeded', {
                       ip: ip,
@@ -64,6 +69,7 @@ module Html2rss
         # @param feed_token [String] feed token (hashed for privacy)
         # @param url [String] URL being accessed
         # @param success [Boolean] whether the token was valid
+        # @return [void]
         def log_token_usage(feed_token, url, success)
           severity = success ? :info : :warn
 
@@ -79,6 +85,7 @@ module Html2rss
         # @param ip [String] client IP address
         # @param activity [String] description of suspicious activity
         # @param details [Hash] additional details
+        # @return [void]
         def log_suspicious_activity(ip, activity, details = {})
           log_event('suspicious_activity', {
                       ip: ip,
@@ -92,6 +99,7 @@ module Html2rss
         # @param ip [String] client IP address
         # @param reason [String] reason for blocking
         # @param endpoint [String] endpoint that was blocked
+        # @return [void]
         def log_blocked_request(ip, reason, endpoint)
           log_event('blocked_request', {
                       ip: ip,
@@ -104,6 +112,7 @@ module Html2rss
         # Log configuration validation failure
         # @param component [String] component that failed validation
         # @param details [String] validation failure details
+        # @return [void]
         def log_config_validation_failure(component, details)
           log_event('config_validation_failure', {
                       component: component,
@@ -115,6 +124,7 @@ module Html2rss
         # @param component [String] component name
         # @param event [String] lifecycle event name
         # @param details [Hash] optional extra context
+        # @return [void]
         def log_cache_lifecycle(component, event, details = {})
           log_event('cache_lifecycle', {
                       component: component,

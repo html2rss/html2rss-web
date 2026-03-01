@@ -11,14 +11,18 @@ module Html2rss
       STATUS = 500
       CODE = 'INTERNAL_SERVER_ERROR'
 
+      # @param message [String]
+      # @return [void]
       def initialize(message = self.class::DEFAULT_MESSAGE)
         super
       end
 
+      # @return [Integer]
       def status
         self.class::STATUS
       end
 
+      # @return [String]
       def code
         self.class::CODE
       end

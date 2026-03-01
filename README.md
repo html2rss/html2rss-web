@@ -67,6 +67,7 @@ make setup
 make dev
 make test
 make ready
+make yard-verify-public-docs
 bundle exec rubocop -F
 bundle exec rspec
 make openapi
@@ -88,6 +89,7 @@ Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://local
 | `make test-frontend` | Run frontend unit and contract tests.                   |
 | `make lint`          | Run all linters.                                        |
 | `make lintfix`       | Auto-fix lint warnings where possible.                  |
+| `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`. |
 | `make openapi`       | Regenerate `docs/api/v1/openapi.yaml` from request specs. |
 | `make openapi-verify`| Regenerate + fail if OpenAPI file is stale.             |
 | `make clean`         | Remove build artefacts.                                 |

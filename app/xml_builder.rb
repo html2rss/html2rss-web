@@ -5,6 +5,11 @@ require 'time'
 
 module Html2rss
   module Web
+    ##
+    # Central RSS/XML rendering helpers.
+    #
+    # XML shaping is centralized so endpoints/services can return consistent feed
+    # output without duplicating channel/item boilerplate.
     module XmlBuilder
       EMPTY_FEED_DESCRIPTION_TEMPLATE = <<~DESC
         Unable to extract content from %<url>s using the %<strategy>s strategy.
@@ -21,6 +26,12 @@ module Html2rss
         Try another strategy or reach out to the site owner.
       DESC
       class << self
+        # @param title [String]
+        # @param description [String]
+        # @param link [String, nil]
+        # @param items [Array<Hash{Symbol=>Object}>]
+        # @param timestamp [Time, nil]
+        # @return [String] serialized RSS XML document.
         def build_rss_feed(title:, description:, link: nil, items: [], timestamp: nil)
           current_time = timestamp || Time.now
           formatted_now = format_pub_date(current_time)
@@ -35,6 +46,9 @@ module Html2rss
           end.doc.to_xml(save_with: Nokogiri::XML::Node::SaveOptions::AS_XML)
         end
 
+        # @param message [String]
+        # @param title [String]
+        # @return [String] single-item RSS error document.
         def build_error_feed(message:, title: 'Error')
           build_single_item_feed(
             title:,
@@ -46,6 +60,8 @@ module Html2rss
           )
         end
 
+        # @param url [String]
+        # @return [String] RSS response describing authorization failure.
         def build_access_denied_feed(url)
           build_single_item_feed(
             title: 'Access Denied',
@@ -57,6 +73,10 @@ module Html2rss
           )
         end
 
+        # @param url [String]
+        # @param strategy [String]
+        # @param site_title [String, nil]
+        # @return [String] RSS warning document when extraction yields no content.
         def build_empty_feed_warning(url:, strategy:, site_title: nil)
           feed_title = site_title ? "#{site_title} - Content Extraction Issue" : 'Content Extraction Issue'
           build_single_item_feed(
@@ -70,6 +90,11 @@ module Html2rss
 
         private
 
+        # @param title [String]
+        # @param description [String]
+        # @param item [Hash{Symbol=>Object}]
+        # @param link [String, nil]
+        # @return [String]
         def build_single_item_feed(title:, description:, item:, link: nil)
           timestamp = Time.now
           build_rss_feed(
@@ -81,6 +106,9 @@ module Html2rss
           )
         end
 
+        # @param item [Hash{Symbol=>Object}]
+        # @param timestamp [Time]
+        # @return [Hash{Symbol=>Object}] normalized item with required RSS fields.
         def feed_item(item, timestamp:)
           feed_item = {
             title: item[:title],
@@ -91,6 +119,12 @@ module Html2rss
           feed_item
         end
 
+        # @param xml [Nokogiri::XML::Builder]
+        # @param title [String]
+        # @param description [String]
+        # @param link [String, nil]
+        # @param now [String]
+        # @return [void]
         def build_channel(xml, title:, description:, link:, now:)
           xml.title(title.to_s)
           xml.description(description.to_s)
@@ -99,6 +133,10 @@ module Html2rss
           xml.pubDate(now)
         end
 
+        # @param xml [Nokogiri::XML::Builder]
+        # @param items [Array<Hash{Symbol=>Object}>]
+        # @param default_pub_date [String]
+        # @return [void]
         def build_items(xml, items, default_pub_date:)
           items.each do |item|
             xml.item do
@@ -110,10 +148,16 @@ module Html2rss
           end
         end
 
+        # @param xml [Nokogiri::XML::Builder]
+        # @param node_name [Symbol]
+        # @param value [Object]
+        # @return [void]
         def append_text_node(xml, node_name, value)
           xml.public_send(node_name, value.to_s) if value
         end
 
+        # @param pub_date [Time, String]
+        # @return [String] RFC2822 date string for RSS output.
         def format_pub_date(pub_date)
           pub_date.is_a?(Time) ? pub_date.rfc2822 : pub_date.to_s
         end

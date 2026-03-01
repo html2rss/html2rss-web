@@ -11,6 +11,11 @@ module Html2rss
     # Feeds functionality for generating RSS feeds
     module Feeds
       class << self
+        # Builds and renders a configured RSS feed by feed name.
+        #
+        # @param feed_name [String]
+        # @param params [Hash{Symbol=>Object}]
+        # @return [String] rendered feed output.
         def generate_feed(feed_name, params = {})
           config = LocalConfig.find(feed_name)
           config[:params] = (config[:params] || {}).merge(params) if params.any?

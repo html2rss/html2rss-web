@@ -10,11 +10,15 @@ module Html2rss
   ##
   # Web application modules for html2rss
   module Web
-    # Authentication system
+    ##
+    # Authentication and feed-token validation helpers.
+    #
+    # This module keeps auth decisions in one place so route handlers can stay
+    # thin and rely on one consistent success/failure contract.
     module Auth
       class << self
         # @param request [Rack::Request]
-        # @return [Hash, nil] account data if authenticated
+        # @return [Hash{Symbol=>Object}, nil] account attributes when authenticated.
         def authenticate(request)
           token = extract_token(request)
           return audit_auth(request, nil, 'missing_token') unless token
@@ -25,8 +29,9 @@ module Html2rss
 
         # @param username [String]
         # @param url [String]
+        # @param strategy [String]
         # @param expires_in [Integer] seconds (default: 10 years)
-        # @return [String] HMAC-signed compressed feed token
+        # @return [String, nil] signed feed token when generation succeeds.
         def generate_feed_token(username, url, strategy:, expires_in: Html2rss::Web::DEFAULT_EXPIRY)
           token = FeedToken.create_with_validation(
             username: username,
@@ -40,7 +45,7 @@ module Html2rss
 
         # @param feed_token [String]
         # @param url [String]
-        # @return [Hash, nil]
+        # @return [Hash{Symbol=>Object}, nil] account when token and URL are valid.
         def validate_feed_token(feed_token, url)
           with_validated_token(feed_token, url) do |token|
             AccountManager.get_account_by_username(token.username)
@@ -70,15 +75,15 @@ module Html2rss
 
         # @param request [Rack::Request]
         # @param reason [String]
-        # @return [nil]
+        # @return [nil] always nil to preserve authenticate return contract.
         def log_auth_failure(request, reason)
           SecurityLogger.log_auth_failure(request.ip, request.user_agent, reason)
           nil
         end
 
-        # @param account [Hash]
+        # @param account [Hash{Symbol=>Object}]
         # @param request [Rack::Request]
-        # @return [Hash]
+        # @return [Hash{Symbol=>Object}] unchanged account payload.
         def log_auth_success(account, request)
           SecurityLogger.log_auth_success(account[:username], request.ip)
           account
@@ -96,12 +101,26 @@ module Html2rss
           token
         end
 
+        # Keeps success/failure logging in one branch so authenticate remains
+        # easy to scan.
+        #
+        # @param request [Rack::Request]
+        # @param account [Hash{Symbol=>Object}, nil]
+        # @param failure_reason [String]
+        # @return [Hash{Symbol=>Object}, nil]
         def audit_auth(request, account, failure_reason)
           return log_auth_success(account, request) if account
 
           log_auth_failure(request, failure_reason)
         end
 
+        # Validates token integrity, records token-usage telemetry, and yields
+        # only when token checks pass.
+        #
+        # @param feed_token [String, nil]
+        # @param url [String, nil]
+        # @yieldparam token [Html2rss::Web::FeedToken]
+        # @return [Object, nil] block result when valid, otherwise nil.
         def with_validated_token(feed_token, url)
           return nil unless feed_token && url
 
