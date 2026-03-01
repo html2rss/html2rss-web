@@ -56,8 +56,16 @@ jobs:
           ruby-version-file: ".tool-versions"
           bundler-cache: true
 
+      - name: Setup Node.js for OpenAPI lint tooling
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".tool-versions"
+
       - name: Verify generated OpenAPI is up to date
         run: bundle exec rake openapi:verify
+
+      - name: Lint OpenAPI contract
+        run: make openapi-lint
 
   frontend:
     runs-on: ubuntu-latest
@@ -76,6 +84,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify generated OpenAPI client is up to date
+        run: npm run openapi:verify
 
       - name: Check formatting
         run: npm run format:check
