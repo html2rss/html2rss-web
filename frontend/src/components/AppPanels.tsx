@@ -192,7 +192,7 @@ export function GuestOnboardingPanel({
 
           <div class="form-actions auth-form-actions">
             <button type="submit" class="btn btn--accent">
-              Authenticate
+              Sign in
             </button>
           </div>
         </form>
@@ -235,7 +235,7 @@ export function MemberConvertPanel({
   return (
     <section class="surface surface--form surface--minimal">
       <div class="panel-meta">
-        <span>{username}</span>
+        <span class="panel-meta__primary">{username}</span>
         <button type="button" onClick={onLogout} class="btn btn--link btn--meta">
           Log out
         </button>

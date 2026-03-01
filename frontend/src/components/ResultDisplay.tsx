@@ -16,9 +16,17 @@ interface ResultDisplayProps {
   isAuthenticated?: boolean;
   username?: string;
   onLogout?: () => void;
+  onRequestSignIn?: () => void;
 }
 
-export function ResultDisplay({ result, onClose, isAuthenticated, username, onLogout }: ResultDisplayProps) {
+export function ResultDisplay({
+  result,
+  onClose,
+  isAuthenticated,
+  username,
+  onLogout,
+  onRequestSignIn,
+}: ResultDisplayProps) {
   const [copyNotice, setCopyNotice] = useState('');
   const [feedTitle, setFeedTitle] = useState('');
   const [feedItems, setFeedItems] = useState<string[]>([]);
@@ -89,7 +97,7 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
   return (
     <section id="result-display" class={`surface ${styles.result}`} aria-live="polite">
       <div class="panel-meta">
-        <span>{isAuthenticated ? (username ?? '') : ''}</span>
+        <span class="panel-meta__primary">{isAuthenticated ? (username ?? '') : ''}</span>
         {isAuthenticated && onLogout ? (
           <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
             Log out
@@ -101,6 +109,7 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
 
       <header class={styles.hero}>
         <h2 class={styles.heroTitle}>Feed created</h2>
+        <p class={styles.heroName}>{result.name}</p>
       </header>
 
       <div class={styles.feedCard}>
@@ -115,6 +124,16 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
           <span>Subscribe in reader</span>
         </a>
       </div>
+      <p class={styles.actionHint}>Opens your default RSS reader if configured.</p>
+
+      {!isAuthenticated && onRequestSignIn && (
+        <p class={styles.guestCue}>
+          Have credentials?{' '}
+          <button type="button" class="btn btn--link btn--meta" onClick={onRequestSignIn}>
+            Sign in
+          </button>
+        </p>
+      )}
 
       {copyNotice && (
         <div class="notice" role="status">

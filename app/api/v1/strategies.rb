@@ -25,11 +25,21 @@ module Html2rss
                 {
                   id: name.to_s,
                   name: name.to_s,
-                  display_name: name.to_s.split('_').map(&:capitalize).join(' ')
+                  display_name: display_name_for(name)
                 }
               end
 
               Response.success(data: { strategies: strategies }, meta: { total: strategies.count })
+            end
+
+            private
+
+            def display_name_for(name)
+              case name.to_s
+              when 'ssrf_filter' then 'Standard (recommended)'
+              when 'browserless' then 'JavaScript pages'
+              else name.to_s.split('_').map(&:capitalize).join(' ')
+              end
             end
           end
         end

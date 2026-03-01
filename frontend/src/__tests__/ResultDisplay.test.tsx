@@ -26,9 +26,11 @@ describe('ResultDisplay', () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
     expect(screen.getByText('Feed created')).toBeInTheDocument();
+    expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.queryByText('Copy the URL or open it in your RSS reader.')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
+    expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Open feed in new tab' })).not.toBeInTheDocument();
   });
 
@@ -50,5 +52,14 @@ describe('ResultDisplay', () => {
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
     });
+  });
+
+  it('shows sign-in cue for guests and triggers callback', () => {
+    const onRequestSignIn = vi.fn();
+    render(<ResultDisplay result={mockResult} onClose={mockOnClose} onRequestSignIn={onRequestSignIn} />);
+
+    expect(screen.getByText('Have credentials?')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(onRequestSignIn).toHaveBeenCalled();
   });
 });

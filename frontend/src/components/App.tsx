@@ -127,6 +127,11 @@ export function App() {
     }
   };
 
+  const handleSignInFromResult = () => {
+    clearResult();
+    setShowAuthForm(true);
+  };
+
   if (authLoading) {
     return (
       <div class="app-shell">
@@ -159,6 +164,7 @@ export function App() {
           isAuthenticated={isAuthenticated}
           onLogout={isAuthenticated ? handleLogout : undefined}
           username={username}
+          onRequestSignIn={!isAuthenticated ? handleSignInFromResult : undefined}
         />
       )}
 

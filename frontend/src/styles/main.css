@@ -77,6 +77,12 @@ main > .content-panel + .content-panel {
   min-height: 1.25rem;
 }
 
+.panel-meta__primary {
+  color: var(--sl-color-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
 .surface-header {
   display: grid;
   gap: 0.35rem;

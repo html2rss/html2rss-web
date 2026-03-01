@@ -140,4 +140,34 @@ describe('App', () => {
     expect(screen.getByText('Conversion error')).toBeInTheDocument();
     expect(screen.getByText('Access Denied')).toBeInTheDocument();
   });
+
+  it('should allow guests to trigger sign-in handoff from result screen', async () => {
+    vi.spyOn(window, 'fetch').mockResolvedValue({
+      text: async () =>
+        `<?xml version="1.0"?><rss><channel><title>Example Feed</title><item><title>Item One</title></item></channel></rss>`,
+    } as Response);
+
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: false,
+      result: {
+        id: 'feed-123',
+        name: 'Example Feed',
+        url: 'https://example.com/articles',
+        username: 'guest',
+        strategy: 'ssrf_filter',
+        public_url: '/api/v1/feeds/example-token',
+      },
+      error: null,
+      convertFeed: mockConvertFeed,
+      clearResult: mockClearResult,
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+
+    await waitFor(() => {
+      expect(mockClearResult).toHaveBeenCalled();
+    });
+  });
 });

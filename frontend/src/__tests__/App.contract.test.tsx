@@ -48,8 +48,10 @@ describe('App contract', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Feed created')).toBeInTheDocument();
+      expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
+      expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
     });
   });
 });

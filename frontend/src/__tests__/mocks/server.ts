@@ -10,12 +10,12 @@ export const server = setupServer(
           {
             id: 'ssrf_filter',
             name: 'ssrf_filter',
-            display_name: 'SSRF Filter',
+            display_name: 'Standard (recommended)',
           },
           {
             id: 'browserless',
             name: 'browserless',
-            display_name: 'Browserless',
+            display_name: 'JavaScript pages',
           },
         ],
       },
