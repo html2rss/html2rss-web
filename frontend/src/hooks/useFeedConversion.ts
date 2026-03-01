@@ -1,4 +1,6 @@
 import { useState } from 'preact/hooks';
+import { createFeed } from '../api/generated';
+import { apiClient, bearerHeaders } from '../api/client';
 
 interface ConversionResult {
   id: string;
@@ -36,30 +38,34 @@ export function useFeedConversion() {
     setState((prev) => ({ ...prev, isConverting: true, error: null }));
 
     try {
-      const response = await fetch('/api/v1/feeds', {
-        method: 'POST',
+      const response = await createFeed({
+        client: apiClient,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...bearerHeaders(token),
         },
-        body: JSON.stringify({
+        body: {
           url: url.trim(),
           strategy: strategy.trim(),
-        }),
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        const errorMessage = errorData?.error?.message || `Request failed with status ${response.status}`;
-        throw new Error(errorMessage);
+      const errorPayload = response.error as { error?: { message?: string } } | undefined;
+      if (response.error) {
+        const networkMessage = response.error instanceof Error ? response.error.message : undefined;
+        throw new Error(networkMessage || errorPayload?.error?.message || 'Request failed');
       }
 
-      const responseData = await response.json();
-      if (!responseData?.success || !responseData?.data?.feed) {
+      const typed = response.data as {
+        success?: boolean;
+        data?: { feed?: ConversionResult };
+      };
+
+      if (!typed?.success || !typed?.data?.feed) {
         throw new Error('Invalid response format');
       }
 
-      const result = responseData.data.feed;
+      const result = typed.data.feed;
       setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
     } catch (error) {
       setState((prev) => ({

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
+import { listStrategies } from '../api/generated';
+import { apiClient, bearerHeaders } from '../api/client';
 
 interface Strategy {
   id: string;
@@ -28,19 +30,16 @@ export function useStrategies(token: string | null) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await fetch('/api/v1/strategies', {
-        method: 'GET',
+      const response = await listStrategies({
+        client: apiClient,
         headers: {
-          Authorization: `Bearer ${token}`,
+          ...bearerHeaders(token),
           'Content-Type': 'application/json',
         },
+        responseStyle: 'data',
       });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch strategies: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = response as { success?: boolean; data?: { strategies?: Strategy[] } };
 
       if (data.success && data.data?.strategies) {
         setState({

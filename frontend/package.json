@@ -10,6 +10,8 @@
     "preview": "astro preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "openapi:generate": "openapi-ts -i ../docs/api/v1/openapi.yaml -o src/api/generated -c @hey-api/client-fetch",
+    "openapi:verify": "npm run openapi:generate && git diff --exit-code -- src/api/generated",
     "test": "vitest",
     "test:run": "vitest run",
     "test:unit": "vitest run --reporter=verbose --config vitest.unit.config.ts",
@@ -20,11 +22,13 @@
   "dependencies": {
     "@astrojs/preact": "^4.1.1",
     "@astrojs/starlight": "^0.36.0",
+    "@hey-api/client-fetch": "^0.13.1",
     "astro": "^5.14.1",
     "preact": "^10.27.2",
     "tslib": "^2.8.1"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.93.1",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/preact": "^3.2.4",

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready yard-verify-public-docs openapi openapi-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
 
 # Default target
 help: ## Show this help message
@@ -89,8 +89,14 @@ yard-verify-public-docs: ## Verify essential YARD docs for all public methods in
 openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
 	bundle exec rake openapi:generate
 
-openapi-verify: ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml is stale
+openapi-verify: openapi-client-verify ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml or frontend client is stale
 	bundle exec rake openapi:verify
+
+openapi-client: ## Generate frontend OpenAPI client/types from docs/api/v1/openapi.yaml
+	@cd frontend && npm run openapi:generate
+
+openapi-client-verify: ## Generate frontend OpenAPI client and fail if generated files are stale
+	@cd frontend && npm run openapi:verify
 
 openapi-lint: openapi-lint-redocly openapi-lint-spectral ## Lint docs/api/v1/openapi.yaml with Redocly and Spectral
 
