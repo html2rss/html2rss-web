@@ -144,9 +144,7 @@ export function App() {
   }
 
   return (
-    <div
-      class={`app-shell${mode !== 'result' ? ' app-shell--workspace' : ''}`}
-    >
+    <div class="app-shell app-shell--workspace">
       {authError && mode !== 'result' && (
         <section class="notice notice--error" role="alert">
           <h3>Authentication error</h3>

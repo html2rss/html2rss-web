@@ -1,17 +1,11 @@
 import { useState, useEffect } from 'preact/hooks';
+import { renderFeedByToken } from '../api/generated';
+import { apiClient } from '../api/client';
+import type { FeedRecord } from '../api/contracts';
 import styles from './ResultDisplay.module.css';
 
-interface ConversionResult {
-  id: string;
-  name: string;
-  url: string;
-  username: string;
-  strategy: string;
-  public_url: string;
-}
-
 interface ResultDisplayProps {
-  result: ConversionResult;
+  result: FeedRecord;
   onClose: () => void;
   isAuthenticated?: boolean;
   username?: string;
@@ -49,8 +43,18 @@ export function ResultDisplay({
 
     const loadPreview = async () => {
       try {
-        const response = await fetch(fullUrl, { signal: controller.signal });
-        const content = await response.text();
+        const token = extractFeedToken(result.public_url);
+        if (!token) throw new Error('Missing feed token');
+
+        const content = await renderFeedByToken({
+          client: apiClient,
+          path: { token },
+          parseAs: 'text',
+          signal: controller.signal,
+          responseStyle: 'data',
+        });
+        if (typeof content !== 'string') throw new Error('Invalid feed preview response');
+
         const xmlDoc = new DOMParser().parseFromString(content, 'text/xml');
 
         const parsedTitle =
@@ -80,7 +84,7 @@ export function ResultDisplay({
     return () => {
       controller.abort();
     };
-  }, [fullUrl]);
+  }, [result.public_url]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -95,16 +99,19 @@ export function ResultDisplay({
   const shouldShowPreview = isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0;
 
   return (
-    <section id="result-display" class={`surface ${styles.result}`} aria-live="polite">
+    <section id="result-display" class={styles.result} aria-live="polite">
       <div class="panel-meta">
         <span class="panel-meta__primary">{isAuthenticated ? (username ?? '') : ''}</span>
-        {isAuthenticated && onLogout ? (
-          <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
-            Log out
+        <span class="panel-meta__actions">
+          <button type="button" class="btn btn--link btn--meta" onClick={onClose}>
+            ← Convert another
           </button>
-        ) : (
-          <span />
-        )}
+          {isAuthenticated && onLogout && (
+            <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
+              Log out
+            </button>
+          )}
+        </span>
       </div>
 
       <header class={styles.hero}>
@@ -161,10 +168,21 @@ export function ResultDisplay({
       )}
 
       <div class={styles.footer}>
-        <button type="button" class="btn btn--accent" onClick={onClose}>
-          Convert another website
+        <button type="button" class="btn btn--link btn--meta" onClick={onClose}>
+          ← Convert another website
         </button>
       </div>
     </section>
   );
 }
+
+const extractFeedToken = (publicUrl: string): string | null => {
+  const path = publicUrl.startsWith('http')
+    ? new URL(publicUrl).pathname
+    : publicUrl;
+  const segments = path.split('/').filter(Boolean);
+  const feedIndex = segments.findIndex((segment) => segment === 'feeds');
+  if (feedIndex < 0) return null;
+
+  return segments[feedIndex + 1] ?? null;
+};

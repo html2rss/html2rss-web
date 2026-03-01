@@ -75,7 +75,7 @@ export function GuestOnboardingPanel({
   const selectedDemoUrl = demoSources.find((source) => source.id === selectedDemoId)?.url ?? demoSources[0].url;
 
   return (
-    <section class="surface surface--form">
+    <section class="workspace">
       <div class="panel-meta">
         <span />
         {mode === 'guest-demo' ? (
@@ -83,43 +83,32 @@ export function GuestOnboardingPanel({
             Sign in
           </button>
         ) : (
-          <button type="button" class="btn btn--link" onClick={onBackToDemo}>
-            Back to demo
+          <button type="button" class="btn btn--link btn--meta" onClick={onBackToDemo}>
+            ← Back to demo
           </button>
         )}
       </div>
 
-      <header class="surface-header onboarding-header">
-        <h2 class="onboarding-title">Convert website to RSS</h2>
-        <p class="onboarding-subtitle">
-          {mode === 'guest-demo'
-            ? 'Try a demo source instantly. Sign in to convert your own URLs.'
-            : 'Sign in to convert any website URL.'}
-        </p>
-      </header>
-
       {mode === 'guest-demo' ? (
-        <div class="form form--spacious form--tight">
-          <fieldset class="fieldset">
-            <legend class="legend">Demo source</legend>
-            <div class="radio-list radio-list--compact">
+        <div class="form">
+          <h2 class="workspace-title">Convert website to RSS</h2>
+          <p class="field-help">Try a demo source instantly. Sign in to convert your own URLs.</p>
+
+          <div class="field">
+            <label for="demo-source" class="label">Demo source</label>
+            <select
+              id="demo-source"
+              class="input"
+              value={selectedDemoId}
+              onChange={(e) => setSelectedDemoId((e.target as HTMLSelectElement).value)}
+            >
               {demoSources.map((source) => (
-                <label key={source.id} class={`radio-card radio-card--compact ${selectedDemoId === source.id ? 'is-selected' : ''}`}>
-                  <input
-                    type="radio"
-                    name="demo-source"
-                    class="radio-card__input"
-                    checked={selectedDemoId === source.id}
-                    onChange={() => setSelectedDemoId(source.id)}
-                  />
-                  <span class="radio-card__content">
-                    <span class="radio-card__title">{source.label}</span>
-                    <span class="radio-card__hint">{source.hint}</span>
-                  </span>
-                </label>
+                <option key={source.id} value={source.id}>
+                  {source.label} — {source.hint}
+                </option>
               ))}
-            </div>
-          </fieldset>
+            </select>
+          </div>
 
           {demoError && (
             <div class="notice notice--error notice--compact" role="alert">
@@ -129,13 +118,15 @@ export function GuestOnboardingPanel({
           )}
 
           <div class="form-actions">
-            <button type="button" class="btn btn--accent" onClick={() => onConvert(selectedDemoUrl)}>
+            <button type="button" class="btn btn--ghost" onClick={() => onConvert(selectedDemoUrl)}>
               Run demo
             </button>
           </div>
         </div>
       ) : (
-        <form id="auth-section" class="form form--spacious form--tight" onSubmit={onAuthSubmit}>
+        <form id="auth-section" class="form" onSubmit={onAuthSubmit}>
+          <h2 class="workspace-title">Convert website to RSS</h2>
+
           {authFieldErrors.form && (
             <div class="notice notice--error notice--compact" role="alert">
               <p>{authFieldErrors.form}</p>
@@ -182,7 +173,7 @@ export function GuestOnboardingPanel({
             </div>
           </div>
 
-          <p class="surface-header__hint">
+          <p class="field-help">
             Need a token? Ask your html2rss-web admin or read the{' '}
             <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
               official docs
@@ -190,7 +181,7 @@ export function GuestOnboardingPanel({
             .
           </p>
 
-          <div class="form-actions auth-form-actions">
+          <div class="form-actions">
             <button type="submit" class="btn btn--accent">
               Sign in
             </button>
@@ -233,7 +224,7 @@ export function MemberConvertPanel({
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
 
   return (
-    <section class="surface surface--form surface--minimal">
+    <section class="workspace">
       <div class="panel-meta">
         <span class="panel-meta__primary">{username}</span>
         <button type="button" onClick={onLogout} class="btn btn--link btn--meta">
@@ -241,7 +232,8 @@ export function MemberConvertPanel({
         </button>
       </div>
 
-      <form id="feed-section" class="form form--spacious form--tight form--member" onSubmit={onFeedSubmit}>
+      <form id="feed-section" class="form" onSubmit={onFeedSubmit}>
+        <h2 class="workspace-title">Convert a website</h2>
         <div class="field">
           <label for="url" class="label" data-required>URL</label>
           <div class="field field--inline">
@@ -257,7 +249,7 @@ export function MemberConvertPanel({
               value={feedFormData.url}
               onInput={(e) => onFeedFieldChange('url', (e.target as HTMLInputElement).value)}
             />
-            <button type="submit" class="btn btn--quiet-accent" disabled={isConverting}>
+            <button type="submit" class="btn btn--accent" disabled={isConverting}>
               {isConverting ? 'Converting...' : 'Convert'}
             </button>
           </div>
