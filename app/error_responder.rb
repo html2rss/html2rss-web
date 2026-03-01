@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'api/v1/contract'
+require_relative 'observability'
 
 module Html2rss
   module Web
@@ -19,10 +20,12 @@ module Html2rss
         # @param error [StandardError]
         # @return [String] serialized JSON or XML error body.
         def respond(request:, response:, error:)
-          error_code = error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE
-          response.status = error.respond_to?(:status) ? error.status : 500
-          client_message = error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
-          request.env['rack.errors']&.puts(error_log_line(request, error)) unless error.is_a?(HttpError)
+          error_code = resolve_error_code(error)
+          response.status = resolve_status(error)
+          emit_error_event(error, error_code, response.status)
+          write_internal_error_log(request, error)
+
+          client_message = client_message_for(error)
 
           return render_api_error(response, client_message, error_code) if api_request?(request)
 
@@ -65,6 +68,46 @@ module Html2rss
           return error.message unless request_id
 
           "[request_id=#{request_id}] #{error.message}"
+        end
+
+        # @param error [StandardError]
+        # @return [String]
+        def resolve_error_code(error)
+          error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE
+        end
+
+        # @param error [StandardError]
+        # @return [Integer]
+        def resolve_status(error)
+          error.respond_to?(:status) ? error.status : 500
+        end
+
+        # @param error [StandardError]
+        # @return [String]
+        def client_message_for(error)
+          error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
+        end
+
+        # @param request [Rack::Request]
+        # @param error [StandardError]
+        # @return [void]
+        def write_internal_error_log(request, error)
+          return if error.is_a?(HttpError)
+
+          request.env['rack.errors']&.puts(error_log_line(request, error))
+        end
+
+        # @param error [StandardError]
+        # @param error_code [String]
+        # @param status [Integer]
+        # @return [void]
+        def emit_error_event(error, error_code, status)
+          Observability.emit(
+            event_name: 'request.error',
+            outcome: 'failure',
+            details: { error_class: error.class.name, error_code: error_code, status: status },
+            level: :error
+          )
         end
       end
     end

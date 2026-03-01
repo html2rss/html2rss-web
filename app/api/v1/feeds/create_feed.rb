@@ -9,6 +9,7 @@ require_relative '../../../auto_source'
 require_relative '../../../boundary_models'
 require_relative '../../../exceptions'
 require_relative '../../../url_validator'
+require_relative '../../../observability'
 require_relative '../response'
 
 module Html2rss
@@ -29,17 +30,15 @@ module Html2rss
               # @param request [Rack::Request] HTTP request with auth context.
               # @return [Hash{Symbol=>Object}] API response payload.
               def call(request)
-                account = require_account(request)
-                ensure_auto_source_enabled!
-                params = build_create_params(request_params(request), account)
-
-                feed_data = AutoSource.create_stable_feed(params.name, params.url, account, params.strategy)
-                raise InternalServerError, 'Failed to create feed' unless feed_data
-
+                params, feed_data = build_feed_from_request(request)
+                emit_create_success(params)
                 Response.success(response: request.response,
                                  status: 201,
                                  data: { feed: feed_attributes(feed_data) },
                                  meta: { created: true })
+              rescue StandardError => error
+                emit_create_failure(error)
+                raise
               end
 
               # Extracts a best-effort human-readable title from the URL.
@@ -151,6 +150,41 @@ module Html2rss
               def json_request?(request)
                 content_type = request.env['CONTENT_TYPE'].to_s
                 content_type.include?('application/json')
+              end
+
+              # @param request [Rack::Request]
+              # @return [Array<(Html2rss::Web::BoundaryModels::FeedCreateParams, Object)>]
+              def build_feed_from_request(request)
+                account = require_account(request)
+                ensure_auto_source_enabled!
+                params = build_create_params(request_params(request), account)
+
+                feed_data = AutoSource.create_stable_feed(params.name, params.url, account, params.strategy)
+                raise InternalServerError, 'Failed to create feed' unless feed_data
+
+                [params, feed_data]
+              end
+
+              # @param params [Html2rss::Web::BoundaryModels::FeedCreateParams]
+              # @return [void]
+              def emit_create_success(params)
+                Observability.emit(
+                  event_name: 'feed.create',
+                  outcome: 'success',
+                  details: { strategy: params.strategy, url: params.url },
+                  level: :info
+                )
+              end
+
+              # @param error [StandardError]
+              # @return [void]
+              def emit_create_failure(error)
+                Observability.emit(
+                  event_name: 'feed.create',
+                  outcome: 'failure',
+                  details: { error_class: error.class.name, error_message: error.message },
+                  level: :warn
+                )
               end
             end
           end

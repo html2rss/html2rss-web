@@ -2,6 +2,7 @@
 
 require 'openssl'
 require_relative 'security_logger'
+require_relative 'observability'
 require_relative 'request_context'
 require_relative 'feed_token'
 require_relative 'url_validator'
@@ -111,8 +112,14 @@ module Html2rss
         # @param failure_reason [String]
         # @return [Hash{Symbol=>Object}, nil]
         def audit_auth(request, account, failure_reason)
-          return log_auth_success(account, request) if account
+          if account
+            Observability.emit(event_name: 'auth.authenticate', outcome: 'success',
+                               details: { username: account[:username] }, level: :info)
+            return log_auth_success(account, request)
+          end
 
+          Observability.emit(event_name: 'auth.authenticate', outcome: 'failure',
+                             details: { reason: failure_reason }, level: :warn)
           log_auth_failure(request, failure_reason)
         end
 
