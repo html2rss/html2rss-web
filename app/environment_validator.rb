@@ -2,6 +2,7 @@
 
 require_relative 'security_logger'
 require_relative 'account_manager'
+require_relative 'flags'
 
 module Html2rss
   module Web
@@ -45,10 +46,7 @@ module Html2rss
 
         # @return [Boolean]
         def auto_source_enabled?
-          flag = ENV.fetch('AUTO_SOURCE_ENABLED', nil)
-          return flag != 'false' if development?
-
-          flag == 'true'
+          Flags.auto_source_enabled?
         end
 
         private

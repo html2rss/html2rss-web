@@ -11,11 +11,14 @@ require_relative 'app/auth'
 require_relative 'app/auto_source'
 require_relative 'app/feeds'
 require_relative 'app/local_config'
+require_relative 'app/flags'
 require_relative 'app/cache_ttl'
 require_relative 'app/exceptions'
 require_relative 'app/xml_builder'
 require_relative 'app/error_responder'
 require_relative 'app/security_logger'
+require_relative 'app/observability'
+require_relative 'app/app_context'
 require_relative 'app/request_context_middleware'
 require_relative 'app/api/v1/feeds'
 require_relative 'app/api/v1/health'
@@ -23,6 +26,7 @@ require_relative 'app/api/v1/strategies'
 require_relative 'app/ssrf_filter_strategy'
 require_relative 'app/http_cache'
 require_relative 'app/feed_request_handler'
+require_relative 'app/feed_route_handler'
 require_relative 'app/routes/api_v1'
 require_relative 'app/routes/static'
 
@@ -47,9 +51,17 @@ module Html2rss
         </html>
       HTML
       def self.development? = EnvironmentValidator.development?
+      class << self
+        # @return [Html2rss::Web::AppContext::Context]
+        def context
+          AppContext.build
+        end
+      end
+
       def development? = self.class.development?
       EnvironmentValidator.validate_environment!
       EnvironmentValidator.validate_production_security!
+      Flags.validate!
 
       Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
       Html2rss::RequestService.default_strategy_name = :ssrf_filter
@@ -109,36 +121,23 @@ module Html2rss
       end
 
       route do |r|
+        context = self.class.context
         r.public
 
-        Routes::ApiV1.call(r) ||
-          Routes::Static.call(r,
-                              feed_handler: ->(router_ctx, feed_name) { handle_feed_generation(router_ctx, feed_name) },
-                              index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
+        context.routes_api_v1.call(r, context: context) ||
+          context.routes_static.call(r,
+                                     feed_handler: lambda { |router_ctx, feed_name|
+                                       FeedRouteHandler.call(context: context, router: router_ctx, feed_name: feed_name)
+                                     },
+                                     index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
 
       private
-
-      def handle_feed_generation(router, feed_name)
-        rss_content, ttl_seconds = FeedRequestHandler.call(
-          feed_name: feed_name,
-          params: router.params,
-          async_refresh: async_refresh_enabled?
-        )
-        router.response['Content-Type'] = 'application/xml'
-        HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
-        rss_content
-      end
 
       def render_index_page(router)
         index_path = 'public/frontend/index.html'
         router.response['Content-Type'] = 'text/html'
         File.exist?(index_path) ? File.read(index_path) : FALLBACK_HTML
-      end
-
-      # @return [Boolean]
-      def async_refresh_enabled?
-        ENV.fetch('ASYNC_FEED_REFRESH_ENABLED', 'false') == 'true'
       end
     end
   end

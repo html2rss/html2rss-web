@@ -4,6 +4,7 @@ require 'digest'
 require 'time'
 
 require_relative 'security_logger'
+require_relative 'flags'
 
 module Html2rss
   module Web
@@ -156,7 +157,7 @@ module Html2rss
 
         # @return [Integer]
         def stale_factor
-          factor = ENV.fetch('ASYNC_FEED_REFRESH_STALE_FACTOR', '3').to_i
+          factor = Flags.async_feed_refresh_stale_factor.to_i
           factor.positive? ? factor : 3
         end
       end
