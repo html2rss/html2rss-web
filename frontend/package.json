@@ -14,7 +14,8 @@
     "test:run": "vitest run",
     "test:unit": "vitest run --reporter=verbose --config vitest.unit.config.ts",
     "test:contract": "vitest run --reporter=verbose --config vitest.contract.config.ts",
-    "test:ci": "npm run test:unit && npm run test:contract"
+    "test:ci": "npm run test:unit && npm run test:contract",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/preact": "^4.1.1",
@@ -24,6 +25,7 @@
     "tslib": "^2.8.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/preact": "^3.2.4",
     "jsdom": "^27.0.0",

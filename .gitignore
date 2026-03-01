@@ -41,6 +41,8 @@
 /frontend/.astro/
 /frontend/node_modules/
 /public/frontend
+/frontend/playwright-report/
+/frontend/test-results/
 
 # Frontend generated files
 *.min.js

@@ -7,7 +7,7 @@ export default defineConfig({
     globals: true,
     testTimeout: 10000,
     hookTimeout: 10000,
-    exclude: [...configDefaults.exclude, 'tests/**'],
+    exclude: [...configDefaults.exclude, 'tests/**', 'e2e/**'],
   },
   esbuild: {
     jsx: 'automatic',
