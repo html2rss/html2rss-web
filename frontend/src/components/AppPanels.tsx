@@ -206,7 +206,6 @@ interface MemberConvertPanelProps {
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   conversionError: string | null;
-  quickUrls: string[];
   isConverting: boolean;
   strategies: Strategy[];
   strategiesLoading: boolean;
@@ -222,7 +221,6 @@ export function MemberConvertPanel({
   feedFormData,
   feedFieldErrors,
   conversionError,
-  quickUrls,
   isConverting,
   strategies,
   strategiesLoading,
@@ -231,23 +229,24 @@ export function MemberConvertPanel({
   onFeedFieldChange,
   strategyHint,
 }: MemberConvertPanelProps) {
+  const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
+
   return (
-    <section class="surface surface--form">
+    <section class="surface surface--form surface--minimal">
       <div class="panel-meta">
-        <span>Signed in as {username}</span>
-        <button type="button" onClick={onLogout} class="btn btn--link">
+        <span>{username}</span>
+        <button type="button" onClick={onLogout} class="btn btn--link btn--meta">
           Log out
         </button>
       </div>
 
       <header class="surface-header">
-        <h3 class="surface-header__title">Convert website to RSS</h3>
-        <p class="surface-header__hint">Paste a URL and convert.</p>
+        <h3 class="surface-header__title">Convert</h3>
       </header>
 
-      <form id="feed-section" class="form form--spacious form--tight" onSubmit={onFeedSubmit}>
+      <form id="feed-section" class="form form--spacious form--tight form--member" onSubmit={onFeedSubmit}>
         <div class="field">
-          <label for="url" class="label" data-required>Website URL</label>
+          <label for="url" class="label" data-required>URL</label>
           <div class="field field--inline">
             <input
               type="url"
@@ -261,30 +260,17 @@ export function MemberConvertPanel({
               value={feedFormData.url}
               onInput={(e) => onFeedFieldChange('url', (e.target as HTMLInputElement).value)}
             />
-            <button type="submit" class="btn btn--accent" disabled={isConverting}>
+            <button type="submit" class="btn btn--quiet-accent" disabled={isConverting}>
               {isConverting ? 'Converting...' : 'Convert'}
             </button>
           </div>
-          <div class="field-error" id="url-error">
+          <div class="field-error field-error--compact" id="url-error">
             {feedFieldErrors.url}
-          </div>
-          <div class="url-inline-hints" role="group" aria-label="Example URLs">
-            <span>Try:</span>
-            {quickUrls.map((url) => (
-              <button
-                key={url}
-                type="button"
-                class="btn btn--link btn--inline"
-                onClick={() => onFeedFieldChange('url', url)}
-              >
-                {url}
-              </button>
-            ))}
           </div>
         </div>
 
-        <fieldset class="fieldset">
-          <legend class="legend">Strategy</legend>
+        <div class="field">
+          <label for="strategy" class="label">Strategy</label>
           {strategiesError && (
             <div class="notice notice--error" role="alert">
               <p>Failed to load strategies: {strategiesError}</p>
@@ -293,27 +279,24 @@ export function MemberConvertPanel({
           {strategiesLoading ? (
             <p>Loading strategies...</p>
           ) : (
-            <div class="radio-list radio-list--compact" id="strategy-group">
-              {strategies.map((strategy) => (
-                <label key={strategy.id} class={`radio-card radio-card--compact ${feedFormData.strategy === strategy.id ? 'is-selected' : ''}`}>
-                  <input
-                    type="radio"
-                    id={`strategy-${strategy.id}`}
-                    name="strategy"
-                    value={strategy.id}
-                    class="radio-card__input"
-                    checked={feedFormData.strategy === strategy.id}
-                    onChange={(e) => onFeedFieldChange('strategy', (e.target as HTMLInputElement).value)}
-                  />
-                  <span class="radio-card__content">
-                    <span class="radio-card__title">{strategy.display_name}</span>
-                    <span class="radio-card__hint">{strategyHint(strategy)}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
+            <>
+              <select
+                id="strategy"
+                name="strategy"
+                class="input"
+                value={feedFormData.strategy}
+                onChange={(e) => onFeedFieldChange('strategy', (e.target as HTMLSelectElement).value)}
+              >
+                {strategies.map((strategy) => (
+                  <option key={strategy.id} value={strategy.id}>
+                    {strategy.display_name}
+                  </option>
+                ))}
+              </select>
+              {selectedStrategy && <p class="field-help">{strategyHint(selectedStrategy)}</p>}
+            </>
           )}
-        </fieldset>
+        </div>
 
         {conversionError && (
           <div class="notice notice--error notice--compact" role="alert">

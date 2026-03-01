@@ -1,25 +1,34 @@
 :root {
   --app-radius: 0.6rem;
-  --app-gap: 1.5rem;
+  --app-gap: 1rem;
   --app-gap-sm: 0.75rem;
-  --app-panel-padding: clamp(1.25rem, 3vw, 1.75rem);
-  --app-form-gap: 1rem;
+  --app-panel-padding: clamp(0.95rem, 2vw, 1.2rem);
+  --app-form-gap: 0.85rem;
   --app-inline-gap: 0.75rem;
+}
+
+main > .content-panel:first-child {
+  display: none;
+}
+
+main > .content-panel + .content-panel {
+  border-top: 0;
+  padding-top: 0.35rem;
 }
 
 .app-shell {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
+  padding: 0.5rem 1rem 2rem;
   display: grid;
   gap: var(--app-gap);
 }
 
 @media (min-width: 768px) {
   .app-shell {
-    padding: 2rem 1.5rem 3.5rem;
-    gap: 2rem;
+    padding: 0.75rem 1.5rem 2.4rem;
+    gap: 1.2rem;
   }
 }
 
@@ -27,7 +36,7 @@
   max-width: 960px;
 }
 
-.app-shell--onboarding {
+.app-shell--workspace {
   max-width: 980px;
 }
 
@@ -41,7 +50,12 @@
 }
 
 .surface--form {
-  max-width: 840px;
+  width: 100%;
+  max-width: none;
+}
+
+.surface--minimal {
+  gap: 0.9rem;
 }
 
 .panel-meta {
@@ -49,7 +63,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--sl-color-text-accent);
 }
 
@@ -60,7 +74,7 @@
 
 .surface-header__title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   line-height: 1.3;
   color: var(--sl-color-text);
 }
@@ -146,6 +160,16 @@
   background: color-mix(in srgb, var(--sl-color-accent-hover) 70%, var(--sl-color-bg-nav) 30%);
 }
 
+.btn--quiet-accent {
+  background: color-mix(in srgb, var(--sl-color-accent) 42%, var(--sl-color-bg-nav) 58%);
+  color: var(--sl-color-gray-1);
+  border-color: color-mix(in srgb, var(--sl-color-accent) 46%, var(--sl-color-bg-nav) 54%);
+}
+
+.btn--quiet-accent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--sl-color-accent-hover) 48%, var(--sl-color-bg-nav) 52%);
+}
+
 .btn--ghost {
   background: var(--sl-color-bg);
   border-color: var(--sl-color-hairline);
@@ -194,13 +218,10 @@
   text-decoration: underline;
 }
 
-.btn--inline {
+.btn--meta {
+  color: var(--sl-color-gray-2);
   font-size: 0.82rem;
-  color: var(--sl-color-text-accent);
-}
-
-.btn--inline:hover {
-  color: var(--sl-color-text);
+  font-weight: 500;
 }
 
 .form {
@@ -209,11 +230,15 @@
 }
 
 .form--spacious {
-  gap: 1.25rem;
+  gap: 0.95rem;
 }
 
 .form--tight {
   gap: 1rem;
+}
+
+.form--member {
+  gap: 0.72rem;
 }
 
 .form-actions {
@@ -223,7 +248,7 @@
 
 .field {
   display: grid;
-  gap: 0.4rem;
+  gap: 0.28rem;
 }
 
 .field--inline {
@@ -291,6 +316,16 @@
   font-size: 0.75rem;
   color: var(--sl-color-red);
   min-height: 1em;
+}
+
+.field-error--compact {
+  min-height: 0.4em;
+}
+
+.field-help {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--sl-color-text-accent);
 }
 
 .radio-list {
@@ -387,15 +422,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-}
-
-.url-inline-hints {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.8rem;
-  color: var(--sl-color-text-accent);
 }
 
 h1#_top {

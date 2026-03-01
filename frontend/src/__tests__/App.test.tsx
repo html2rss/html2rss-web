@@ -83,9 +83,9 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
-    expect(screen.getByText('Convert website to RSS')).toBeInTheDocument();
-    expect(screen.getByText('Paste a URL and convert.')).toBeInTheDocument();
+    expect(screen.getByText('testuser')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Convert' })).toBeInTheDocument();
+    expect(screen.getByLabelText('URL')).toBeInTheDocument();
   });
 
   it('should call logout when logout button is clicked', () => {

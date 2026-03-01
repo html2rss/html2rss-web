@@ -12,12 +12,6 @@ import styles from './App.module.css';
 
 type ViewMode = 'result' | 'guest-demo' | 'guest-auth' | 'member';
 
-const QUICK_URLS = [
-  'https://news.ycombinator.com',
-  'https://github.com/trending',
-  'https://www.reddit.com/r/programming/',
-];
-
 const EMPTY_AUTH_ERRORS = { username: '', token: '', form: '' };
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 
@@ -146,7 +140,7 @@ export function App() {
 
   return (
     <div
-      class={`app-shell${mode === 'result' ? ' app-shell--wide' : ''}${mode === 'guest-demo' || mode === 'guest-auth' ? ' app-shell--onboarding' : ''}`}
+      class={`app-shell${mode === 'result' ? ' app-shell--wide' : ''}${mode !== 'result' ? ' app-shell--workspace' : ''}`}
     >
       {authError && mode !== 'result' && (
         <section class="notice notice--error" role="alert">
@@ -199,7 +193,6 @@ export function App() {
           feedFormData={feedFormData}
           feedFieldErrors={feedFieldErrors}
           conversionError={error}
-          quickUrls={QUICK_URLS}
           isConverting={isConverting}
           strategies={strategies}
           strategiesLoading={strategiesLoading}
