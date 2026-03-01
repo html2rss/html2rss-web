@@ -8,6 +8,7 @@ services:
       - bundle-cache:/usr/local/bundle
     ports:
       - "4000:4000"
+      - "4001:4001"
     environment:
       - RACK_ENV=development
       - BUNDLE_PATH=/usr/local/bundle

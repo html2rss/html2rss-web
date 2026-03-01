@@ -9,6 +9,10 @@ export default defineConfig({
     host: true,
   },
   vite: {
+    optimizeDeps: {
+      entries: ["src/pages/**/*.astro", "src/components/**/*.{astro,js,jsx,ts,tsx}"],
+      exclude: ["msw/node"],
+    },
     server: {
       proxy: {
         "/api": "http://localhost:4000",
