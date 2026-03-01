@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'preact/hooks';
 import { listStrategies } from '../api/generated';
 import { apiClient, bearerHeaders } from '../api/client';
-
-interface Strategy {
-  id: string;
-  name: string;
-  display_name: string;
-}
+import type { StrategyRecord } from '../api/contracts';
 
 interface StrategiesState {
-  strategies: Strategy[];
+  strategies: StrategyRecord[];
   isLoading: boolean;
   error: string | null;
 }
@@ -17,7 +12,7 @@ interface StrategiesState {
 export function useStrategies(token: string | null) {
   const [state, setState] = useState<StrategiesState>({
     strategies: [],
-    isLoading: false,
+    isLoading: !!token,
     error: null,
   });
 
@@ -39,11 +34,9 @@ export function useStrategies(token: string | null) {
         responseStyle: 'data',
       });
 
-      const data = response as { success?: boolean; data?: { strategies?: Strategy[] } };
-
-      if (data.success && data.data?.strategies) {
+      if (response?.success && response.data?.strategies) {
         setState({
-          strategies: data.data.strategies,
+          strategies: response.data.strategies,
           isLoading: false,
           error: null,
         });

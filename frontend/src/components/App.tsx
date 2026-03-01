@@ -62,9 +62,9 @@ export function App() {
   };
 
   const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Recommended - safe and secure';
-    if (strategy.id === 'browserless') return 'Great for pages that rely on JavaScript';
-    return `Strategy: ${strategy.name}`;
+    if (strategy.id === 'ssrf_filter') return 'Direct fetch — works for most sites. Fast and safe.';
+    if (strategy.id === 'browserless') return 'Headless browser — use for JavaScript-rendered pages (React, Angular, SPAs).';
+    return strategy.name;
   };
 
   const handleAuthSubmit = async (event: Event) => {

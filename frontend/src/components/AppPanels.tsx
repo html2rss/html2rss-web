@@ -260,30 +260,28 @@ export function MemberConvertPanel({
 
         <div class="field">
           <label for="strategy" class="label">Strategy</label>
-          {strategiesError && (
-            <div class="notice notice--error" role="alert">
-              <p>Failed to load strategies: {strategiesError}</p>
-            </div>
-          )}
-          {strategiesLoading ? (
-            <p>Loading strategies...</p>
-          ) : (
-            <>
-              <select
-                id="strategy"
-                name="strategy"
-                class="input"
-                value={feedFormData.strategy}
-                onChange={(e) => onFeedFieldChange('strategy', (e.target as HTMLSelectElement).value)}
-              >
-                {strategies.map((strategy) => (
+          <select
+            id="strategy"
+            name="strategy"
+            class="input"
+            value={feedFormData.strategy}
+            disabled={strategiesLoading}
+            onChange={(e) => onFeedFieldChange('strategy', (e.target as HTMLSelectElement).value)}
+          >
+            {strategiesLoading
+              ? <option value="">Loading…</option>
+              : strategies.map((strategy) => (
                   <option key={strategy.id} value={strategy.id}>
                     {strategy.display_name}
                   </option>
-                ))}
-              </select>
-              {selectedStrategy && <p class="field-help">{strategyHint(selectedStrategy)}</p>}
-            </>
+                ))
+            }
+          </select>
+          {strategiesError && (
+            <p class="field-error">{strategiesError}</p>
+          )}
+          {selectedStrategy && !strategiesLoading && (
+            <p class="field-help">{strategyHint(selectedStrategy)}</p>
           )}
         </div>
 
