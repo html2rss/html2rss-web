@@ -29,7 +29,12 @@ describe('App contract', () => {
             public_url: '/api/v1/feeds/generated-token',
           })
         );
-      })
+      }),
+      http.get('/api/v1/feeds/generated-token', () =>
+        HttpResponse.text(
+          `<?xml version="1.0"?><rss><channel><title>Contract Feed</title><item><title>Contract Item</title></item></channel></rss>`
+        )
+      )
     );
 
     render(<App />);
@@ -42,12 +47,9 @@ describe('App contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Convert' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          'Drop it straight into your reader or explore the preview without leaving this page.'
-        )
-      ).toBeInTheDocument();
+      expect(screen.getByText('Feed created')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
     });
   });
 });

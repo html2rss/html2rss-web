@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { Bookmarklet } from './Bookmarklet';
 
 export interface Strategy {
   id: string;
@@ -76,7 +77,7 @@ export function GuestOnboardingPanel({
   return (
     <section class="surface surface--form">
       <div class="panel-meta">
-        <span>Not signed in</span>
+        <span />
         {mode === 'guest-demo' ? (
           <button type="button" class="btn btn--link" onClick={() => onModeChange('guest-auth')}>
             Sign in
@@ -93,7 +94,7 @@ export function GuestOnboardingPanel({
         <p class="onboarding-subtitle">
           {mode === 'guest-demo'
             ? 'Try a demo source instantly. Sign in to convert your own URLs.'
-            : 'Sign in to convert any website URL and choose your strategy.'}
+            : 'Sign in to convert any website URL.'}
         </p>
       </header>
 
@@ -240,10 +241,6 @@ export function MemberConvertPanel({
         </button>
       </div>
 
-      <header class="surface-header">
-        <h3 class="surface-header__title">Convert</h3>
-      </header>
-
       <form id="feed-section" class="form form--spacious form--tight form--member" onSubmit={onFeedSubmit}>
         <div class="field">
           <label for="url" class="label" data-required>URL</label>
@@ -311,6 +308,8 @@ export function MemberConvertPanel({
           </div>
         )}
       </form>
+
+      <Bookmarklet />
     </section>
   );
 }

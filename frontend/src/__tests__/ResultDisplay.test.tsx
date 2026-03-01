@@ -16,16 +16,20 @@ describe('ResultDisplay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(window, 'fetch').mockResolvedValue({
+      text: async () =>
+        `<?xml version="1.0"?><rss><channel><title>Example Feed</title><item><title>Item One</title></item></channel></rss>`,
+    } as Response);
   });
 
   it('should render success message and feed details', () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
-    expect(screen.getByText('🎉')).toBeInTheDocument();
-    expect(screen.getByText('Your RSS feed is live!')).toBeInTheDocument();
-    expect(
-      screen.getByText('Drop it straight into your reader or explore the preview without leaving this page.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Feed created')).toBeInTheDocument();
+    expect(screen.queryByText('Copy the URL or open it in your RSS reader.')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open feed in new tab' })).not.toBeInTheDocument();
   });
 
   it('should call onClose when convert-another button is clicked', () => {
@@ -40,11 +44,11 @@ describe('ResultDisplay', () => {
   it('should copy feed URL to clipboard when copy button is clicked', async () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
-    const copyLinkButton = screen.getByRole('button', { name: 'Copy feed link' });
+    const copyLinkButton = screen.getByRole('button', { name: 'Copy URL' });
     fireEvent.click(copyLinkButton);
 
     await waitFor(() => {
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('feed:https://example.com/feed.xml');
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
     });
   });
 });

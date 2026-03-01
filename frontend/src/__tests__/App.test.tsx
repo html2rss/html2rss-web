@@ -84,8 +84,8 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText('testuser')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Convert' })).toBeInTheDocument();
     expect(screen.getByLabelText('URL')).toBeInTheDocument();
+    expect(screen.getByText('Advanced: bookmarklet')).toBeInTheDocument();
   });
 
   it('should call logout when logout button is clicked', () => {

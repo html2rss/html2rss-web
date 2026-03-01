@@ -140,7 +140,7 @@ export function App() {
 
   return (
     <div
-      class={`app-shell${mode === 'result' ? ' app-shell--wide' : ''}${mode !== 'result' ? ' app-shell--workspace' : ''}`}
+      class={`app-shell${mode !== 'result' ? ' app-shell--workspace' : ''}`}
     >
       {authError && mode !== 'result' && (
         <section class="notice notice--error" role="alert">
@@ -153,23 +153,13 @@ export function App() {
       )}
 
       {mode === 'result' && result && (
-        <>
-          {isAuthenticated && (
-            <div class="user-bar">
-              <span>Logged in as {username}</span>
-              <button type="button" onClick={handleLogout} class="btn btn--link">
-                Logout
-              </button>
-            </div>
-          )}
-          <ResultDisplay
-            result={result}
-            onClose={clearResult}
-            isAuthenticated={isAuthenticated}
-            onLogout={isAuthenticated ? handleLogout : undefined}
-            username={username}
-          />
-        </>
+        <ResultDisplay
+          result={result}
+          onClose={clearResult}
+          isAuthenticated={isAuthenticated}
+          onLogout={isAuthenticated ? handleLogout : undefined}
+          username={username}
+        />
       )}
 
       {(mode === 'guest-demo' || mode === 'guest-auth') && !authError && (

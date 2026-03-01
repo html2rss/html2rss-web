@@ -10,8 +10,6 @@ interface ConversionResult {
   public_url: string;
 }
 
-type PreviewMode = 'preview' | 'xml';
-
 interface ResultDisplayProps {
   result: ConversionResult;
   onClose: () => void;
@@ -21,14 +19,10 @@ interface ResultDisplayProps {
 }
 
 export function ResultDisplay({ result, onClose, isAuthenticated, username, onLogout }: ResultDisplayProps) {
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('preview');
-  const [xmlContent, setXmlContent] = useState<string>('');
-  const [isLoadingXml, setIsLoadingXml] = useState(false);
-  const [xmlError, setXmlError] = useState('');
   const [copyNotice, setCopyNotice] = useState('');
-  const previewTabId = 'result-preview-tab-preview';
-  const xmlTabId = 'result-preview-tab-xml';
-  const panelId = 'result-preview-panel';
+  const [feedTitle, setFeedTitle] = useState('');
+  const [feedItems, setFeedItems] = useState<string[]>([]);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(true);
 
   const fullUrl = result.public_url.startsWith('http')
     ? result.public_url
@@ -43,146 +37,109 @@ export function ResultDisplay({ result, onClose, isAuthenticated, username, onLo
   }, []);
 
   useEffect(() => {
-    if (previewMode === 'xml' && !xmlContent) {
-      loadRawXml();
-    }
-  }, [previewMode]);
+    const controller = new AbortController();
 
-  const loadRawXml = async () => {
-    setIsLoadingXml(true);
-    setXmlError('');
-    try {
-      const response = await fetch(fullUrl);
-      const content = await response.text();
-      setXmlContent(content);
-    } catch (error) {
-      setXmlError(error instanceof Error ? error.message : 'Unable to load XML preview.');
-      setXmlContent('');
-    } finally {
-      setIsLoadingXml(false);
-    }
-  };
+    const loadPreview = async () => {
+      try {
+        const response = await fetch(fullUrl, { signal: controller.signal });
+        const content = await response.text();
+        const xmlDoc = new DOMParser().parseFromString(content, 'text/xml');
+
+        const parsedTitle =
+          xmlDoc.querySelector('channel > title')?.textContent?.trim() ||
+          xmlDoc.querySelector('feed > title')?.textContent?.trim() ||
+          '';
+
+        const rssItems = Array.from(xmlDoc.querySelectorAll('item > title'));
+        const atomItems = Array.from(xmlDoc.querySelectorAll('entry > title'));
+        const parsedItems = (rssItems.length > 0 ? rssItems : atomItems)
+          .map((item) => item.textContent?.trim() ?? '')
+          .filter((item) => item.length > 0)
+          .slice(0, 7);
+
+        setFeedTitle(parsedTitle);
+        setFeedItems(parsedItems);
+      } catch {
+        setFeedTitle('');
+        setFeedItems([]);
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+
+    return () => {
+      controller.abort();
+    };
+  }, [fullUrl]);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopyNotice('Copied to clipboard.');
       window.setTimeout(() => setCopyNotice(''), 3000);
-    } catch (error) {
+    } catch {
       setCopyNotice('Clipboard copy failed. Please copy the URL manually.');
     }
   };
 
+  const shouldShowPreview = isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0;
+
   return (
     <section id="result-display" class={`surface ${styles.result}`} aria-live="polite">
-      <header class={styles.hero}>
-        <div class={styles.heroHeadline}>
-          <span class={styles.heroIcon} aria-hidden="true">
-            🎉
-          </span>
-          <span class={styles.heroText}>
-            <p class={styles.heroEyebrow}>Feed ready</p>
-            <h2 class={styles.heroTitle}>Your RSS feed is live!</h2>
-            <p class={styles.heroSubtitle}>
-              Drop it straight into your reader or explore the preview without leaving this page.
-            </p>
-          </span>
-        </div>
-        <div class={styles.heroActions}>
-          <a href={feedProtocolUrl} class="btn btn--accent" target="_blank" rel="noopener">
-            <span aria-hidden="true">📰</span>
-            <span>Subscribe in RSS reader</span>
-          </a>
-          <button type="button" class="btn btn--ghost" onClick={() => copyToClipboard(feedProtocolUrl)}>
-            <span aria-hidden="true">📋</span>
-            <span>Copy feed link</span>
+      <div class="panel-meta">
+        <span>{isAuthenticated ? (username ?? '') : ''}</span>
+        {isAuthenticated && onLogout ? (
+          <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
+            Log out
           </button>
-          <a href={fullUrl} target="_blank" rel="noopener" class="btn btn--ghost">
-            <span aria-hidden="true">🔗</span>
-            <span>Open feed in new tab</span>
-          </a>
-        </div>
-        {copyNotice && (
-          <div class="notice" role="status">
-            <p>{copyNotice}</p>
-          </div>
+        ) : (
+          <span />
         )}
+      </div>
+
+      <header class={styles.hero}>
+        <h2 class={styles.heroTitle}>Feed created</h2>
       </header>
 
-      {isAuthenticated && (
-        <div class={styles.accountBar}>
-          <span>
-            Signed in as <strong>{username ?? 'your account'}</strong>
-          </span>
-          {onLogout && (
-            <button type="button" class="btn btn--link" onClick={onLogout}>
-              Logout
-            </button>
-          )}
+      <div class={styles.feedCard}>
+        <input type="text" value={fullUrl} readOnly aria-label="Feed URL" class="input" />
+      </div>
+
+      <div class={styles.heroActions}>
+        <button type="button" class="btn btn--accent" onClick={() => copyToClipboard(fullUrl)}>
+          <span>Copy URL</span>
+        </button>
+        <a href={feedProtocolUrl} class="btn btn--ghost" target="_blank" rel="noopener">
+          <span>Subscribe in reader</span>
+        </a>
+      </div>
+
+      {copyNotice && (
+        <div class="notice" role="status">
+          <p>{copyNotice}</p>
         </div>
       )}
 
-      <div class={styles.feedCard}>
-        <span class={styles.feedLabel}>Feed URL</span>
-        <div class={styles.feedInputRow}>
-          <input type="text" value={fullUrl} readOnly aria-label="Feed URL" class="input" />
-          <button type="button" class="btn btn--ghost" onClick={() => copyToClipboard(fullUrl)}>
-            Copy URL
-          </button>
-        </div>
-      </div>
-
-      <div class={styles.preview}>
-        <div class={styles.previewTabs} role="tablist" aria-label="Feed preview mode">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewMode === 'preview'}
-            id={previewTabId}
-            aria-controls={panelId}
-            class={`${styles.tab} ${previewMode === 'preview' ? styles.tabActive : ''}`}
-            onClick={() => setPreviewMode('preview')}
-          >
-            Reader preview
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={previewMode === 'xml'}
-            id={xmlTabId}
-            aria-controls={panelId}
-            class={`${styles.tab} ${previewMode === 'xml' ? styles.tabActive : ''}`}
-            onClick={() => setPreviewMode('xml')}
-          >
-            Raw XML
-          </button>
-        </div>
-
-        <div
-          class={styles.previewSurface}
-          role="tabpanel"
-          id={panelId}
-          aria-labelledby={previewMode === 'preview' ? previewTabId : xmlTabId}
-        >
-          {previewMode === 'preview' ? (
-            <iframe src={fullUrl} class={styles.previewFrame} title="RSS feed preview" />
+      {shouldShowPreview && (
+        <section class={styles.preview} aria-label="Feed item preview">
+          {isLoadingPreview ? (
+            <p class={styles.previewLoading}>Loading preview...</p>
           ) : (
-            <div class={styles.previewXml}>
-              {isLoadingXml ? (
-                <div class={styles.previewLoading}>Loading raw XML...</div>
-              ) : xmlError ? (
-                <div class="notice notice--error" role="alert">
-                  <p>Failed to load XML preview: {xmlError}</p>
-                </div>
-              ) : (
-                <pre>
-                  <code>{xmlContent}</code>
-                </pre>
+            <>
+              {feedTitle && <p class={styles.previewTitle}>{feedTitle}</p>}
+              {feedItems.length > 0 && (
+                <ul class={styles.previewList}>
+                  {feedItems.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
               )}
-            </div>
+            </>
           )}
-        </div>
-      </div>
+        </section>
+      )}
 
       <div class={styles.footer}>
         <button type="button" class="btn btn--accent" onClick={onClose}>
