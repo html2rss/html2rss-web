@@ -6,6 +6,7 @@ require 'html2rss/url'
 
 require_relative '../../../auth'
 require_relative '../../../auto_source'
+require_relative '../../../boundary_models'
 require_relative '../../../exceptions'
 require_relative '../../../url_validator'
 require_relative '../response'
@@ -32,7 +33,7 @@ module Html2rss
                 ensure_auto_source_enabled!
                 params = build_create_params(request_params(request), account)
 
-                feed_data = AutoSource.create_stable_feed(params[:name], params[:url], account, params[:strategy])
+                feed_data = AutoSource.create_stable_feed(params.name, params.url, account, params.strategy)
                 raise InternalServerError, 'Failed to create feed' unless feed_data
 
                 Response.success(response: request.response,
@@ -75,21 +76,18 @@ module Html2rss
               #
               # @param params [Hash{String=>Object}] merged request parameters.
               # @param account [Hash{Symbol=>Object}] authenticated account.
-              # @return [Hash{Symbol=>Object}] normalized params.
-              # @option return [String] :url validated source URL.
-              # @option return [String, nil] :name inferred site title.
-              # @option return [String] :strategy normalized strategy name.
+              # @return [Html2rss::Web::BoundaryModels::FeedCreateParams]
               def build_create_params(params, account)
                 url = params['url'].to_s.strip
                 raise BadRequestError, 'URL parameter is required' if url.empty?
                 raise BadRequestError, 'Invalid URL format' unless UrlValidator.valid_url?(url)
                 raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(account, url)
 
-                {
+                BoundaryModels::FeedCreateParams.new(
                   url: url,
                   name: V1::Feeds.extract_site_title(url),
                   strategy: normalize_strategy(params['strategy'])
-                }
+                )
               end
 
               # Normalizes a strategy value while preserving a default path.
@@ -117,20 +115,16 @@ module Html2rss
 
               # Shapes feed attributes into the stable API schema.
               #
-              # @param feed_data [Hash{Symbol=>Object}] feed record.
+              # @param feed_data [Html2rss::Web::BoundaryModels::FeedMetadata, Hash{Symbol=>Object}] feed record.
               # @return [Hash{Symbol=>Object}] response-safe feed attributes.
               def feed_attributes(feed_data)
+                typed_feed = feed_data.is_a?(BoundaryModels::FeedMetadata) ? feed_data : BoundaryModels::FeedMetadata.new(**feed_data)
                 timestamp = Time.now.iso8601
 
-                {
-                  id: feed_data[:id],
-                  name: feed_data[:name],
-                  url: feed_data[:url],
-                  strategy: feed_data[:strategy],
-                  public_url: feed_data[:public_url],
+                typed_feed.to_h.merge(
                   created_at: timestamp,
                   updated_at: timestamp
-                }
+                ).slice(:id, :name, :url, :strategy, :public_url, :created_at, :updated_at)
               end
 
               # Parses params with optional JSON body override.

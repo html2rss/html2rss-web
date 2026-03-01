@@ -3,6 +3,7 @@
 require 'digest'
 require_relative 'account_manager'
 require_relative 'auth'
+require_relative 'boundary_models'
 require_relative 'feed_generator'
 require_relative 'url_validator'
 
@@ -26,13 +27,7 @@ module Html2rss
         # @param url [String]
         # @param token_data [Hash{Symbol=>Object}] authenticated token/account data.
         # @param strategy [String]
-        # @return [Hash{Symbol=>Object}, nil] feed metadata when allowed.
-        # @option return [String] :id stable feed identifier.
-        # @option return [String, nil] :name optional feed name.
-        # @option return [String] :url source URL.
-        # @option return [String] :username account username.
-        # @option return [String] :strategy strategy identifier.
-        # @option return [String] :public_url API URL containing signed token.
+        # @return [Html2rss::Web::BoundaryModels::FeedMetadata, nil]
         def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
           return nil unless url_allowed_for_token?(token_data, url)
 
@@ -108,18 +103,18 @@ module Html2rss
         # @param token_data [Hash{Symbol=>Object}]
         # @param strategy [String]
         # @param identifiers [Hash{Symbol=>String}]
-        # @return [Hash{Symbol=>Object}]
+        # @return [Html2rss::Web::BoundaryModels::FeedMetadata]
         def build_feed_data(name, url, token_data, strategy, identifiers)
           public_url = "/api/v1/feeds/#{identifiers[:feed_token]}"
 
-          {
+          BoundaryModels::FeedMetadata.new(
             id: identifiers[:feed_id],
             name: name,
             url: url,
             username: token_data[:username],
             strategy: strategy,
             public_url: public_url
-          }
+          )
         end
       end
     end

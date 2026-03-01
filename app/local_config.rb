@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'yaml'
+require_relative 'config_snapshot'
+require_relative 'security_logger'
 
 module Html2rss
   module Web
@@ -13,6 +15,9 @@ module Html2rss
       ##
       # raised when the local config wasn't found
       class NotFound < RuntimeError; end
+      ##
+      # raised when the local config shape is invalid
+      class InvalidConfig < RuntimeError; end
 
       # Path to local feed configuration file.
       CONFIG_FILE = 'config/feeds.yml'
@@ -23,24 +28,24 @@ module Html2rss
         # @return [Hash<Symbol, Any>]
         def find(name)
           normalized_name = normalize_name(name)
-          config = feeds.fetch(normalized_name.to_sym) do
+          config = snapshot.feeds.fetch(normalized_name.to_sym) do
             raise NotFound, "Did not find local feed config at '#{normalized_name}'"
           end
-          config = deep_dup(config)
+          config_hash = deep_dup(config.raw)
 
-          apply_global_defaults(config)
+          apply_global_defaults(config_hash)
         end
 
         ##
         # @return [Hash<Symbol, Any>]
         def feeds
-          yaml.fetch(:feeds, {})
+          snapshot.feeds.transform_values { |feed| deep_dup(feed.raw) }
         end
 
         ##
         # @return [Hash<Symbol, Any>]
         def global
-          yaml.reject { |key| key == :feeds }
+          deep_dup(snapshot.global)
         end
 
         ##
@@ -49,6 +54,25 @@ module Html2rss
           YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
         rescue Errno::ENOENT => error
           raise NotFound, "Configuration file not found: #{error.message}"
+        end
+
+        ##
+        # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
+        def snapshot
+          return @snapshot if @snapshot # rubocop:disable ThreadSafety/ClassInstanceVariable
+
+          @snapshot = ConfigSnapshot.load(yaml) # rubocop:disable ThreadSafety/ClassInstanceVariable
+        rescue KeyError, TypeError, ArgumentError => error
+          raise InvalidConfig, "Invalid local config: #{error.message}"
+        end
+
+        ##
+        # @param reason [String]
+        # @return [nil]
+        def reload!(reason: 'manual')
+          @snapshot = nil # rubocop:disable ThreadSafety/ClassInstanceVariable
+          SecurityLogger.log_cache_lifecycle('local_config', 'reload', reason: reason)
+          nil
         end
 
         private

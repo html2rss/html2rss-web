@@ -16,11 +16,13 @@ require_relative 'app/exceptions'
 require_relative 'app/xml_builder'
 require_relative 'app/error_responder'
 require_relative 'app/security_logger'
+require_relative 'app/request_context_middleware'
 require_relative 'app/api/v1/feeds'
 require_relative 'app/api/v1/health'
 require_relative 'app/api/v1/strategies'
 require_relative 'app/ssrf_filter_strategy'
 require_relative 'app/http_cache'
+require_relative 'app/feed_request_handler'
 require_relative 'app/routes/api_v1'
 require_relative 'app/routes/static'
 
@@ -53,6 +55,7 @@ module Html2rss
       Html2rss::RequestService.default_strategy_name = :ssrf_filter
       Html2rss::RequestService.unregister_strategy(:faraday)
       opts.merge!(check_dynamic_arity: false, check_arity: :warn)
+      use RequestContextMiddleware
       use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
                        verbose: development?
 
@@ -117,18 +120,25 @@ module Html2rss
       private
 
       def handle_feed_generation(router, feed_name)
-        rss_content = Feeds.generate_feed(feed_name, router.params)
-        ttl_value = LocalConfig.find(feed_name)&.dig(:channel, :ttl)
-        ttl_seconds = CacheTtl.seconds_from_minutes(ttl_value)
+        rss_content, ttl_seconds = FeedRequestHandler.call(
+          feed_name: feed_name,
+          params: router.params,
+          async_refresh: async_refresh_enabled?
+        )
         router.response['Content-Type'] = 'application/xml'
         HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
-        rss_content.to_s
+        rss_content
       end
 
       def render_index_page(router)
         index_path = 'public/frontend/index.html'
         router.response['Content-Type'] = 'text/html'
         File.exist?(index_path) ? File.read(index_path) : FALLBACK_HTML
+      end
+
+      # @return [Boolean]
+      def async_refresh_enabled?
+        ENV.fetch('ASYNC_FEED_REFRESH_ENABLED', 'false') == 'true'
       end
     end
   end

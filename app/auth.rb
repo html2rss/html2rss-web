@@ -2,6 +2,7 @@
 
 require 'openssl'
 require_relative 'security_logger'
+require_relative 'request_context'
 require_relative 'feed_token'
 require_relative 'url_validator'
 require_relative 'account_manager'
@@ -85,6 +86,7 @@ module Html2rss
         # @param request [Rack::Request]
         # @return [Hash{Symbol=>Object}] unchanged account payload.
         def log_auth_success(account, request)
+          assign_request_context_actor(account[:username])
           SecurityLogger.log_auth_success(account[:username], request.ip)
           account
         end
@@ -125,6 +127,7 @@ module Html2rss
           return nil unless feed_token && url
 
           token = FeedToken.validate_and_decode(feed_token, url, secret_key)
+          assign_request_context_strategy(token&.strategy)
           SecurityLogger.log_token_usage(feed_token, url, !token.nil?)
           return nil unless token
 
@@ -134,6 +137,24 @@ module Html2rss
         # @return [String]
         def secret_key
           ENV.fetch('HTML2RSS_SECRET_KEY')
+        end
+
+        # @param username [String, nil]
+        # @return [void]
+        def assign_request_context_actor(username)
+          context = RequestContext.current
+          return unless context && username
+
+          RequestContext.set!(context.with(actor: username))
+        end
+
+        # @param strategy [String, nil]
+        # @return [void]
+        def assign_request_context_strategy(strategy)
+          context = RequestContext.current
+          return unless context && strategy
+
+          RequestContext.set!(context.with(strategy: strategy))
         end
       end
     end

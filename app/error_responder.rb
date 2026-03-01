@@ -22,7 +22,7 @@ module Html2rss
           error_code = error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE
           response.status = error.respond_to?(:status) ? error.status : 500
           client_message = error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
-          request.env['rack.errors']&.puts(error.message) unless error.is_a?(HttpError)
+          request.env['rack.errors']&.puts(error_log_line(request, error)) unless error.is_a?(HttpError)
 
           return render_api_error(response, client_message, error_code) if api_request?(request)
 
@@ -53,6 +53,18 @@ module Html2rss
         def render_xml_error(response, message)
           response['Content-Type'] = 'application/xml'
           XmlBuilder.build_error_feed(message: message)
+        end
+
+        # @param request [Rack::Request]
+        # @param error [StandardError]
+        # @return [String]
+        def error_log_line(request, error)
+          request_id_header = request.respond_to?(:get_header) ? request.get_header('HTTP_X_REQUEST_ID') : nil
+          context = request.env['html2rss.request_context']
+          request_id = request_id_header || context&.request_id
+          return error.message unless request_id
+
+          "[request_id=#{request_id}] #{error.message}"
         end
       end
     end

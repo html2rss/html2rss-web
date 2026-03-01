@@ -4,6 +4,7 @@ require 'logger'
 require 'json'
 require 'digest'
 require 'time'
+require_relative 'request_context'
 
 module Html2rss
   module Web
@@ -153,8 +154,10 @@ module Html2rss
         # @param event_type [String] type of security event
         # @param data [Hash] event data
         def log_event(event_type, data, severity: :warn)
+          context_data = RequestContext.current_h
           payload = {
             security_event: event_type,
+            **context_data,
             **data
           }.to_json
 
