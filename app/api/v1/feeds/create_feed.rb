@@ -15,8 +15,18 @@ module Html2rss
     module Api
       module V1
         module Feeds
+          ##
+          # Creates stable feed records from authenticated API requests.
+          #
+          # The implementation intentionally keeps parsing, authorization, and
+          # normalization in a single boundary object so callers can rely on one
+          # predictable contract instead of coordinating multiple services.
           module CreateFeed
             class << self
+              # Creates a feed and returns a normalized API success payload.
+              #
+              # @param request [Rack::Request] HTTP request with auth context.
+              # @return [Hash{Symbol=>Object}] API response payload.
               def call(request)
                 account = require_account(request)
                 ensure_auto_source_enabled!
@@ -31,6 +41,10 @@ module Html2rss
                                  meta: { created: true })
               end
 
+              # Extracts a best-effort human-readable title from the URL.
+              #
+              # @param url [String] target source URL.
+              # @return [String, nil] inferred title or nil when unavailable.
               def extract_site_title(url)
                 Html2rss::Url.for_channel(url).channel_titleized
               rescue StandardError
@@ -39,10 +53,17 @@ module Html2rss
 
               private
 
+              # Enforces feature availability at the API edge to fail fast.
+              #
+              # @return [void]
               def ensure_auto_source_enabled!
                 raise ForbiddenError, Contract::MESSAGES[:auto_source_disabled] unless AutoSource.enabled?
               end
 
+              # Resolves the authenticated account from the request.
+              #
+              # @param request [Rack::Request]
+              # @return [Hash{Symbol=>Object}] authenticated account attributes.
               def require_account(request)
                 account = Auth.authenticate(request)
                 raise UnauthorizedError, 'Authentication required' unless account
@@ -50,6 +71,14 @@ module Html2rss
                 account
               end
 
+              # Validates and normalizes feed creation parameters.
+              #
+              # @param params [Hash{String=>Object}] merged request parameters.
+              # @param account [Hash{Symbol=>Object}] authenticated account.
+              # @return [Hash{Symbol=>Object}] normalized params.
+              # @option return [String] :url validated source URL.
+              # @option return [String, nil] :name inferred site title.
+              # @option return [String] :strategy normalized strategy name.
               def build_create_params(params, account)
                 url = params['url'].to_s.strip
                 raise BadRequestError, 'URL parameter is required' if url.empty?
@@ -63,6 +92,10 @@ module Html2rss
                 }
               end
 
+              # Normalizes a strategy value while preserving a default path.
+              #
+              # @param raw_strategy [String, nil]
+              # @return [String]
               def normalize_strategy(raw_strategy)
                 strategy = raw_strategy.to_s.strip
                 strategy = default_strategy if strategy.empty?
@@ -72,14 +105,20 @@ module Html2rss
                 strategy
               end
 
+              # @return [Array<String>] supported strategy identifiers.
               def supported_strategies
                 Html2rss::RequestService.strategy_names.map(&:to_s)
               end
 
+              # @return [String] default strategy identifier.
               def default_strategy
                 Html2rss::RequestService.default_strategy_name.to_s
               end
 
+              # Shapes feed attributes into the stable API schema.
+              #
+              # @param feed_data [Hash{Symbol=>Object}] feed record.
+              # @return [Hash{Symbol=>Object}] response-safe feed attributes.
               def feed_attributes(feed_data)
                 timestamp = Time.now.iso8601
 
@@ -94,6 +133,10 @@ module Html2rss
                 }
               end
 
+              # Parses params with optional JSON body override.
+              #
+              # @param request [Rack::Request]
+              # @return [Hash{String=>Object}] merged request params.
               def request_params(request)
                 return request.params unless json_request?(request)
 
@@ -109,6 +152,8 @@ module Html2rss
                 raise BadRequestError, 'Invalid JSON payload'
               end
 
+              # @param request [Rack::Request]
+              # @return [Boolean] whether request body should be parsed as JSON.
               def json_request?(request)
                 content_type = request.env['CONTENT_TYPE'].to_s
                 content_type.include?('application/json')

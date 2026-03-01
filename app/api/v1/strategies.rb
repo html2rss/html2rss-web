@@ -8,10 +8,18 @@ module Html2rss
     module Api
       module V1
         ##
-        # RESTful API v1 for strategies resource
-        # Handles listing available extraction strategies
+        # Strategy metadata endpoints for API v1.
+        #
+        # Exposes only lightweight strategy metadata so clients can render
+        # choices without coupling to backend strategy internals.
         module Strategies
           class << self
+            # @param _request [Rack::Request]
+            # @return [Hash{Symbol=>Object}] response with strategy list.
+            # @option return [Hash] :data strategies payload.
+            # @option return [Array<Hash>] :strategies available strategy metadata.
+            # @option return [Hash] :meta list metadata.
+            # @option return [Integer] :total number of strategies.
             def index(_request)
               strategies = Html2rss::RequestService.strategy_names.map do |name|
                 {
