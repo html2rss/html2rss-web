@@ -14,7 +14,6 @@ Introduce `Html2rss::Web::AppContext` as the single dependency wiring root used 
 - auth (`Auth`)
 - flags (`Flags`)
 - logging/observability (`SecurityLogger`, `Observability`)
-- runtime (`FeedRuntime`, `FeedRequestHandler`)
 - API handlers (`Api::V1::*`)
 - route assemblers (`Routes::*`)
 

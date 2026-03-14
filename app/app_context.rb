@@ -17,8 +17,6 @@ module Html2rss
         :auth,
         :security_logger,
         :observability,
-        :feed_runtime,
-        :feed_request_handler,
         :routes_api_v1,
         :routes_static,
         :api_health,
@@ -42,9 +40,7 @@ module Html2rss
             flags: Flags,
             auth: Auth,
             security_logger: SecurityLogger,
-            observability: Observability,
-            feed_runtime: FeedRuntime,
-            feed_request_handler: FeedRequestHandler
+            observability: Observability
           }
         end
 

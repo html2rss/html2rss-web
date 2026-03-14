@@ -2,13 +2,15 @@
 
 require_relative '../../../account_manager'
 require_relative '../../../auth'
-require_relative '../../../auto_source'
 require_relative '../../../exceptions'
 require_relative '../../../feed_response_format'
-require_relative '../../../feed_generator'
-require_relative '../../../http_cache'
+require_relative '../../../feeds/json_renderer'
+require_relative '../../../feeds/request_parser'
+require_relative '../../../feeds/resolver'
+require_relative '../../../feeds/rss_renderer'
+require_relative '../../../feeds/service'
+require_relative '../../../http/feed_response'
 require_relative '../../../observability'
-require_relative '../../../url_validator'
 
 module Html2rss
   module Web
@@ -28,12 +30,13 @@ module Html2rss
               # @param token [String] signed public feed token.
               # @return [String] serialized feed response body.
               def call(request, token)
-                format = FeedResponseFormat.for_request(request)
-                normalized_token = FeedResponseFormat.strip_known_extension(token)
-                feed_token, strategy = resolve_authorized_feed(normalized_token)
-                rendered = render_generated_feed(request, feed_token.url, strategy, format)
-                emit_render_success(strategy, feed_token.url)
-                rendered
+                feed_request, resolved_source, result = feed_pipeline(request, token)
+                emit_result(resolved_source, result)
+                Http::FeedResponse.call(
+                  response: request.response,
+                  representation: feed_request.representation,
+                  result: result
+                )
               rescue StandardError => error
                 emit_render_failure(error)
                 raise
@@ -41,84 +44,39 @@ module Html2rss
 
               private
 
-              # @return [void]
-              def ensure_auto_source_enabled!
-                raise ForbiddenError, Contract::MESSAGES[:auto_source_disabled] unless AutoSource.enabled?
-              end
-
-              # @param token [String]
-              # @return [Html2rss::Web::FeedToken]
-              def validated_token_for(token)
-                feed_token = Auth.validate_and_decode_feed_token(token)
-                raise UnauthorizedError, 'Invalid token' unless feed_token
-
-                feed_token
-              end
-
-              # @param feed_token [Html2rss::Web::FeedToken]
-              # @return [Hash{Symbol=>Object}] account attributes.
-              def account_for(feed_token)
-                account = AccountManager.get_account_by_username(feed_token.username)
-                raise UnauthorizedError, 'Account not found' unless account
-
-                account
-              end
-
-              # @param account [Hash{Symbol=>Object}]
-              # @param url [String]
-              # @return [void]
-              def ensure_access!(account, url)
-                raise ForbiddenError, 'Access Denied' unless UrlValidator.url_allowed?(account, url)
-              end
-
-              # @param feed_token [Html2rss::Web::FeedToken]
-              # @return [String] validated strategy identifier.
-              def resolve_token_strategy(feed_token)
-                strategy = feed_token.strategy.to_s.strip
-                strategy = default_strategy if strategy.empty?
-
-                raise BadRequestError, 'Unsupported strategy' unless supported_strategies.include?(strategy)
-
-                strategy
-              end
-
-              # @return [Array<String>] supported strategy identifiers.
-              def supported_strategies
-                Html2rss::RequestService.strategy_names.map(&:to_s)
-              end
-
-              # @return [String] default strategy identifier.
-              def default_strategy
-                Html2rss::RequestService.default_strategy_name.to_s
-              end
-
-              # Builds HTTP response headers and returns XML body.
-              #
               # @param request [Rack::Request]
-              # @param url [String]
-              # @param strategy [String]
-              # @param format [Symbol]
-              # @return [String] rendered feed body.
-              def render_generated_feed(request, url, strategy, format)
-                rendered_feed = AutoSource.generate_feed_result(url, strategy, format:)
+              # @param token [String]
+              # @return [Array<(Html2rss::Web::Feeds::Request, Html2rss::Web::Feeds::ResolvedSource, Html2rss::Web::Feeds::Result)>]
+              def feed_pipeline(request, token)
+                feed_request = ::Html2rss::Web::Feeds::RequestParser.call(
+                  request: request,
+                  target_kind: :token,
+                  identifier: token
+                )
+                resolved_source = ::Html2rss::Web::Feeds::Resolver.call(feed_request)
+                result = ::Html2rss::Web::Feeds::Service.call(resolved_source)
 
-                request.response['Content-Type'] = FeedResponseFormat.content_type(format)
-                HttpCache.expires(request.response, rendered_feed.ttl_seconds, cache_control: 'public')
-                HttpCache.vary(request.response, 'Accept')
-
-                rendered_feed.body
+                [feed_request, resolved_source, result]
               end
 
-              # @param token [String]
-              # @return [Array<(Html2rss::Web::FeedToken, String)>]
-              def resolve_authorized_feed(token)
-                feed_token = validated_token_for(token)
-                account = account_for(feed_token)
-                ensure_access!(account, feed_token.url)
-                ensure_auto_source_enabled!
+              # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+              # @param result [Html2rss::Web::Feeds::Result]
+              # @return [void]
+              def emit_result(resolved_source, result)
+                return emit_success_from(resolved_source) unless result.status == :error
 
-                strategy = resolve_token_strategy(feed_token)
-                [feed_token, strategy]
+                emit_render_failure(
+                  InternalServerError.new(result.error_message || result.message || HttpError::DEFAULT_MESSAGE)
+                )
+              end
+
+              # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+              # @return [void]
+              def emit_success_from(resolved_source)
+                emit_render_success(
+                  resolved_source.generator_input[:strategy],
+                  resolved_source.generator_input.dig(:channel, :url)
+                )
               end
 
               # @param strategy [String]

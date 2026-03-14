@@ -34,11 +34,14 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
   let(:json_body) { JSON.parse(last_response.body) }
   let(:json_feed_error) { JSON.parse(last_response.body).slice('version', 'title') }
-  let(:feed_result) { Html2rss::Web::FeedRenderResult.new(body: '<rss version="2.0"></rss>', ttl_seconds: 600) }
-  let(:json_feed_result) do
-    Html2rss::Web::FeedRenderResult.new(
-      body: '{"version":"https://jsonfeed.org/version/1.1","items":[]}',
-      ttl_seconds: 600
+  let(:feed_result) do
+    Html2rss::Web::Feeds::Result.new(
+      status: :ok,
+      payload: nil,
+      message: nil,
+      ttl_seconds: 600,
+      cache_key: 'feed_result:test',
+      error_message: nil
     )
   end
 
@@ -63,12 +66,10 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
     allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
     allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
     allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
-    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
-      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::RSS)
-      .and_return(feed_result)
-    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
-      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::JSON_FEED)
-      .and_return(json_feed_result)
+    allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+    allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
+      .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
   end
 
   describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -82,7 +83,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       expect(last_response.body).to include('Invalid token')
     end
 
-    it 'renders the XML feed with cache headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'renders the XML feed with cache headers', :aggregate_failures do
       get "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_HOST' => 'localhost:3000', 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(200)
@@ -121,6 +122,31 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'treats wildcard Accept as rss unless json is more specific', :aggregate_failures do
+      header 'Accept', '*/*'
+      get "/api/v1/feeds/#{feed_token}"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'ignores q=0 json feed media types during negotiation', :aggregate_failures do
+      header 'Accept', 'application/feed+json;q=0, application/xml;q=0.4'
+      get "/api/v1/feeds/#{feed_token}"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'serves HEAD requests for token feeds with negotiated headers only', :aggregate_failures do
+      head "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/feed+json')
+      expect(last_response.headers['Cache-Control']).to include('max-age=600')
+      expect(last_response.body).to eq('')
     end
 
     it 'ignores query param strategy overrides', :aggregate_failures do
@@ -188,7 +214,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         expect(json_body).to include('error' => include('message' => 'Invalid JSON payload'))
       end
 
-      it 'returns bad request when URL is missing', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      it 'returns bad request when URL is missing', :aggregate_failures do
         allow(Html2rss::Web::Api::V1::Feeds).to receive(:extract_site_title).and_return('Example')
 
         post '/api/v1/feeds', request_payload.merge(url: '').to_json, auth_headers
@@ -199,7 +225,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         )
       end
 
-      it 'returns forbidden when URL is not allowed for account', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      it 'returns forbidden when URL is not allowed for account', :aggregate_failures do
         allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(false)
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
@@ -219,7 +245,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         )
       end
 
-      it 'returns error when feed creation fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      it 'returns error when feed creation fails', :aggregate_failures do
         allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(nil)
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
@@ -230,7 +256,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         )
       end
 
-      it 'returns created feed metadata', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      it 'returns created feed metadata', :aggregate_failures do
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 
         expect(last_response.status).to eq(201)
