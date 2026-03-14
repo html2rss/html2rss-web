@@ -126,8 +126,9 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Feed ready')).toBeInTheDocument();
+    expect(screen.getByText('Ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
+    expect(screen.queryByText('Run your own instance')).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByText('Example Feed')).toBeInTheDocument();

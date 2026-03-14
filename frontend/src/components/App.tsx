@@ -146,13 +146,15 @@ export function App() {
 
   return (
     <section class="workspace-shell">
-      <header class="workspace-frame">
+      <header class={`workspace-frame${result ? ' workspace-frame--compact' : ''}`}>
         <div class="workspace-frame__masthead">
           <BrandLockup />
         </div>
-        <div class="workspace-frame__titleblock">
-          <h1>Turn web pages into stable feeds.</h1>
-        </div>
+        {!result && (
+          <div class="workspace-frame__titleblock">
+            <h1>Turn web pages into stable feeds.</h1>
+          </div>
+        )}
       </header>
 
       {(metadataError || tokenStateError) && (
@@ -197,15 +199,17 @@ export function App() {
         </div>
       )}
 
-      <InstanceInfo
-        feedCreationEnabled={feedCreation.enabled}
-        accessTokenRequired={feedCreation.access_token_required}
-        hasAccessToken={hasToken}
-        onClearToken={() => {
-          clearToken();
-          setShowTokenPrompt(false);
-        }}
-      />
+      {!result && (
+        <InstanceInfo
+          feedCreationEnabled={feedCreation.enabled}
+          accessTokenRequired={feedCreation.access_token_required}
+          hasAccessToken={hasToken}
+          onClearToken={() => {
+            clearToken();
+            setShowTokenPrompt(false);
+          }}
+        />
+      )}
     </section>
   );
 }

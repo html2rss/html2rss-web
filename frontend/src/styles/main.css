@@ -163,6 +163,11 @@ textarea {
   gap: var(--space-3);
 }
 
+.workspace-frame--compact {
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+}
+
 .workspace-frame__masthead,
 .result-actions,
 .surface__toolbar,
@@ -483,6 +488,24 @@ a:focus-visible {
   align-items: start;
 }
 
+.result-primary,
+.result-secondary {
+  display: grid;
+}
+
+.result-primary {
+  gap: var(--space-4);
+}
+
+.result-secondary {
+  justify-items: start;
+}
+
+.result-url .input {
+  min-height: 3.25rem;
+  font-size: var(--font-size-00);
+}
+
 .field-stack--dense {
   gap: var(--space-4);
 }
@@ -507,6 +530,8 @@ a:focus-visible {
 
 .result-actions {
   align-items: stretch;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  justify-content: start;
 }
 
 .feed-preview__header h3 {
@@ -647,6 +672,10 @@ a:focus-visible {
 
   .form-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .result-secondary {
+    justify-items: stretch;
   }
 }
 

@@ -80,16 +80,14 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   return (
     <section id="feed-result" class="surface surface--primary surface--result" aria-live="polite">
       <div class="surface__header">
-        <p class="eyebrow">Feed ready</p>
+        <p class="eyebrow">Ready</p>
         <h2>{displayTitle}</h2>
-        <p class="muted-copy">
-          Copy the generated feed URL immediately, or open the endpoint to inspect the rendered output.
-        </p>
+        <p class="muted-copy">The endpoint is live.</p>
       </div>
 
       <div class="result-layout">
-        <section class="surface__section surface__section--strong">
-          <label class="field-block" htmlFor="feed-url">
+        <section class="surface__section surface__section--strong result-primary">
+          <label class="field-block result-url" htmlFor="feed-url">
             <span class="field-label">Feed URL</span>
             <input
               id="feed-url"
@@ -108,9 +106,6 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
             <a href={fullUrl} class="btn btn--secondary" target="_blank" rel="noopener noreferrer">
               Open feed
             </a>
-            <button type="button" class="btn btn--ghost" onClick={onCreateAnother}>
-              Create another feed
-            </button>
           </div>
 
           {copyNotice && (
@@ -118,17 +113,23 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
               <p>{copyNotice}</p>
             </div>
           )}
+
+          <div class="result-secondary">
+            <button type="button" class="btn btn--ghost" onClick={onCreateAnother}>
+              Create another feed
+            </button>
+          </div>
         </section>
 
         <aside class="surface__section feed-preview" aria-label="Feed preview">
           <div class="feed-preview__header">
-            <p class="eyebrow">Preview</p>
-            <h3>{feedTitle || 'Previewing feed items'}</h3>
+            <p class="eyebrow">Recent entries</p>
+            <h3>Preview</h3>
           </div>
           {isLoadingPreview ? (
             <div class="preview-loading">
               <span class="status-card__spinner" aria-hidden="true" />
-              <p>Loading recent entries</p>
+              <p>Loading entries</p>
             </div>
           ) : feedItems.length > 0 ? (
             <ol class="feed-preview__list">
@@ -137,9 +138,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
               ))}
             </ol>
           ) : (
-            <p class="muted-copy">
-              The feed endpoint is live. Preview items were not available for this response.
-            </p>
+            <p class="muted-copy">Preview items were not available for this response.</p>
           )}
         </aside>
       </div>
