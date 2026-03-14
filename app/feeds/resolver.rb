@@ -2,15 +2,14 @@
 
 require 'digest'
 
-require_relative '../account_manager'
-require_relative '../auth'
-require_relative '../auto_source'
-require_relative '../cache_ttl'
-require_relative '../exceptions'
-require_relative '../local_config'
-require_relative '../url_validator'
+require_relative '../security/auth'
+require_relative '../security/feed_access'
+require_relative '../domain/auto_source'
+require_relative '../domain/cache_ttl'
+require_relative '../domain/feed_contracts'
+require_relative '../errors/exceptions'
+require_relative '../config/local_config'
 require_relative '../api/v1/contract'
-require_relative 'resolved_source'
 
 module Html2rss
   module Web
@@ -19,8 +18,8 @@ module Html2rss
       # Resolves static and token-backed requests into shared generator inputs.
       module Resolver
         class << self
-          # @param feed_request [Html2rss::Web::Feeds::Request]
-          # @return [Html2rss::Web::Feeds::ResolvedSource]
+          # @param feed_request [Html2rss::Web::FeedContracts::Request]
+          # @return [Html2rss::Web::FeedContracts::ResolvedSource]
           def call(feed_request)
             case feed_request.target_kind
             when :static
@@ -34,14 +33,14 @@ module Html2rss
 
           private
 
-          # @param feed_request [Html2rss::Web::Feeds::Request]
-          # @return [Html2rss::Web::Feeds::ResolvedSource]
+          # @param feed_request [Html2rss::Web::FeedContracts::Request]
+          # @return [Html2rss::Web::FeedContracts::ResolvedSource]
           def resolve_static(feed_request)
             config = LocalConfig.find(feed_request.feed_name)
             config[:params] = (config[:params] || {}).merge(feed_request.params) if feed_request.params.any?
             config[:strategy] ||= Html2rss::RequestService.default_strategy_name
 
-            ResolvedSource.new(
+            FeedContracts::ResolvedSource.new(
               source_kind: :static,
               cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
               generator_input: config,
@@ -49,14 +48,15 @@ module Html2rss
             )
           end
 
-          # @param feed_request [Html2rss::Web::Feeds::Request]
-          # @return [Html2rss::Web::Feeds::ResolvedSource]
+          # @param feed_request [Html2rss::Web::FeedContracts::Request]
+          # @return [Html2rss::Web::FeedContracts::ResolvedSource]
           def resolve_token(feed_request)
-            feed_token = validated_feed_token(feed_request.token)
+            ensure_auto_source_enabled!
+            feed_token = FeedAccess.authorize_feed_token!(feed_request.token)
             strategy = resolved_strategy(feed_token)
             generator_input = token_generator_input(feed_token.url, strategy)
 
-            ResolvedSource.new(
+            FeedContracts::ResolvedSource.new(
               source_kind: :token,
               cache_identity: token_cache_identity(feed_request.token),
               generator_input: generator_input,
@@ -77,27 +77,6 @@ module Html2rss
           # @return [String]
           def token_cache_identity(token)
             "token:#{Digest::SHA256.hexdigest(token.to_s)}"
-          end
-
-          # @param token [String]
-          # @return [Html2rss::Web::FeedToken]
-          def validated_feed_token(token)
-            feed_token = Auth.validate_and_decode_feed_token(token)
-            raise UnauthorizedError, 'Invalid token' unless feed_token
-
-            account = AccountManager.get_account_by_username(feed_token.username)
-            raise UnauthorizedError, 'Account not found' unless account
-
-            ensure_token_access!(account, feed_token.url)
-            ensure_auto_source_enabled!
-            feed_token
-          end
-
-          # @param account [Hash{Symbol=>Object}]
-          # @param url [String]
-          # @return [void]
-          def ensure_token_access!(account, url)
-            raise ForbiddenError, 'Access Denied' unless UrlValidator.url_allowed?(account, url)
           end
 
           # @return [void]

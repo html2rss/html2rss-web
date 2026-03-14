@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../request_target'
+require_relative '../request/request_target'
 
 module Html2rss
   module Web

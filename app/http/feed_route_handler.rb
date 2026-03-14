@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../exceptions'
-require_relative '../feed_response_format'
+require_relative '../errors/exceptions'
+require_relative '../rendering/feed_response_format'
+require_relative '../domain/feed_contracts'
 require_relative '../feeds/json_renderer'
 require_relative '../feeds/request_parser'
 require_relative '../feeds/resolver'
@@ -63,7 +64,7 @@ module Html2rss
           # @param context [Html2rss::Web::AppContext::Context]
           # @param feed_name [String]
           # @param strategy [String, nil]
-          # @param result [Html2rss::Web::Feeds::Result]
+          # @param result [Html2rss::Web::FeedContracts::RenderResult]
           # @return [void]
           def emit_result(context, feed_name, strategy, result)
             return emit_success(context, feed_name, strategy) unless result.status == :error

@@ -1,9 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../exceptions'
+require_relative '../errors/exceptions'
 require_relative 'cache'
-require_relative 'payload'
-require_relative 'result'
+require_relative '../domain/feed_contracts'
 
 module Html2rss
   module Web
@@ -12,8 +11,8 @@ module Html2rss
       # Shared synchronous feed service around the html2rss gem.
       module Service
         class << self
-          # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
-          # @return [Html2rss::Web::Feeds::Result]
+          # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
+          # @return [Html2rss::Web::FeedContracts::RenderResult]
           def call(resolved_source)
             cache_key = "feed_result:#{resolved_source.cache_identity}"
 
@@ -28,9 +27,9 @@ module Html2rss
 
           private
 
-          # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+          # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
           # @param cache_key [String]
-          # @return [Html2rss::Web::Feeds::Result]
+          # @return [Html2rss::Web::FeedContracts::RenderResult]
           def build_result(resolved_source, cache_key)
             feed = Html2rss.feed(resolved_source.generator_input)
             success_result(feed, resolved_source, cache_key)
@@ -39,11 +38,11 @@ module Html2rss
           end
 
           # @param feed [Object]
-          # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+          # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
           # @param cache_key [String]
-          # @return [Html2rss::Web::Feeds::Result]
+          # @return [Html2rss::Web::FeedContracts::RenderResult]
           def success_result(feed, resolved_source, cache_key)
-            Result.new(
+            FeedContracts::RenderResult.new(
               status: result_status(feed),
               payload: payload_for(feed, resolved_source),
               message: nil,
@@ -66,10 +65,10 @@ module Html2rss
           end
 
           # @param feed [Object]
-          # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
-          # @return [Html2rss::Web::Feeds::Payload]
+          # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
+          # @return [Html2rss::Web::FeedContracts::RenderPayload]
           def payload_for(feed, resolved_source)
-            Payload.new(
+            FeedContracts::RenderPayload.new(
               feed: feed,
               site_title: site_title_for(feed, resolved_source.generator_input.dig(:channel, :url)),
               url: resolved_source.generator_input.dig(:channel, :url),
@@ -88,11 +87,11 @@ module Html2rss
           end
 
           # @param error [StandardError]
-          # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+          # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
           # @param cache_key [String]
-          # @return [Html2rss::Web::Feeds::Result]
+          # @return [Html2rss::Web::FeedContracts::RenderResult]
           def error_result(error, resolved_source, cache_key)
-            Result.new(
+            FeedContracts::RenderResult.new(
               status: :error,
               payload: nil,
               message: HttpError::DEFAULT_MESSAGE,

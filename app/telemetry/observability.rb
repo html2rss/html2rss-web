@@ -4,7 +4,7 @@ require 'json'
 require 'logger'
 require 'time'
 
-require_relative 'request_context'
+require_relative '../request/request_context'
 
 module Html2rss
   module Web

@@ -7,7 +7,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   subject(:result) { described_class.call(resolved_source) }
 
   let(:resolved_source) do
-    Html2rss::Web::Feeds::ResolvedSource.new(
+    Html2rss::Web::FeedContracts::ResolvedSource.new(
       source_kind: :static,
       cache_identity: 'example-feed:abc123',
       generator_input: {
@@ -103,9 +103,9 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     end
   end
 
-  # @return [Html2rss::Web::Feeds::Payload]
+  # @return [Html2rss::Web::FeedContracts::RenderPayload]
   def expected_payload
-    Html2rss::Web::Feeds::Payload.new(
+    Html2rss::Web::FeedContracts::RenderPayload.new(
       feed: feed,
       site_title: 'Example Feed',
       url: 'https://example.com/articles',

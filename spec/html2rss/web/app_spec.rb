@@ -29,7 +29,7 @@ RSpec.describe Html2rss::Web::App do
   end
 
   def static_feed_result(ttl:)
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :ok,
       payload: nil,
       message: nil,
@@ -46,7 +46,7 @@ RSpec.describe Html2rss::Web::App do
   end
 
   def static_service_error_result
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :error,
       payload: nil,
       message: 'Internal Server Error',

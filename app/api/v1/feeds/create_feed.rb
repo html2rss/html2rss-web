@@ -3,12 +3,12 @@
 require 'time'
 require 'json'
 
-require_relative '../../../auth'
-require_relative '../../../auto_source'
-require_relative '../../../boundary_models'
-require_relative '../../../exceptions'
-require_relative '../../../url_validator'
-require_relative '../../../observability'
+require_relative '../../../security/auth'
+require_relative '../../../domain/auto_source'
+require_relative '../../../domain/feed_contracts'
+require_relative '../../../errors/exceptions'
+require_relative '../../../security/url_validator'
+require_relative '../../../telemetry/observability'
 require_relative '../response'
 
 module Html2rss
@@ -58,7 +58,7 @@ module Html2rss
                 raise BadRequestError, 'Invalid URL format' unless UrlValidator.valid_url?(url)
                 raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(account, url)
 
-                BoundaryModels::FeedCreateParams.new(
+                FeedContracts::CreateParams.new(
                   url: url,
                   name: V1::Feeds.extract_site_title(url),
                   strategy: normalize_strategy(params['strategy'])
@@ -141,9 +141,9 @@ module Html2rss
               end
 
               def feed_metadata(feed_data)
-                return feed_data if feed_data.is_a?(BoundaryModels::FeedMetadata)
+                return feed_data if feed_data.is_a?(FeedContracts::Metadata)
 
-                BoundaryModels::FeedMetadata.new(**feed_data)
+                FeedContracts::Metadata.new(**feed_data)
               end
 
               def typed_feed_attributes(typed_feed, timestamp)

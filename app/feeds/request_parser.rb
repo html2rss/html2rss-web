@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require 'cgi'
-require_relative 'request'
-require_relative 'response_format'
+require_relative '../domain/feed_contracts'
+require_relative '../rendering/feed_response_format'
 
 module Html2rss
   module Web
@@ -14,12 +14,12 @@ module Html2rss
           # @param request [Rack::Request]
           # @param target_kind [Symbol]
           # @param identifier [String]
-          # @return [Html2rss::Web::Feeds::Request]
+          # @return [Html2rss::Web::FeedContracts::Request]
           def call(request:, target_kind:, identifier:)
             build_request(
               request: request,
               target_kind: target_kind,
-              identifier: normalize_identifier(target_kind, ResponseFormat.strip_known_extension(identifier))
+              identifier: normalize_identifier(target_kind, FeedResponseFormat.strip_known_extension(identifier))
             )
           end
 
@@ -28,11 +28,11 @@ module Html2rss
           # @param request [Rack::Request]
           # @param target_kind [Symbol]
           # @param identifier [String]
-          # @return [Html2rss::Web::Feeds::Request]
+          # @return [Html2rss::Web::FeedContracts::Request]
           def build_request(request:, target_kind:, identifier:)
-            Request.new(
+            FeedContracts::Request.new(
               target_kind: target_kind,
-              representation: ResponseFormat.for_request(request),
+              representation: FeedResponseFormat.for_request(request),
               feed_name: target_kind == :static ? identifier : nil,
               token: target_kind == :token ? identifier : nil,
               params: request.params.to_h

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative 'security_logger'
-require_relative 'account_manager'
+require_relative '../security/security_logger'
+require_relative '../security/account_manager'
 require_relative 'flags'
 
 module Html2rss

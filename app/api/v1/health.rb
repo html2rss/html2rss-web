@@ -2,9 +2,9 @@
 
 require 'time'
 
-require_relative '../../auth'
-require_relative '../../exceptions'
-require_relative '../../local_config'
+require_relative '../../security/auth'
+require_relative '../../errors/exceptions'
+require_relative '../../config/local_config'
 require_relative 'contract'
 require_relative 'response'
 

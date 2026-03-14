@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../exceptions'
+require_relative '../../errors/exceptions'
 
 module Html2rss
   module Web

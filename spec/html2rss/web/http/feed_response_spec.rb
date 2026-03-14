@@ -10,13 +10,13 @@ RSpec.describe Html2rss::Web::Http::FeedResponse do
     subject(:write_response) do
       described_class.call(
         response: response,
-        representation: Html2rss::Web::Feeds::ResponseFormat::RSS,
+        representation: Html2rss::Web::FeedResponseFormat::RSS,
         result: result
       )
     end
 
     let(:result) do
-      Html2rss::Web::Feeds::Result.new(
+      Html2rss::Web::FeedContracts::RenderResult.new(
         status: :ok,
         payload: nil,
         message: nil,
@@ -45,13 +45,13 @@ RSpec.describe Html2rss::Web::Http::FeedResponse do
     subject(:write_response) do
       described_class.call(
         response: response,
-        representation: Html2rss::Web::Feeds::ResponseFormat::JSON_FEED,
+        representation: Html2rss::Web::FeedResponseFormat::JSON_FEED,
         result: result
       )
     end
 
     let(:result) do
-      Html2rss::Web::Feeds::Result.new(
+      Html2rss::Web::FeedContracts::RenderResult.new(
         status: :error,
         payload: nil,
         message: 'Internal Server Error',

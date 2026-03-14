@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/local_config'
+require_relative '../../../app/config/local_config'
 
 RSpec.describe Html2rss::Web::LocalConfig do
   def titles_for(*names)

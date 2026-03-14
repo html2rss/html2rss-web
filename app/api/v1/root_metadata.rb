@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../auto_source'
+require_relative '../../domain/auto_source'
 
 module Html2rss
   module Web

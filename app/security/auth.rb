@@ -2,8 +2,8 @@
 
 require 'openssl'
 require_relative 'security_logger'
-require_relative 'observability'
-require_relative 'request_context'
+require_relative '../telemetry/observability'
+require_relative '../request/request_context'
 require_relative 'feed_token'
 require_relative 'url_validator'
 require_relative 'account_manager'
@@ -43,25 +43,6 @@ module Html2rss
             secret_key: secret_key
           )
           token&.encode
-        end
-
-        # @param feed_token [String]
-        # @param url [String]
-        # @return [Hash{Symbol=>Object}, nil] account when token and URL are valid.
-        def validate_feed_token(feed_token, url)
-          with_validated_token(feed_token, url) do |token|
-            AccountManager.get_account_by_username(token.username)
-          end
-        end
-
-        # @param feed_token [String]
-        # @param url [String]
-        # @return [Boolean]
-        def feed_url_allowed?(feed_token, url)
-          account = validate_feed_token(feed_token, url)
-          return false unless account
-
-          UrlValidator.url_allowed?(account, url)
         end
 
         # @param token [String]

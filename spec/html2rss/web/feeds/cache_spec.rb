@@ -7,9 +7,9 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
   attr_writer :fetch_calls
 
   let(:result) do
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :ok,
-      payload: Html2rss::Web::Feeds::Payload.new(
+      payload: Html2rss::Web::FeedContracts::RenderPayload.new(
         feed: Object.new,
         site_title: 'Example',
         url: 'https://example.com',
@@ -39,12 +39,12 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
 
   private
 
-  # @return [Array<Html2rss::Web::Feeds::Result>]
+  # @return [Array<Html2rss::Web::FeedContracts::RenderResult>]
   def read_same_key_twice
     [fetch_with_counter, fetch_with_counter]
   end
 
-  # @return [Html2rss::Web::Feeds::Result]
+  # @return [Html2rss::Web::FeedContracts::RenderResult]
   def fetch_with_counter
     described_class.fetch('feed_result:test', ttl_seconds: 60) do
       self.fetch_calls += 1

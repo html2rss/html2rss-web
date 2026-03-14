@@ -1,16 +1,17 @@
 # frozen_string_literal: true
 
-require_relative '../../../account_manager'
-require_relative '../../../auth'
-require_relative '../../../exceptions'
-require_relative '../../../feed_response_format'
+require_relative '../../../security/account_manager'
+require_relative '../../../security/auth'
+require_relative '../../../errors/exceptions'
+require_relative '../../../domain/feed_contracts'
+require_relative '../../../rendering/feed_response_format'
 require_relative '../../../feeds/json_renderer'
 require_relative '../../../feeds/request_parser'
 require_relative '../../../feeds/resolver'
 require_relative '../../../feeds/rss_renderer'
 require_relative '../../../feeds/service'
 require_relative '../../../http/feed_response'
-require_relative '../../../observability'
+require_relative '../../../telemetry/observability'
 
 module Html2rss
   module Web
@@ -46,7 +47,7 @@ module Html2rss
 
               # @param request [Rack::Request]
               # @param token [String]
-              # @return [Array<(Html2rss::Web::Feeds::Request, Html2rss::Web::Feeds::ResolvedSource, Html2rss::Web::Feeds::Result)>]
+              # @return [Array<(Html2rss::Web::FeedContracts::Request, Html2rss::Web::FeedContracts::ResolvedSource, Html2rss::Web::FeedContracts::RenderResult)>]
               def feed_pipeline(request, token)
                 feed_request = ::Html2rss::Web::Feeds::RequestParser.call(
                   request: request,
@@ -59,8 +60,8 @@ module Html2rss
                 [feed_request, resolved_source, result]
               end
 
-              # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
-              # @param result [Html2rss::Web::Feeds::Result]
+              # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
+              # @param result [Html2rss::Web::FeedContracts::RenderResult]
               # @return [void]
               def emit_result(resolved_source, result)
                 return emit_success_from(resolved_source) unless result.status == :error
@@ -70,7 +71,7 @@ module Html2rss
                 )
               end
 
-              # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+              # @param resolved_source [Html2rss::Web::FeedContracts::ResolvedSource]
               # @return [void]
               def emit_success_from(resolved_source)
                 emit_render_success(

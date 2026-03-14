@@ -2,7 +2,7 @@
 
 require 'ssrf_filter'
 require 'html2rss'
-require_relative '../app/local_config'
+require_relative '../config/local_config'
 
 module Html2rss
   module Web

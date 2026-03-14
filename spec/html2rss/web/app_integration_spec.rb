@@ -37,7 +37,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:json_body) { JSON.parse(last_response.body) }
   let(:json_feed_error) { JSON.parse(last_response.body).slice('version', 'title') }
   let(:feed_result) do
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :ok,
       payload: nil,
       message: nil,

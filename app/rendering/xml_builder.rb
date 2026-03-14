@@ -2,6 +2,7 @@
 
 require 'nokogiri'
 require 'time'
+require_relative 'feed_notice_text'
 
 module Html2rss
   module Web
@@ -11,20 +12,6 @@ module Html2rss
     # XML shaping is centralized so endpoints/services can return consistent feed
     # output without duplicating channel/item boilerplate.
     module XmlBuilder
-      EMPTY_FEED_DESCRIPTION_TEMPLATE = <<~DESC
-        Unable to extract content from %<url>s using the %<strategy>s strategy.
-        The site may rely on JavaScript, block automated requests, or expose a structure that needs a different parser.
-      DESC
-      EMPTY_FEED_ITEM_TEMPLATE = <<~DESC
-        No entries were extracted from %<url>s.
-        Possible causes:
-        - JavaScript-heavy site (try the browserless strategy)
-        - Anti-bot protection
-        - Complex or changing markup
-        - Site blocking automated requests
-
-        Try another strategy or reach out to the site owner.
-      DESC
       class << self
         # @param title [String]
         # @param description [String]
@@ -61,28 +48,14 @@ module Html2rss
         end
 
         # @param url [String]
-        # @return [String] RSS response describing authorization failure.
-        def build_access_denied_feed(url)
-          build_single_item_feed(
-            title: 'Access Denied',
-            description: 'This URL is not allowed for public auto source generation.',
-            item: {
-              title: 'Access Denied',
-              description: "URL '#{url}' is not in the allowed list for public auto source."
-            }
-          )
-        end
-
-        # @param url [String]
         # @param strategy [String]
         # @param site_title [String, nil]
         # @return [String] RSS warning document when extraction yields no content.
         def build_empty_feed_warning(url:, strategy:, site_title: nil)
-          feed_title = site_title ? "#{site_title} - Content Extraction Issue" : 'Content Extraction Issue'
           build_single_item_feed(
-            title: feed_title,
-            description: format(EMPTY_FEED_DESCRIPTION_TEMPLATE, url:, strategy:),
-            item: { title: 'Content Extraction Failed', description: format(EMPTY_FEED_ITEM_TEMPLATE, url:),
+            title: FeedNoticeText.empty_feed_title(site_title),
+            description: FeedNoticeText.empty_feed_description(url: url, strategy: strategy),
+            item: { title: 'Content Extraction Failed', description: FeedNoticeText.empty_feed_item(url: url),
                     link: url },
             link: url
           )

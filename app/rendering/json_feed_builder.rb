@@ -2,7 +2,7 @@
 
 require 'json'
 require 'time'
-require_relative 'xml_builder'
+require_relative 'feed_notice_text'
 
 module Html2rss
   module Web
@@ -10,8 +10,6 @@ module Html2rss
     # Central JSON Feed rendering helpers.
     module JsonFeedBuilder
       VERSION_URL = 'https://jsonfeed.org/version/1.1'
-      EMPTY_FEED_DESCRIPTION_TEMPLATE = XmlBuilder::EMPTY_FEED_DESCRIPTION_TEMPLATE
-      EMPTY_FEED_ITEM_TEMPLATE = XmlBuilder::EMPTY_FEED_ITEM_TEMPLATE
 
       class << self
         # @param message [String]
@@ -29,28 +27,13 @@ module Html2rss
         end
 
         # @param url [String]
-        # @return [String] JSON Feed response describing authorization failure.
-        def build_access_denied_feed(url)
-          build_single_item_feed(
-            title: 'Access Denied',
-            description: 'This URL is not allowed for public auto source generation.',
-            home_page_url: url,
-            item: {
-              title: 'Access Denied',
-              content_text: "URL '#{url}' is not in the allowed list for public auto source.",
-              url: url
-            }
-          )
-        end
-
-        # @param url [String]
         # @param strategy [String]
         # @param site_title [String, nil]
         # @return [String] JSON Feed warning document when extraction yields no content.
         def build_empty_feed_warning(url:, strategy:, site_title: nil)
           build_single_item_feed(
-            title: empty_feed_title(site_title),
-            description: format(EMPTY_FEED_DESCRIPTION_TEMPLATE, url:, strategy:),
+            title: FeedNoticeText.empty_feed_title(site_title),
+            description: FeedNoticeText.empty_feed_description(url: url, strategy: strategy),
             home_page_url: url,
             item: empty_feed_item(url)
           )
@@ -90,31 +73,14 @@ module Html2rss
           }.compact
         end
 
-        # @param site_title [String, nil]
-        # @return [String]
-        def empty_feed_title(site_title)
-          site_title ? "#{site_title} - Content Extraction Issue" : 'Content Extraction Issue'
-        end
-
         # @param url [String]
         # @return [Hash{Symbol=>String}]
         def empty_feed_item(url)
           {
             title: 'Content Extraction Failed',
-            content_text: format(EMPTY_FEED_ITEM_TEMPLATE, url:),
+            content_text: FeedNoticeText.empty_feed_item(url: url),
             url: url
           }
-        end
-
-        # @param value [Time, DateTime, String, nil]
-        # @return [String, nil]
-        def format_time(value)
-          return if value.nil?
-          return value.iso8601 if value.respond_to?(:iso8601)
-
-          Time.parse(value.to_s).utc.iso8601
-        rescue ArgumentError
-          value.to_s
         end
       end
     end

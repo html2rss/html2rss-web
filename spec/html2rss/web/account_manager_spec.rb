@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/account_manager'
+require_relative '../../../app/security/account_manager'
 
 RSpec.describe Html2rss::Web::AccountManager do
   describe '.get_account' do
@@ -37,6 +37,18 @@ RSpec.describe Html2rss::Web::AccountManager do
       described_class.get_account('token-1')
       described_class.reload!
       expect(described_class.get_account('token-2')).to include(username: 'bob')
+    end
+  end
+
+  describe '.get_account_by_username' do
+    it 'returns account by username from the memoized snapshot' do
+      allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
+        auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] }
+      )
+
+      account = described_class.get_account_by_username('alice')
+
+      expect(account).to include(username: 'alice', token: 'token-1')
     end
   end
 end

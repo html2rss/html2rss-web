@@ -2,7 +2,7 @@
 
 require 'yaml'
 require_relative 'config_snapshot'
-require_relative 'security_logger'
+require_relative '../security/security_logger'
 
 module Html2rss
   module Web

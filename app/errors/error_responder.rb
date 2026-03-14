@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'api/v1/contract'
-require_relative 'feed_response_format'
-require_relative 'json_feed_builder'
-require_relative 'observability'
-require_relative 'request_target'
+require_relative '../api/v1/contract'
+require_relative '../rendering/feed_response_format'
+require_relative '../rendering/json_feed_builder'
+require_relative '../telemetry/observability'
+require_relative '../request/request_target'
 
 module Html2rss
   module Web

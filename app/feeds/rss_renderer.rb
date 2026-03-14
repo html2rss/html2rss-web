@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../exceptions'
-require_relative '../xml_builder'
+require_relative '../domain/feed_contracts'
+require_relative '../errors/exceptions'
+require_relative '../rendering/xml_builder'
 
 module Html2rss
   module Web
@@ -10,7 +11,7 @@ module Html2rss
       # Renders RSS bodies from shared feed results.
       module RssRenderer
         class << self
-          # @param result [Html2rss::Web::Feeds::Result]
+          # @param result [Html2rss::Web::FeedContracts::RenderResult]
           # @return [String]
           def call(result)
             case result.status
@@ -25,7 +26,7 @@ module Html2rss
 
           private
 
-          # @param result [Html2rss::Web::Feeds::Result]
+          # @param result [Html2rss::Web::FeedContracts::RenderResult]
           # @return [String]
           def empty_feed(result)
             XmlBuilder.build_empty_feed_warning(
@@ -35,7 +36,7 @@ module Html2rss
             )
           end
 
-          # @param result [Html2rss::Web::Feeds::Result]
+          # @param result [Html2rss::Web::FeedContracts::RenderResult]
           # @return [String]
           def error_feed(result)
             XmlBuilder.build_error_feed(message: result.message || HttpError::DEFAULT_MESSAGE)

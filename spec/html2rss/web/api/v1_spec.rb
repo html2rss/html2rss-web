@@ -11,7 +11,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   def json_feed_error = JSON.parse(last_response.body).slice('version', 'title')
 
   def feed_result
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :ok,
       payload: nil,
       message: nil,
@@ -22,7 +22,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   end
 
   def service_error_result
-    Html2rss::Web::Feeds::Result.new(
+    Html2rss::Web::FeedContracts::RenderResult.new(
       status: :error,
       payload: nil,
       message: 'Internal Server Error',

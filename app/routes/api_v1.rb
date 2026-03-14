@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative '../api/v1/root_metadata'
-require_relative '../request_target'
+require_relative '../request/request_target'
 
 module Html2rss
   module Web

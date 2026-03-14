@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative 'local_config'
+require_relative '../config/local_config'
 require_relative 'security_logger'
 
 module Html2rss
@@ -41,7 +41,7 @@ module Html2rss
         def get_account_by_username(username)
           return nil unless username
 
-          accounts.find { |account| account[:username] == username }
+          snapshot[:username_index][username]
         end
 
         private
@@ -51,6 +51,7 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         # @option return [Array<Hash{Symbol=>Object}>] :accounts frozen account list.
         # @option return [Hash{String=>Hash{Symbol=>Object}}] :token_index token lookup table.
+        # @option return [Hash{String=>Hash{Symbol=>Object}}] :username_index username lookup table.
         def snapshot
           return @snapshot if @snapshot # rubocop:disable ThreadSafety/ClassInstanceVariable
 
@@ -69,18 +70,28 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         # @option return [Array<Hash{Symbol=>Object}>] :accounts frozen account list.
         # @option return [Hash{String=>Hash{Symbol=>Object}}] :token_index token lookup table.
+        # @option return [Hash{String=>Hash{Symbol=>Object}}] :username_index username lookup table.
         def build_snapshot
           raw_accounts = LocalConfig.global.dig(:auth, :accounts)
-          accounts = Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
-          token_index = accounts.to_h { |account| [account[:token], account] }.freeze
+          accounts = normalized_accounts(raw_accounts)
+          token_index = index_accounts(accounts, :token)
+          username_index = index_accounts(accounts, :username)
 
           SecurityLogger.log_cache_lifecycle('account_manager', 'build', accounts_count: accounts.length)
-          { accounts: accounts, token_index: token_index }.freeze
+          { accounts: accounts, token_index: token_index, username_index: username_index }.freeze
         end
 
-        # @return [Hash{String=>Hash{Symbol=>Object}}]
-        def token_index
-          snapshot[:token_index]
+        # @param raw_accounts [Array<Hash>, nil]
+        # @return [Array<Hash{Symbol=>Object}>]
+        def normalized_accounts(raw_accounts)
+          Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @param key [Symbol]
+        # @return [Hash{Object=>Hash{Symbol=>Object}}]
+        def index_accounts(accounts, key)
+          accounts.to_h { |account| [account[key], account] }.freeze
         end
       end
     end

@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/cache_ttl'
+require_relative '../../../app/domain/cache_ttl'
 
 RSpec.describe Html2rss::Web::CacheTtl do
   describe '.seconds_from_minutes' do
