@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup quick-check ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
 
 # Default target
 help: ## Show this help message
@@ -59,6 +59,8 @@ lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	@echo "Ruby linting complete!"
 
 lint-js: ## Run JavaScript/Frontend linter (Prettier) - errors when issues found
+	@echo "Running TypeScript typecheck..."
+	@cd frontend && npm run typecheck
 	@echo "Running Prettier format check..."
 	@cd frontend && npm run format:check
 	@echo "JavaScript linting complete!"
@@ -76,10 +78,15 @@ lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
 	@cd frontend && npm run format
 	@echo "JavaScript lintfix complete!"
 
-ready: ## Pre-commit gate (RuboCop + RSpec)
+quick-check: ## Fast local checks (Ruby lint/docs + frontend format/typecheck)
+	@echo "Running quick checks..."
+	$(MAKE) lint-ruby
+	$(MAKE) lint-js
+	@echo "Quick checks complete!"
+
+ready: ## Pre-commit gate (quick checks + RSpec)
 	@echo "Running pre-commit checks..."
-	bundle exec rubocop -F
-	bundle exec rake yard:verify_public_docs
+	$(MAKE) quick-check
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
 

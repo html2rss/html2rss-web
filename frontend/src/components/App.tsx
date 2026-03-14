@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
-import {
-  GuestOnboardingPanel,
-  MemberConvertPanel,
-  type Strategy,
-} from './AppPanels';
+import { GuestOnboardingPanel, MemberConvertPanel, type Strategy } from './AppPanels';
 import { useAuth } from '../hooks/useAuth';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
@@ -78,7 +74,8 @@ export function App() {
 
   const strategyHint = (strategy: Strategy) => {
     if (strategy.id === 'ssrf_filter') return 'Direct fetch. Fast path for standard documents.';
-    if (strategy.id === 'browserless') return 'Browser render. Use for JavaScript-heavy pages and SPA output.';
+    if (strategy.id === 'browserless')
+      return 'Browser render. Use for JavaScript-heavy pages and SPA output.';
     return strategy.name;
   };
 

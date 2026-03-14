@@ -29,20 +29,18 @@ export function useStrategies(token: string | null) {
         client: apiClient,
         headers: {
           ...bearerHeaders(token),
-          'Content-Type': 'application/json',
         },
-        responseStyle: 'data',
       });
 
-      if (response?.success && response.data?.strategies) {
-        setState({
-          strategies: response.data.strategies,
-          isLoading: false,
-          error: null,
-        });
-      } else {
+      if (response.error || !response.data?.success || !response.data.data?.strategies) {
         throw new Error('Invalid response format from strategies API');
       }
+
+      setState({
+        strategies: response.data.data.strategies,
+        isLoading: false,
+        error: null,
+      });
     } catch (error) {
       setState({
         strategies: [],

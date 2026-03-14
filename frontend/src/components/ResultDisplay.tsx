@@ -167,7 +167,9 @@ export function ResultDisplay({
                   ))}
                 </ol>
               ) : (
-                <p class="muted-copy">The feed endpoint is live. Preview items are not available for this response.</p>
+                <p class="muted-copy">
+                  The feed endpoint is live. Preview items are not available for this response.
+                </p>
               )}
             </aside>
           )}
@@ -178,9 +180,7 @@ export function ResultDisplay({
 }
 
 const extractFeedToken = (publicUrl: string): string | null => {
-  const path = publicUrl.startsWith('http')
-    ? new URL(publicUrl).pathname
-    : publicUrl;
+  const path = publicUrl.startsWith('http') ? new URL(publicUrl).pathname : publicUrl;
   const segments = path.split('/').filter(Boolean);
   const feedIndex = segments.findIndex((segment) => segment === 'feeds');
   if (feedIndex < 0) return null;

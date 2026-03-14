@@ -72,7 +72,9 @@ export function GuestOnboardingPanel({
   onAuthFieldChange,
   onBackToDemo,
 }: GuestOnboardingPanelProps) {
-  const [selectedDemoId, setSelectedDemoId] = useState<(typeof DEMO_SOURCES)[number]['id']>(DEMO_SOURCES[0].id);
+  const [selectedDemoId, setSelectedDemoId] = useState<(typeof DEMO_SOURCES)[number]['id']>(
+    DEMO_SOURCES[0].id
+  );
   const selectedDemo = DEMO_SOURCES.find((source) => source.id === selectedDemoId) ?? DEMO_SOURCES[0];
 
   return (
@@ -84,7 +86,8 @@ export function GuestOnboardingPanel({
         </div>
         <div class="stack stack--lg">
           <p class="muted-copy">
-            The guest path is for quick verification. Operator mode unlocks arbitrary URLs and strategy selection.
+            The guest path is for quick verification. Operator mode unlocks arbitrary URLs and strategy
+            selection.
           </p>
           <div class="metric-strip" aria-label="guest capabilities">
             <div class="metric-tile">
@@ -257,11 +260,11 @@ export function MemberConvertPanel({
   return (
     <section class="state-layout state-layout--member">
       <form class="surface surface--main form-shell" onSubmit={onFeedSubmit}>
-          <div class="surface__header surface__header--row">
-            <div>
-              <p class="eyebrow">operator workspace</p>
-              <h2>Convert a website</h2>
-            </div>
+        <div class="surface__header surface__header--row">
+          <div>
+            <p class="eyebrow">operator workspace</p>
+            <h2>Convert a website</h2>
+          </div>
           <div class="surface__toolbar">
             <span class="surface__operator">
               operator:<span class="surface__operator-name">{username}</span>
@@ -300,14 +303,15 @@ export function MemberConvertPanel({
                 disabled={strategiesLoading}
                 onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
               >
-                {strategiesLoading
-                  ? <option value="">Loading…</option>
-                  : strategies.map((strategy) => (
-                      <option key={strategy.id} value={strategy.id}>
-                        {strategy.display_name}
-                      </option>
-                    ))
-                }
+                {strategiesLoading ? (
+                  <option value="">Loading…</option>
+                ) : (
+                  strategies.map((strategy) => (
+                    <option key={strategy.id} value={strategy.id}>
+                      {strategy.display_name}
+                    </option>
+                  ))
+                )}
               </select>
               <span class="field-help">
                 {strategiesError
