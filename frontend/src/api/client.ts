@@ -12,7 +12,7 @@ const resolveBaseUrl = (): string => {
 export const apiClient = createClient(
   createConfig({
     baseUrl: resolveBaseUrl(),
-  }),
+  })
 );
 
 export const bearerHeaders = (token: string | null): Record<string, string> =>
