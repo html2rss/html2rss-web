@@ -21,8 +21,8 @@ describe('ResultDisplay', () => {
       json: async () => ({
         items: [
           { title: 'Item One' },
+          { content_text: '56 points by canpan 1 hour ago | hide | 18&nbsp;comments' },
           { content_text: '2. Item Two ( example.com )' },
-          { title: 'Item Three' },
         ],
       }),
     } as Response);
@@ -36,7 +36,8 @@ describe('ResultDisplay', () => {
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
-      expect(screen.getByText('Item Three')).toBeInTheDocument();
+      expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
+      expect(screen.getByText('Item Two')).toBeInTheDocument();
     });
     expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
       headers: { Accept: 'application/feed+json' },

@@ -582,24 +582,25 @@ a:focus-visible {
 }
 
 .result-meta {
-  max-width: 36rem;
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
-  line-height: 1.2;
-  color: var(--text-body);
+  max-width: 32rem;
+  font-size: clamp(0.98rem, 1.5vw, 1.16rem);
+  line-height: 1.18;
+  color: var(--text-strong);
 }
 
 .result-preview {
   width: min(100%, 40rem);
   margin: 0 auto;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   justify-items: start;
-  padding-top: var(--space-1);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid rgba(255, 255, 255, 0.08);
 }
 
 .result-preview__label {
   margin: 0;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.72);
   font-size: var(--font-size-00);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -616,10 +617,10 @@ a:focus-visible {
 
 .result-preview__list li {
   color: var(--text-body);
-  max-width: 32rem;
+  max-width: 34rem;
   font-family: var(--font-family-display);
-  font-size: clamp(1.08rem, 1.8vw, 1.42rem);
-  line-height: 1.24;
+  font-size: clamp(1rem, 1.65vw, 1.28rem);
+  line-height: 1.2;
   text-align: left;
 }
 
@@ -628,12 +629,13 @@ a:focus-visible {
   margin: 0 auto;
   justify-items: start;
   justify-content: start;
-  gap: var(--space-5);
+  gap: var(--space-4);
+  margin-top: calc(var(--space-2) * -1);
 }
 
 .btn--linkish {
-  color: var(--text-body);
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 560;
 }
 
 .status-card {

@@ -99,7 +99,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
 
       {previewItems.length > 0 && (
         <section class="result-preview" aria-label="Feed preview">
-          <p class="result-preview__label">Latest items</p>
+          <p class="result-preview__label">Feed preview</p>
           <ul class="result-preview__list">
             {previewItems.map((item) => (
               <li key={item}>{item}</li>
@@ -120,11 +120,19 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
 function normalizePreviewText(value?: string): string | null {
   if (!value) return null;
 
-  const normalized = value
+  const normalized = decodeHtmlEntities(value)
     .replace(/\s+/g, ' ')
     .replace(/^\d+\.\s+/, '')
     .replace(/\s+\([^)]*\)\s*$/, '')
     .trim();
 
   return normalized || null;
+}
+
+function decodeHtmlEntities(value: string): string {
+  if (typeof document === 'undefined') return value;
+
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = value;
+  return textarea.value;
 }
