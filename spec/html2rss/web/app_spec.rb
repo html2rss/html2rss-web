@@ -61,6 +61,16 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
+    it 'serves HEAD requests for legacy feed routes with negotiated headers only', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      stub_legacy_feed('<rss/>')
+      head '/legacy'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.headers['Cache-Control']).to include('max-age=10800')
+      expect(last_response.body).to eq('')
+    end
+
     it 'coerces string ttl values before cache expiry math', :aggregate_failures do
       allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
       allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: '180' } })

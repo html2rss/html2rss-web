@@ -42,7 +42,7 @@ module Html2rss
         # @return [String]
         def feed_content(feed_name, params, format, ttl_seconds, async_refresh)
           FeedRuntime.read(
-            key: feed_cache_key(feed_name, params, format),
+            key: feed_cache_key(feed_name, params),
             ttl_seconds: ttl_seconds,
             async_refresh: async_refresh
           ) do
@@ -52,12 +52,11 @@ module Html2rss
 
         # @param feed_name [String]
         # @param params [Hash]
-        # @param format [Symbol]
         # @return [String]
-        def feed_cache_key(feed_name, params, format)
+        def feed_cache_key(feed_name, params)
           normalized_params = params.to_h.sort_by { |key, _| key.to_s }
           digest = Digest::SHA256.hexdigest(Marshal.dump(normalized_params))
-          "local_feed:#{feed_name}:#{format}:#{digest}"
+          "local_feed:#{feed_name}:#{digest}"
         end
       end
     end

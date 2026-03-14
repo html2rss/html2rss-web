@@ -123,6 +123,31 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       expect(last_response.headers['Content-Type']).to eq('application/xml')
     end
 
+    it 'treats wildcard Accept as rss unless json is more specific', :aggregate_failures do
+      header 'Accept', '*/*'
+      get "/api/v1/feeds/#{feed_token}"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'ignores q=0 json feed media types during negotiation', :aggregate_failures do
+      header 'Accept', 'application/feed+json;q=0, application/xml;q=0.4'
+      get "/api/v1/feeds/#{feed_token}"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'serves HEAD requests for token feeds with negotiated headers only', :aggregate_failures do
+      head "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/feed+json')
+      expect(last_response.headers['Cache-Control']).to include('max-age=600')
+      expect(last_response.body).to eq('')
+    end
+
     it 'ignores query param strategy overrides', :aggregate_failures do
       header 'Accept', 'application/xml'
       get "/api/v1/feeds/#{feed_token}", { 'strategy' => 'invalid' }
