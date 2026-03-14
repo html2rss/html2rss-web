@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
-import { within } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse } from './mocks/server';
 import { App } from '../components/App';
@@ -30,31 +29,37 @@ describe('App contract', () => {
           })
         );
       }),
-      http.get('/api/v1/feeds/generated-token', () =>
-        HttpResponse.text(
-          `<?xml version="1.0"?><rss><channel><title>Contract Feed</title><item><title>Contract Item</title></item></channel></rss>`
-        )
-      )
+      http.get('/api/v1/feeds/generated-token', ({ request }) => {
+        expect(request.headers.get('accept')).toBe('application/feed+json');
+
+        return HttpResponse.json(
+          {
+            items: [{ title: 'Contract Item' }],
+          },
+          {
+            headers: { 'content-type': 'application/feed+json' },
+          }
+        );
+      })
     );
 
     render(<App />);
 
-    await screen.findByText('Create a feed URL.');
+    await screen.findByLabelText('Page URL');
 
-    const urlInput = screen.getByLabelText('Source URL') as HTMLInputElement;
+    const urlInput = screen.getByLabelText('Page URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      const resultRegion = document.getElementById('feed-result');
-      expect(resultRegion).not.toBeNull();
-      const resultQueries = within(resultRegion!);
-
-      expect(screen.getByText('Result')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
-      expect(resultQueries.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
-      expect(resultQueries.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+      expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
+      expect(screen.getByText('Feed preview')).toBeInTheDocument();
+      expect(screen.getByText('Contract Item')).toBeInTheDocument();
     });
   });
 });
