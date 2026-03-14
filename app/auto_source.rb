@@ -89,16 +89,28 @@ module Html2rss
         # @param identifiers [Hash{Symbol=>String}]
         # @return [Html2rss::Web::BoundaryModels::FeedMetadata]
         def build_feed_data(name, url, token_data, strategy, identifiers)
-          public_url = "/api/v1/feeds/#{identifiers[:feed_token]}"
-
           BoundaryModels::FeedMetadata.new(
             id: identifiers[:feed_id],
             name: name,
             url: url,
             username: token_data[:username],
             strategy: strategy,
-            public_url: public_url
+            feed_token: identifiers[:feed_token],
+            public_url: feed_public_url(identifiers[:feed_token]),
+            json_public_url: feed_json_public_url(identifiers[:feed_token])
           )
+        end
+
+        # @param feed_token [String]
+        # @return [String]
+        def feed_public_url(feed_token)
+          "/api/v1/feeds/#{feed_token}"
+        end
+
+        # @param feed_token [String]
+        # @return [String]
+        def feed_json_public_url(feed_token)
+          "#{feed_public_url(feed_token)}.json"
         end
       end
     end

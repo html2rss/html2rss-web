@@ -77,6 +77,6 @@ USER html2rss
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
 COPY --chown=$USER:$USER . /app
-COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./public/frontend
+COPY --from=frontend-builder --chown=$USER:$USER /app/public/frontend ./public/frontend
 
 CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]

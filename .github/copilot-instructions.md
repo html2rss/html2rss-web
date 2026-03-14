@@ -3,8 +3,8 @@
 ## Overview
 
 - Ruby web app that converts websites into RSS 2.0 feeds.
-- Built with **Roda** backend + **Astro** frontend, using the **html2rss** gem (+ `html2rss-configs`).
-- **Frontend:** Modern Astro-based UI with component architecture, served alongside Ruby backend.
+- Built with **Roda** backend + **Preact** frontend, using the **html2rss** gem (+ `html2rss-configs`).
+- **Frontend:** Vite-built Preact UI, served alongside Ruby backend.
 
 ## Documentation website of core dependencies
 
@@ -14,10 +14,10 @@ Search these pages before using them. Find examples, plugins, UI components, and
 
 1. https://roda.jeremyevans.net/documentation.html
 
-### Astro & Starlight
+### Preact & Vite
 
-1. https://docs.astro.build/en/getting-started/
-2. https://starlight.astro.build/getting-started/
+1. https://preactjs.com/guide/v10/getting-started/
+2. https://vite.dev/guide/
 
 ### html2rss
 
@@ -40,8 +40,8 @@ Fix rubocop `RSpec/MultipleExpectations` adding rspec tag `:aggregate_failures`.
 - ✅ Validate all inputs. Pass outbound requests through **SSRF filter**.
 - ✅ Add caching headers where appropriate (`Rack::Cache`).
 - ✅ Errors: friendly messages for users, detailed logging internally.
-- ✅ **Frontend**: Use Astro components in `frontend/src/`. Keep it simple.
-- ✅ **CSS**: Use frontend styles provided by Astro Starlight.
+- ✅ **Frontend**: Use Preact components in `frontend/src/`. Keep it simple.
+- ✅ **CSS**: Use the app-owned frontend styles in `frontend/src/styles/`.
 - ✅ **Specs**: RSpec for Ruby, build tests for frontend.
 - ✅ When a spec needs to tweak environment variables, wrap the example in `ClimateControl.modify` so state is restored automatically.
 

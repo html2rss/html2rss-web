@@ -74,6 +74,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
     expect(response.code).to eq('201')
     expect(body.fetch('success')).to be(true)
     expect(body.dig('data', 'feed', 'public_url')).to match(%r{^/api/v1/feeds/})
+    expect(body.dig('data', 'feed', 'json_public_url')).to match(%r{^/api/v1/feeds/.+\.json$})
   end
 
   it 'returns forbidden for authenticated creation when auto source is disabled', :aggregate_failures do

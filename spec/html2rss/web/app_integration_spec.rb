@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require 'rack/test'
+require 'cgi'
 require 'json'
 require 'securerandom'
 require_relative '../../../app'
@@ -13,6 +14,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
 
   let(:feed_url) { 'https://example.com/articles' }
   let(:feed_token) { "valid-feed-token-#{SecureRandom.hex(4)}" }
+  let(:encoded_feed_token) { CGI.escape(feed_token) }
 
   let(:account) do
     {
@@ -94,6 +96,18 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       expect(last_response.body).to eq('<rss version="2.0"></rss>')
     end
 
+    it 'accepts URL-escaped public feed tokens', :aggregate_failures do
+      padded_feed_token = 'signed-public-token='
+      encoded_padded_feed_token = CGI.escape(padded_feed_token)
+
+      stub_escaped_feed_token(raw_token: padded_feed_token, encoded_token: encoded_padded_feed_token)
+
+      get "/api/v1/feeds/#{encoded_padded_feed_token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
     it 'renders the JSON feed when requested by extension', :aggregate_failures do
       get "/api/v1/feeds/#{feed_token}.json"
 
@@ -166,6 +180,23 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         [401, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error' }]
       )
     end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+    def stub_escaped_feed_token(raw_token:, encoded_token:)
+      escaped_token_payload = instance_double(
+        Html2rss::Web::FeedToken,
+        url: feed_url,
+        username: account[:username],
+        strategy: 'ssrf_filter'
+      )
+
+      allow(Html2rss::Web::FeedToken).to receive(:decode).with(raw_token).and_return(escaped_token_payload)
+      allow(Html2rss::Web::FeedToken).to receive(:decode).with(encoded_token).and_return(nil)
+      allow(Html2rss::Web::FeedToken)
+        .to receive(:validate_and_decode).with(raw_token, feed_url, anything)
+        .and_return(escaped_token_payload)
+    end
+    # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
   end
 
   describe 'POST /api/v1/feeds' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -182,7 +213,9 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         name: 'Example Feed',
         url: feed_url,
         strategy: 'ssrf_filter',
+        feed_token: feed_token,
         public_url: "/api/v1/feeds/#{feed_token}",
+        json_public_url: "/api/v1/feeds/#{feed_token}.json",
         username: account[:username]
       }
     end
@@ -264,7 +297,9 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         expect(json_body.dig('data', 'feed')).to include(
           'id' => 'feed-123',
           'url' => feed_url,
-          'public_url' => "/api/v1/feeds/#{feed_token}"
+          'feed_token' => feed_token,
+          'public_url' => "/api/v1/feeds/#{feed_token}",
+          'json_public_url' => "/api/v1/feeds/#{feed_token}.json"
         )
       end
     end

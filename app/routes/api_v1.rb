@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../api/v1/root_metadata'
 require_relative '../request_target'
 
 module Html2rss
@@ -127,14 +128,9 @@ module Html2rss
           # @option return [String] :name API display name.
           # @option return [String] :description human-readable API description.
           # @option return [String] :openapi_url absolute OpenAPI spec URL.
+          # @option return [Hash] :demo public demo metadata block.
           def api_root_payload(router)
-            {
-              api: {
-                name: 'html2rss-web API',
-                description: 'RESTful API for converting websites to RSS feeds',
-                openapi_url: "#{router.base_url}/api/v1/openapi.yaml"
-              }
-            }
+            Api::V1::RootMetadata.build(router)
           end
 
           # @param result [Hash, String]

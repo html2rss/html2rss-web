@@ -18,7 +18,9 @@ describe('useFeedConversion contract', () => {
         return HttpResponse.json(
           buildFeedResponse({
             url: body.url,
+            feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
+            json_public_url: '/api/v1/feeds/generated-token.json',
           })
         );
       })
@@ -32,7 +34,9 @@ describe('useFeedConversion contract', () => {
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
     expect(result.current.error).toBeNull();
+    expect(result.current.result?.feed_token).toBe('generated-token');
     expect(result.current.result?.public_url).toBe('/api/v1/feeds/generated-token');
+    expect(result.current.result?.json_public_url).toBe('/api/v1/feeds/generated-token.json');
   });
 
   it('propagates API validation errors', async () => {
@@ -48,7 +52,9 @@ describe('useFeedConversion contract', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'token');
+      await expect(
+        result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'token')
+      ).rejects.toThrow('URL parameter is required');
     });
 
     expect(result.current.result).toBeNull();

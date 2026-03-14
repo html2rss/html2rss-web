@@ -1,21 +1,11 @@
-import { useState } from 'preact/hooks';
+import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
+import { DominantField } from './DominantField';
 
 export interface Strategy {
   id: string;
   name: string;
   display_name: string;
-}
-
-export interface AuthFormData {
-  username: string;
-  token: string;
-}
-
-export interface AuthFieldErrors {
-  username: string;
-  token: string;
-  form: string;
 }
 
 export interface FeedFormData {
@@ -28,173 +18,8 @@ export interface FeedFieldErrors {
   form: string;
 }
 
-interface GuestOnboardingPanelProps {
-  mode: 'guest-demo' | 'guest-auth';
-  demoError: string;
-  authFormData: AuthFormData;
-  authFieldErrors: AuthFieldErrors;
-  onModeChange: (mode: 'guest-demo' | 'guest-auth') => void;
-  onConvert: (url: string) => void;
-  onAuthSubmit: (event: Event) => void;
-  onAuthFieldChange: (key: 'username' | 'token', value: string) => void;
-  onBackToDemo: () => void;
-}
-
-export function GuestOnboardingPanel({
-  mode,
-  demoError,
-  authFormData,
-  authFieldErrors,
-  onModeChange,
-  onConvert,
-  onAuthSubmit,
-  onAuthFieldChange,
-  onBackToDemo,
-}: GuestOnboardingPanelProps) {
-  const demoSources = [
-    {
-      id: 'github',
-      label: 'GitHub Trending',
-      hint: 'Trending repositories',
-      url: 'https://github.com/trending',
-    },
-    {
-      id: 'hackernews',
-      label: 'Hacker News',
-      hint: 'Latest tech discussions',
-      url: 'https://news.ycombinator.com',
-    },
-    {
-      id: 'hardware',
-      label: 'Hardware Reviews',
-      hint: 'German tech reviews',
-      url: 'https://www.chip.de',
-    },
-  ];
-  const [selectedDemoId, setSelectedDemoId] = useState(demoSources[0].id);
-  const selectedDemoUrl = demoSources.find((source) => source.id === selectedDemoId)?.url ?? demoSources[0].url;
-
-  return (
-    <section class="workspace">
-      <div class="panel-meta">
-        <span />
-        {mode === 'guest-demo' ? (
-          <button type="button" class="btn btn--link" onClick={() => onModeChange('guest-auth')}>
-            Sign in
-          </button>
-        ) : (
-          <button type="button" class="btn btn--link btn--meta" onClick={onBackToDemo}>
-            ← Back to demo
-          </button>
-        )}
-      </div>
-
-      {mode === 'guest-demo' ? (
-        <div class="form">
-          <h2 class="workspace-title">Convert website to RSS</h2>
-          <p class="field-help">Try a demo source instantly. Sign in to convert your own URLs.</p>
-
-          <div class="field">
-            <label for="demo-source" class="label">Demo source</label>
-            <select
-              id="demo-source"
-              class="input"
-              value={selectedDemoId}
-              onChange={(e) => setSelectedDemoId((e.target as HTMLSelectElement).value)}
-            >
-              {demoSources.map((source) => (
-                <option key={source.id} value={source.id}>
-                  {source.label} — {source.hint}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {demoError && (
-            <div class="notice notice--error notice--compact" role="alert">
-              <h4>Demo conversion error</h4>
-              <p>{demoError}</p>
-            </div>
-          )}
-
-          <div class="form-actions">
-            <button type="button" class="btn btn--ghost" onClick={() => onConvert(selectedDemoUrl)}>
-              Run demo
-            </button>
-          </div>
-        </div>
-      ) : (
-        <form id="auth-section" class="form" onSubmit={onAuthSubmit}>
-          <h2 class="workspace-title">Convert website to RSS</h2>
-
-          {authFieldErrors.form && (
-            <div class="notice notice--error notice--compact" role="alert">
-              <p>{authFieldErrors.form}</p>
-            </div>
-          )}
-
-          <div class="field">
-            <label for="username" class="label" data-required>
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              class="input"
-              placeholder="Enter your username"
-              required
-              autocomplete="username"
-              value={authFormData.username}
-              onInput={(e) => onAuthFieldChange('username', (e.target as HTMLInputElement).value)}
-            />
-            <div class="field-error" id="username-error">
-              {authFieldErrors.username}
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="token" class="label" data-required>
-              Token
-            </label>
-            <input
-              type="password"
-              id="token"
-              name="token"
-              class="input"
-              placeholder="Enter your authentication token"
-              required
-              autocomplete="current-password"
-              value={authFormData.token}
-              onInput={(e) => onAuthFieldChange('token', (e.target as HTMLInputElement).value)}
-            />
-            <div class="field-error" id="token-error">
-              {authFieldErrors.token}
-            </div>
-          </div>
-
-          <p class="field-help">
-            Need a token? Ask your html2rss-web admin or read the{' '}
-            <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
-              official docs
-            </a>
-            .
-          </p>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn--accent">
-              Sign in
-            </button>
-          </div>
-        </form>
-      )}
-    </section>
-  );
-}
-
-interface MemberConvertPanelProps {
-  username: string;
-  onLogout: () => void;
+interface CreateFeedPanelProps {
+  focusComposerKey: number;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   conversionError: string | null;
@@ -202,14 +27,22 @@ interface MemberConvertPanelProps {
   strategies: Strategy[];
   strategiesLoading: boolean;
   strategiesError: string | null;
+  feedCreationEnabled: boolean;
+  accessTokenRequired: boolean;
+  hasAccessToken: boolean;
+  tokenDraft: string;
+  tokenError: string;
+  showTokenPrompt: boolean;
   onFeedSubmit: (event: Event) => void;
   onFeedFieldChange: (key: 'url' | 'strategy', value: string) => void;
+  onTokenDraftChange: (value: string) => void;
+  onSaveToken: () => void;
+  onCancelTokenPrompt: () => void;
   strategyHint: (strategy: Strategy) => string;
 }
 
-export function MemberConvertPanel({
-  username,
-  onLogout,
+export function CreateFeedPanel({
+  focusComposerKey,
   feedFormData,
   feedFieldErrors,
   conversionError,
@@ -217,89 +50,204 @@ export function MemberConvertPanel({
   strategies,
   strategiesLoading,
   strategiesError,
+  feedCreationEnabled,
+  accessTokenRequired,
+  hasAccessToken,
+  tokenDraft,
+  tokenError,
+  showTokenPrompt,
   onFeedSubmit,
   onFeedFieldChange,
+  onTokenDraftChange,
+  onSaveToken,
+  onCancelTokenPrompt,
   strategyHint,
-}: MemberConvertPanelProps) {
+}: CreateFeedPanelProps) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
+  const tokenInputRef = useRef<HTMLInputElement | null>(null);
+  const strategyOptionLabel = (strategy: Strategy) => {
+    if (strategy.id === 'ssrf_filter') return 'Standard rendering';
+    if (strategy.id === 'browserless') return 'JavaScript pages';
+    return strategy.display_name;
+  };
+
+  useLayoutEffect(() => {
+    if (!urlInputRef.current || typeof window === 'undefined') return;
+
+    const focusHandle = window.requestAnimationFrame(() => {
+      const input = urlInputRef.current;
+      if (!input) return;
+
+      input.focus();
+      input.select();
+    });
+
+    return () => window.cancelAnimationFrame(focusHandle);
+  }, [focusComposerKey]);
+
+  useLayoutEffect(() => {
+    if (!showTokenPrompt || !tokenInputRef.current || typeof window === 'undefined') return;
+
+    const focusHandle = window.requestAnimationFrame(() => {
+      tokenInputRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(focusHandle);
+  }, [showTokenPrompt]);
 
   return (
-    <section class="workspace">
-      <div class="panel-meta">
-        <span class="panel-meta__primary">{username}</span>
-        <button type="button" onClick={onLogout} class="btn btn--link btn--meta">
-          Log out
-        </button>
-      </div>
+    <form class="form-shell form-shell--minimal" onSubmit={onFeedSubmit}>
+      <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
+        <DominantField
+          id="url"
+          label="Page URL"
+          type="url"
+          value={feedFormData.url}
+          placeholder="https://example.com/article"
+          autoFocus
+          inputRef={urlInputRef}
+          actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
+          actionText={isConverting ? '...' : '>'}
+          disabled={isConverting || !feedCreationEnabled || showTokenPrompt}
+          error={feedFieldErrors.url}
+          onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
+        />
 
-      <form id="feed-section" class="form" onSubmit={onFeedSubmit}>
-        <h2 class="workspace-title">Convert a website</h2>
-        <div class="field">
-          <label for="url" class="label" data-required>URL</label>
-          <div class="field field--inline">
-            <input
-              type="url"
-              id="url"
-              name="url"
-              class="input"
-              placeholder="https://example.com"
-              required
-              autofocus
-              autocomplete="url"
-              value={feedFormData.url}
-              onInput={(e) => onFeedFieldChange('url', (e.target as HTMLInputElement).value)}
-            />
-            <button type="submit" class="btn btn--accent" disabled={isConverting}>
-              {isConverting ? 'Converting...' : 'Convert'}
-            </button>
-          </div>
-          <div class="field-error field-error--compact" id="url-error">
-            {feedFieldErrors.url}
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="strategy" class="label">Strategy</label>
+        <label class="field-block field-block--select field-block--subtle" htmlFor="strategy">
           <select
             id="strategy"
             name="strategy"
-            class="input"
+            class="input input--select input--subtle"
             value={feedFormData.strategy}
-            disabled={strategiesLoading}
-            onChange={(e) => onFeedFieldChange('strategy', (e.target as HTMLSelectElement).value)}
+            disabled={strategiesLoading || showTokenPrompt}
+            onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
           >
-            {strategiesLoading
-              ? <option value="">Loading…</option>
-              : strategies.map((strategy) => (
-                  <option key={strategy.id} value={strategy.id}>
-                    {strategy.display_name}
-                  </option>
-                ))
-            }
+            {strategiesLoading ? (
+              <option value="">Loading…</option>
+            ) : (
+              strategies.map((strategy) => (
+                <option key={strategy.id} value={strategy.id}>
+                  {strategyOptionLabel(strategy)}
+                </option>
+              ))
+            )}
           </select>
-          {strategiesError && (
-            <p class="field-error">{strategiesError}</p>
-          )}
-          {selectedStrategy && !strategiesLoading && (
-            <p class="field-help">{strategyHint(selectedStrategy)}</p>
+        </label>
+        {strategiesError && <p class="field-help">{strategiesError}</p>}
+        {!strategiesError && selectedStrategy?.id === 'browserless' && (
+          <p class="field-help">{strategyHint(selectedStrategy)}</p>
+        )}
+
+        {!feedCreationEnabled && (
+          <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+        )}
+      </div>
+
+      {showTokenPrompt && (
+        <div class="token-gate" role="group" aria-label="Access token">
+          <div class="token-gate__copy">
+            <h2>Add access token</h2>
+            <p class="token-gate__hint">This instance needs an access token.</p>
+          </div>
+          <label class="field-block field-block--token" htmlFor="access-token">
+            <span class="field-label field-label--ghost">Access token</span>
+            <input
+              id="access-token"
+              name="access-token"
+              type="password"
+              class="input input--mono input--subtle"
+              aria-label="Access token"
+              placeholder="Paste access token"
+              autocomplete="off"
+              ref={tokenInputRef}
+              value={tokenDraft}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return;
+
+                event.preventDefault();
+                void onSaveToken();
+              }}
+              onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
+            />
+            <span class="field-error">{tokenError}</span>
+          </label>
+          <a
+            href="https://html2rss.github.io/web-application/getting-started/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="token-gate__nudge token-gate__nudge-link"
+          >
+            Set up your own instance with Docker.
+          </a>
+          <div class="token-gate__actions">
+            <button type="button" class="btn btn--ghost" onClick={onSaveToken}>
+              Save and continue
+            </button>
+          </div>
+          <div class="token-gate__back">
+            <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
+              Back
+            </button>
+          </div>
+        </div>
+      )}
+
+      {conversionError && (
+        <div class="notice notice--error" role="alert">
+          <div class="notice__title">Feed generation failed</div>
+          <p>{conversionError}</p>
+        </div>
+      )}
+
+      {feedFieldErrors.form && (
+        <div class="notice notice--error" role="alert">
+          <p>{feedFieldErrors.form}</p>
+        </div>
+      )}
+    </form>
+  );
+}
+
+interface UtilityStripProps {
+  hidden?: boolean;
+  hasAccessToken: boolean;
+  onClearToken: () => void;
+}
+
+export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: UtilityStripProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (hidden) return null;
+
+  return (
+    <section class="utility-strip" aria-label="Utilities">
+      <button
+        type="button"
+        class="utility-button utility-button--toggle"
+        aria-expanded={isOpen ? 'true' : 'false'}
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        More
+      </button>
+      {isOpen && (
+        <div class="utility-strip__items">
+          <Bookmarklet />
+          <a
+            href="https://github.com/html2rss/html2rss-web"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="utility-link"
+          >
+            Source code
+          </a>
+          {hasAccessToken && (
+            <button type="button" class="utility-button" onClick={onClearToken}>
+              Clear saved token
+            </button>
           )}
         </div>
-
-        {conversionError && (
-          <div class="notice notice--error notice--compact" role="alert">
-            <h4>Conversion error</h4>
-            <p>{conversionError}</p>
-          </div>
-        )}
-
-        {feedFieldErrors.form && (
-          <div class="notice notice--error notice--compact" role="alert">
-            <p>{feedFieldErrors.form}</p>
-          </div>
-        )}
-      </form>
-
-      <Bookmarklet />
+      )}
     </section>
   );
 }

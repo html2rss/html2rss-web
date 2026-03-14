@@ -2,7 +2,6 @@
 
 require 'time'
 require 'json'
-require 'html2rss/url'
 
 require_relative '../../../auth'
 require_relative '../../../auto_source'
@@ -18,12 +17,11 @@ module Html2rss
       module V1
         module Feeds
           ##
-          # Creates stable feed records from authenticated API requests.
-          #
-          # The implementation intentionally keeps parsing, authorization, and
-          # normalization in a single boundary object so callers can rely on one
-          # predictable contract instead of coordinating multiple services.
+          # Creates stable feed records from authenticated API requests with one predictable boundary contract.
           module CreateFeed
+            FEED_ATTRIBUTE_KEYS =
+              %i[id name url strategy feed_token public_url json_public_url created_at updated_at].freeze
+
             class << self
               # Creates a feed and returns a normalized API success payload.
               #
@@ -41,29 +39,12 @@ module Html2rss
                 raise
               end
 
-              # Extracts a best-effort human-readable title from the URL.
-              #
-              # @param url [String] target source URL.
-              # @return [String, nil] inferred title or nil when unavailable.
-              def extract_site_title(url)
-                Html2rss::Url.for_channel(url).channel_titleized
-              rescue StandardError
-                nil
-              end
-
               private
 
-              # Enforces feature availability at the API edge to fail fast.
-              #
-              # @return [void]
               def ensure_auto_source_enabled!
                 raise ForbiddenError, Contract::MESSAGES[:auto_source_disabled] unless AutoSource.enabled?
               end
 
-              # Resolves the authenticated account from the request.
-              #
-              # @param request [Rack::Request]
-              # @return [Hash{Symbol=>Object}] authenticated account attributes.
               def require_account(request)
                 account = Auth.authenticate(request)
                 raise UnauthorizedError, 'Authentication required' unless account
@@ -71,11 +52,6 @@ module Html2rss
                 account
               end
 
-              # Validates and normalizes feed creation parameters.
-              #
-              # @param params [Hash{String=>Object}] merged request parameters.
-              # @param account [Hash{Symbol=>Object}] authenticated account.
-              # @return [Html2rss::Web::BoundaryModels::FeedCreateParams]
               def build_create_params(params, account)
                 url = params['url'].to_s.strip
                 raise BadRequestError, 'URL parameter is required' if url.empty?
@@ -89,10 +65,6 @@ module Html2rss
                 )
               end
 
-              # Normalizes a strategy value while preserving a default path.
-              #
-              # @param raw_strategy [String, nil]
-              # @return [String]
               def normalize_strategy(raw_strategy)
                 strategy = raw_strategy.to_s.strip
                 strategy = default_strategy if strategy.empty?
@@ -112,24 +84,13 @@ module Html2rss
                 Html2rss::RequestService.default_strategy_name.to_s
               end
 
-              # Shapes feed attributes into the stable API schema.
-              #
-              # @param feed_data [Html2rss::Web::BoundaryModels::FeedMetadata, Hash{Symbol=>Object}] feed record.
-              # @return [Hash{Symbol=>Object}] response-safe feed attributes.
               def feed_attributes(feed_data)
-                typed_feed = feed_data.is_a?(BoundaryModels::FeedMetadata) ? feed_data : BoundaryModels::FeedMetadata.new(**feed_data)
                 timestamp = Time.now.iso8601
+                typed_feed = feed_metadata(feed_data)
 
-                typed_feed.to_h.merge(
-                  created_at: timestamp,
-                  updated_at: timestamp
-                ).slice(:id, :name, :url, :strategy, :public_url, :created_at, :updated_at)
+                typed_feed_attributes(typed_feed, timestamp).slice(*FEED_ATTRIBUTE_KEYS)
               end
 
-              # Parses params with optional JSON body override.
-              #
-              # @param request [Rack::Request]
-              # @return [Hash{String=>Object}] merged request params.
               def request_params(request)
                 return request.params unless json_request?(request)
 
@@ -145,15 +106,11 @@ module Html2rss
                 raise BadRequestError, 'Invalid JSON payload'
               end
 
-              # @param request [Rack::Request]
-              # @return [Boolean] whether request body should be parsed as JSON.
               def json_request?(request)
                 content_type = request.env['CONTENT_TYPE'].to_s
                 content_type.include?('application/json')
               end
 
-              # @param request [Rack::Request]
-              # @return [Array<(Html2rss::Web::BoundaryModels::FeedCreateParams, Object)>]
               def build_feed_from_request(request)
                 account = require_account(request)
                 ensure_auto_source_enabled!
@@ -165,8 +122,6 @@ module Html2rss
                 [params, feed_data]
               end
 
-              # @param params [Html2rss::Web::BoundaryModels::FeedCreateParams]
-              # @return [void]
               def emit_create_success(params)
                 Observability.emit(
                   event_name: 'feed.create',
@@ -176,8 +131,6 @@ module Html2rss
                 )
               end
 
-              # @param error [StandardError]
-              # @return [void]
               def emit_create_failure(error)
                 Observability.emit(
                   event_name: 'feed.create',
@@ -185,6 +138,16 @@ module Html2rss
                   details: { error_class: error.class.name, error_message: error.message },
                   level: :warn
                 )
+              end
+
+              def feed_metadata(feed_data)
+                return feed_data if feed_data.is_a?(BoundaryModels::FeedMetadata)
+
+                BoundaryModels::FeedMetadata.new(**feed_data)
+              end
+
+              def typed_feed_attributes(typed_feed, timestamp)
+                typed_feed.to_h.merge(created_at: timestamp, updated_at: timestamp)
               end
             end
           end

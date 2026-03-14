@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { listStrategies } from '../api/generated';
-import { apiClient, bearerHeaders } from '../api/client';
+import { apiClient } from '../api/client';
 import type { StrategyRecord } from '../api/contracts';
 
 interface StrategiesState {
@@ -9,40 +9,30 @@ interface StrategiesState {
   error: string | null;
 }
 
-export function useStrategies(token: string | null) {
+export function useStrategies() {
   const [state, setState] = useState<StrategiesState>({
     strategies: [],
-    isLoading: !!token,
+    isLoading: true,
     error: null,
   });
 
   const fetchStrategies = async () => {
-    if (!token) {
-      setState({ strategies: [], isLoading: false, error: null });
-      return;
-    }
-
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const response = await listStrategies({
         client: apiClient,
-        headers: {
-          ...bearerHeaders(token),
-          'Content-Type': 'application/json',
-        },
-        responseStyle: 'data',
       });
 
-      if (response?.success && response.data?.strategies) {
-        setState({
-          strategies: response.data.strategies,
-          isLoading: false,
-          error: null,
-        });
-      } else {
+      if (response.error || !response.data?.success || !response.data.data?.strategies) {
         throw new Error('Invalid response format from strategies API');
       }
+
+      setState({
+        strategies: response.data.data.strategies,
+        isLoading: false,
+        error: null,
+      });
     } catch (error) {
       setState({
         strategies: [],
@@ -54,7 +44,7 @@ export function useStrategies(token: string | null) {
 
   useEffect(() => {
     fetchStrategies();
-  }, [token]);
+  }, []);
 
   return {
     strategies: state.strategies,

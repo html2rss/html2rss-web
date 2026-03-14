@@ -41,8 +41,24 @@ paths:
                         - description
                         - openapi_url
                         type: object
+                      instance:
+                        properties:
+                          feed_creation:
+                            properties:
+                              access_token_required:
+                                type: boolean
+                              enabled:
+                                type: boolean
+                            required:
+                            - enabled
+                            - access_token_required
+                            type: object
+                        required:
+                        - feed_creation
+                        type: object
                     required:
                     - api
+                    - instance
                     type: object
                   success:
                     type: boolean
@@ -50,7 +66,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns OpenAPI document URL in metadata
+          description: returns instance feed-creation capability
       security: []
       summary: API metadata
       tags:
@@ -90,6 +106,8 @@ paths:
                         properties:
                           created_at:
                             type: string
+                          feed_token:
+                            type: string
                           id:
                             type: string
                           name:
@@ -107,6 +125,7 @@ paths:
                         - name
                         - url
                         - strategy
+                        - feed_token
                         - public_url
                         - created_at
                         - updated_at

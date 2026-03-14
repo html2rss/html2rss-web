@@ -2,7 +2,7 @@
 
 # html2rss-web
 
-html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby backend and an Astro-powered frontend.
+html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby backend and a Preact frontend.
 
 ## Links
 
@@ -12,7 +12,7 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 
 ## Highlights
 
-- Responsive Astro interface with gallery and custom feed creation.
+- Responsive Preact interface for demo, sign-in, conversion, and result flows.
 - Automatic source discovery with token-scoped permissions.
 - Signed public feed URLs that work in standard RSS readers.
 - Built-in SSRF defences, input validation, and HMAC-protected tokens.
@@ -20,17 +20,8 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 ## Architecture
 
 - **Backend:** Ruby + Roda, backed by the `html2rss` gem for extraction.
-- **Frontend:** Astro static site with progressive enhancement.
+- **Frontend:** Preact app built with Vite into `public/frontend`.
 - **Distribution:** Docker Compose by default; other deployments require manual wiring.
-
-## Documentation
-
-In-repo docs live under `frontend/src/content/docs/` and are published by Astro.
-
-- [Configuration Guide](frontend/src/content/docs/configuration.md)
-- [Security Guide](frontend/src/content/docs/security.md)
-- [REST API v1](frontend/src/content/docs/api/v1.md)
-- [Testing Overview](frontend/src/content/docs/testing.md)
 - [v2 Migration Guide](docs/migrations/v2.md)
 
 ## REST API Snapshot
@@ -73,7 +64,7 @@ bundle exec rspec
 make openapi
 ```
 
-Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://localhost:4001`.
+Dev URLs: Ruby app at `http://localhost:4000`, frontend dev server at `http://localhost:4001`.
 
 ## Make Targets
 
@@ -81,9 +72,9 @@ Dev URLs: Ruby app at `http://localhost:4000`, Astro dev server at `http://local
 | -------------------- | ------------------------------------------------------- |
 | `make help`          | List available shortcuts.                               |
 | `make setup`         | Install Ruby and Node dependencies.                     |
-| `make dev`           | Run Ruby (port 4000) and Astro (port 4001) dev servers. |
+| `make dev`           | Run Ruby (port 4000) and frontend (port 4001) dev servers. |
 | `make dev-ruby`      | Start only the Ruby server.                             |
-| `make dev-frontend`  | Start only the Astro dev server (port 4001).            |
+| `make dev-frontend`  | Start only the frontend dev server (port 4001).         |
 | `make test`          | Run Ruby and frontend test suites.                      |
 | `make test-ruby`     | Run Ruby specs.                                         |
 | `make test-frontend` | Run frontend unit and contract tests.                   |
@@ -105,8 +96,8 @@ The OpenAPI file is generated from Ruby request specs only.
 
 | Command                 | Purpose                                       |
 | ----------------------- | --------------------------------------------- |
-| `npm run dev`           | Astro dev server with hot reload (port 4001). |
-| `npm run build`         | Production build.                             |
+| `npm run dev`           | Vite dev server with hot reload (port 4001).  |
+| `npm run build`         | Build static assets into `public/frontend`.   |
 | `npm run test:run`      | Unit tests (Vitest).                          |
 | `npm run test:contract` | Contract tests with MSW.                      |
 

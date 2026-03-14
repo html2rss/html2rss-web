@@ -1,20 +1,11 @@
 import { useState } from 'preact/hooks';
 import { createFeed } from '../api/generated';
-import { apiClient, bearerHeaders } from '../api/client';
-
-interface ConversionResult {
-  id: string;
-  name: string;
-  url: string;
-  strategy: string;
-  public_url: string;
-  created_at: string;
-  updated_at: string;
-}
+import { apiClient } from '../api/client';
+import type { FeedRecord } from '../api/contracts';
 
 interface ConversionState {
   isConverting: boolean;
-  result: ConversionResult | null;
+  result: FeedRecord | null;
   error: string | null;
 }
 
@@ -41,39 +32,31 @@ export function useFeedConversion() {
       const response = await createFeed({
         client: apiClient,
         headers: {
-          'Content-Type': 'application/json',
-          ...bearerHeaders(token),
+          Authorization: `Bearer ${token}`,
         },
         body: {
           url: url.trim(),
           strategy: strategy.trim(),
         },
+        throwOnError: true,
       });
 
-      const errorPayload = response.error as { error?: { message?: string } } | undefined;
-      if (response.error) {
-        const networkMessage = response.error instanceof Error ? response.error.message : undefined;
-        throw new Error(networkMessage || errorPayload?.error?.message || 'Request failed');
-      }
-
-      const typed = response.data as {
-        success?: boolean;
-        data?: { feed?: ConversionResult };
-      };
-
-      if (!typed?.success || !typed?.data?.feed) {
+      if (!response.data?.success || !response.data.data?.feed) {
         throw new Error('Invalid response format');
       }
 
-      const result = typed.data.feed;
+      const result = response.data.data.feed;
       setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
+      return result;
     } catch (error) {
+      const message = toErrorMessage(error);
       setState((prev) => ({
         ...prev,
         isConverting: false,
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error: message,
         result: null,
       }));
+      throw new Error(message);
     }
   };
 
@@ -87,11 +70,34 @@ export function useFeedConversion() {
     });
   };
 
+  const clearError = () => {
+    setState((prev) => ({ ...prev, error: null }));
+  };
+
   return {
     isConverting: state.isConverting,
     result: state.result,
     error: state.error,
     convertFeed,
+    clearError,
     clearResult,
   };
 }
+
+const toErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string' && error.trim()) return error;
+
+  const message = extractMessage(error);
+  return message ?? 'An unexpected error occurred';
+};
+
+const extractMessage = (error: unknown): string | null => {
+  if (!error || typeof error !== 'object') return null;
+
+  const candidate =
+    (error as { error?: { message?: unknown }; message?: unknown }).error?.message ??
+    (error as { message?: unknown }).message;
+
+  return typeof candidate === 'string' && candidate.trim() ? candidate : null;
+};

@@ -26,17 +26,17 @@ cleanup() {
     wait $RUBY_PID 2>/dev/null || true
   fi
 
-  # Kill Astro server and its children
-  if [ ! -z "$ASTRO_PID" ]; then
+  # Kill frontend dev server and its children
+  if [ ! -z "$FRONTEND_PID" ]; then
     # Kill the npm process and its children
-    pkill -P $ASTRO_PID 2>/dev/null || true
-    kill $ASTRO_PID 2>/dev/null || true
-    wait $ASTRO_PID 2>/dev/null || true
+    pkill -P $FRONTEND_PID 2>/dev/null || true
+    kill $FRONTEND_PID 2>/dev/null || true
+    wait $FRONTEND_PID 2>/dev/null || true
   fi
 
   # Clean up any remaining processes on our ports
   pkill -f "puma.*html2rss-web" 2>/dev/null || true
-  pkill -f "astro.*dev.*4001" 2>/dev/null || true
+  pkill -f "vite.*4001" 2>/dev/null || true
 
   echo "✅ Development servers stopped"
   exit 0
@@ -77,18 +77,18 @@ if [ "$ruby_started" != "true" ]; then
   exit 1
 fi
 
-# Start Astro dev server
+# Start frontend dev server
 cd frontend
 npm run dev &
-ASTRO_PID=$!
+FRONTEND_PID=$!
 
-# Verify Astro server started
+# Verify frontend server started
 sleep 3
-if ! kill -0 $ASTRO_PID 2>/dev/null; then
-  echo "❌ Astro dev server failed to start"
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+  echo "❌ Frontend dev server failed to start"
   kill $RUBY_PID 2>/dev/null || true
   exit 1
 fi
 
 echo "✅ Development environment ready at http://localhost:4001"
-wait $RUBY_PID $ASTRO_PID
+wait $RUBY_PID $FRONTEND_PID

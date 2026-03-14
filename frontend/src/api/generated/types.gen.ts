@@ -13,7 +13,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
     /**
-     * returns OpenAPI document URL in metadata
+     * returns instance feed-creation capability
      */
     200: {
         data: {
@@ -21,6 +21,12 @@ export type GetApiMetadataResponses = {
                 description: string;
                 name: string;
                 openapi_url: string;
+            };
+            instance: {
+                feed_creation: {
+                    access_token_required: boolean;
+                    enabled: boolean;
+                };
             };
         };
         success: boolean;
@@ -75,7 +81,9 @@ export type CreateFeedResponses = {
         data: {
             feed: {
                 created_at: string;
+                feed_token: string;
                 id: string;
+                json_public_url: string;
                 name: string;
                 public_url: string;
                 strategy: string;

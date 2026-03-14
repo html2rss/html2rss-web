@@ -5,12 +5,10 @@ import { server, buildFeedResponse } from './mocks/server';
 import { App } from '../components/App';
 
 describe('App contract', () => {
-  const username = 'contract-user';
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.sessionStorage.setItem('html2rss_username', username);
-    window.sessionStorage.setItem('html2rss_token', token);
+    window.sessionStorage.setItem('html2rss_access_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {
@@ -26,32 +24,47 @@ describe('App contract', () => {
         return HttpResponse.json(
           buildFeedResponse({
             url: body.url,
+            feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
+            json_public_url: '/api/v1/feeds/generated-token.json',
           })
         );
       }),
-      http.get('/api/v1/feeds/generated-token', () =>
-        HttpResponse.text(
-          `<?xml version="1.0"?><rss><channel><title>Contract Feed</title><item><title>Contract Item</title></item></channel></rss>`
-        )
-      )
+      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
+        expect(request.headers.get('accept')).toBe('application/feed+json');
+
+        return HttpResponse.json(
+          {
+            items: [{ title: 'Contract Item' }],
+          },
+          {
+            headers: { 'content-type': 'application/feed+json' },
+          }
+        );
+      })
     );
 
     render(<App />);
 
-    await screen.findByText(username);
+    await screen.findByLabelText('Page URL');
 
-    const urlInput = screen.getByLabelText('URL') as HTMLInputElement;
+    const urlInput = screen.getByLabelText('Page URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Convert' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Feed created')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
-      expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
+      expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'JSON Feed' })).toHaveAttribute(
+        'href',
+        'http://localhost:3000/api/v1/feeds/generated-token.json'
+      );
+      expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
+      expect(screen.getByText('Feed preview')).toBeInTheDocument();
+      expect(screen.getByText('Contract Item')).toBeInTheDocument();
     });
   });
 });

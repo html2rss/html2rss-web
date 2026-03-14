@@ -88,6 +88,9 @@ jobs:
       - name: Verify generated OpenAPI client is up to date
         run: npm run openapi:verify
 
+      - name: Typecheck frontend
+        run: npm run typecheck
+
       - name: Check formatting
         run: npm run format:check
 
@@ -127,7 +130,7 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Build frontend
+      - name: Build frontend static assets
         run: npm run build
         working-directory: frontend
 
@@ -162,7 +165,7 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Build frontend
+      - name: Build frontend static assets
         run: npm run build
         working-directory: frontend
 
