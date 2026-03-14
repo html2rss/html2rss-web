@@ -5,10 +5,10 @@
   gap: 0.75rem;
   width: 100%;
   padding: 0.85rem 1rem;
-  border: 1px solid var(--sl-color-hairline);
+  border: 1px solid var(--app-border);
   border-radius: 0.6rem;
-  background: var(--sl-color-bg);
-  color: var(--sl-color-text);
+  background: var(--app-bg-panel-strong);
+  color: var(--app-text);
   text-align: left;
   cursor: pointer;
   transition:
@@ -17,8 +17,8 @@
 }
 
 .button:hover {
-  border-color: var(--sl-color-accent);
-  background: var(--sl-color-accent-low);
+  border-color: var(--app-accent);
+  background: var(--app-accent-soft);
 }
 
 .content {
@@ -40,10 +40,10 @@
 .name {
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--sl-color-text);
+  color: var(--app-text);
 }
 
 .description {
   font-size: 0.8rem;
-  color: var(--sl-color-text-accent);
+  color: var(--app-text-muted);
 }

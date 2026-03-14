@@ -28,7 +28,7 @@ dev: ## Start development server with live reload
 dev-ruby: ## Start Ruby server only
 	@bin/dev-ruby
 
-dev-frontend: ## Start Astro dev server only
+dev-frontend: ## Start frontend dev server only
 	@cd frontend && npm run dev
 
 test: ## Run all tests (Ruby + Frontend)
@@ -111,7 +111,7 @@ openai-lint-spectral: openapi-lint-spectral ## Alias for openapi-lint-spectral
 
 clean: ## Clean temporary files
 	@rm -rf tmp/rack-cache-* coverage/
-	@cd frontend && rm -rf dist/ .astro/ node_modules/
+	@cd frontend && rm -rf dist/ node_modules/
 	@echo "Clean complete!"
 
 frontend-setup: ## Setup frontend dependencies

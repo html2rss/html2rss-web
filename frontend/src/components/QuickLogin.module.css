@@ -1,15 +1,15 @@
 .wrapper {
   border-radius: 0.6rem;
-  background: var(--sl-color-accent-low);
+  background: var(--app-accent-soft);
   padding: 0.9rem 1rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  color: var(--sl-color-text);
+  color: var(--app-text);
 }
 
 .text {
   font-size: 0.9rem;
-  color: var(--sl-color-text-accent);
+  color: var(--app-text-muted);
 }

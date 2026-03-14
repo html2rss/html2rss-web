@@ -127,7 +127,7 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Build frontend
+      - name: Build frontend static assets
         run: npm run build
         working-directory: frontend
 
@@ -162,7 +162,7 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Build frontend
+      - name: Build frontend static assets
         run: npm run build
         working-directory: frontend
 

@@ -5,15 +5,15 @@
   justify-content: center;
   gap: 1rem;
   min-height: 40vh;
-  color: var(--sl-color-text);
+  color: var(--app-text);
 }
 
 .loadingSpinner {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  border: 3px solid var(--sl-color-hairline);
-  border-top-color: var(--sl-color-accent);
+  border: 3px solid var(--app-border);
+  border-top-color: var(--app-accent);
   animation: app-spin 0.8s linear infinite;
 }
 
