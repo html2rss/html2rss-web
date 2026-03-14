@@ -16,15 +16,22 @@ describe('ResultDisplay', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(window, 'fetch').mockResolvedValue({
+      text: async () =>
+        `<?xml version="1.0"?><rss><channel><item><description>1. Item One ( example.com )</description></item><item><description>2. Item Two ( example.com )</description></item><item><description>3. Item Three ( example.com )</description></item></channel></rss>`,
+    } as Response);
   });
 
-  it('renders the simplified result actions', () => {
+  it('renders the simplified result actions and preview', async () => {
     render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    expect(screen.getByText('Feed URL ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Item One')).toBeInTheDocument();
+      expect(screen.getByText('Item Three')).toBeInTheDocument();
+    });
   });
 
   it('calls onCreateAnother when the reset button is clicked', () => {

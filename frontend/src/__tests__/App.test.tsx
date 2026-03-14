@@ -130,7 +130,6 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Feed URL ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Bookmarklet' })).not.toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();

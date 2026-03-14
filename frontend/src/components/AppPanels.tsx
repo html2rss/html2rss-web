@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
+import { DominantField } from './DominantField';
 
 export interface Strategy {
   id: string;
@@ -64,6 +65,11 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProps) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
   const urlInputRef = useRef<HTMLInputElement | null>(null);
+  const strategyOptionLabel = (strategy: Strategy) => {
+    if (strategy.id === 'ssrf_filter') return 'Standard rendering';
+    if (strategy.id === 'browserless') return 'JavaScript pages';
+    return strategy.display_name;
+  };
 
   useLayoutEffect(() => {
     if (!urlInputRef.current || typeof window === 'undefined') return;
@@ -82,25 +88,22 @@ export function CreateFeedPanel({
   return (
     <form class="form-shell form-shell--minimal" onSubmit={onFeedSubmit}>
       <div class="field-stack field-stack--dense">
-        <label class="field-block field-block--primary field-block--hero" htmlFor="url">
-          <span class="field-label field-label--ghost">Page URL</span>
-          <input
-            type="url"
-            id="url"
-            name="url"
-            class="input input--mono input--hero"
-            placeholder="https://example.com/article"
-            autocomplete="url"
-            autoFocus
-            ref={urlInputRef}
-            value={feedFormData.url}
-            onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
-          />
-          <span class="field-error">{feedFieldErrors.url}</span>
-        </label>
+        <DominantField
+          id="url"
+          label="Page URL"
+          type="url"
+          value={feedFormData.url}
+          placeholder="https://example.com/article"
+          autoFocus
+          inputRef={urlInputRef}
+          actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
+          actionText={isConverting ? '...' : '>'}
+          disabled={isConverting || !feedCreationEnabled}
+          error={feedFieldErrors.url}
+          onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
+        />
 
         <label class="field-block field-block--select field-block--subtle" htmlFor="strategy">
-          <span class="field-label field-label--inline">Rendering</span>
           <select
             id="strategy"
             name="strategy"
@@ -114,7 +117,7 @@ export function CreateFeedPanel({
             ) : (
               strategies.map((strategy) => (
                 <option key={strategy.id} value={strategy.id}>
-                  {strategy.display_name}
+                  {strategyOptionLabel(strategy)}
                 </option>
               ))
             )}
@@ -125,13 +128,6 @@ export function CreateFeedPanel({
           <p class="field-help">{strategyHint(selectedStrategy)}</p>
         )}
 
-        <button
-          type="submit"
-          class="btn btn--primary btn--hero"
-          disabled={isConverting || !feedCreationEnabled}
-        >
-          {isConverting ? 'Generating…' : 'Generate feed URL'}
-        </button>
         {!feedCreationEnabled && (
           <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
         )}
