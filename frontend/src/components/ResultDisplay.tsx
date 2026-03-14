@@ -103,8 +103,13 @@ export function ResultDisplay({
       <div class="panel-meta">
         <span class="panel-meta__primary">{isAuthenticated ? (username ?? '') : ''}</span>
         <span class="panel-meta__actions">
-          <button type="button" class="btn btn--link btn--meta" onClick={onClose}>
-            ← Convert another
+          <button
+            type="button"
+            class="btn btn--link btn--meta"
+            onClick={onClose}
+            aria-label="Convert another website"
+          >
+            ← Convert another website
           </button>
           {isAuthenticated && onLogout && (
             <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
@@ -166,12 +171,6 @@ export function ResultDisplay({
           )}
         </section>
       )}
-
-      <div class={styles.footer}>
-        <button type="button" class="btn btn--link btn--meta" onClick={onClose}>
-          ← Convert another website
-        </button>
-      </div>
     </section>
   );
 }
