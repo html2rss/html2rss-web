@@ -2,11 +2,14 @@ export function Bookmarklet() {
   const bookmarkletHref = (() => {
     if (typeof window === 'undefined') return '#';
 
-    const baseUrl = new URL(window.location.origin);
-    baseUrl.pathname = '/';
-    baseUrl.search = '?url=';
+    const appUrl = new URL(window.location.href);
+    appUrl.search = '';
+    appUrl.hash = '';
 
-    return `javascript:window.location.href='${baseUrl.toString()}'+encodeURIComponent(window.location.href);`;
+    const targetPath = appUrl.pathname.endsWith('/frontend/index.html') ? appUrl.pathname : '/';
+    const targetPrefix = `${appUrl.origin}${targetPath}?url=`;
+
+    return `javascript:window.location.href=${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href);`;
   })();
 
   return (

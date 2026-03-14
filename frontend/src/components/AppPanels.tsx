@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
 
 export interface Strategy {
@@ -17,12 +18,13 @@ export interface FeedFieldErrors {
 }
 
 function feedAccessNote(feedCreationEnabled: boolean, accessTokenRequired: boolean, hasAccessToken: boolean) {
-  if (!feedCreationEnabled) return 'Feed creation is unavailable on this deployment.';
-  if (accessTokenRequired && !hasAccessToken) return 'Custom URLs ask for an access token on submit.';
+  if (!feedCreationEnabled) return 'This instance is read-only right now.';
+  if (accessTokenRequired && !hasAccessToken) return 'You will be asked for a token when you submit.';
   return '';
 }
 
 interface CreateFeedPanelProps {
+  focusComposerKey: number;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   conversionError: string | null;
@@ -45,6 +47,7 @@ interface CreateFeedPanelProps {
 }
 
 export function CreateFeedPanel({
+  focusComposerKey,
   feedFormData,
   feedFieldErrors,
   conversionError,
@@ -67,13 +70,24 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProps) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
   const accessNote = feedAccessNote(feedCreationEnabled, accessTokenRequired, hasAccessToken);
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (!urlInputRef.current || typeof window === 'undefined') return;
+
+    const focusHandle = window.requestAnimationFrame(() => {
+      const input = urlInputRef.current;
+      if (!input) return;
+
+      input.focus();
+      input.select();
+    });
+
+    return () => window.cancelAnimationFrame(focusHandle);
+  }, [focusComposerKey]);
 
   return (
     <section class="surface surface--primary">
-      <div class="surface__header">
-        <h2>Create a feed</h2>
-      </div>
-
       <form class="form-shell" onSubmit={onFeedSubmit}>
         <div class="field-stack field-stack--dense">
           <div class="composer-block">
@@ -86,6 +100,8 @@ export function CreateFeedPanel({
                 class="input input--mono input--hero"
                 placeholder="https://example.com/article"
                 autocomplete="url"
+                autoFocus
+                ref={urlInputRef}
                 value={feedFormData.url}
                 onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
               />
@@ -133,7 +149,7 @@ export function CreateFeedPanel({
                 ? strategiesError
                 : selectedStrategy
                   ? strategyHint(selectedStrategy)
-                  : 'Choose the standard strategy unless the page depends on client-side rendering.'}
+                  : 'Start with the standard mode first.'}
             </p>
             {accessNote && <p class="field-help">{accessNote}</p>}
           </div>
@@ -143,7 +159,8 @@ export function CreateFeedPanel({
           <div class="token-gate" role="group" aria-label="Access token">
             <div class="token-gate__copy">
               <span class="field-label">Access token</span>
-              <p class="muted-copy">Save one token in this browser session to continue.</p>
+              <h3>Add access token</h3>
+              <p class="muted-copy">This instance needs a token to generate this feed.</p>
             </div>
             <div class="token-gate__controls">
               <label class="field-block" htmlFor="access-token">
@@ -156,16 +173,22 @@ export function CreateFeedPanel({
                   placeholder="Paste access token"
                   autocomplete="off"
                   value={tokenDraft}
+                  onKeyDown={(event) => {
+                    if (event.key !== 'Enter') return;
+
+                    event.preventDefault();
+                    void onSaveToken();
+                  }}
                   onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
                 />
                 <span class="field-error">{tokenError}</span>
               </label>
               <div class="token-gate__actions">
                 <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-                  Continue
+                  Save and continue
                 </button>
                 <button type="button" class="btn btn--ghost" onClick={onCancelTokenPrompt}>
-                  Cancel
+                  Back
                 </button>
               </div>
             </div>
@@ -196,16 +219,17 @@ interface InstanceInfoProps {
 
 export function InstanceInfo({ hasAccessToken, onClearToken }: InstanceInfoProps) {
   return (
-    <section class="surface surface--info">
+    <section class={`surface surface--info${hasAccessToken ? ' surface--info-compact' : ''}`}>
       <div class="surface__header">
-        <h2>Run your own instance</h2>
+        <h2>{hasAccessToken ? 'Utilities' : 'Run your own instance'}</h2>
+        {!hasAccessToken && <p class="muted-copy">Use Docker when you want your own copy.</p>}
       </div>
 
-      <div class="instance-info">
-        <p>
-          Start locally with Docker, then wire in included feeds, automatic generation, or custom configs.
-        </p>
-      </div>
+      {!hasAccessToken && (
+        <div class="instance-info">
+          <p>Start with the getting-started guide, then keep the bookmarklet and token controls here.</p>
+        </div>
+      )}
 
       <div class="instance-utility">
         <Bookmarklet />
@@ -221,9 +245,12 @@ export function InstanceInfo({ hasAccessToken, onClearToken }: InstanceInfoProps
           Getting started
         </a>
         {hasAccessToken && (
-          <button type="button" class="btn btn--ghost" onClick={onClearToken}>
-            Clear token
-          </button>
+          <>
+            <span class="support-status">Saved token in this browser</span>
+            <button type="button" class="btn btn--ghost" onClick={onClearToken}>
+              Clear saved token
+            </button>
+          </>
         )}
       </div>
     </section>

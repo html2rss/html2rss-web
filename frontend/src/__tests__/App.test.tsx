@@ -86,9 +86,15 @@ describe('App', () => {
   it('renders the streamlined hero and create section', () => {
     render(<App />);
 
-    expect(screen.getByText('Turn web pages into stable feeds.')).toBeInTheDocument();
-    expect(screen.getByText('Create a feed')).toBeInTheDocument();
+    expect(screen.getByText('Create a feed URL.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Source URL')).toBeInTheDocument();
     expect(screen.getByText('Run your own instance')).toBeInTheDocument();
+  });
+
+  it('autofocuses the source url field', () => {
+    render(<App />);
+
+    expect(document.activeElement).toBe(screen.getByLabelText('Source URL'));
   });
 
   it('shows inline token prompt when submitting without a token', () => {
@@ -99,7 +105,7 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    expect(screen.getByText('Save one token in this browser session to continue.')).toBeInTheDocument();
+    expect(screen.getByText('Add access token')).toBeInTheDocument();
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
@@ -126,7 +132,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.getByText('Result')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
     expect(screen.queryByText('Run your own instance')).not.toBeInTheDocument();
 
@@ -162,12 +168,14 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Clear token' }));
+    expect(screen.getByText('Utilities')).toBeInTheDocument();
+    expect(screen.queryByText('Run your own instance')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear saved token' }));
 
     expect(mockClearToken).toHaveBeenCalled();
   });
 
-  it('saves access token from the inline prompt', async () => {
+  it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
     fireEvent.input(screen.getByLabelText('Source URL'), {
@@ -176,10 +184,41 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
     const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+
+    await waitFor(() => {
+      expect(mockSaveToken).toHaveBeenCalledWith('token-123');
+      expect(mockConvertFeed).toHaveBeenCalledWith(
+        'https://example.com/articles',
+        'ssrf_filter',
+        'token-123'
+      );
+    });
+  });
+
+  it('submits the token prompt with Enter', async () => {
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Source URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
+    fireEvent.keyDown(accessTokenInput, { key: 'Enter' });
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
     });
+  });
+
+  it('builds a bookmarklet that returns to the current frontend entry', () => {
+    window.history.replaceState({}, '', 'http://localhost:3000/frontend/index.html');
+    render(<App />);
+
+    const bookmarklet = screen.getByRole('link', { name: 'Convert page to feed' });
+    expect(bookmarklet.getAttribute('href')).toContain('/frontend/index.html?url=');
+    expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
 });

@@ -7,6 +7,7 @@ import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
+const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
 
 function BrandLockup() {
   return (
@@ -42,6 +43,7 @@ export function App() {
   const [showTokenPrompt, setShowTokenPrompt] = useState(false);
   const [tokenDraft, setTokenDraft] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -61,7 +63,7 @@ export function App() {
     if (!hasCurrentStrategy) setFeedFormData((prev) => ({ ...prev, strategy: nextStrategy }));
   }, [strategies, feedFormData.strategy]);
 
-  const feedCreation = metadata?.instance.feed_creation ?? { enabled: true, access_token_required: true };
+  const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
     setFeedFormData((prev) => ({ ...prev, [key]: value }));
@@ -73,19 +75,15 @@ export function App() {
   };
 
   const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Direct fetch for standard documents and static pages.';
-    if (strategy.id === 'browserless')
-      return 'Rendered browser pass for JavaScript-heavy pages, SPAs, and delayed content.';
+    if (strategy.id === 'ssrf_filter') return 'Start here for most pages.';
+    if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
     return strategy.name;
   };
 
-  const handleFeedSubmit = async (event: Event) => {
-    event.preventDefault();
-    setFeedFieldErrors(EMPTY_FEED_ERRORS);
-
+  const attemptFeedCreation = async (accessToken: string) => {
     if (!feedFormData.url.trim()) {
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
-      return;
+      return false;
     }
 
     if (!feedCreation.enabled) {
@@ -93,17 +91,20 @@ export function App() {
         ...EMPTY_FEED_ERRORS,
         form: 'Custom feed generation is disabled for this instance.',
       });
-      return;
+      return false;
     }
 
-    if (feedCreation.access_token_required && !hasToken) {
+    if (feedCreation.access_token_required && !accessToken) {
       setShowTokenPrompt(true);
-      setTokenError('Add an access token to create a custom feed.');
-      return;
+      setTokenError('Paste an access token to keep going.');
+      return false;
     }
 
     try {
-      await convertFeed(feedFormData.url, feedFormData.strategy, token ?? '');
+      await convertFeed(feedFormData.url, feedFormData.strategy, accessToken);
+      setShowTokenPrompt(false);
+      setTokenError('');
+      return true;
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Unable to start feed generation.';
       if (message.toLowerCase().includes('url')) {
@@ -111,15 +112,23 @@ export function App() {
       } else {
         setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: message });
       }
+      return false;
     }
+  };
+
+  const handleFeedSubmit = async (event: Event) => {
+    event.preventDefault();
+    setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    await attemptFeedCreation(token ?? '');
   };
 
   const handleSaveToken = async () => {
     try {
-      await saveToken(tokenDraft);
+      const normalizedToken = tokenDraft.trim();
+      await saveToken(normalizedToken);
       setTokenError('');
-      setShowTokenPrompt(false);
-      setTokenDraft('');
+      const created = await attemptFeedCreation(normalizedToken);
+      if (created) setTokenDraft('');
     } catch (error) {
       setTokenError(error instanceof Error ? error.message : 'Unable to save access token.');
     }
@@ -127,6 +136,7 @@ export function App() {
 
   const handleCreateAnother = () => {
     clearResult();
+    setFocusCreateComposerKey((current) => current + 1);
   };
 
   if (metadataLoading || tokenLoading) {
@@ -152,7 +162,7 @@ export function App() {
         </div>
         {!result && (
           <div class="workspace-frame__titleblock">
-            <h1>Turn web pages into stable feeds.</h1>
+            <h1>Create a feed URL.</h1>
           </div>
         )}
       </header>
@@ -167,43 +177,44 @@ export function App() {
       {result ? (
         <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
       ) : (
-        <CreateFeedPanel
-          feedFormData={feedFormData}
-          feedFieldErrors={feedFieldErrors}
-          conversionError={conversionError}
-          isConverting={isConverting}
-          strategies={strategies}
-          strategiesLoading={strategiesLoading}
-          strategiesError={strategiesError}
-          feedCreationEnabled={feedCreation.enabled}
-          accessTokenRequired={feedCreation.access_token_required}
-          hasAccessToken={hasToken}
-          tokenDraft={tokenDraft}
-          tokenError={tokenError}
-          showTokenPrompt={showTokenPrompt}
-          onFeedSubmit={handleFeedSubmit}
-          onFeedFieldChange={setFeedField}
-          onTokenDraftChange={(value) => {
-            setTokenDraft(value);
-            setTokenError('');
-          }}
-          onSaveToken={handleSaveToken}
-          onCancelTokenPrompt={() => {
-            setShowTokenPrompt(false);
-            setTokenError('');
-          }}
-          strategyHint={strategyHint}
-        />
-      )}
+        <div class="workspace-grid">
+          <CreateFeedPanel
+            focusComposerKey={focusCreateComposerKey}
+            feedFormData={feedFormData}
+            feedFieldErrors={feedFieldErrors}
+            conversionError={conversionError}
+            isConverting={isConverting}
+            strategies={strategies}
+            strategiesLoading={strategiesLoading}
+            strategiesError={strategiesError}
+            feedCreationEnabled={feedCreation.enabled}
+            accessTokenRequired={feedCreation.access_token_required}
+            hasAccessToken={hasToken}
+            tokenDraft={tokenDraft}
+            tokenError={tokenError}
+            showTokenPrompt={showTokenPrompt}
+            onFeedSubmit={handleFeedSubmit}
+            onFeedFieldChange={setFeedField}
+            onTokenDraftChange={(value) => {
+              setTokenDraft(value);
+              setTokenError('');
+            }}
+            onSaveToken={handleSaveToken}
+            onCancelTokenPrompt={() => {
+              setShowTokenPrompt(false);
+              setTokenError('');
+            }}
+            strategyHint={strategyHint}
+          />
 
-      {!result && (
-        <InstanceInfo
-          hasAccessToken={hasToken}
-          onClearToken={() => {
-            clearToken();
-            setShowTokenPrompt(false);
-          }}
-        />
+          <InstanceInfo
+            hasAccessToken={hasToken}
+            onClearToken={() => {
+              clearToken();
+              setShowTokenPrompt(false);
+            }}
+          />
+        </div>
       )}
     </section>
   );

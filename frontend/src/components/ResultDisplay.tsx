@@ -76,17 +76,25 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   };
 
   const displayTitle = feedTitle || result.name;
+  const previewItems = feedItems.slice(0, 4);
 
   return (
     <section id="feed-result" class="surface surface--primary surface--result" aria-live="polite">
       <div class="surface__header">
-        <p class="eyebrow">Ready</p>
+        <p class="eyebrow">Result</p>
         <h2>{displayTitle}</h2>
-        <p class="muted-copy">The endpoint is live.</p>
+        <p class="muted-copy">Your feed URL is ready to copy into a reader or automation.</p>
       </div>
 
       <div class="result-layout">
         <section class="surface__section surface__section--strong result-primary">
+          <div class="result-summary">
+            <p class="result-kicker">Primary action</p>
+            <p class="result-summary__copy">
+              Copy the feed URL, then drop it into the reader or workflow you use.
+            </p>
+          </div>
+
           <label class="field-block result-url" htmlFor="feed-url">
             <span class="field-label">Feed URL</span>
             <input
@@ -115,30 +123,31 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
           )}
 
           <div class="result-secondary">
+            <p class="muted-copy">Need another one from a different page?</p>
             <button type="button" class="btn btn--ghost" onClick={onCreateAnother}>
               Create another feed
             </button>
           </div>
         </section>
 
-        <aside class="surface__section feed-preview" aria-label="Feed preview">
+        <aside class="surface__section surface__section--quiet feed-preview" aria-label="Feed preview">
           <div class="feed-preview__header">
-            <p class="eyebrow">Recent entries</p>
+            <p class="eyebrow">Quick check</p>
             <h3>Preview</h3>
           </div>
           {isLoadingPreview ? (
             <div class="preview-loading">
               <span class="status-card__spinner" aria-hidden="true" />
-              <p>Loading entries</p>
+              <p>Loading sample entries</p>
             </div>
-          ) : feedItems.length > 0 ? (
+          ) : previewItems.length > 0 ? (
             <ol class="feed-preview__list">
-              {feedItems.map((item) => (
+              {previewItems.map((item) => (
                 <li key={item}>{item}</li>
               ))}
             </ol>
           ) : (
-            <p class="muted-copy">Preview items were not available for this response.</p>
+            <p class="muted-copy">The feed is live even though preview entries were not available here.</p>
           )}
         </aside>
       </div>

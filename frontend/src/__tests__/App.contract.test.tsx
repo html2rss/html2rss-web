@@ -39,7 +39,7 @@ describe('App contract', () => {
 
     render(<App />);
 
-    await screen.findByText('Generate a feed from a web page');
+    await screen.findByText('Create a feed URL.');
 
     const urlInput = screen.getByLabelText('Source URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
@@ -51,7 +51,7 @@ describe('App contract', () => {
       expect(resultRegion).not.toBeNull();
       const resultQueries = within(resultRegion!);
 
-      expect(screen.getByText('Feed ready')).toBeInTheDocument();
+      expect(screen.getByText('Result')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(resultQueries.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
       expect(resultQueries.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();

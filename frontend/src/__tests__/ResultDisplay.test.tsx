@@ -25,8 +25,11 @@ describe('ResultDisplay', () => {
   it('renders utility actions and preview state', async () => {
     render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    expect(screen.getByText('Ready')).toBeInTheDocument();
+    expect(screen.getByText('Result')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
+    expect(
+      screen.getByText('Copy the feed URL, then drop it into the reader or workflow you use.')
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
 
