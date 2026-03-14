@@ -65,6 +65,7 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProps) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
   const urlInputRef = useRef<HTMLInputElement | null>(null);
+  const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const strategyOptionLabel = (strategy: Strategy) => {
     if (strategy.id === 'ssrf_filter') return 'Standard rendering';
     if (strategy.id === 'browserless') return 'JavaScript pages';
@@ -85,9 +86,19 @@ export function CreateFeedPanel({
     return () => window.cancelAnimationFrame(focusHandle);
   }, [focusComposerKey]);
 
+  useLayoutEffect(() => {
+    if (!showTokenPrompt || !tokenInputRef.current || typeof window === 'undefined') return;
+
+    const focusHandle = window.requestAnimationFrame(() => {
+      tokenInputRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(focusHandle);
+  }, [showTokenPrompt]);
+
   return (
     <form class="form-shell form-shell--minimal" onSubmit={onFeedSubmit}>
-      <div class="field-stack field-stack--dense">
+      <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
         <DominantField
           id="url"
           label="Page URL"
@@ -98,7 +109,7 @@ export function CreateFeedPanel({
           inputRef={urlInputRef}
           actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
-          disabled={isConverting || !feedCreationEnabled}
+          disabled={isConverting || !feedCreationEnabled || showTokenPrompt}
           error={feedFieldErrors.url}
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
@@ -109,7 +120,7 @@ export function CreateFeedPanel({
             name="strategy"
             class="input input--select input--subtle"
             value={feedFormData.strategy}
-            disabled={strategiesLoading}
+            disabled={strategiesLoading || showTokenPrompt}
             onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
           >
             {strategiesLoading ? (
@@ -137,7 +148,7 @@ export function CreateFeedPanel({
         <div class="token-gate" role="group" aria-label="Access token">
           <div class="token-gate__copy">
             <h2>Add access token</h2>
-            <p class="field-help">Paste it once and continue.</p>
+            <p class="token-gate__hint">This instance needs an access token.</p>
           </div>
           <label class="field-block field-block--token" htmlFor="access-token">
             <span class="field-label field-label--ghost">Access token</span>
@@ -149,6 +160,7 @@ export function CreateFeedPanel({
               aria-label="Access token"
               placeholder="Paste access token"
               autocomplete="off"
+              ref={tokenInputRef}
               value={tokenDraft}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter') return;
@@ -160,11 +172,21 @@ export function CreateFeedPanel({
             />
             <span class="field-error">{tokenError}</span>
           </label>
+          <a
+            href="https://html2rss.github.io/web-application/getting-started/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="token-gate__nudge token-gate__nudge-link"
+          >
+            Set up your own instance with Docker.
+          </a>
           <div class="token-gate__actions">
-            <button type="button" class="btn btn--primary" onClick={onSaveToken}>
+            <button type="button" class="btn btn--ghost" onClick={onSaveToken}>
               Save and continue
             </button>
-            <button type="button" class="btn btn--ghost" onClick={onCancelTokenPrompt}>
+          </div>
+          <div class="token-gate__back">
+            <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
               Back
             </button>
           </div>
@@ -188,12 +210,15 @@ export function CreateFeedPanel({
 }
 
 interface UtilityStripProps {
+  hidden?: boolean;
   hasAccessToken: boolean;
   onClearToken: () => void;
 }
 
-export function UtilityStrip({ hasAccessToken, onClearToken }: UtilityStripProps) {
+export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: UtilityStripProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  if (hidden) return null;
 
   return (
     <section class="utility-strip" aria-label="Utilities">
@@ -208,14 +233,6 @@ export function UtilityStrip({ hasAccessToken, onClearToken }: UtilityStripProps
       {isOpen && (
         <div class="utility-strip__items">
           <Bookmarklet />
-          <a
-            href="https://html2rss.github.io/"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="utility-link"
-          >
-            Getting started
-          </a>
           <a
             href="https://github.com/html2rss/html2rss-web"
             target="_blank"

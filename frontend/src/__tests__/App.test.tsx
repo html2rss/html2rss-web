@@ -100,7 +100,7 @@ describe('App', () => {
     });
   });
 
-  it('shows inline token prompt when submitting without a token', () => {
+  it('shows inline token prompt when submitting without a token', async () => {
     render(<App />);
 
     fireEvent.input(screen.getByLabelText('Page URL'), {
@@ -109,6 +109,15 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     expect(screen.getByText('Add access token')).toBeInTheDocument();
+    expect(screen.getByLabelText('Page URL')).toBeDisabled();
+    expect(screen.getByRole('combobox')).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
+    expect(screen.getByText('This instance needs an access token.')).toBeInTheDocument();
+    expect(screen.queryByText('Paste an access token to keep going.')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(document.getElementById('access-token'));
+    });
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 

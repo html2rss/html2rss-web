@@ -198,6 +198,10 @@ textarea {
   gap: var(--space-4);
 }
 
+.field-stack--inactive {
+  opacity: 0.34;
+}
+
 .result-shell {
   gap: var(--space-3);
 }
@@ -318,6 +322,11 @@ a:focus-visible {
   font-size: 0.98rem;
   font-weight: 500;
   padding: 0;
+}
+
+.input:disabled,
+.input--select:disabled {
+  cursor: not-allowed;
 }
 
 .dominant-field__action {
@@ -473,21 +482,30 @@ a:focus-visible {
   width: min(100%, 38rem);
   margin: 0 auto;
   padding-top: var(--space-2);
+  gap: var(--space-3);
 }
 
 .token-gate__copy {
   display: grid;
-  gap: var(--space-1);
-  justify-items: center;
-  text-align: center;
+  gap: 0;
+  justify-items: start;
+  text-align: left;
 }
 
 .token-gate__copy h2 {
   margin: 0;
   color: var(--text-strong);
   font-family: var(--font-family-display);
-  font-size: clamp(1.2rem, 3vw, 1.65rem);
+  font-size: clamp(1.08rem, 2.6vw, 1.32rem);
+  font-weight: 600;
   line-height: var(--line-height-tight);
+}
+
+.token-gate__hint {
+  margin: 0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-0);
+  line-height: 1.45;
 }
 
 .token-gate__actions,
@@ -495,6 +513,65 @@ a:focus-visible {
   display: grid;
   gap: var(--space-3);
   justify-items: center;
+}
+
+.token-gate__actions {
+  justify-items: end;
+  margin-top: calc(var(--space-1) * -1);
+}
+
+.token-gate__actions .btn {
+  min-height: 2.55rem;
+  padding-inline: 0.95rem;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-body);
+  font-size: 0.98rem;
+  font-weight: 550;
+}
+
+.token-gate__back {
+  margin-top: calc(var(--space-3) * -0.4);
+  justify-self: start;
+}
+
+.token-gate__nudge {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-0);
+  line-height: 1.5;
+}
+
+.token-gate__nudge-link {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.token-gate__nudge-link:hover,
+.token-gate__nudge-link:focus-visible {
+  color: var(--text-body);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.field-block--token {
+  justify-items: stretch;
+  gap: 0.5rem;
+}
+
+.field-block--token .input {
+  min-height: 3.5rem;
+  padding-inline: 1.1rem;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.field-block--token .input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.field-block--token .field-error {
+  text-align: left;
 }
 
 .result-copy {
@@ -617,7 +694,6 @@ a:focus-visible {
     padding-top: clamp(1rem, 6vh, 4rem);
   }
 
-  .token-gate__actions,
   .result-actions {
     grid-template-columns: repeat(2, minmax(0, auto));
   }
@@ -651,6 +727,14 @@ a:focus-visible {
   .result-actions--quiet {
     grid-template-columns: 1fr;
     gap: var(--space-3);
+  }
+
+  .token-gate__actions {
+    justify-items: stretch;
+  }
+
+  .token-gate__actions .btn {
+    width: 100%;
   }
 
   .field-block--select {

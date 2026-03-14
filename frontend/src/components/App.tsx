@@ -93,7 +93,7 @@ export function App() {
 
     if (feedCreation.access_token_required && !accessToken) {
       setShowTokenPrompt(true);
-      setTokenError('Paste an access token to keep going.');
+      setTokenError('');
       return false;
     }
 
@@ -197,6 +197,7 @@ export function App() {
             strategyHint={strategyHint}
           />
           <UtilityStrip
+            hidden={showTokenPrompt}
             hasAccessToken={hasToken}
             onClearToken={() => {
               clearToken();
