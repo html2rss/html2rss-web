@@ -10,6 +10,7 @@
     "preview": "vite preview --port 4001 --host",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "openapi:generate": "openapi-ts -i ../docs/api/v1/openapi.yaml -o src/api/generated -c @hey-api/client-fetch",
     "openapi:verify": "npm run openapi:generate && git diff --exit-code -- src/api/generated",
     "test": "vitest",

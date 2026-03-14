@@ -1,3 +1,8 @@
 # Frontend package files
 package-lock.json
 yarn.lock
+
+# Generated and transient frontend output
+.astro/
+test-results/
+src/api/generated/

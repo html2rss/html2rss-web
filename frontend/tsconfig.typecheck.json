@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true
+  },
+  "exclude": ["src/__tests__/**/*", "e2e/**/*", "playwright.config.ts", "vitest*.ts", "vitest.config.js"]
+}
