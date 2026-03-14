@@ -6,7 +6,7 @@ require_relative '../feeds/request_parser'
 require_relative '../feeds/resolver'
 require_relative '../feeds/rss_renderer'
 require_relative '../feeds/service'
-require_relative '../http_cache'
+require_relative 'feed_response'
 
 module Html2rss
   module Web
@@ -24,11 +24,8 @@ module Html2rss
             resolved_source = Feeds::Resolver.call(feed_request)
             result = Feeds::Service.call(resolved_source)
 
-            raise InternalServerError, result.message if result.status == :error
-
-            emit_success(context, feed_name, resolved_source.generator_input[:strategy])
-            configure_response(router, result.ttl_seconds, feed_request.representation)
-            render_result(result, feed_request.representation)
+            emit_result(context, feed_name, resolved_source.generator_input[:strategy], result)
+            FeedResponse.call(response: router.response, representation: feed_request.representation, result: result)
           rescue StandardError => error
             emit_failure(context, feed_name, error)
             raise
@@ -62,23 +59,19 @@ module Html2rss
             )
           end
 
+          # @param context [Html2rss::Web::AppContext::Context]
+          # @param feed_name [String]
+          # @param strategy [String, nil]
           # @param result [Html2rss::Web::Feeds::Result]
-          # @param format [Symbol]
-          # @return [String]
-          def render_result(result, format)
-            return Feeds::JsonRenderer.call(result) if format == Feeds::ResponseFormat::JSON_FEED
-
-            Feeds::RssRenderer.call(result)
-          end
-
-          # @param router [Roda::RodaRequest]
-          # @param ttl_seconds [Integer]
-          # @param format [Symbol]
           # @return [void]
-          def configure_response(router, ttl_seconds, format)
-            router.response['Content-Type'] = FeedResponseFormat.content_type(format)
-            HttpCache.expires(router.response, ttl_seconds, cache_control: 'public')
-            HttpCache.vary(router.response, 'Accept')
+          def emit_result(context, feed_name, strategy, result)
+            return emit_success(context, feed_name, strategy) unless result.status == :error
+
+            emit_failure(
+              context,
+              feed_name,
+              InternalServerError.new(result.error_message || result.message || HttpError::DEFAULT_MESSAGE)
+            )
           end
         end
       end

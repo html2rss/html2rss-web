@@ -17,13 +17,16 @@ module Html2rss
         class << self
           # @param key [String]
           # @param ttl_seconds [Integer]
+          # @param cacheable [Boolean, Proc]
           # @yieldreturn [Html2rss::Web::Feeds::Result]
           # @return [Html2rss::Web::Feeds::Result]
-          def fetch(key, ttl_seconds:)
+          def fetch(key, ttl_seconds:, cacheable: true)
             entry = read_entry(key)
             return entry.result if fresh?(entry)
 
             result = yield
+            return result unless cacheable_result?(cacheable, result)
+
             write_entry(key, ttl_seconds, result)
             result
           end
@@ -57,6 +60,15 @@ module Html2rss
           def write_entry(key, ttl_seconds, result)
             entries[key] = Entry.new(result: result, expires_at: Time.now.utc + normalize_ttl(ttl_seconds))
             SecurityLogger.log_cache_lifecycle('feeds_cache', 'write', key_hash: key_hash(key))
+          end
+
+          # @param cacheable [Boolean, Proc]
+          # @param result [Html2rss::Web::Feeds::Result]
+          # @return [Boolean]
+          def cacheable_result?(cacheable, result)
+            return cacheable.call(result) if cacheable.respond_to?(:call)
+
+            cacheable
           end
 
           # @return [Hash{String=>Entry}]

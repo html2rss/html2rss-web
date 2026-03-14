@@ -20,7 +20,7 @@ module Html2rss
           def call(result)
             case result.status
             when :ok
-              JSON.generate(payload_for(result.payload.fetch(:feed)))
+              JSON.generate(payload_for(result.payload.feed))
             when :empty
               empty_feed(result)
             else
@@ -34,9 +34,9 @@ module Html2rss
           # @return [String]
           def empty_feed(result)
             JsonFeedBuilder.build_empty_feed_warning(
-              url: result.payload.fetch(:url),
-              strategy: result.payload.fetch(:strategy),
-              site_title: result.payload.fetch(:feed).channel.title
+              url: result.payload.url,
+              strategy: result.payload.strategy,
+              site_title: result.payload.site_title
             )
           end
 

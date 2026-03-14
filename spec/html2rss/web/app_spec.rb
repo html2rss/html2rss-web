@@ -34,7 +34,8 @@ RSpec.describe Html2rss::Web::App do
       payload: nil,
       message: nil,
       ttl_seconds: Html2rss::Web::CacheTtl.seconds_from_minutes(ttl),
-      cache_key: 'feed_result:spec'
+      cache_key: 'feed_result:spec',
+      error_message: nil
     )
   end
 
@@ -42,6 +43,36 @@ RSpec.describe Html2rss::Web::App do
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
     allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return(rss_body)
     allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return(json_body)
+  end
+
+  def static_service_error_result
+    Html2rss::Web::Feeds::Result.new(
+      status: :error,
+      payload: nil,
+      message: 'Internal Server Error',
+      ttl_seconds: 600,
+      cache_key: 'feed_result:error',
+      error_message: 'upstream timeout'
+    )
+  end
+
+  def stub_static_service_error(feed_name)
+    allow(Html2rss::Web::LocalConfig)
+      .to receive(:find)
+      .with(feed_name)
+      .and_return({ channel: { ttl: 180 } })
+    allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(static_service_error_result)
+    allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
+  end
+
+  def service_error_response_tuple(path)
+    get path
+    [
+      last_response.status,
+      last_response.headers['Content-Type'],
+      last_response.headers['Cache-Control'].split(',').map(&:strip).sort,
+      last_response.body
+    ]
   end
 
   it { expect(described_class).to be < Roda }
@@ -59,7 +90,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'serves static feed routes with caching headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'serves static feed routes with caching headers', :aggregate_failures do
       stub_static_feed
 
       get '/legacy'
@@ -81,7 +112,7 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'serves HEAD requests for static feed routes with negotiated headers only', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'serves HEAD requests for static feed routes with negotiated headers only', :aggregate_failures do
       stub_static_feed
       head '/legacy'
 
@@ -119,7 +150,15 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'hides unexpected internal error details from API responses', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'renders service failures as non-cacheable xml feed errors', :aggregate_failures do
+      stub_static_service_error('legacy-service-error')
+
+      expect(service_error_response_tuple('/legacy-service-error')).to eq(
+        [500, 'application/xml', %w[max-age=0 must-revalidate no-cache no-store private], '<error/>']
+      )
+    end
+
+    it 'hides unexpected internal error details from API responses', :aggregate_failures do
       allow(Html2rss::Web::Routes::ApiV1).to receive(:call).and_raise(StandardError, 'boom')
 
       get '/api/v1'

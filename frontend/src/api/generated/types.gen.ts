@@ -16,14 +16,14 @@ export type GetApiMetadataResponses = {
      * returns OpenAPI document URL in metadata
      */
     200: {
-        success: boolean;
         data: {
             api: {
-                name: string;
                 description: string;
+                name: string;
                 openapi_url: string;
             };
         };
+        success: boolean;
     };
 };
 
@@ -31,8 +31,8 @@ export type GetApiMetadataResponse = GetApiMetadataResponses[keyof GetApiMetadat
 
 export type CreateFeedData = {
     body?: {
-        url: string;
         strategy: string;
+        url: string;
     };
     headers: {
         Authorization: string;
@@ -47,21 +47,21 @@ export type CreateFeedErrors = {
      * returns 401 with UNAUTHORIZED error payload
      */
     401: {
-        success: boolean;
         error: {
-            message: string;
             code: string;
+            message: string;
         };
+        success: boolean;
     };
     /**
      * returns forbidden for authenticated requests when auto source is disabled
      */
     403: {
-        success: boolean;
         error: {
-            message: string;
             code: string;
+            message: string;
         };
+        success: boolean;
     };
 };
 
@@ -72,21 +72,21 @@ export type CreateFeedResponses = {
      * creates a feed when request is valid
      */
     201: {
-        success: boolean;
         data: {
             feed: {
+                created_at: string;
                 id: string;
                 name: string;
-                url: string;
-                strategy: string;
                 public_url: string;
-                created_at: string;
+                strategy: string;
                 updated_at: string;
+                url: string;
             };
         };
         meta: {
             created: boolean;
         };
+        success: boolean;
     };
 };
 
@@ -103,25 +103,17 @@ export type RenderFeedByTokenData = {
 
 export type RenderFeedByTokenErrors = {
     /**
-     * returns unauthorized for invalid tokens
+     * returns JSON Feed-shaped errors when requested by json extension
      */
-    401: {
-        success: boolean;
-        error: {
-            message: string;
-            code: string;
-        };
-    };
+    401: string;
     /**
      * returns forbidden when auto source is disabled
      */
-    403: {
-        success: boolean;
-        error: {
-            message: string;
-            code: string;
-        };
-    };
+    403: Blob | File;
+    /**
+     * returns non-cacheable json feed errors when service generation fails
+     */
+    500: string;
 };
 
 export type RenderFeedByTokenError = RenderFeedByTokenErrors[keyof RenderFeedByTokenErrors];
@@ -150,21 +142,21 @@ export type GetHealthStatusErrors = {
      * returns 401 with UNAUTHORIZED error payload
      */
     401: {
-        success: boolean;
         error: {
-            message: string;
             code: string;
+            message: string;
         };
+        success: boolean;
     };
     /**
      * returns error when configuration fails
      */
     500: {
-        success: boolean;
         error: {
-            message: string;
             code: string;
+            message: string;
         };
+        success: boolean;
     };
 };
 
@@ -175,18 +167,18 @@ export type GetHealthStatusResponses = {
      * returns health status when token is valid
      */
     200: {
-        success: boolean;
         data: {
             health: {
-                status: string;
-                timestamp: string;
-                environment: string;
-                uptime: number;
                 checks: {
                     [key: string]: unknown;
                 };
+                environment: string;
+                status: string;
+                timestamp: string;
+                uptime: number;
             };
         };
+        success: boolean;
     };
 };
 
@@ -204,13 +196,13 @@ export type GetLivenessProbeResponses = {
      * returns liveness status without authentication
      */
     200: {
-        success: boolean;
         data: {
             health: {
                 status: string;
                 timestamp: string;
             };
         };
+        success: boolean;
     };
 };
 
@@ -228,18 +220,18 @@ export type GetReadinessProbeResponses = {
      * returns readiness status without authentication
      */
     200: {
-        success: boolean;
         data: {
             health: {
-                status: string;
-                timestamp: string;
-                environment: string;
-                uptime: number;
                 checks: {
                     [key: string]: unknown;
                 };
+                environment: string;
+                status: string;
+                timestamp: string;
+                uptime: number;
             };
         };
+        success: boolean;
     };
 };
 
@@ -273,17 +265,17 @@ export type ListStrategiesResponses = {
      * returns available strategies
      */
     200: {
-        success: boolean;
         data: {
             strategies: Array<{
+                display_name: string;
                 id: string;
                 name: string;
-                display_name: string;
             }>;
         };
         meta: {
             total: number;
         };
+        success: boolean;
     };
 };
 

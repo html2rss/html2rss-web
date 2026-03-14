@@ -9,7 +9,7 @@ require_relative '../../../feeds/request_parser'
 require_relative '../../../feeds/resolver'
 require_relative '../../../feeds/rss_renderer'
 require_relative '../../../feeds/service'
-require_relative '../../../http_cache'
+require_relative '../../../http/feed_response'
 require_relative '../../../observability'
 
 module Html2rss
@@ -31,9 +31,12 @@ module Html2rss
               # @return [String] serialized feed response body.
               def call(request, token)
                 feed_request, resolved_source, result = feed_pipeline(request, token)
-                configure_response(request, feed_request.representation, result.ttl_seconds)
-                emit_success_from(resolved_source)
-                render_result(result, feed_request.representation)
+                emit_result(resolved_source, result)
+                Http::FeedResponse.call(
+                  response: request.response,
+                  representation: feed_request.representation,
+                  result: result
+                )
               rescue StandardError => error
                 emit_render_failure(error)
                 raise
@@ -52,19 +55,19 @@ module Html2rss
                 )
                 resolved_source = ::Html2rss::Web::Feeds::Resolver.call(feed_request)
                 result = ::Html2rss::Web::Feeds::Service.call(resolved_source)
-                raise InternalServerError, result.message if result.status == :error
 
                 [feed_request, resolved_source, result]
               end
 
-              # @param request [Rack::Request]
-              # @param format [Symbol]
-              # @param ttl_seconds [Integer]
+              # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
+              # @param result [Html2rss::Web::Feeds::Result]
               # @return [void]
-              def configure_response(request, format, ttl_seconds)
-                request.response['Content-Type'] = FeedResponseFormat.content_type(format)
-                HttpCache.expires(request.response, ttl_seconds, cache_control: 'public')
-                HttpCache.vary(request.response, 'Accept')
+              def emit_result(resolved_source, result)
+                return emit_success_from(resolved_source) unless result.status == :error
+
+                emit_render_failure(
+                  InternalServerError.new(result.error_message || result.message || HttpError::DEFAULT_MESSAGE)
+                )
               end
 
               # @param resolved_source [Html2rss::Web::Feeds::ResolvedSource]
@@ -74,17 +77,6 @@ module Html2rss
                   resolved_source.generator_input[:strategy],
                   resolved_source.generator_input.dig(:channel, :url)
                 )
-              end
-
-              # @param result [Html2rss::Web::Feeds::Result]
-              # @param format [Symbol]
-              # @return [String]
-              def render_result(result, format)
-                if format == ::Html2rss::Web::Feeds::ResponseFormat::JSON_FEED
-                  return ::Html2rss::Web::Feeds::JsonRenderer.call(result)
-                end
-
-                ::Html2rss::Web::Feeds::RssRenderer.call(result)
               end
 
               # @param strategy [String]

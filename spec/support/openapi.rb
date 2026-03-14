@@ -58,6 +58,17 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
     end
   end
 
+  deep_sort = lambda do |value|
+    case value
+    when Hash
+      value.keys.sort_by(&:to_s).to_h { |key| [key, deep_sort.call(value[key])] }
+    when Array
+      value.map { |item| deep_sort.call(item) }
+    else
+      value
+    end
+  end
+
   path_map = spec['paths'] || spec[:paths]
   next unless path_map.is_a?(Hash)
 
@@ -82,9 +93,9 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
         merged['responses'] = (existing['responses'] || {}).merge(operation_doc['responses'] || {})
         merged['parameters'] = [*(existing['parameters'] || []), *(operation_doc['parameters'] || [])]
         merged['parameters'].uniq! { |parameter| [parameter['name'], parameter['in']] }
-        normalized_paths[normalized][verb] = merged
+        normalized_paths[normalized][verb] = deep_sort.call(merged)
       else
-        normalized_paths[normalized][verb] = operation_doc
+        normalized_paths[normalized][verb] = deep_sort.call(operation_doc)
       end
 
       normalized_paths[normalized][verb]['description'] ||= normalized_paths[normalized][verb]['summary']
@@ -107,9 +118,9 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
   end
 
   if spec.key?('paths')
-    spec['paths'] = normalized_paths
+    spec['paths'] = deep_sort.call(normalized_paths)
   else
-    spec[:paths] = normalized_paths
+    spec[:paths] = deep_sort.call(normalized_paths)
   end
 
   tags = [

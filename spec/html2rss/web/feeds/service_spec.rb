@@ -24,7 +24,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   end
 
   context 'when feed generation succeeds with items' do
-    let(:feed) { Struct.new(:items).new([Object.new]) }
+    let(:channel) { Struct.new(:title).new('Example Feed') }
+    let(:feed) { Struct.new(:items, :channel).new([Object.new], channel) }
 
     before do
       allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_return(feed)
@@ -42,12 +43,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.cache_key).to eq('feed_result:example-feed:abc123')
     end
 
-    it 'retains the canonical payload metadata' do
-      expect(result.payload).to eq(
-        feed: feed,
-        url: 'https://example.com/articles',
-        strategy: 'ssrf_filter'
-      )
+    it 'retains the normalized payload object' do
+      expect(result.payload).to eq(expected_payload)
     end
 
     it 'reuses the cached result for repeated requests' do
@@ -60,7 +57,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
   context 'when the generated feed has no items' do
     before do
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_return(Struct.new(:items).new([]))
+      feed = Struct.new(:items, :channel).new([], Struct.new(:title).new(nil))
+      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_return(feed)
     end
 
     it 'marks the result as empty' do
@@ -69,6 +67,10 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     it 'keeps the result message empty' do
       expect(result.message).to be_nil
+    end
+
+    it 'normalizes a fallback site title from the source url' do
+      expect(result.payload.site_title).to eq('https://example.com/articles')
     end
   end
 
@@ -81,12 +83,33 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.status).to eq(:error)
     end
 
-    it 'returns the generator error message' do
-      expect(result.message).to eq('boom')
+    it 'returns a generic client error message' do
+      expect(result.message).to eq('Internal Server Error')
+    end
+
+    it 'retains the internal error details for observability' do
+      expect(result.error_message).to eq('boom')
     end
 
     it 'drops the feed payload' do
       expect(result.payload).to be_nil
     end
+
+    it 'does not cache the failure result' do
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss).to have_received(:feed).twice
+    end
+  end
+
+  # @return [Html2rss::Web::Feeds::Payload]
+  def expected_payload
+    Html2rss::Web::Feeds::Payload.new(
+      feed: feed,
+      site_title: 'Example Feed',
+      url: 'https://example.com/articles',
+      strategy: 'ssrf_filter'
+    )
   end
 end

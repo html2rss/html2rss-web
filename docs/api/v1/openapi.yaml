@@ -18,30 +18,21 @@ servers:
 paths:
   "/":
     get:
-      summary: API metadata
-      tags:
-      - Root
+      description: API metadata
       operationId: getApiMetadata
-      security: []
       responses:
         '200':
-          description: returns OpenAPI document URL in metadata
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   data:
-                    type: object
                     properties:
                       api:
-                        type: object
                         properties:
-                          name:
-                            type: string
                           description:
+                            type: string
+                          name:
                             type: string
                           openapi_url:
                             type: string
@@ -49,23 +40,28 @@ paths:
                         - name
                         - description
                         - openapi_url
+                        type: object
                     required:
                     - api
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - data
-      description: API metadata
+                type: object
+          description: returns OpenAPI document URL in metadata
+      security: []
+      summary: API metadata
+      tags:
+      - Root
   "/feeds":
     post:
-      summary: Create a feed
-      tags:
-      - Feeds
+      description: Create a feed
       operationId: createFeed
-      security:
-      - BearerAuth: []
       parameters:
-      - name: Authorization
-        in: header
+      - in: header
+        name: Authorization
         required: true
         schema:
           type: string
@@ -73,44 +69,38 @@ paths:
         content:
           application/json:
             schema:
-              type: object
               properties:
-                url:
-                  type: string
                 strategy:
+                  type: string
+                url:
                   type: string
               required:
               - url
               - strategy
+              type: object
       responses:
         '201':
-          description: creates a feed when request is valid
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   data:
-                    type: object
                     properties:
                       feed:
-                        type: object
                         properties:
+                          created_at:
+                            type: string
                           id:
                             type: string
                           name:
                             type: string
-                          url:
+                          public_url:
                             type: string
                           strategy:
                             type: string
-                          public_url:
-                            type: string
-                          created_at:
-                            type: string
                           updated_at:
+                            type: string
+                          url:
                             type: string
                         required:
                         - id
@@ -120,375 +110,360 @@ paths:
                         - public_url
                         - created_at
                         - updated_at
+                        type: object
                     required:
                     - feed
-                  meta:
                     type: object
+                  meta:
                     properties:
                       created:
                         type: boolean
                     required:
                     - created
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - data
                 - meta
+                type: object
+          description: creates a feed when request is valid
         '401':
-          description: returns 401 with UNAUTHORIZED error payload
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   error:
-                    type: object
                     properties:
-                      message:
-                        type: string
                       code:
+                        type: string
+                      message:
                         type: string
                     required:
                     - message
                     - code
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - error
+                type: object
+          description: returns 401 with UNAUTHORIZED error payload
         '403':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                    required:
+                    - message
+                    - code
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
           description: returns forbidden for authenticated requests when auto source
             is disabled
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  error:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      code:
-                        type: string
-                    required:
-                    - message
-                    - code
-                required:
-                - success
-                - error
-      description: Create a feed
-  "/feeds/{token}":
-    get:
-      summary: Render feed by token
+      security:
+      - BearerAuth: []
+      summary: Create a feed
       tags:
       - Feeds
+  "/feeds/{token}":
+    get:
+      description: Render feed by token
       operationId: renderFeedByToken
-      security: []
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          type: string
       responses:
-        '403':
-          description: returns forbidden when auto source is disabled
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  error:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      code:
-                        type: string
-                    required:
-                    - message
-                    - code
-                required:
-                - success
-                - error
         '200':
-          description: renders feed for a valid token
           content:
             application/xml:
               schema:
                 type: string
+          description: renders feed for a valid token
         '401':
-          description: returns unauthorized for invalid tokens
+          content:
+            application/feed+json:
+              schema:
+                type: string
+          description: returns JSON Feed-shaped errors when requested by json extension
+        '403':
+          content:
+            application/xml:
+              schema:
+                type: string
+          description: returns forbidden when auto source is disabled
+        '500':
+          content:
+            application/feed+json:
+              schema:
+                type: string
+          description: returns non-cacheable json feed errors when service generation
+            fails
+      security: []
+      summary: Render feed by token
+      tags:
+      - Feeds
+  "/health":
+    get:
+      description: Authenticated health check
+      operationId: getHealthStatus
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
           content:
             application/json:
               schema:
-                type: object
                 properties:
+                  data:
+                    properties:
+                      health:
+                        properties:
+                          checks:
+                            properties: {}
+                            type: object
+                          environment:
+                            type: string
+                          status:
+                            type: string
+                          timestamp:
+                            type: string
+                          uptime:
+                            format: float
+                            type: number
+                        required:
+                        - status
+                        - timestamp
+                        - environment
+                        - uptime
+                        - checks
+                        type: object
+                    required:
+                    - health
+                    type: object
                   success:
                     type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: returns health status when token is valid
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
                   error:
-                    type: object
                     properties:
-                      message:
-                        type: string
                       code:
+                        type: string
+                      message:
                         type: string
                     required:
                     - message
                     - code
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - error
-      description: Render feed by token
-      parameters:
-      - name: token
-        in: path
-        required: true
-        schema:
-          type: string
-  "/health":
-    get:
+                type: object
+          description: returns 401 with UNAUTHORIZED error payload
+        '500':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      message:
+                        type: string
+                    required:
+                    - message
+                    - code
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: returns error when configuration fails
+      security:
+      - BearerAuth: []
       summary: Authenticated health check
       tags:
       - Health
-      operationId: getHealthStatus
-      security:
-      - BearerAuth: []
-      parameters:
-      - name: Authorization
-        in: header
-        required: true
-        schema:
-          type: string
+  "/health/live":
+    get:
+      description: Liveness probe
+      operationId: getLivenessProbe
       responses:
         '200':
-          description: returns health status when token is valid
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   data:
-                    type: object
                     properties:
                       health:
-                        type: object
                         properties:
                           status:
                             type: string
                           timestamp:
                             type: string
-                          environment:
-                            type: string
-                          uptime:
-                            type: number
-                            format: float
-                          checks:
-                            type: object
-                            properties: {}
                         required:
                         - status
                         - timestamp
-                        - environment
-                        - uptime
-                        - checks
+                        type: object
                     required:
                     - health
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - data
-        '401':
-          description: returns 401 with UNAUTHORIZED error payload
-          content:
-            application/json:
-              schema:
                 type: object
-                properties:
-                  success:
-                    type: boolean
-                  error:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      code:
-                        type: string
-                    required:
-                    - message
-                    - code
-                required:
-                - success
-                - error
-        '500':
-          description: returns error when configuration fails
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  error:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                      code:
-                        type: string
-                    required:
-                    - message
-                    - code
-                required:
-                - success
-                - error
-      description: Authenticated health check
-  "/health/live":
-    get:
+          description: returns liveness status without authentication
+      security: []
       summary: Liveness probe
       tags:
       - Health
-      operationId: getLivenessProbe
-      security: []
-      responses:
-        '200':
-          description: returns liveness status without authentication
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      health:
-                        type: object
-                        properties:
-                          status:
-                            type: string
-                          timestamp:
-                            type: string
-                        required:
-                        - status
-                        - timestamp
-                    required:
-                    - health
-                required:
-                - success
-                - data
-      description: Liveness probe
   "/health/ready":
     get:
-      summary: Readiness probe
-      tags:
-      - Health
+      description: Readiness probe
       operationId: getReadinessProbe
-      security: []
       responses:
         '200':
-          description: returns readiness status without authentication
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   data:
-                    type: object
                     properties:
                       health:
-                        type: object
                         properties:
+                          checks:
+                            properties: {}
+                            type: object
+                          environment:
+                            type: string
                           status:
                             type: string
                           timestamp:
                             type: string
-                          environment:
-                            type: string
                           uptime:
-                            type: number
                             format: float
-                          checks:
-                            type: object
-                            properties: {}
+                            type: number
                         required:
                         - status
                         - timestamp
                         - environment
                         - uptime
                         - checks
+                        type: object
                     required:
                     - health
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - data
-      description: Readiness probe
+                type: object
+          description: returns readiness status without authentication
+      security: []
+      summary: Readiness probe
+      tags:
+      - Health
   "/openapi.yaml":
     get:
-      summary: OpenAPI specification
-      tags:
-      - Root
+      description: OpenAPI specification
       operationId: getOpenApiSpec
-      security: []
       responses:
         '200':
-          description: serves the OpenAPI document as YAML
           content:
             application/yaml:
               schema:
                 type: string
-      description: OpenAPI specification
+          description: serves the OpenAPI document as YAML
+      security: []
+      summary: OpenAPI specification
+      tags:
+      - Root
   "/strategies":
     get:
-      summary: List extraction strategies
-      tags:
-      - Strategies
+      description: List extraction strategies
       operationId: listStrategies
-      security: []
       responses:
         '200':
-          description: returns available strategies
           content:
             application/json:
               schema:
-                type: object
                 properties:
-                  success:
-                    type: boolean
                   data:
-                    type: object
                     properties:
                       strategies:
-                        type: array
                         items:
-                          type: object
                           properties:
+                            display_name:
+                              type: string
                             id:
                               type: string
                             name:
-                              type: string
-                            display_name:
                               type: string
                           required:
                           - id
                           - name
                           - display_name
+                          type: object
+                        type: array
                     required:
                     - strategies
-                  meta:
                     type: object
+                  meta:
                     properties:
                       total:
                         type: integer
                     required:
                     - total
+                    type: object
+                  success:
+                    type: boolean
                 required:
                 - success
                 - data
                 - meta
-      description: List extraction strategies
+                type: object
+          description: returns available strategies
+      security: []
+      summary: List extraction strategies
+      tags:
+      - Strategies
 components:
   securitySchemes:
     BearerAuth:

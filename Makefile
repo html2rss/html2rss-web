@@ -89,8 +89,9 @@ yard-verify-public-docs: ## Verify essential YARD docs for all public methods in
 openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
 	bundle exec rake openapi:generate
 
-openapi-verify: openapi-client-verify ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml or frontend client is stale
+openapi-verify: ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml or frontend client is stale
 	bundle exec rake openapi:verify
+	$(MAKE) openapi-client-verify
 
 openapi-client: ## Generate frontend OpenAPI client/types from docs/api/v1/openapi.yaml
 	@cd frontend && npm run openapi:generate

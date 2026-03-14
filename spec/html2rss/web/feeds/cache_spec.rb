@@ -9,10 +9,16 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
   let(:result) do
     Html2rss::Web::Feeds::Result.new(
       status: :ok,
-      payload: { feed: Object.new, url: 'https://example.com', strategy: 'ssrf_filter' },
+      payload: Html2rss::Web::Feeds::Payload.new(
+        feed: Object.new,
+        site_title: 'Example',
+        url: 'https://example.com',
+        strategy: 'ssrf_filter'
+      ),
       message: nil,
       ttl_seconds: 60,
-      cache_key: 'feed_result:test'
+      cache_key: 'feed_result:test',
+      error_message: nil
     )
   end
 
