@@ -86,7 +86,9 @@ export const getParseAs = (contentType: string | null): Exclude<Config['parseAs'
     return 'formData';
   }
 
-  if (['application/', 'audio/', 'image/', 'video/'].some((type) => cleanContent.startsWith(type))) {
+  if (
+    ['application/', 'audio/', 'image/', 'video/'].some((type) => cleanContent.startsWith(type))
+  ) {
     return 'blob';
   }
 
@@ -101,7 +103,7 @@ const checkForExistence = (
   options: Pick<RequestOptions, 'auth' | 'query'> & {
     headers: Headers;
   },
-  name?: string
+  name?: string,
 ): boolean => {
   if (!name) {
     return false;
@@ -183,7 +185,9 @@ const headersEntries = (headers: Headers): Array<[string, string]> => {
   return entries;
 };
 
-export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | undefined>): Headers => {
+export const mergeHeaders = (
+  ...headers: Array<Required<Config>['headers'] | undefined>
+): Headers => {
   const mergedHeaders = new Headers();
   for (const header of headers) {
     if (!header) {
@@ -202,7 +206,10 @@ export const mergeHeaders = (...headers: Array<Required<Config>['headers'] | und
       } else if (value !== undefined) {
         // assume object headers are meant to be JSON stringified, i.e. their
         // content value in OpenAPI specification is 'application/json'
-        mergedHeaders.set(key, typeof value === 'object' ? JSON.stringify(value) : (value as string));
+        mergedHeaders.set(
+          key,
+          typeof value === 'object' ? JSON.stringify(value) : (value as string),
+        );
       }
     }
   }
@@ -213,7 +220,7 @@ type ErrInterceptor<Err, Res, Req, Options> = (
   error: Err,
   response: Res,
   request: Req,
-  options: Options
+  options: Options,
 ) => Err | Promise<Err>;
 
 type ReqInterceptor<Req, Options> = (request: Req, options: Options) => Req | Promise<Req>;
@@ -221,7 +228,7 @@ type ReqInterceptor<Req, Options> = (request: Req, options: Options) => Req | Pr
 type ResInterceptor<Res, Req, Options> = (
   response: Res,
   request: Req,
-  options: Options
+  options: Options,
 ) => Res | Promise<Res>;
 
 class Interceptors<Interceptor> {
@@ -271,7 +278,12 @@ export interface Middleware<Req, Res, Err, Options> {
   response: Interceptors<ResInterceptor<Res, Req, Options>>;
 }
 
-export const createInterceptors = <Req, Res, Err, Options>(): Middleware<Req, Res, Err, Options> => ({
+export const createInterceptors = <Req, Res, Err, Options>(): Middleware<
+  Req,
+  Res,
+  Err,
+  Options
+> => ({
   error: new Interceptors<ErrInterceptor<Err, Res, Req, Options>>(),
   request: new Interceptors<ReqInterceptor<Req, Options>>(),
   response: new Interceptors<ResInterceptor<Res, Req, Options>>(),
@@ -294,7 +306,7 @@ const defaultHeaders = {
 };
 
 export const createConfig = <T extends ClientOptions = ClientOptions>(
-  override: Config<Omit<ClientOptions, keyof T> & T> = {}
+  override: Config<Omit<ClientOptions, keyof T> & T> = {},
 ): Config<Omit<ClientOptions, keyof T> & T> => ({
   ...jsonBodySerializer,
   headers: defaultHeaders,

@@ -2,43 +2,20 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type {
-  CreateFeedData,
-  CreateFeedErrors,
-  CreateFeedResponses,
-  GetApiMetadataData,
-  GetApiMetadataResponses,
-  GetHealthStatusData,
-  GetHealthStatusErrors,
-  GetHealthStatusResponses,
-  GetLivenessProbeData,
-  GetLivenessProbeResponses,
-  GetOpenApiSpecData,
-  GetOpenApiSpecResponses,
-  GetReadinessProbeData,
-  GetReadinessProbeResponses,
-  ListStrategiesData,
-  ListStrategiesResponses,
-  RenderFeedByTokenData,
-  RenderFeedByTokenErrors,
-  RenderFeedByTokenResponses,
-} from './types.gen';
+import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetOpenApiSpecData, GetOpenApiSpecResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
 
-export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<
-  TData,
-  ThrowOnError
-> & {
-  /**
-   * You can provide a client instance returned by `createClient()` instead of
-   * individual options. This might be also useful if you want to implement a
-   * custom client.
-   */
-  client?: Client;
-  /**
-   * You can pass arbitrary values through the `meta` object. This can be
-   * used to access values that aren't defined as part of the SDK function.
-   */
-  meta?: Record<string, unknown>;
+export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
+    /**
+     * You can provide a client instance returned by `createClient()` instead of
+     * individual options. This might be also useful if you want to implement a
+     * custom client.
+     */
+    client?: Client;
+    /**
+     * You can pass arbitrary values through the `meta` object. This can be
+     * used to access values that aren't defined as part of the SDK function.
+     */
+    meta?: Record<string, unknown>;
 };
 
 /**
@@ -46,104 +23,65 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * API metadata
  */
-export const getApiMetadata = <ThrowOnError extends boolean = false>(
-  options?: Options<GetApiMetadataData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetApiMetadataResponses, unknown, ThrowOnError>({ url: '/', ...options });
+export const getApiMetadata = <ThrowOnError extends boolean = false>(options?: Options<GetApiMetadataData, ThrowOnError>) => (options?.client ?? client).get<GetApiMetadataResponses, unknown, ThrowOnError>({ url: '/', ...options });
 
 /**
  * Create a feed
  *
  * Create a feed
  */
-export const createFeed = <ThrowOnError extends boolean = false>(
-  options: Options<CreateFeedData, ThrowOnError>
-) =>
-  (options.client ?? client).post<CreateFeedResponses, CreateFeedErrors, ThrowOnError>({
+export const createFeed = <ThrowOnError extends boolean = false>(options: Options<CreateFeedData, ThrowOnError>) => (options.client ?? client).post<CreateFeedResponses, CreateFeedErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/feeds',
     ...options,
     headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Render feed by token
  *
  * Render feed by token
  */
-export const renderFeedByToken = <ThrowOnError extends boolean = false>(
-  options: Options<RenderFeedByTokenData, ThrowOnError>
-) =>
-  (options.client ?? client).get<RenderFeedByTokenResponses, RenderFeedByTokenErrors, ThrowOnError>({
-    url: '/feeds/{token}',
-    ...options,
-  });
+export const renderFeedByToken = <ThrowOnError extends boolean = false>(options: Options<RenderFeedByTokenData, ThrowOnError>) => (options.client ?? client).get<RenderFeedByTokenResponses, RenderFeedByTokenErrors, ThrowOnError>({ url: '/feeds/{token}', ...options });
 
 /**
  * Authenticated health check
  *
  * Authenticated health check
  */
-export const getHealthStatus = <ThrowOnError extends boolean = false>(
-  options: Options<GetHealthStatusData, ThrowOnError>
-) =>
-  (options.client ?? client).get<GetHealthStatusResponses, GetHealthStatusErrors, ThrowOnError>({
+export const getHealthStatus = <ThrowOnError extends boolean = false>(options: Options<GetHealthStatusData, ThrowOnError>) => (options.client ?? client).get<GetHealthStatusResponses, GetHealthStatusErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/health',
-    ...options,
-  });
+    ...options
+});
 
 /**
  * Liveness probe
  *
  * Liveness probe
  */
-export const getLivenessProbe = <ThrowOnError extends boolean = false>(
-  options?: Options<GetLivenessProbeData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetLivenessProbeResponses, unknown, ThrowOnError>({
-    url: '/health/live',
-    ...options,
-  });
+export const getLivenessProbe = <ThrowOnError extends boolean = false>(options?: Options<GetLivenessProbeData, ThrowOnError>) => (options?.client ?? client).get<GetLivenessProbeResponses, unknown, ThrowOnError>({ url: '/health/live', ...options });
 
 /**
  * Readiness probe
  *
  * Readiness probe
  */
-export const getReadinessProbe = <ThrowOnError extends boolean = false>(
-  options?: Options<GetReadinessProbeData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetReadinessProbeResponses, unknown, ThrowOnError>({
-    url: '/health/ready',
-    ...options,
-  });
+export const getReadinessProbe = <ThrowOnError extends boolean = false>(options?: Options<GetReadinessProbeData, ThrowOnError>) => (options?.client ?? client).get<GetReadinessProbeResponses, unknown, ThrowOnError>({ url: '/health/ready', ...options });
 
 /**
  * OpenAPI specification
  *
  * OpenAPI specification
  */
-export const getOpenApiSpec = <ThrowOnError extends boolean = false>(
-  options?: Options<GetOpenApiSpecData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<GetOpenApiSpecResponses, unknown, ThrowOnError>({
-    url: '/openapi.yaml',
-    ...options,
-  });
+export const getOpenApiSpec = <ThrowOnError extends boolean = false>(options?: Options<GetOpenApiSpecData, ThrowOnError>) => (options?.client ?? client).get<GetOpenApiSpecResponses, unknown, ThrowOnError>({ url: '/openapi.yaml', ...options });
 
 /**
  * List extraction strategies
  *
  * List extraction strategies
  */
-export const listStrategies = <ThrowOnError extends boolean = false>(
-  options?: Options<ListStrategiesData, ThrowOnError>
-) =>
-  (options?.client ?? client).get<ListStrategiesResponses, unknown, ThrowOnError>({
-    url: '/strategies',
-    ...options,
-  });
+export const listStrategies = <ThrowOnError extends boolean = false>(options?: Options<ListStrategiesData, ThrowOnError>) => (options?.client ?? client).get<ListStrategiesResponses, unknown, ThrowOnError>({ url: '/strategies', ...options });

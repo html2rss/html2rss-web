@@ -51,7 +51,10 @@ export interface Config {
    */
   headers?:
     | RequestInit['headers']
-    | Record<string, string | number | boolean | (string | number | boolean)[] | null | undefined | unknown>;
+    | Record<
+        string,
+        string | number | boolean | (string | number | boolean)[] | null | undefined | unknown
+      >;
   /**
    * The request method.
    *

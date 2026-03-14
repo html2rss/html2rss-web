@@ -128,7 +128,9 @@ export const createClient = (config: Config = {}): Client => {
 
     if (response.ok) {
       const parseAs =
-        (opts.parseAs === 'auto' ? getParseAs(response.headers.get('Content-Type')) : opts.parseAs) ?? 'json';
+        (opts.parseAs === 'auto'
+          ? getParseAs(response.headers.get('Content-Type'))
+          : opts.parseAs) ?? 'json';
 
       if (response.status === 204 || response.headers.get('Content-Length') === '0') {
         let emptyData: any;
