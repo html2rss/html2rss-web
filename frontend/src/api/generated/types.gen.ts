@@ -107,9 +107,9 @@ export type RenderFeedByTokenErrors = {
      */
     401: string;
     /**
-     * returns forbidden when auto source is disabled
+     * returns JSON Feed-shaped forbidden errors when requested through Accept
      */
-    403: Blob | File;
+    403: string;
     /**
      * returns non-cacheable json feed errors when service generation fails
      */
@@ -122,7 +122,7 @@ export type RenderFeedByTokenResponses = {
     /**
      * renders feed for a valid token
      */
-    200: Blob | File;
+    200: string;
 };
 
 export type RenderFeedByTokenResponse = RenderFeedByTokenResponses[keyof RenderFeedByTokenResponses];
