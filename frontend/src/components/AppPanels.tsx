@@ -22,14 +22,6 @@ function feedAccessNote(feedCreationEnabled: boolean, accessTokenRequired: boole
   return '';
 }
 
-function instanceNote(feedCreationEnabled: boolean, accessTokenRequired: boolean, hasAccessToken: boolean) {
-  if (!feedCreationEnabled) return 'This deployment is currently serving read-only feed functionality.';
-  if (!accessTokenRequired) return 'This deployment can generate feeds without additional access setup.';
-  return hasAccessToken
-    ? 'An access token is currently stored in this browser session.'
-    : 'This deployment asks for an access token only when you create a custom feed.';
-}
-
 interface CreateFeedPanelProps {
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
@@ -150,20 +142,18 @@ export function CreateFeedPanel({
         {showTokenPrompt && (
           <div class="token-gate" role="group" aria-label="Access token">
             <div class="token-gate__copy">
-              <p class="eyebrow">Access token</p>
-              <h3>Unlock custom feed creation</h3>
-              <p class="muted-copy">
-                Save a token in this browser session to generate feeds from your own URLs.
-              </p>
+              <span class="field-label">Access token</span>
+              <p class="muted-copy">Save one token in this browser session to continue.</p>
             </div>
             <div class="token-gate__controls">
               <label class="field-block" htmlFor="access-token">
-                <span class="field-label">Access token</span>
                 <input
                   id="access-token"
                   name="access-token"
                   type="password"
                   class="input input--mono"
+                  aria-label="Access token"
+                  placeholder="Paste access token"
                   autocomplete="off"
                   value={tokenDraft}
                   onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
@@ -172,7 +162,7 @@ export function CreateFeedPanel({
               </label>
               <div class="token-gate__actions">
                 <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-                  Save token
+                  Continue
                 </button>
                 <button type="button" class="btn btn--ghost" onClick={onCancelTokenPrompt}>
                   Cancel
@@ -199,30 +189,12 @@ export function CreateFeedPanel({
   );
 }
 
-export function QuickToolsPanel() {
-  return (
-    <section class="surface surface--quiet">
-      <div class="surface__header">
-        <h2>Bookmarklet</h2>
-      </div>
-      <Bookmarklet />
-    </section>
-  );
-}
-
 interface InstanceInfoProps {
-  feedCreationEnabled: boolean;
-  accessTokenRequired: boolean;
   hasAccessToken: boolean;
   onClearToken: () => void;
 }
 
-export function InstanceInfo({
-  feedCreationEnabled,
-  accessTokenRequired,
-  hasAccessToken,
-  onClearToken,
-}: InstanceInfoProps) {
+export function InstanceInfo({ hasAccessToken, onClearToken }: InstanceInfoProps) {
   return (
     <section class="surface surface--info">
       <div class="surface__header">
@@ -230,8 +202,13 @@ export function InstanceInfo({
       </div>
 
       <div class="instance-info">
-        <p>Start locally with Docker, then use included feeds, automatic generation, or custom configs.</p>
-        <p>{instanceNote(feedCreationEnabled, accessTokenRequired, hasAccessToken)}</p>
+        <p>
+          Start locally with Docker, then wire in included feeds, automatic generation, or custom configs.
+        </p>
+      </div>
+
+      <div class="instance-utility">
+        <Bookmarklet />
       </div>
 
       <div class="surface__toolbar">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
-import { CreateFeedPanel, InstanceInfo, QuickToolsPanel, type Strategy } from './AppPanels';
+import { CreateFeedPanel, InstanceInfo, type Strategy } from './AppPanels';
 import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
@@ -167,42 +167,37 @@ export function App() {
       {result ? (
         <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
       ) : (
-        <div class="support-stack">
-          <CreateFeedPanel
-            feedFormData={feedFormData}
-            feedFieldErrors={feedFieldErrors}
-            conversionError={conversionError}
-            isConverting={isConverting}
-            strategies={strategies}
-            strategiesLoading={strategiesLoading}
-            strategiesError={strategiesError}
-            feedCreationEnabled={feedCreation.enabled}
-            accessTokenRequired={feedCreation.access_token_required}
-            hasAccessToken={hasToken}
-            tokenDraft={tokenDraft}
-            tokenError={tokenError}
-            showTokenPrompt={showTokenPrompt}
-            onFeedSubmit={handleFeedSubmit}
-            onFeedFieldChange={setFeedField}
-            onTokenDraftChange={(value) => {
-              setTokenDraft(value);
-              setTokenError('');
-            }}
-            onSaveToken={handleSaveToken}
-            onCancelTokenPrompt={() => {
-              setShowTokenPrompt(false);
-              setTokenError('');
-            }}
-            strategyHint={strategyHint}
-          />
-          <QuickToolsPanel />
-        </div>
+        <CreateFeedPanel
+          feedFormData={feedFormData}
+          feedFieldErrors={feedFieldErrors}
+          conversionError={conversionError}
+          isConverting={isConverting}
+          strategies={strategies}
+          strategiesLoading={strategiesLoading}
+          strategiesError={strategiesError}
+          feedCreationEnabled={feedCreation.enabled}
+          accessTokenRequired={feedCreation.access_token_required}
+          hasAccessToken={hasToken}
+          tokenDraft={tokenDraft}
+          tokenError={tokenError}
+          showTokenPrompt={showTokenPrompt}
+          onFeedSubmit={handleFeedSubmit}
+          onFeedFieldChange={setFeedField}
+          onTokenDraftChange={(value) => {
+            setTokenDraft(value);
+            setTokenError('');
+          }}
+          onSaveToken={handleSaveToken}
+          onCancelTokenPrompt={() => {
+            setShowTokenPrompt(false);
+            setTokenError('');
+          }}
+          strategyHint={strategyHint}
+        />
       )}
 
       {!result && (
         <InstanceInfo
-          feedCreationEnabled={feedCreation.enabled}
-          accessTokenRequired={feedCreation.access_token_required}
           hasAccessToken={hasToken}
           onClearToken={() => {
             clearToken();

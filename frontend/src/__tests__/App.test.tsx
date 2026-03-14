@@ -99,7 +99,7 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    expect(screen.getByText('Unlock custom feed creation')).toBeInTheDocument();
+    expect(screen.getByText('Save one token in this browser session to continue.')).toBeInTheDocument();
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
@@ -176,7 +176,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
     const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save token' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
