@@ -34,11 +34,13 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
   let(:json_body) { JSON.parse(last_response.body) }
   let(:json_feed_error) { JSON.parse(last_response.body).slice('version', 'title') }
-  let(:feed_result) { Html2rss::Web::FeedRenderResult.new(body: '<rss version="2.0"></rss>', ttl_seconds: 600) }
-  let(:json_feed_result) do
-    Html2rss::Web::FeedRenderResult.new(
-      body: '{"version":"https://jsonfeed.org/version/1.1","items":[]}',
-      ttl_seconds: 600
+  let(:feed_result) do
+    Html2rss::Web::Feeds::Result.new(
+      status: :ok,
+      payload: nil,
+      message: nil,
+      ttl_seconds: 600,
+      cache_key: 'feed_result:test'
     )
   end
 
@@ -63,12 +65,10 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
     allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
     allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
     allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
-    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
-      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::RSS)
-      .and_return(feed_result)
-    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
-      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::JSON_FEED)
-      .and_return(json_feed_result)
+    allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+    allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
+      .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
   end
 
   describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers

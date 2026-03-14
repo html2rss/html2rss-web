@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require_relative 'feed_response_format'
+require_relative 'feeds/json_renderer'
+require_relative 'feeds/request_parser'
+require_relative 'feeds/resolver'
+require_relative 'feeds/rss_renderer'
+require_relative 'feeds/service'
 require_relative 'http_cache'
 
 module Html2rss
@@ -14,11 +19,15 @@ module Html2rss
         # @param feed_name [String]
         # @return [String]
         def call(context:, router:, feed_name:)
-          format = FeedResponseFormat.for_request(router)
-          content, ttl_seconds = fetch_feed_payload(context, router, feed_name, format)
-          emit_success(context, feed_name, router.params['strategy'])
-          configure_response(router, ttl_seconds, format)
-          content
+          feed_request = Feeds::RequestParser.call(request: router, target_kind: :static, identifier: feed_name)
+          resolved_source = Feeds::Resolver.call(feed_request)
+          result = Feeds::Service.call(resolved_source)
+
+          raise InternalServerError, result.message if result.status == :error
+
+          emit_success(context, feed_name, resolved_source.generator_input[:strategy])
+          configure_response(router, result.ttl_seconds, feed_request.representation)
+          render_result(result, feed_request.representation)
         rescue StandardError => error
           emit_failure(context, feed_name, error)
           raise
@@ -52,18 +61,13 @@ module Html2rss
           )
         end
 
-        # @param context [Html2rss::Web::AppContext::Context]
-        # @param router [Roda::RodaRequest]
-        # @param feed_name [String]
+        # @param result [Html2rss::Web::Feeds::Result]
         # @param format [Symbol]
-        # @return [Array<(String, Integer)>]
-        def fetch_feed_payload(context, router, feed_name, format)
-          context.feed_request_handler.call(
-            feed_name: feed_name,
-            params: router.params,
-            format: format,
-            async_refresh: context.flags.async_feed_refresh_enabled?
-          )
+        # @return [String]
+        def render_result(result, format)
+          return Feeds::JsonRenderer.call(result) if format == Feeds::ResponseFormat::JSON_FEED
+
+          Feeds::RssRenderer.call(result)
         end
 
         # @param router [Roda::RodaRequest]

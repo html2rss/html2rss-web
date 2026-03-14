@@ -9,12 +9,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   def app = Html2rss::Web::App.freeze.app
   def json_feed_error = JSON.parse(last_response.body).slice('version', 'title')
-  def rss_result = Html2rss::Web::FeedRenderResult.new(body: '<rss version="2.0"></rss>', ttl_seconds: 600)
 
-  def json_result
-    Html2rss::Web::FeedRenderResult.new(
-      body: '{"version":"https://jsonfeed.org/version/1.1","items":[]}',
-      ttl_seconds: 600
+  def feed_result
+    Html2rss::Web::Feeds::Result.new(
+      status: :ok,
+      payload: nil,
+      message: nil,
+      ttl_seconds: 600,
+      cache_key: 'feed_result:test'
     )
   end
 
@@ -185,10 +187,11 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.body).to include('Account not found')
     end
 
-    it 'renders feed for a valid token', :aggregate_failures do
+    it 'renders feed for a valid token', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}.xml"
 
@@ -199,7 +202,9 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     it 'renders json feed for a valid token when requested through Accept', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(json_result)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+      allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
+        .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
 
       get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
 
@@ -209,10 +214,11 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.headers['Vary']).to include('Accept')
     end
 
-    it 'prefers xml when Accept quality outranks json', :aggregate_failures do
+    it 'prefers xml when Accept quality outranks json', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml;q=1.0, application/feed+json;q=0.2' }
 
@@ -220,10 +226,11 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.content_type).to include('application/xml')
     end
 
-    it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do
+    it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do # rubocop:disable RSpec/ExampleLength
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}", { strategy: 'bad' }, { 'HTTP_ACCEPT' => 'application/xml' }
 
