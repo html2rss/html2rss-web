@@ -125,7 +125,15 @@ export function ResultDisplay({
       </header>
 
       <div class={styles.feedCard}>
-        <input type="text" value={fullUrl} readOnly aria-label="Feed URL" class="input" />
+        <input
+          id="feed-url"
+          name="feed-url"
+          type="text"
+          value={fullUrl}
+          readOnly
+          aria-label="Feed URL"
+          class="input"
+        />
       </div>
 
       <div class={styles.heroActions}>
