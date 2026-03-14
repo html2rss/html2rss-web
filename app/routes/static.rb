@@ -6,7 +6,7 @@ module Html2rss
   module Web
     module Routes
       ##
-      # Mounts non-API routes (root page + legacy feed paths).
+      # Mounts non-API routes (root page + static feed paths).
       #
       # This remains minimal by receiving handlers from the caller, keeping
       # routing concerns separate from rendering/business logic.

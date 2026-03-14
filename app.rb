@@ -105,7 +105,11 @@ module Html2rss
         context.routes_api_v1.call(r, context: context) ||
           context.routes_static.call(r,
                                      feed_handler: lambda { |router_ctx, feed_name|
-                                       FeedRouteHandler.call(context: context, router: router_ctx, feed_name: feed_name)
+                                       Http::FeedRouteHandler.call(
+                                         context: context,
+                                         router: router_ctx,
+                                         feed_name: feed_name
+                                       )
                                      },
                                      index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
