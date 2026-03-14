@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { createFeed } from '../api/generated';
-import { apiClient } from '../api/client';
+import { apiClient, bearerHeaders } from '../api/client';
 import type { FeedRecord } from '../api/contracts';
 
 interface ConversionState {
@@ -32,20 +32,22 @@ export function useFeedConversion() {
       const response = await createFeed({
         client: apiClient,
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          ...bearerHeaders(token),
         },
         body: {
           url: url.trim(),
           strategy: strategy.trim(),
         },
+        responseStyle: 'data',
         throwOnError: true,
       });
 
-      if (!response.data?.success || !response.data.data?.feed) {
+      if (!response?.success || !response.data?.feed) {
         throw new Error('Invalid response format');
       }
 
-      const result = response.data.data.feed;
+      const result = response.data.feed;
       setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
     } catch (error) {
       setState((prev) => ({
@@ -87,8 +89,7 @@ const toErrorMessage = (error: unknown): string => {
 const extractMessage = (error: unknown): string | null => {
   if (!error || typeof error !== 'object') return null;
 
-  const candidate =
-    (error as { error?: { message?: unknown }; message?: unknown }).error?.message ??
+  const candidate = (error as { error?: { message?: unknown }; message?: unknown }).error?.message ??
     (error as { message?: unknown }).message;
 
   return typeof candidate === 'string' && candidate.trim() ? candidate : null;
