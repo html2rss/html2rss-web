@@ -224,7 +224,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Render feed by token',
     operation_id: 'renderFeedByToken',
     tags: ['Feeds'],
-    security: []
+    security: [],
+    example_mode: :multiple
   } do
     before do
       stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
@@ -312,8 +313,36 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.body).to include(Html2rss::Web::Api::V1::Contract::MESSAGES[:auto_source_disabled])
     end
 
+    it 'returns JSON Feed-shaped forbidden errors when requested through Accept', :aggregate_failures do
+      unique_url = "#{feed_url}/disabled-json"
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+
+      ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
+        get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
+      end
+
+      expect([last_response.status, last_response.headers['Content-Type'], json_feed_error]).to eq(
+        [403, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error' }]
+      )
+    end
+
+    it 'returns non-cacheable xml feed errors when service generation fails', :aggregate_failures do
+      unique_url = "#{feed_url}/service-error-xml"
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(service_error_result)
+
+      get "/api/v1/feeds/#{token}.xml"
+
+      expect(last_response.status).to eq(500)
+      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.headers['Cache-Control']).to include('no-store')
+      expect(last_response.body).to include('Internal Server Error')
+    end
+
     it 'returns non-cacheable json feed errors when service generation fails', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+      unique_url = "#{feed_url}/service-error-json"
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
 
       status, content_type, cache_control, title = json_feed_service_error_tuple(token)
 

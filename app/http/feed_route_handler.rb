@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative '../exceptions'
 require_relative '../feed_response_format'
 require_relative '../feeds/json_renderer'
 require_relative '../feeds/request_parser'

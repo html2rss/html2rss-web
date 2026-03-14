@@ -21,21 +21,25 @@ module Html2rss
           # @yieldreturn [Html2rss::Web::Feeds::Result]
           # @return [Html2rss::Web::Feeds::Result]
           def fetch(key, ttl_seconds:, cacheable: true)
-            entry = read_entry(key)
-            return entry.result if fresh?(entry)
+            lock.synchronize do
+              entry = read_entry(key)
+              return entry.result if fresh?(entry)
 
-            result = yield
-            return result unless cacheable_result?(cacheable, result)
+              result = yield
+              return result unless cacheable_result?(cacheable, result)
 
-            write_entry(key, ttl_seconds, result)
-            result
+              write_entry(key, ttl_seconds, result)
+              result
+            end
           end
 
           # @param reason [String]
           # @return [nil]
           def clear!(reason: 'manual')
-            @entries = {} # rubocop:disable ThreadSafety/ClassInstanceVariable
-            SecurityLogger.log_cache_lifecycle('feeds_cache', 'clear', reason: reason)
+            lock.synchronize do
+              @entries = {}
+              SecurityLogger.log_cache_lifecycle('feeds_cache', 'clear', reason: reason)
+            end
             nil
           end
 
@@ -74,6 +78,11 @@ module Html2rss
           # @return [Hash{String=>Entry}]
           def entries
             @entries ||= {} # rubocop:disable ThreadSafety/ClassInstanceVariable
+          end
+
+          # @return [Mutex]
+          def lock
+            @lock ||= Mutex.new # rubocop:disable ThreadSafety/ClassInstanceVariable
           end
 
           # @param ttl_seconds [Integer]

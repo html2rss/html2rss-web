@@ -192,6 +192,9 @@ paths:
       responses:
         '200':
           content:
+            application/feed+json:
+              schema:
+                type: string
             application/xml:
               schema:
                 type: string
@@ -199,18 +202,46 @@ paths:
         '401':
           content:
             application/feed+json:
+              example:
+                title: Error
+                version: https://jsonfeed.org/version/1.1
+              schema:
+                type: string
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
               schema:
                 type: string
           description: returns JSON Feed-shaped errors when requested by json extension
         '403':
           content:
-            application/xml:
+            application/feed+json:
+              example:
+                title: Error
+                version: https://jsonfeed.org/version/1.1
               schema:
                 type: string
-          description: returns forbidden when auto source is disabled
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+              schema:
+                type: string
+          description: returns JSON Feed-shaped forbidden errors when requested through
+            Accept
         '500':
           content:
             application/feed+json:
+              example:
+                title: Error
+                version: https://jsonfeed.org/version/1.1
+              schema:
+                type: string
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
               schema:
                 type: string
           description: returns non-cacheable json feed errors when service generation
