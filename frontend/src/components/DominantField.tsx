@@ -11,6 +11,7 @@ interface DominantFieldProps {
   disabled?: boolean;
   actionLabel: string;
   actionText: string;
+  actionVariant?: 'default' | 'soft';
   onAction?: () => void;
   onInput?: JSX.GenericEventHandler<HTMLInputElement>;
   inputRef?: Ref<HTMLInputElement>;
@@ -28,6 +29,7 @@ export function DominantField({
   disabled = false,
   actionLabel,
   actionText,
+  actionVariant = 'default',
   onAction,
   onInput,
   inputRef,
@@ -55,7 +57,9 @@ export function DominantField({
       </label>
       <button
         type={onAction ? 'button' : 'submit'}
-        class={`dominant-field__action${actionText.length > 1 ? ' dominant-field__action--text' : ''}`}
+        class={`dominant-field__action${actionText.length > 1 ? ' dominant-field__action--text' : ''}${
+          actionVariant === 'soft' ? ' dominant-field__action--soft' : ''
+        }`}
         disabled={disabled}
         aria-label={actionLabel}
         onClick={onAction}

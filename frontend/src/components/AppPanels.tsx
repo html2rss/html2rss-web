@@ -131,7 +131,6 @@ export function CreateFeedPanel({
         {!feedCreationEnabled && (
           <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
         )}
-        {accessTokenRequired && !hasAccessToken && <p class="field-help">Token requested only if needed.</p>}
       </div>
 
       {showTokenPrompt && (
@@ -216,6 +215,14 @@ export function UtilityStrip({ hasAccessToken, onClearToken }: UtilityStripProps
             class="utility-link"
           >
             Getting started
+          </a>
+          <a
+            href="https://github.com/html2rss/html2rss-web"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="utility-link"
+          >
+            Source code
           </a>
           {hasAccessToken && (
             <button type="button" class="utility-button" onClick={onClearToken}>

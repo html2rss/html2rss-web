@@ -17,8 +17,14 @@ describe('ResultDisplay', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(window, 'fetch').mockResolvedValue({
-      text: async () =>
-        `<?xml version="1.0"?><rss><channel><item><description>1. Item One ( example.com )</description></item><item><description>2. Item Two ( example.com )</description></item><item><description>3. Item Three ( example.com )</description></item></channel></rss>`,
+      ok: true,
+      json: async () => ({
+        items: [
+          { title: 'Item One' },
+          { content_text: '2. Item Two ( example.com )' },
+          { title: 'Item Three' },
+        ],
+      }),
     } as Response);
   });
 
@@ -31,6 +37,9 @@ describe('ResultDisplay', () => {
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText('Item Three')).toBeInTheDocument();
+    });
+    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
+      headers: { Accept: 'application/feed+json' },
     });
   });
 

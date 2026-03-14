@@ -2,6 +2,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { FeedRecord } from '../api/contracts';
 import { DominantField } from './DominantField';
 
+interface JsonFeedItem {
+  title?: string;
+  content_text?: string;
+}
+
+interface JsonFeedResponse {
+  items?: JsonFeedItem[];
+}
+
 interface ResultDisplayProps {
   result: FeedRecord;
   onCreateAnother: () => void;
@@ -27,25 +36,16 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
 
     const loadPreview = async () => {
       try {
-        const response = await window.fetch(fullUrl);
-        const xml = await response.text();
-        const document = new DOMParser().parseFromString(xml, 'application/xml');
-        const explicitTitles = Array.from(document.querySelectorAll('item > title, entry > title')).map(
-          (node) => node.textContent?.trim()
-        );
-        const derivedDescriptions = Array.from(document.querySelectorAll('item > description'))
-          .map((node) => node.textContent?.trim())
-          .filter((description): description is string => Boolean(description))
-          .filter((description) => /^\d+\.\s+/.test(description))
-          .map((description) =>
-            description
-              .replace(/^\d+\.\s+/, '')
-              .replace(/\s+\([^)]*\)\s*$/, '')
-              .trim()
-          );
-        const itemTitles = [...explicitTitles, ...derivedDescriptions]
-          .filter((title): title is string => Boolean(title))
-          .slice(0, 3);
+        const response = await window.fetch(fullUrl, {
+          headers: { Accept: 'application/feed+json' },
+        });
+        if (!response.ok) throw new Error('Preview request failed');
+        const payload = (await response.json()) as JsonFeedResponse;
+        const itemTitles =
+          payload.items
+            ?.map((item) => normalizePreviewText(item.title || item.content_text))
+            .filter((title): title is string => Boolean(title))
+            .slice(0, 3) || [];
 
         if (!isCancelled) setPreviewItems(itemTitles);
       } catch {
@@ -84,8 +84,18 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         readOnly
         actionLabel="Copy feed URL"
         actionText="Copy"
+        actionVariant="soft"
         onAction={() => void copyToClipboard(fullUrl)}
       />
+
+      <div class="result-actions result-actions--quiet">
+        <a href={fullUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
+          Open feed
+        </a>
+        <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
+          Create another feed
+        </button>
+      </div>
 
       {previewItems.length > 0 && (
         <section class="result-preview" aria-label="Feed preview">
@@ -98,15 +108,6 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         </section>
       )}
 
-      <div class="result-actions result-actions--quiet">
-        <a href={fullUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
-          Open feed
-        </a>
-        <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
-          Create another feed
-        </button>
-      </div>
-
       {copyNotice && (
         <div class="notice notice--success" role="status">
           <p>{copyNotice}</p>
@@ -114,4 +115,16 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       )}
     </section>
   );
+}
+
+function normalizePreviewText(value?: string): string | null {
+  if (!value) return null;
+
+  const normalized = value
+    .replace(/\s+/g, ' ')
+    .replace(/^\d+\.\s+/, '')
+    .replace(/\s+\([^)]*\)\s*$/, '')
+    .trim();
+
+  return normalized || null;
 }

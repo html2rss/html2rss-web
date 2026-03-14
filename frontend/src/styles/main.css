@@ -198,6 +198,10 @@ textarea {
   gap: var(--space-4);
 }
 
+.result-shell {
+  gap: var(--space-3);
+}
+
 .dominant-field {
   position: relative;
   width: 100%;
@@ -346,9 +350,19 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
+.dominant-field__action--soft {
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text-muted);
+}
+
 .dominant-field__action:hover:not(:disabled) {
   transform: translateX(0.04rem);
   background: rgba(255, 255, 255, 0.11);
+}
+
+.dominant-field__action--soft:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-strong);
 }
 
 .dominant-field__action:disabled {
@@ -484,20 +498,26 @@ a:focus-visible {
 }
 
 .result-copy {
-  text-align: center;
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  justify-items: start;
+  text-align: left;
 }
 
 .result-meta {
-  max-width: 32rem;
-  font-size: var(--font-size-1);
+  max-width: 36rem;
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1.2;
+  color: var(--text-body);
 }
 
 .result-preview {
-  width: min(100%, 34rem);
+  width: min(100%, 40rem);
   margin: 0 auto;
   display: grid;
   gap: var(--space-2);
-  justify-items: center;
+  justify-items: start;
+  padding-top: var(--space-1);
 }
 
 .result-preview__label {
@@ -514,16 +534,29 @@ a:focus-visible {
   width: 100%;
   list-style: none;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.6rem;
 }
 
 .result-preview__list li {
   color: var(--text-body);
-  text-align: center;
+  max-width: 32rem;
+  font-family: var(--font-family-display);
+  font-size: clamp(1.08rem, 1.8vw, 1.42rem);
+  line-height: 1.24;
+  text-align: left;
 }
 
 .result-actions--quiet {
-  gap: var(--space-4);
+  width: min(100%, 40rem);
+  margin: 0 auto;
+  justify-items: start;
+  justify-content: start;
+  gap: var(--space-5);
+}
+
+.btn--linkish {
+  color: var(--text-body);
+  font-weight: 600;
 }
 
 .status-card {
@@ -579,19 +612,6 @@ a:focus-visible {
   text-transform: uppercase;
 }
 
-.app-footer {
-  padding: 0 var(--space-4) var(--space-4);
-}
-
-.app-footer__inner {
-  width: min(100%, var(--page-max-width));
-  margin: 0 auto;
-  padding-top: var(--space-3);
-  border-top: var(--border-width) solid rgba(255, 255, 255, 0.08);
-  color: var(--text-muted);
-  font-size: var(--font-size-00);
-}
-
 @media (min-width: 48rem) {
   .page-main {
     padding-top: clamp(1rem, 6vh, 4rem);
@@ -620,6 +640,17 @@ a:focus-visible {
   .input--hero {
     min-height: 4rem;
     padding-right: 4.2rem;
+  }
+
+  .result-copy,
+  .result-preview,
+  .result-actions--quiet {
+    width: 100%;
+  }
+
+  .result-actions--quiet {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
   }
 
   .field-block--select {
