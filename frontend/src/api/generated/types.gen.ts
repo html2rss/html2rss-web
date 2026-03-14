@@ -22,6 +22,15 @@ export type GetApiMetadataResponses = {
                 name: string;
                 openapi_url: string;
             };
+            demo: {
+                enabled: boolean;
+                sources: Array<{
+                    id: string;
+                    url: string;
+                }>;
+                strategy?: string;
+                token?: string;
+            };
         };
         success: boolean;
     };
@@ -75,6 +84,7 @@ export type CreateFeedResponses = {
         data: {
             feed: {
                 created_at: string;
+                feed_token: string;
                 id: string;
                 name: string;
                 public_url: string;

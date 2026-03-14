@@ -28,6 +28,7 @@ describe('useFeedConversion', () => {
       name: 'Test Feed',
       url: 'https://example.com',
       strategy: 'ssrf_filter',
+      feed_token: 'test-token',
       public_url: 'https://example.com/feed.xml',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',

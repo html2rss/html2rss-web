@@ -26,6 +26,7 @@ describe('App contract', () => {
         return HttpResponse.json(
           buildFeedResponse({
             url: body.url,
+            feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
           })
         );

@@ -123,7 +123,7 @@ module Html2rss
                 typed_feed.to_h.merge(
                   created_at: timestamp,
                   updated_at: timestamp
-                ).slice(:id, :name, :url, :strategy, :public_url, :created_at, :updated_at)
+                ).slice(:id, :name, :url, :strategy, :feed_token, :public_url, :created_at, :updated_at)
               end
 
               # Parses params with optional JSON body override.

@@ -12,15 +12,21 @@ vi.mock('../hooks/useFeedConversion', () => ({
   useFeedConversion: vi.fn(),
 }));
 
+vi.mock('../hooks/useApiMetadata', () => ({
+  useApiMetadata: vi.fn(),
+}));
+
 vi.mock('../hooks/useStrategies', () => ({
   useStrategies: vi.fn(),
 }));
 
 import { useAuth } from '../hooks/useAuth';
+import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 
 const mockUseAuth = useAuth as any;
+const mockUseApiMetadata = useApiMetadata as any;
 const mockUseFeedConversion = useFeedConversion as any;
 const mockUseStrategies = useStrategies as any;
 
@@ -36,8 +42,22 @@ describe('App', () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: false,
       username: null,
+      token: null,
       login: mockLogin,
       logout: mockLogout,
+      isLoading: false,
+      error: null,
+    });
+
+    mockUseApiMetadata.mockReturnValue({
+      demo: {
+        enabled: true,
+        token: 'CHANGE_ME_DEMO_TOKEN',
+        strategy: 'ssrf_filter',
+        sources: [{ id: 'github-com-trending', url: 'https://github.com/trending' }],
+      },
+      isLoading: false,
+      error: null,
     });
 
     mockUseFeedConversion.mockReturnValue({
@@ -58,8 +78,8 @@ describe('App', () => {
   it('should render demo section when not authenticated', () => {
     render(<App />);
 
-    expect(screen.getByText('Convert website to RSS')).toBeInTheDocument();
-    expect(screen.getByText('Try a demo source instantly. Sign in to convert your own URLs.')).toBeInTheDocument();
+    expect(screen.getByText('Run a demo source')).toBeInTheDocument();
+    expect(screen.getByText('Run a known source. Sign in to submit your own URL.')).toBeInTheDocument();
     expect(screen.getByText('Run demo')).toBeInTheDocument();
   });
 
@@ -70,6 +90,8 @@ describe('App', () => {
       token: 'test-token',
       login: mockLogin,
       logout: mockLogout,
+      isLoading: false,
+      error: null,
     });
 
     mockUseStrategies.mockReturnValue({
@@ -95,6 +117,8 @@ describe('App', () => {
       token: 'test-token',
       login: mockLogin,
       logout: mockLogout,
+      isLoading: false,
+      error: null,
     });
 
     mockUseStrategies.mockReturnValue({
@@ -119,6 +143,8 @@ describe('App', () => {
       token: 'test-token',
       login: mockLogin,
       logout: mockLogout,
+      isLoading: false,
+      error: null,
     });
 
     mockUseStrategies.mockReturnValue({
@@ -155,6 +181,7 @@ describe('App', () => {
         url: 'https://example.com/articles',
         username: 'guest',
         strategy: 'ssrf_filter',
+        feed_token: 'example-token',
         public_url: '/api/v1/feeds/example-token',
       },
       error: null,

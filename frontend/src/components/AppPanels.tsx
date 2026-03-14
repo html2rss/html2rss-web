@@ -1,5 +1,6 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
+import type { DemoSourceRecord } from '../api/contracts';
 
 export interface Strategy {
   id: string;
@@ -31,6 +32,9 @@ export interface FeedFieldErrors {
 interface GuestOnboardingPanelProps {
   mode: 'guest-demo' | 'guest-auth';
   demoError: string;
+  demoSources: DemoSourceRecord[];
+  demoLoading: boolean;
+  demoStatusMessage: string | null;
   authFormData: AuthFormData;
   authFieldErrors: AuthFieldErrors;
   onModeChange: (mode: 'guest-demo' | 'guest-auth') => void;
@@ -40,30 +44,12 @@ interface GuestOnboardingPanelProps {
   onBackToDemo: () => void;
 }
 
-const DEMO_SOURCES = [
-  {
-    id: 'github',
-    label: 'GitHub Trending',
-    hint: 'Repository leaderboard',
-    url: 'https://github.com/trending',
-  },
-  {
-    id: 'hackernews',
-    label: 'Hacker News',
-    hint: 'Front page discussion feed',
-    url: 'https://news.ycombinator.com',
-  },
-  {
-    id: 'hardware',
-    label: 'CHIP.de',
-    hint: 'Article-heavy consumer tech site',
-    url: 'https://www.chip.de',
-  },
-] as const;
-
 export function GuestOnboardingPanel({
   mode,
   demoError,
+  demoSources,
+  demoLoading,
+  demoStatusMessage,
   authFormData,
   authFieldErrors,
   onModeChange,
@@ -72,43 +58,28 @@ export function GuestOnboardingPanel({
   onAuthFieldChange,
   onBackToDemo,
 }: GuestOnboardingPanelProps) {
-  const [selectedDemoId, setSelectedDemoId] = useState<(typeof DEMO_SOURCES)[number]['id']>(
-    DEMO_SOURCES[0].id
-  );
-  const selectedDemo = DEMO_SOURCES.find((source) => source.id === selectedDemoId) ?? DEMO_SOURCES[0];
+  const [selectedDemoId, setSelectedDemoId] = useState('');
+
+  useEffect(() => {
+    if (!demoSources[0]) return;
+    if (demoSources.some((source) => source.id === selectedDemoId)) return;
+
+    setSelectedDemoId(demoSources[0].id);
+  }, [demoSources, selectedDemoId]);
+
+  const selectedDemo = demoSources.find((source) => source.id === selectedDemoId) ?? demoSources[0] ?? null;
 
   return (
     <section class={`state-layout ${mode === 'guest-auth' ? 'state-layout--auth' : 'state-layout--guest'}`}>
       <aside class="surface surface--sidebar">
         <div class="surface__header">
-          <p class="eyebrow">public entrypoint</p>
-          <h2>Choose a controlled path</h2>
+          <p class="eyebrow">public demo</p>
+          <h2>Fixed sources only</h2>
         </div>
-        <div class="stack stack--lg">
-          <p class="muted-copy">
-            The guest path is for quick verification. Operator mode unlocks arbitrary URLs and strategy
-            selection.
-          </p>
-          <div class="metric-strip" aria-label="guest capabilities">
-            <div class="metric-tile">
-              <strong>3</strong>
-              <span>demo sites</span>
-            </div>
-            <div class="metric-tile">
-              <strong>1</strong>
-              <span>feed output</span>
-            </div>
-            <div class="metric-tile">
-              <strong>0</strong>
-              <span>branding noise</span>
-            </div>
-          </div>
+        <div class="stack">
+          <p class="muted-copy">Run a known source. Sign in to submit your own URL.</p>
           <div class="surface__section">
-            <div class="subtle-list">
-              <span>demo mode: fixed inputs</span>
-              <span>auth mode: token-gated operator access</span>
-              <span>output: RSS endpoint with preview</span>
-            </div>
+            <p class="muted-copy">The demo source list and token come from the server.</p>
           </div>
         </div>
       </aside>
@@ -118,44 +89,51 @@ export function GuestOnboardingPanel({
           <div class="surface__header surface__header--row">
             <div>
               <p class="eyebrow">guest mode</p>
-              <h2>Convert website to RSS</h2>
+              <h2>Run a demo source</h2>
             </div>
             <button type="button" class="btn btn--secondary" onClick={() => onModeChange('guest-auth')}>
               Sign in
             </button>
           </div>
 
-          <p class="muted-copy">Try a demo source instantly. Sign in to convert your own URLs.</p>
-
-          <div class="demo-grid" role="list" aria-label="demo sources">
-            {DEMO_SOURCES.map((source) => (
-              <button
-                key={source.id}
-                type="button"
-                class={`demo-card${source.id === selectedDemoId ? ' demo-card--selected' : ''}`}
-                aria-pressed={source.id === selectedDemoId}
-                onClick={() => setSelectedDemoId(source.id)}
-              >
-                <span class="demo-card__eyebrow">{source.id}</span>
-                <strong>{source.label}</strong>
-                <span>{source.hint}</span>
-                <code>{source.url}</code>
-              </button>
+          <ul class="demo-grid" aria-label="demo sources">
+            {demoSources.map((source) => (
+              <li key={source.id}>
+                <button
+                  type="button"
+                  class={`demo-card${source.id === selectedDemoId ? ' demo-card--selected' : ''}`}
+                  aria-pressed={source.id === selectedDemoId}
+                  onClick={() => setSelectedDemoId(source.id)}
+                >
+                  <strong>{formatDemoLabel(source.url)}</strong>
+                  <code>{source.url}</code>
+                </button>
+              </li>
             ))}
-          </div>
+          </ul>
 
           <div class="surface__section surface__section--footer">
             <p class="muted-copy">
-              Selected demo: <span class="surface__operator">{selectedDemo.label}</span>
+              {selectedDemo ? formatDemoLabel(selectedDemo.url) : 'No demo source available.'}
             </p>
-            <button type="button" class="btn btn--primary" onClick={() => onConvert(selectedDemo.url)}>
+            <button
+              type="button"
+              class="btn btn--primary"
+              disabled={demoLoading || !selectedDemo || Boolean(demoStatusMessage)}
+              onClick={() => selectedDemo && onConvert(selectedDemo.url)}
+            >
               Run demo
             </button>
           </div>
 
+          {demoStatusMessage && (
+            <div class="notice notice--error" role="alert">
+              <p>{demoStatusMessage}</p>
+            </div>
+          )}
+
           {demoError && (
             <div class="notice notice--error" role="alert">
-              <div class="notice__title">Demo conversion failed</div>
               <p>{demoError}</p>
             </div>
           )}
@@ -165,7 +143,7 @@ export function GuestOnboardingPanel({
           <div class="surface__header surface__header--row">
             <div>
               <p class="eyebrow">operator mode</p>
-              <h2>Authenticate with username and token</h2>
+              <h2>Sign in</h2>
             </div>
             <button type="button" class="btn btn--ghost" onClick={onBackToDemo}>
               Back to demo
@@ -210,9 +188,9 @@ export function GuestOnboardingPanel({
 
           <div class="surface__section surface__section--footer">
             <p class="muted-copy">
-              Need a token? Ask your html2rss admin or check the{' '}
+              Need a token? See the{' '}
               <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
-                official docs
+                docs
               </a>
               .
             </p>
@@ -263,7 +241,7 @@ export function MemberConvertPanel({
         <div class="surface__header surface__header--row">
           <div>
             <p class="eyebrow">operator workspace</p>
-            <h2>Convert a website</h2>
+            <h2>Convert a page</h2>
           </div>
           <div class="surface__toolbar">
             <span class="surface__operator">
@@ -347,23 +325,25 @@ export function MemberConvertPanel({
 
       <aside class="surface surface--sidebar">
         <div class="surface__header">
-          <p class="eyebrow">operator tools</p>
-          <h2>Low-friction entry points</h2>
+          <p class="eyebrow">tools</p>
+          <h2>Fast path</h2>
         </div>
-        <div class="stack stack--lg">
-          <p class="muted-copy">
-            Keep a single tab open, paste the target URL, then copy the resulting endpoint into your reader.
-          </p>
-          <div class="surface__section">
-            <div class="subtle-list">
-              <span>default path: direct fetch</span>
-              <span>fallback path: browser rendering</span>
-              <span>result path: copy generated feed URL</span>
-            </div>
-          </div>
+        <div class="stack">
+          <p class="muted-copy">Paste a URL. Pick a strategy. Copy the feed URL.</p>
           <Bookmarklet />
         </div>
       </aside>
     </section>
   );
 }
+
+const formatDemoLabel = (url: string): string => {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, '');
+    const path = parsed.pathname.split('/').filter(Boolean).join(' / ');
+    return path ? `${host} / ${path}` : host;
+  } catch {
+    return url;
+  }
+};

@@ -97,6 +97,7 @@ module Html2rss
             url: url,
             username: token_data[:username],
             strategy: strategy,
+            feed_token: identifiers[:feed_token],
             public_url: public_url
           )
         end

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
 import { GuestOnboardingPanel, MemberConvertPanel, type Strategy } from './AppPanels';
 import { useAuth } from '../hooks/useAuth';
+import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 
@@ -20,7 +21,7 @@ function BrandLockup() {
       </span>
       <div class="brand-lockup__text">
         <strong>html2rss</strong>
-        <span>HTML ingestion to RSS feed output</span>
+        <span>html to feed</span>
       </div>
     </div>
   );
@@ -36,6 +37,7 @@ export function App() {
     isLoading: authLoading,
     error: authError,
   } = useAuth();
+  const { demo, isLoading: metadataLoading, error: metadataError } = useApiMetadata();
   const { isConverting, result, error, convertFeed, clearResult } = useFeedConversion();
   const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies(token);
 
@@ -51,9 +53,11 @@ export function App() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (strategies.length > 0 && !feedFormData.strategy) {
-      setFeedFormData((prev) => ({ ...prev, strategy: strategies[0].id }));
-    }
+    const nextStrategy = strategies[0]?.id;
+    if (!nextStrategy) return;
+
+    const hasCurrentStrategy = strategies.some((strategy) => strategy.id === feedFormData.strategy);
+    if (!hasCurrentStrategy) setFeedFormData((prev) => ({ ...prev, strategy: nextStrategy }));
   }, [strategies, feedFormData.strategy]);
 
   const mode: ViewMode = result
@@ -66,10 +70,16 @@ export function App() {
 
   const setAuthField = (key: 'username' | 'token', value: string) => {
     setAuthFormData((prev) => ({ ...prev, [key]: value }));
+    setAuthFieldErrors((prev) => ({ ...prev, [key]: '', form: '' }));
   };
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
     setFeedFormData((prev) => ({ ...prev, [key]: value }));
+    setFeedFieldErrors((prev) => ({
+      ...prev,
+      url: key === 'url' ? '' : prev.url,
+      form: '',
+    }));
   };
 
   const strategyHint = (strategy: Strategy) => {
@@ -131,9 +141,13 @@ export function App() {
 
   const handleDemoConversion = async (url: string) => {
     setDemoError('');
+    if (!demo?.enabled || !demo.token || !demo.strategy) {
+      setDemoError('Demo unavailable.');
+      return;
+    }
+
     try {
-      const demoStrategy = strategies[0]?.id ?? 'ssrf_filter';
-      await convertFeed(url, demoStrategy, 'CHANGE_ME_DEMO_TOKEN');
+      await convertFeed(url, demo.strategy, demo.token);
     } catch (submitError) {
       setDemoError(submitError instanceof Error ? submitError.message : 'Demo conversion failed.');
     }
@@ -152,7 +166,7 @@ export function App() {
           <div class="status-card__spinner" aria-hidden="true" />
           <div>
             <strong>Booting session</strong>
-            <p>Checking stored credentials and available strategies.</p>
+            <p>Checking session state.</p>
           </div>
         </div>
       </section>
@@ -170,17 +184,15 @@ export function App() {
           </div>
         </div>
         <div class="workspace-frame__titleblock">
-          <p class="eyebrow">html to rss conversion tool</p>
+          <p class="eyebrow">html2rss</p>
           <h1>
             {mode === 'result'
               ? 'Feed generated'
               : isAuthenticated
-                ? 'Convert and inspect source pages'
-                : 'Convert public HTML into a feed endpoint'}
+                ? 'Convert a page'
+                : 'Run the public demo or sign in'}
           </h1>
-          <p class="lede">
-            Compact operator UI. Minimal inputs, explicit states, one canonical action per outcome.
-          </p>
+          <p class="lede">One input. One output. Fixed demo paths for guests.</p>
         </div>
       </header>
 
@@ -216,6 +228,9 @@ export function App() {
           onAuthSubmit={handleAuthSubmit}
           onAuthFieldChange={setAuthField}
           onBackToDemo={() => setShowAuthForm(false)}
+          demoSources={demo?.sources ?? []}
+          demoLoading={metadataLoading}
+          demoStatusMessage={metadataError ?? (!demo?.enabled ? 'Demo unavailable.' : null)}
         />
       )}
 

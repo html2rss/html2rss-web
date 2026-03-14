@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { renderFeedByToken } from '../api/generated';
 import { apiClient } from '../api/client';
 import type { FeedRecord } from '../api/contracts';
@@ -23,7 +23,8 @@ export function ResultDisplay({
   const [copyNotice, setCopyNotice] = useState('');
   const [feedTitle, setFeedTitle] = useState('');
   const [feedItems, setFeedItems] = useState<string[]>([]);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(true);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(Boolean(isAuthenticated));
+  const copyResetRef = useRef<number | undefined>(undefined);
 
   const fullUrl = result.public_url.startsWith('http')
     ? result.public_url
@@ -36,16 +37,29 @@ export function ResultDisplay({
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setFeedTitle('');
+      setFeedItems([]);
+      setIsLoadingPreview(false);
+      return;
+    }
+
     const controller = new AbortController();
 
     const loadPreview = async () => {
       try {
-        const token = extractFeedToken(result.public_url);
-        if (!token) throw new Error('Missing feed token');
+        if (!result.feed_token) throw new Error('Missing feed token');
+        setIsLoadingPreview(true);
 
         const content = await renderFeedByToken({
           client: apiClient,
-          path: { token },
+          path: { token: result.feed_token },
           parseAs: 'text',
           signal: controller.signal,
           responseStyle: 'data',
@@ -76,19 +90,21 @@ export function ResultDisplay({
 
     loadPreview();
     return () => controller.abort();
-  }, [result.public_url]);
+  }, [isAuthenticated, result.feed_token]);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopyNotice('Feed URL copied to clipboard.');
-      window.setTimeout(() => setCopyNotice(''), 2500);
+      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+      copyResetRef.current = window.setTimeout(() => setCopyNotice(''), 2500);
     } catch {
       setCopyNotice('Clipboard copy failed. Copy the feed URL manually.');
     }
   };
 
-  const shouldShowPreview = isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0;
+  const shouldShowPreview =
+    Boolean(isAuthenticated) && (isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0);
 
   return (
     <section id="result-display" class="result-shell" aria-live="polite">
@@ -129,11 +145,13 @@ export function ResultDisplay({
               <button type="button" class="btn btn--primary" onClick={() => copyToClipboard(fullUrl)}>
                 Copy URL
               </button>
-              <a href={feedProtocolUrl} class="btn btn--secondary" target="_blank" rel="noopener">
-                Subscribe in reader
-              </a>
+              {isAuthenticated && (
+                <a href={feedProtocolUrl} class="btn btn--secondary" target="_blank" rel="noopener">
+                  Subscribe in reader
+                </a>
+              )}
             </div>
-            <p class="field-help">Opens your default RSS reader if configured.</p>
+            {isAuthenticated && <p class="field-help">Opens your default RSS reader if configured.</p>}
             {copyNotice && (
               <div class="notice notice--success" role="status">
                 <p>{copyNotice}</p>
@@ -141,7 +159,7 @@ export function ResultDisplay({
             )}
             {!isAuthenticated && onRequestSignIn && (
               <div class="result-guest-row">
-                <span class="muted-copy">Have credentials?</span>
+                <span class="muted-copy">Sign in to convert another URL.</span>
                 <button type="button" class="btn btn--ghost" onClick={onRequestSignIn}>
                   Sign in
                 </button>
@@ -178,12 +196,3 @@ export function ResultDisplay({
     </section>
   );
 }
-
-const extractFeedToken = (publicUrl: string): string | null => {
-  const path = publicUrl.startsWith('http') ? new URL(publicUrl).pathname : publicUrl;
-  const segments = path.split('/').filter(Boolean);
-  const feedIndex = segments.findIndex((segment) => segment === 'feeds');
-  if (feedIndex < 0) return null;
-
-  return segments[feedIndex + 1] ?? null;
-};

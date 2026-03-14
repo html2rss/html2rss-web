@@ -18,6 +18,7 @@ describe('useFeedConversion contract', () => {
         return HttpResponse.json(
           buildFeedResponse({
             url: body.url,
+            feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
           })
         );
@@ -32,6 +33,7 @@ describe('useFeedConversion contract', () => {
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
     expect(result.current.error).toBeNull();
+    expect(result.current.result?.feed_token).toBe('generated-token');
     expect(result.current.result?.public_url).toBe('/api/v1/feeds/generated-token');
   });
 

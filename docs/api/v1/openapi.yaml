@@ -41,8 +41,33 @@ paths:
                         - description
                         - openapi_url
                         type: object
+                      demo:
+                        properties:
+                          enabled:
+                            type: boolean
+                          sources:
+                            items:
+                              properties:
+                                id:
+                                  type: string
+                                url:
+                                  type: string
+                              required:
+                              - id
+                              - url
+                              type: object
+                            type: array
+                          strategy:
+                            type: string
+                          token:
+                            type: string
+                        required:
+                        - enabled
+                        - sources
+                        type: object
                     required:
                     - api
+                    - demo
                     type: object
                   success:
                     type: boolean
@@ -90,6 +115,8 @@ paths:
                         properties:
                           created_at:
                             type: string
+                          feed_token:
+                            type: string
                           id:
                             type: string
                           name:
@@ -107,6 +134,7 @@ paths:
                         - name
                         - url
                         - strategy
+                        - feed_token
                         - public_url
                         - created_at
                         - updated_at

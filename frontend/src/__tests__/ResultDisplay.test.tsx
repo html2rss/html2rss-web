@@ -11,6 +11,7 @@ describe('ResultDisplay', () => {
     url: 'https://example.com',
     username: 'testuser',
     strategy: 'ssrf_filter',
+    feed_token: 'test-feed-token',
     public_url: 'https://example.com/feed.xml',
   };
 
@@ -22,16 +23,23 @@ describe('ResultDisplay', () => {
     } as Response);
   });
 
-  it('should render success message and feed details', () => {
+  it('should render guest result with copy action only', () => {
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
 
     expect(screen.getByText('Feed created')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.queryByText('Copy the URL or open it in your RSS reader.')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Subscribe in reader' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Opens your default RSS reader if configured.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Open feed in new tab' })).not.toBeInTheDocument();
+  });
+
+  it('should render authenticated result actions', () => {
+    render(<ResultDisplay result={mockResult} onClose={mockOnClose} isAuthenticated username="testuser" />);
+
     expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
     expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Open feed in new tab' })).not.toBeInTheDocument();
   });
 
   it('should call onClose when convert-another button is clicked', () => {
@@ -58,7 +66,7 @@ describe('ResultDisplay', () => {
     const onRequestSignIn = vi.fn();
     render(<ResultDisplay result={mockResult} onClose={mockOnClose} onRequestSignIn={onRequestSignIn} />);
 
-    expect(screen.getByText('Have credentials?')).toBeInTheDocument();
+    expect(screen.getByText('Sign in to convert another URL.')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(onRequestSignIn).toHaveBeenCalled();
   });
