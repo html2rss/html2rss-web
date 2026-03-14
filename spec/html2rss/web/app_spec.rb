@@ -18,9 +18,30 @@ RSpec.describe Html2rss::Web::App do
     ]
   end
 
-  def stub_legacy_feed(body)
-    allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return(body)
-    allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
+  def static_feed_json
+    '{"version":"https://jsonfeed.org/version/1.1"}'
+  end
+
+  def stub_static_feed(rss_body: '<rss/>', json_body: static_feed_json, ttl: 180)
+    allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: ttl } })
+
+    stub_static_renderers(static_feed_result(ttl:), rss_body:, json_body:)
+  end
+
+  def static_feed_result(ttl:)
+    Html2rss::Web::Feeds::Result.new(
+      status: :ok,
+      payload: nil,
+      message: nil,
+      ttl_seconds: Html2rss::Web::CacheTtl.seconds_from_minutes(ttl),
+      cache_key: 'feed_result:spec'
+    )
+  end
+
+  def stub_static_renderers(result, rss_body:, json_body:)
+    allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+    allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return(rss_body)
+    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return(json_body)
   end
 
   it { expect(described_class).to be < Roda }
@@ -38,9 +59,8 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'serves legacy feed routes with caching headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
-      allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
+    it 'serves static feed routes with caching headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      stub_static_feed
 
       get '/legacy'
 
@@ -52,8 +72,8 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<rss/>')
     end
 
-    it 'serves legacy json feed routes when json is requested by extension', :aggregate_failures do
-      stub_legacy_feed('{"version":"https://jsonfeed.org/version/1.1"}')
+    it 'serves static json feed routes when json is requested by extension', :aggregate_failures do
+      stub_static_feed
       get '/legacy.json'
 
       expect(json_feed_response_tuple).to eq(
@@ -61,8 +81,8 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'serves HEAD requests for legacy feed routes with negotiated headers only', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      stub_legacy_feed('<rss/>')
+    it 'serves HEAD requests for static feed routes with negotiated headers only', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      stub_static_feed
       head '/legacy'
 
       expect(last_response.status).to eq(200)
@@ -72,8 +92,7 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'coerces string ttl values before cache expiry math', :aggregate_failures do
-      allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
-      allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: '180' } })
+      stub_static_feed(ttl: '180')
 
       get '/legacy'
 
@@ -81,7 +100,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Cache-Control']).to include('max-age=10800')
     end
 
-    it 'renders XML error when legacy feed generation fails', :aggregate_failures do
+    it 'renders XML error when static feed generation fails', :aggregate_failures do
       allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
 
       get '/missing-feed'
@@ -91,7 +110,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<error/>')
     end
 
-    it 'renders JSON Feed-shaped errors when legacy json feed generation fails', :aggregate_failures do
+    it 'renders JSON Feed-shaped errors when static json feed generation fails', :aggregate_failures do
       get '/missing-feed.json'
 
       expect(json_feed_error_tuple).to eq(
