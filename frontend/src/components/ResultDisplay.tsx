@@ -19,11 +19,15 @@ interface ResultDisplayProps {
 export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   const [copyNotice, setCopyNotice] = useState('');
   const [previewItems, setPreviewItems] = useState<string[]>([]);
+  const [previewError, setPreviewError] = useState('');
   const copyResetRef = useRef<number | undefined>(undefined);
 
   const fullUrl = result.public_url.startsWith('http')
     ? result.public_url
     : `${window.location.origin}${result.public_url}`;
+  const jsonFeedUrl = result.json_public_url.startsWith('http')
+    ? result.json_public_url
+    : `${window.location.origin}${result.json_public_url}`;
 
   useEffect(() => {
     return () => {
@@ -47,9 +51,15 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
             .filter((title): title is string => Boolean(title))
             .slice(0, 3) || [];
 
-        if (!isCancelled) setPreviewItems(itemTitles);
+        if (!isCancelled) {
+          setPreviewItems(itemTitles);
+          setPreviewError('');
+        }
       } catch {
-        if (!isCancelled) setPreviewItems([]);
+        if (!isCancelled) {
+          setPreviewItems([]);
+          setPreviewError('Preview unavailable right now.');
+        }
       }
     };
 
@@ -92,6 +102,9 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         <a href={fullUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
           Open feed
         </a>
+        <a href={jsonFeedUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
+          JSON Feed
+        </a>
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
           Create another feed
         </button>
@@ -105,6 +118,13 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
               <li key={item}>{item}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {previewError && (
+        <section class="result-preview" aria-label="Feed preview status">
+          <p class="result-preview__label">Feed preview</p>
+          <p class="field-help">{previewError}</p>
         </section>
       )}
 

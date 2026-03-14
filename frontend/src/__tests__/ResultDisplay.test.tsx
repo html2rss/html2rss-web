@@ -12,6 +12,7 @@ describe('ResultDisplay', () => {
     strategy: 'ssrf_filter',
     feed_token: 'test-feed-token',
     public_url: 'https://example.com/feed.xml',
+    json_public_url: 'https://example.com/feed.json',
   };
 
   beforeEach(() => {
@@ -34,13 +35,30 @@ describe('ResultDisplay', () => {
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'JSON Feed' })).toHaveAttribute(
+      'href',
+      'https://example.com/feed.json'
+    );
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
       expect(screen.getByText('Item Two')).toBeInTheDocument();
     });
-    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
+    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.json', {
       headers: { Accept: 'application/feed+json' },
+    });
+  });
+
+  it('surfaces preview fetch failures as a result-state message', async () => {
+    vi.mocked(window.fetch).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({}),
+    } as Response);
+
+    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
     });
   });
 

@@ -30,6 +30,7 @@ describe('useFeedConversion', () => {
       strategy: 'ssrf_filter',
       feed_token: 'test-token',
       public_url: 'https://example.com/feed.xml',
+      json_public_url: 'https://example.com/feed.json',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
     };
@@ -76,7 +77,9 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
+      await expect(
+        result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken')
+      ).rejects.toThrow('Bad Request');
     });
 
     expect(result.current.isConverting).toBe(false);
@@ -90,7 +93,9 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
+      await expect(
+        result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken')
+      ).rejects.toThrow('Network error');
     });
 
     expect(result.current.isConverting).toBe(false);

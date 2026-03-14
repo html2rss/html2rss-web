@@ -32,6 +32,7 @@ module ApiContractHelpers
   def expect_feed_identifier_payload(feed)
     expect(feed.fetch('feed_token')).to be_a(String)
     expect(feed.fetch('public_url')).to match(%r{^/api/v1/feeds/})
+    expect(feed.fetch('json_public_url')).to match(%r{^/api/v1/feeds/.+\.json$})
   end
 
   def expect_feed_source_payload(feed)

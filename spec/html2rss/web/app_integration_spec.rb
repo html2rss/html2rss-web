@@ -215,6 +215,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
         strategy: 'ssrf_filter',
         feed_token: feed_token,
         public_url: "/api/v1/feeds/#{feed_token}",
+        json_public_url: "/api/v1/feeds/#{feed_token}.json",
         username: account[:username]
       }
     end
@@ -297,7 +298,8 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
           'id' => 'feed-123',
           'url' => feed_url,
           'feed_token' => feed_token,
-          'public_url' => "/api/v1/feeds/#{feed_token}"
+          'public_url' => "/api/v1/feeds/#{feed_token}",
+          'json_public_url' => "/api/v1/feeds/#{feed_token}.json"
         )
       end
     end

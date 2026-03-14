@@ -47,13 +47,16 @@ export function useFeedConversion() {
 
       const result = response.data.data.feed;
       setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
+      return result;
     } catch (error) {
+      const message = toErrorMessage(error);
       setState((prev) => ({
         ...prev,
         isConverting: false,
-        error: toErrorMessage(error),
+        error: message,
         result: null,
       }));
+      throw new Error(message);
     }
   };
 
@@ -67,11 +70,16 @@ export function useFeedConversion() {
     });
   };
 
+  const clearError = () => {
+    setState((prev) => ({ ...prev, error: null }));
+  };
+
   return {
     isConverting: state.isConverting,
     result: state.result,
     error: state.error,
     convertFeed,
+    clearError,
     clearResult,
   };
 }

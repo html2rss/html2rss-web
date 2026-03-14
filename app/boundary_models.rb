@@ -16,7 +16,7 @@ module Html2rss
 
       ##
       # Feed metadata contract used between feed services and API responses.
-      FeedMetadata = Data.define(:id, :name, :url, :username, :strategy, :feed_token, :public_url) do
+      FeedMetadata = Data.define(:id, :name, :url, :username, :strategy, :feed_token, :public_url, :json_public_url) do
         # @return [Hash{Symbol=>Object}]
         def to_h
           {
@@ -26,7 +26,8 @@ module Html2rss
             username: username,
             strategy: strategy,
             feed_token: feed_token,
-            public_url: public_url
+            public_url: public_url,
+            json_public_url: json_public_url
           }
         end
       end

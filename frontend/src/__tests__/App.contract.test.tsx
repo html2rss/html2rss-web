@@ -26,10 +26,11 @@ describe('App contract', () => {
             url: body.url,
             feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
+            json_public_url: '/api/v1/feeds/generated-token.json',
           })
         );
       }),
-      http.get('/api/v1/feeds/generated-token', ({ request }) => {
+      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
         expect(request.headers.get('accept')).toBe('application/feed+json');
 
         return HttpResponse.json(
@@ -57,6 +58,10 @@ describe('App contract', () => {
       expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'JSON Feed' })).toHaveAttribute(
+        'href',
+        'http://localhost:3000/api/v1/feeds/generated-token.json'
+      );
       expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
       expect(screen.getByText('Feed preview')).toBeInTheDocument();
       expect(screen.getByText('Contract Item')).toBeInTheDocument();

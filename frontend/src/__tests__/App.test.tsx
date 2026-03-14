@@ -33,6 +33,7 @@ describe('App', () => {
   const mockSaveToken = vi.fn();
   const mockClearToken = vi.fn();
   const mockConvertFeed = vi.fn();
+  const mockClearConversionError = vi.fn();
   const mockClearResult = vi.fn();
 
   beforeEach(() => {
@@ -70,6 +71,7 @@ describe('App', () => {
       result: null,
       error: null,
       convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
       clearResult: mockClearResult,
     });
 
@@ -131,9 +133,11 @@ describe('App', () => {
         strategy: 'ssrf_filter',
         feed_token: 'example-token',
         public_url: '/api/v1/feeds/example-token',
+        json_public_url: '/api/v1/feeds/example-token.json',
       },
       error: null,
       convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
       clearResult: mockClearResult,
     });
 
@@ -196,6 +200,59 @@ describe('App', () => {
         'token-123'
       );
     });
+  });
+
+  it('reopens the token prompt when a saved token is rejected', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    mockConvertFeed.mockRejectedValueOnce(new Error('Unauthorized'));
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Add access token')).toBeInTheDocument();
+      expect(
+        screen.getByText('Access token was rejected. Paste a valid token to continue.')
+      ).toBeInTheDocument();
+      expect(mockClearToken).toHaveBeenCalled();
+      expect(mockClearConversionError).toHaveBeenCalled();
+    });
+  });
+
+  it('clears stale conversion error when backing out of token recovery', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    mockConvertFeed.mockRejectedValueOnce(new Error('Unauthorized'));
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await screen.findByText('Access token was rejected. Paste a valid token to continue.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
   });
 
   it('submits the token prompt with Enter', async () => {

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'html2rss/url'
+
 require_relative 'contract'
 require_relative 'feeds/create_feed'
 require_relative 'feeds/show_feed'
@@ -33,7 +35,9 @@ module Html2rss
             # @param url [String]
             # @return [String, nil]
             def extract_site_title(url)
-              CreateFeed.extract_site_title(url)
+              Html2rss::Url.for_channel(url).channel_titleized
+            rescue StandardError
+              nil
             end
           end
         end

@@ -83,6 +83,7 @@ export type CreateFeedResponses = {
                 created_at: string;
                 feed_token: string;
                 id: string;
+                json_public_url: string;
                 name: string;
                 public_url: string;
                 strategy: string;

@@ -49,6 +49,7 @@ export interface FeedResponseOverrides {
   strategy?: string;
   feed_token?: string;
   public_url?: string;
+  json_public_url?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -66,6 +67,7 @@ export function buildFeedResponse(overrides: FeedResponseOverrides = {}) {
         strategy: overrides.strategy ?? 'ssrf_filter',
         feed_token: overrides.feed_token ?? 'example-token',
         public_url: overrides.public_url ?? '/api/v1/feeds/example-token',
+        json_public_url: overrides.json_public_url ?? '/api/v1/feeds/example-token.json',
         created_at: timestamp,
         updated_at: overrides.updated_at ?? timestamp,
       },

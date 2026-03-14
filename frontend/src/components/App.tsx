@@ -32,7 +32,14 @@ export function App() {
     error: tokenStateError,
   } = useAccessToken();
   const { metadata, isLoading: metadataLoading, error: metadataError } = useApiMetadata();
-  const { isConverting, result, error: conversionError, convertFeed, clearResult } = useFeedConversion();
+  const {
+    isConverting,
+    result,
+    error: conversionError,
+    convertFeed,
+    clearError,
+    clearResult,
+  } = useFeedConversion();
   const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies();
 
   const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
@@ -69,12 +76,23 @@ export function App() {
       url: key === 'url' ? '' : prev.url,
       form: '',
     }));
+    clearError();
   };
 
   const strategyHint = (strategy: Strategy) => {
     if (strategy.id === 'ssrf_filter') return 'Start here for most pages.';
     if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
     return strategy.name;
+  };
+
+  const isAccessTokenError = (message: string) => {
+    const normalized = message.toLowerCase();
+    return (
+      normalized.includes('unauthorized') ||
+      normalized.includes('forbidden') ||
+      normalized.includes('access token') ||
+      normalized.includes('authentication')
+    );
   };
 
   const attemptFeedCreation = async (accessToken: string) => {
@@ -92,6 +110,7 @@ export function App() {
     }
 
     if (feedCreation.access_token_required && !accessToken) {
+      clearError();
       setShowTokenPrompt(true);
       setTokenError('');
       return false;
@@ -104,6 +123,17 @@ export function App() {
       return true;
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Unable to start feed generation.';
+
+      if (feedCreation.access_token_required && isAccessTokenError(message)) {
+        clearToken();
+        clearError();
+        setTokenDraft('');
+        setShowTokenPrompt(true);
+        setTokenError('Access token was rejected. Paste a valid token to continue.');
+        setFeedFieldErrors(EMPTY_FEED_ERRORS);
+        return false;
+      }
+
       if (message.toLowerCase().includes('url')) {
         setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: message });
       } else {
@@ -188,11 +218,13 @@ export function App() {
             onTokenDraftChange={(value) => {
               setTokenDraft(value);
               setTokenError('');
+              clearError();
             }}
             onSaveToken={handleSaveToken}
             onCancelTokenPrompt={() => {
               setShowTokenPrompt(false);
               setTokenError('');
+              clearError();
             }}
             strategyHint={strategyHint}
           />
@@ -202,6 +234,7 @@ export function App() {
             onClearToken={() => {
               clearToken();
               setShowTokenPrompt(false);
+              clearError();
             }}
           />
         </>
