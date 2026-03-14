@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { renderFeedByToken } from '../api/generated';
 import { apiClient } from '../api/client';
 import type { FeedRecord } from '../api/contracts';
-import styles from './ResultDisplay.module.css';
 
 interface ResultDisplayProps {
   result: FeedRecord;
@@ -33,9 +32,7 @@ export function ResultDisplay({
 
   useEffect(() => {
     const resultElement = document.getElementById('result-display');
-    if (resultElement) {
-      resultElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    resultElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   useEffect(() => {
@@ -56,12 +53,10 @@ export function ResultDisplay({
         if (typeof content !== 'string') throw new Error('Invalid feed preview response');
 
         const xmlDoc = new DOMParser().parseFromString(content, 'text/xml');
-
         const parsedTitle =
           xmlDoc.querySelector('channel > title')?.textContent?.trim() ||
           xmlDoc.querySelector('feed > title')?.textContent?.trim() ||
           '';
-
         const rssItems = Array.from(xmlDoc.querySelectorAll('item > title'));
         const atomItems = Array.from(xmlDoc.querySelectorAll('entry > title'));
         const parsedItems = (rssItems.length > 0 ? rssItems : atomItems)
@@ -80,105 +75,104 @@ export function ResultDisplay({
     };
 
     loadPreview();
-
-    return () => {
-      controller.abort();
-    };
+    return () => controller.abort();
   }, [result.public_url]);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopyNotice('Copied to clipboard.');
-      window.setTimeout(() => setCopyNotice(''), 3000);
+      setCopyNotice('Feed URL copied to clipboard.');
+      window.setTimeout(() => setCopyNotice(''), 2500);
     } catch {
-      setCopyNotice('Clipboard copy failed. Please copy the URL manually.');
+      setCopyNotice('Clipboard copy failed. Copy the feed URL manually.');
     }
   };
 
   const shouldShowPreview = isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0;
 
   return (
-    <section id="result-display" class={styles.result} aria-live="polite">
-      <div class="panel-meta">
-        <span class="panel-meta__primary">{isAuthenticated ? (username ?? '') : ''}</span>
-        <span class="panel-meta__actions">
-          <button
-            type="button"
-            class="btn btn--link btn--meta"
-            onClick={onClose}
-            aria-label="Convert another website"
-          >
-            ← Convert another website
-          </button>
-          {isAuthenticated && onLogout && (
-            <button type="button" class="btn btn--link btn--meta" onClick={onLogout}>
-              Log out
+    <section id="result-display" class="result-shell" aria-live="polite">
+      <div class="surface surface--result">
+        <div class="surface__header surface__header--row">
+          <div>
+            <p class="eyebrow">result</p>
+            <h2>Feed created</h2>
+          </div>
+          <div class="surface__toolbar">
+            {isAuthenticated && username && <span class="surface__operator">operator:{username}</span>}
+            <button type="button" class="btn btn--ghost" onClick={onClose}>
+              Convert another website
             </button>
-          )}
-        </span>
-      </div>
-
-      <header class={styles.hero}>
-        <h2 class={styles.heroTitle}>Feed created</h2>
-        <p class={styles.heroName}>{result.name}</p>
-      </header>
-
-      <div class={styles.feedCard}>
-        <input
-          id="feed-url"
-          name="feed-url"
-          type="text"
-          value={fullUrl}
-          readOnly
-          aria-label="Feed URL"
-          class="input"
-        />
-      </div>
-
-      <div class={styles.heroActions}>
-        <button type="button" class="btn btn--accent" onClick={() => copyToClipboard(fullUrl)}>
-          <span>Copy URL</span>
-        </button>
-        <a href={feedProtocolUrl} class="btn btn--ghost" target="_blank" rel="noopener">
-          <span>Subscribe in reader</span>
-        </a>
-      </div>
-      <p class={styles.actionHint}>Opens your default RSS reader if configured.</p>
-
-      {!isAuthenticated && onRequestSignIn && (
-        <p class={styles.guestCue}>
-          Have credentials?{' '}
-          <button type="button" class="btn btn--link btn--meta" onClick={onRequestSignIn}>
-            Sign in
-          </button>
-        </p>
-      )}
-
-      {copyNotice && (
-        <div class="notice" role="status">
-          <p>{copyNotice}</p>
+            {isAuthenticated && onLogout && (
+              <button type="button" class="btn btn--secondary" onClick={onLogout}>
+                Log out
+              </button>
+            )}
+          </div>
         </div>
-      )}
 
-      {shouldShowPreview && (
-        <section class={styles.preview} aria-label="Feed item preview">
-          {isLoadingPreview ? (
-            <p class={styles.previewLoading}>Loading preview...</p>
-          ) : (
-            <>
-              {feedTitle && <p class={styles.previewTitle}>{feedTitle}</p>}
-              {feedItems.length > 0 && (
-                <ul class={styles.previewList}>
+        <div class="result-grid">
+          <section class="surface__section surface__section--strong">
+            <p class="result-name">{result.name}</p>
+            <label class="field-block" htmlFor="feed-url">
+              <span class="field-label">Feed URL</span>
+              <input
+                id="feed-url"
+                name="feed-url"
+                type="text"
+                value={fullUrl}
+                readOnly
+                class="input input--mono"
+              />
+            </label>
+            <div class="result-actions">
+              <button type="button" class="btn btn--primary" onClick={() => copyToClipboard(fullUrl)}>
+                Copy URL
+              </button>
+              <a href={feedProtocolUrl} class="btn btn--secondary" target="_blank" rel="noopener">
+                Subscribe in reader
+              </a>
+            </div>
+            <p class="field-help">Opens your default RSS reader if configured.</p>
+            {copyNotice && (
+              <div class="notice notice--success" role="status">
+                <p>{copyNotice}</p>
+              </div>
+            )}
+            {!isAuthenticated && onRequestSignIn && (
+              <div class="result-guest-row">
+                <span class="muted-copy">Have credentials?</span>
+                <button type="button" class="btn btn--ghost" onClick={onRequestSignIn}>
+                  Sign in
+                </button>
+              </div>
+            )}
+          </section>
+
+          {shouldShowPreview && (
+            <aside class="surface__section feed-preview" aria-label="Feed preview">
+              <div class="feed-preview__header">
+                <p class="eyebrow">preview</p>
+                <h3>{feedTitle || 'Fetching feed items'}</h3>
+              </div>
+              {isLoadingPreview ? (
+                <div class="preview-loading">
+                  <span class="status-card__spinner" aria-hidden="true" />
+                  <p>Loading recent entries</p>
+                </div>
+              ) : feedItems.length > 0 ? (
+                <ol class="feed-preview__list">
                   {feedItems.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
-                </ul>
+                </ol>
+              ) : (
+                <p class="muted-copy">The feed endpoint is live. Preview items are not available for this response.</p>
               )}
-            </>
+            </aside>
           )}
-        </section>
-      )}
+        </div>
+      </div>
     </section>
   );
 }

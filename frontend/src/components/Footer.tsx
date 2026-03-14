@@ -1,12 +1,13 @@
 export function Footer() {
   return (
     <footer class="app-footer">
-      <p>
-        Hosted instance • Not affiliated with html2rss project •{' '}
+      <div class="app-footer__inner">
+        <span>Hosted instance</span>
+        <span>Not affiliated with the upstream html2rss project</span>
         <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
           Official docs
         </a>
-      </p>
+      </div>
     </footer>
   );
 }
