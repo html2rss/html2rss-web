@@ -52,11 +52,8 @@
 html {
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.05), transparent 24rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18rem),
-    var(--bg-page);
-  background-size:
-    auto,
-    auto;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 18rem), var(--bg-page);
+  background-size: auto, auto;
 }
 
 body {

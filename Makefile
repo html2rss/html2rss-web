@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup quick-check ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral
 
 # Default target
 help: ## Show this help message
@@ -46,6 +46,10 @@ test-frontend-unit: ## Run frontend unit tests only
 
 test-frontend-contract: ## Run frontend contract tests only
 	@cd frontend && npm run test:contract
+
+check-frontend: ## Run frontend typecheck, format, and test checks
+	$(MAKE) lint-js
+	$(MAKE) test-frontend
 
 
 lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issues found

@@ -88,6 +88,9 @@ jobs:
       - name: Verify generated OpenAPI client is up to date
         run: npm run openapi:verify
 
+      - name: Typecheck frontend
+        run: npm run typecheck
+
       - name: Check formatting
         run: npm run format:check
 
