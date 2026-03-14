@@ -7,7 +7,7 @@ module Html2rss
     module RequestContext
       ##
       # Immutable request context model.
-      Context = Data.define(:request_id, :path, :method, :route_group, :actor, :strategy, :started_at)
+      Context = Data.define(:request_id, :path, :http_method, :route_group, :actor, :strategy, :started_at)
 
       class << self
         # @param context [Context]
@@ -41,7 +41,7 @@ module Html2rss
           {
             request_id: context.request_id,
             path: context.path,
-            method: context.method,
+            method: context.http_method,
             route_group: context.route_group,
             actor: context.actor,
             strategy: context.strategy,

@@ -60,7 +60,7 @@ module Html2rss
         RequestContext::Context.new(
           request_id: request_id_for(request),
           path: path,
-          method: request.request_method.to_s.upcase,
+          http_method: request.request_method.to_s.upcase,
           route_group: route_group_for(path),
           actor: nil,
           strategy: request.params['strategy'],

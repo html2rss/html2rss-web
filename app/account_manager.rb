@@ -72,7 +72,7 @@ module Html2rss
         def build_snapshot
           raw_accounts = LocalConfig.global.dig(:auth, :accounts)
           accounts = Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
-          token_index = accounts.each_with_object({}) { |account, hash| hash[account[:token]] = account }.freeze
+          token_index = accounts.to_h { |account| [account[:token], account] }.freeze
 
           SecurityLogger.log_cache_lifecycle('account_manager', 'build', accounts_count: accounts.length)
           { accounts: accounts, token_index: token_index }.freeze

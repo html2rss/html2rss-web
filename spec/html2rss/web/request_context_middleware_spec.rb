@@ -23,7 +23,7 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
   def middleware_app
     app = lambda do |_env|
       context = Html2rss::Web::RequestContext.current
-      [200, { 'Content-Type' => 'text/plain' }, ["#{context.route_group}:#{context.method}"]]
+      [200, { 'Content-Type' => 'text/plain' }, ["#{context.route_group}:#{context.http_method}"]]
     end
     described_class.new(app)
   end
