@@ -17,7 +17,7 @@ module Html2rss
           class << self
             # @param request [Rack::Request]
             # @param token [String]
-            # @return [String] XML feed body.
+            # @return [String] serialized feed body.
             def show(request, token)
               ShowFeed.call(request, token)
             end

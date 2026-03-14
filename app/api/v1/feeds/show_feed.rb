@@ -3,8 +3,8 @@
 require_relative '../../../account_manager'
 require_relative '../../../auth'
 require_relative '../../../auto_source'
-require_relative '../../../cache_ttl'
 require_relative '../../../exceptions'
+require_relative '../../../feed_response_format'
 require_relative '../../../feed_generator'
 require_relative '../../../http_cache'
 require_relative '../../../observability'
@@ -21,17 +21,17 @@ module Html2rss
           # This module stays narrow by handling only edge validation and
           # orchestration, then delegating generation to existing services.
           module ShowFeed
-            DEFAULT_TTL_SECONDS = 3600
-
             class << self
               # Resolves and renders XML feed output for a token request.
               #
               # @param request [Rack::Request]
               # @param token [String] signed public feed token.
-              # @return [String] XML feed response body.
+              # @return [String] serialized feed response body.
               def call(request, token)
-                feed_token, strategy = resolve_authorized_feed(token)
-                rendered = render_generated_feed(request, feed_token.url, strategy)
+                format = FeedResponseFormat.for_request(request)
+                normalized_token = FeedResponseFormat.strip_known_extension(token)
+                feed_token, strategy = resolve_authorized_feed(normalized_token)
+                rendered = render_generated_feed(request, feed_token.url, strategy, format)
                 emit_render_success(strategy, feed_token.url)
                 rendered
               rescue StandardError => error
@@ -97,22 +97,16 @@ module Html2rss
               # @param request [Rack::Request]
               # @param url [String]
               # @param strategy [String]
-              # @return [String] rendered XML.
-              def render_generated_feed(request, url, strategy)
-                feed_object = AutoSource.generate_feed_object(url, strategy)
-                rendered_feed = FeedGenerator.process_feed_content(url, strategy, feed_object)
+              # @param format [Symbol]
+              # @return [String] rendered feed body.
+              def render_generated_feed(request, url, strategy, format)
+                rendered_feed = AutoSource.generate_feed_result(url, strategy, format:)
 
-                request.response['Content-Type'] = 'application/xml'
-                HttpCache.expires(request.response, ttl_from_feed(feed_object), cache_control: 'public')
+                request.response['Content-Type'] = FeedResponseFormat.content_type(format)
+                HttpCache.expires(request.response, rendered_feed.ttl_seconds, cache_control: 'public')
+                HttpCache.vary(request.response, 'Accept')
 
-                rendered_feed.to_s
-              end
-
-              # @param feed_object [Object] object exposing channel ttl when available.
-              # @return [Integer] cache TTL in seconds.
-              def ttl_from_feed(feed_object)
-                ttl_value = feed_object.respond_to?(:channel) ? feed_object.channel&.ttl : nil
-                CacheTtl.seconds_from_minutes(ttl_value, default: DEFAULT_TTL_SECONDS)
+                rendered_feed.body
               end
 
               # @param token [String]

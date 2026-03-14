@@ -18,6 +18,7 @@ module Html2rss
       ##
       # raised when the local config shape is invalid
       class InvalidConfig < RuntimeError; end
+      FEED_EXTENSION_PATTERN = /\.(json|rss|xml)\z/
 
       # Path to local feed configuration file.
       CONFIG_FILE = 'config/feeds.yml'
@@ -93,7 +94,7 @@ module Html2rss
         # @param name [String, Symbol, #to_s]
         # @return [String] basename without extension for feed lookup.
         def normalize_name(name)
-          File.basename(name.to_s, '.*')
+          File.basename(name.to_s).sub(FEED_EXTENSION_PATTERN, '')
         end
 
         # Deep-duplicates nested config structures to avoid mutating shared data.

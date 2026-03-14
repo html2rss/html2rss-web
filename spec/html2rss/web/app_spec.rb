@@ -6,6 +6,23 @@ require 'climate_control'
 require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::App do
+  def json_feed_response_tuple
+    [last_response.status, last_response.headers['Content-Type'], JSON.parse(last_response.body)]
+  end
+
+  def json_feed_error_tuple
+    [
+      last_response.status,
+      last_response.headers['Content-Type'],
+      JSON.parse(last_response.body).slice('version', 'title', 'description')
+    ]
+  end
+
+  def stub_legacy_feed(body)
+    allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return(body)
+    allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: 180 } })
+  end
+
   it { expect(described_class).to be < Roda }
 
   context 'with Rack::Test' do
@@ -35,6 +52,15 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<rss/>')
     end
 
+    it 'serves legacy json feed routes when json is requested by extension', :aggregate_failures do
+      stub_legacy_feed('{"version":"https://jsonfeed.org/version/1.1"}')
+      get '/legacy.json'
+
+      expect(json_feed_response_tuple).to eq(
+        [200, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1' }]
+      )
+    end
+
     it 'coerces string ttl values before cache expiry math', :aggregate_failures do
       allow(Html2rss::Web::Feeds).to receive(:generate_feed).and_return('<rss/>')
       allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: '180' } })
@@ -53,6 +79,15 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.status).to eq(500)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
       expect(last_response.body).to eq('<error/>')
+    end
+
+    it 'renders JSON Feed-shaped errors when legacy json feed generation fails', :aggregate_failures do
+      get '/missing-feed.json'
+
+      expect(json_feed_error_tuple).to eq(
+        [500, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error',
+                                         'description' => 'Failed to generate feed: Internal Server Error' }]
+      )
     end
 
     it 'hides unexpected internal error details from API responses', :aggregate_failures do # rubocop:disable RSpec/ExampleLength

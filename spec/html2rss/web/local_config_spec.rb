@@ -5,18 +5,21 @@ require 'spec_helper'
 require_relative '../../../app/local_config'
 
 RSpec.describe Html2rss::Web::LocalConfig do
+  def titles_for(*names)
+    names.map { |name| described_class.find(name)[:title] }
+  end
+
   before do
     described_class.reload!
   end
 
   describe '.find' do
-    it 'strips feed extensions before lookup', :aggregate_failures do
+    it 'strips feed extensions before lookup' do
       allow(described_class).to receive(:yaml).and_return(
         { feeds: { example: { title: 'Example' } } }
       )
 
-      expect(described_class.find('example.rss')[:title]).to eq('Example')
-      expect(described_class.find('example.xml')[:title]).to eq('Example')
+      expect(titles_for('example.json', 'example.rss', 'example.xml')).to eq(%w[Example Example Example])
     end
   end
 

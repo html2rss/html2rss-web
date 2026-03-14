@@ -33,6 +33,14 @@ module Html2rss
           response['Expires'] = '0'
           response['Cache-Control'] = 'private,max-age=0,no-cache,no-store,must-revalidate'
         end
+
+        # @param response [Hash]
+        # @param fields [Array<String>]
+        # @return [void]
+        def vary(response, *fields)
+          existing = response['Vary'].to_s.split(',').map(&:strip).reject(&:empty?)
+          response['Vary'] = (existing + fields).uniq.join(', ')
+        end
       end
     end
   end

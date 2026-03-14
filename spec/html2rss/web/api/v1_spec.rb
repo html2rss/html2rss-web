@@ -8,9 +8,22 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   include Rack::Test::Methods
 
   def app = Html2rss::Web::App.freeze.app
+  def json_feed_error = JSON.parse(last_response.body).slice('version', 'title')
+  def rss_result = Html2rss::Web::FeedRenderResult.new(body: '<rss version="2.0"></rss>', ttl_seconds: 600)
+
+  def json_result
+    Html2rss::Web::FeedRenderResult.new(
+      body: '{"version":"https://jsonfeed.org/version/1.1","items":[]}',
+      ttl_seconds: 600
+    )
+  end
 
   around do |example|
     ClimateControl.modify(AUTO_SOURCE_ENABLED: 'true') { example.run }
+  end
+
+  after do
+    header 'Accept', nil
   end
 
   let(:health_token) { 'CHANGE_ME_HEALTH_CHECK_TOKEN' }
@@ -165,52 +178,73 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
                     )
                     .encode
 
-      get "/api/v1/feeds/#{ghost_token}"
+      get "/api/v1/feeds/#{ghost_token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(401)
-      response_data = JSON.parse(last_response.body)
-      expect(response_data['success']).to be false
-      expect(response_data.dig('error', 'code')).to eq('UNAUTHORIZED')
-      expect(response_data.dig('error', 'message')).to eq('Account not found')
+      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.body).to include('Account not found')
     end
 
-    it 'renders feed for a valid token', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'renders feed for a valid token', :aggregate_failures do
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object)
-        .and_return(
-          instance_double(Html2rss::Feed, channel: instance_double(Html2rss::FeedChannel, ttl: 10))
-        )
-      allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
-        .and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
 
-      get "/api/v1/feeds/#{token}"
+      get "/api/v1/feeds/#{token}.xml"
 
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('application/xml')
     end
 
-    it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do # rubocop:disable RSpec/ExampleLength
+    it 'renders json feed for a valid token when requested through Accept', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
 
-      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_object)
-        .and_return(
-          instance_double(Html2rss::Feed, channel: instance_double(Html2rss::FeedChannel, ttl: 10))
-        )
-      allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
-        .and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(json_result)
 
-      get "/api/v1/feeds/#{token}", strategy: 'bad'
+      get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/feed+json')
+      expect(last_response.headers['Cache-Control']).to include('max-age=600')
+      expect(last_response.headers['Vary']).to include('Accept')
+    end
+
+    it 'prefers xml when Accept quality outranks json', :aggregate_failures do
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+
+      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
+
+      get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml;q=1.0, application/feed+json;q=0.2' }
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/xml')
+    end
+
+    it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+
+      allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result).and_return(rss_result)
+
+      get "/api/v1/feeds/#{token}", { strategy: 'bad' }, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('application/xml')
     end
 
     it 'returns unauthorized for invalid tokens', :aggregate_failures do
-      get '/api/v1/feeds/invalid-token'
+      get '/api/v1/feeds/invalid-token', {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(401)
-      expect_error_response(last_response, code: 'UNAUTHORIZED')
+      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.body).to include('Invalid token')
+    end
+
+    it 'returns JSON Feed-shaped errors when requested by json extension' do
+      get '/api/v1/feeds/invalid-token.json'
+
+      expect([last_response.status, last_response.headers['Content-Type'], json_feed_error]).to eq(
+        [401, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error' }]
+      )
     end
 
     it 'returns forbidden when auto source is disabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
@@ -218,11 +252,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
 
       ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
-        get "/api/v1/feeds/#{token}"
+        get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
       end
 
       expect(last_response.status).to eq(403)
-      expect_error_response(last_response, code: Html2rss::Web::Api::V1::Contract::CODES[:forbidden])
+      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.body).to include(Html2rss::Web::Api::V1::Contract::MESSAGES[:auto_source_disabled])
     end
   end
 

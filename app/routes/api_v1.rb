@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../request_target'
+
 module Html2rss
   module Web
     module Routes
@@ -17,6 +19,7 @@ module Html2rss
           # @return [void]
           def call(router, context:)
             router.on 'api', 'v1' do
+              RequestTarget.mark!(router, RequestTarget::API)
               router.response['Content-Type'] = 'application/json'
 
               mount_openapi_spec(router)
@@ -100,6 +103,7 @@ module Html2rss
           def mount_feeds(router, context)
             router.on 'feeds' do
               router.get String do |token|
+                RequestTarget.mark!(router, RequestTarget::FEED)
                 render_feed_response(context.api_feeds.show(router, token))
               end
 

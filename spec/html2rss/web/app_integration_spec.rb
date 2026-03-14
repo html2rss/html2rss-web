@@ -3,6 +3,7 @@
 require 'spec_helper'
 require 'rack/test'
 require 'json'
+require 'securerandom'
 require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -11,7 +12,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:app) { described_class.freeze.app }
 
   let(:feed_url) { 'https://example.com/articles' }
-  let(:feed_token) { 'valid-feed-token' }
+  let(:feed_token) { "valid-feed-token-#{SecureRandom.hex(4)}" }
 
   let(:account) do
     {
@@ -32,6 +33,18 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:json_headers) { { 'CONTENT_TYPE' => 'application/json' } }
   let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
   let(:json_body) { JSON.parse(last_response.body) }
+  let(:json_feed_error) { JSON.parse(last_response.body).slice('version', 'title') }
+  let(:feed_result) { Html2rss::Web::FeedRenderResult.new(body: '<rss version="2.0"></rss>', ttl_seconds: 600) }
+  let(:json_feed_result) do
+    Html2rss::Web::FeedRenderResult.new(
+      body: '{"version":"https://jsonfeed.org/version/1.1","items":[]}',
+      ttl_seconds: 600
+    )
+  end
+
+  after do
+    header 'Accept', nil
+  end
 
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
@@ -49,30 +62,28 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
     )
     allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
     allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
-    feed_channel = instance_double(Html2rss::FeedChannel, ttl: 10)
-    feed_object = instance_double(Html2rss::Feed, channel: feed_channel)
-
-    allow(Html2rss::Web::AutoSource).to receive_messages(
-      enabled?: true,
-      generate_feed_object: feed_object
-    )
-    allow(Html2rss::Web::FeedGenerator).to receive(:process_feed_content)
-      .and_return('<rss version="2.0"></rss>')
+    allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
+    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
+      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::RSS)
+      .and_return(feed_result)
+    allow(Html2rss::Web::AutoSource).to receive(:generate_feed_result)
+      .with(anything, anything, format: Html2rss::Web::FeedResponseFormat::JSON_FEED)
+      .and_return(json_feed_result)
   end
 
   describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     it 'returns unauthorized for invalid tokens', :aggregate_failures do
       allow(Html2rss::Web::FeedToken).to receive(:decode).and_return(nil)
 
-      get '/api/v1/feeds/invalid-token'
+      get '/api/v1/feeds/invalid-token', {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(401)
-      expect(last_response.content_type).to include('application/json')
-      expect(json_body).to include('error' => include('code' => 'UNAUTHORIZED'))
+      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.body).to include('Invalid token')
     end
 
     it 'renders the XML feed with cache headers', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      get "/api/v1/feeds/#{feed_token}", {}, 'HTTP_HOST' => 'localhost:3000'
+      get "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_HOST' => 'localhost:3000', 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
@@ -82,11 +93,52 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       expect(last_response.body).to eq('<rss version="2.0"></rss>')
     end
 
+    it 'renders the JSON feed when requested by extension', :aggregate_failures do
+      get "/api/v1/feeds/#{feed_token}.json"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/feed+json')
+    end
+
+    it 'renders the JSON feed when requested through Accept', :aggregate_failures do
+      get "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
+      expect([last_response.status, last_response.headers['Content-Type']]).to eq([200, 'application/feed+json'])
+      expect(last_response.headers['Cache-Control']).to include('max-age=600')
+      expect(last_response.headers['Vary']).to include('Accept')
+    end
+
+    it 'prefers the path extension over Accept negotiation', :aggregate_failures do
+      header 'Accept', 'application/feed+json'
+      get "/api/v1/feeds/#{feed_token}.xml"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
+    it 'honors Accept quality values for feed negotiation', :aggregate_failures do
+      header 'Accept', 'application/xml;q=1.0, application/feed+json;q=0.2'
+      get "/api/v1/feeds/#{feed_token}"
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+    end
+
     it 'ignores query param strategy overrides', :aggregate_failures do
+      header 'Accept', 'application/xml'
       get "/api/v1/feeds/#{feed_token}", { 'strategy' => 'invalid' }
 
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('application/xml')
+    end
+
+    it 'returns JSON Feed-shaped errors for invalid json feed tokens' do
+      allow(Html2rss::Web::FeedToken).to receive(:decode).and_return(nil)
+
+      get '/api/v1/feeds/invalid-token.json'
+
+      expect([last_response.status, last_response.headers['Content-Type'], json_feed_error]).to eq(
+        [401, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error' }]
+      )
     end
   end
 

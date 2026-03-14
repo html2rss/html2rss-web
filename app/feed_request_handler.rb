@@ -3,6 +3,7 @@
 require 'digest'
 
 require_relative 'cache_ttl'
+require_relative 'feed_response_format'
 require_relative 'feed_runtime'
 require_relative 'feeds'
 require_relative 'local_config'
@@ -15,11 +16,12 @@ module Html2rss
       class << self
         # @param feed_name [String]
         # @param params [Hash]
+        # @param format [Symbol]
         # @param async_refresh [Boolean]
         # @return [Array<(String, Integer)>] feed xml and cache ttl.
-        def call(feed_name:, params:, async_refresh: false)
+        def call(feed_name:, params:, format:, async_refresh: false)
           ttl_seconds = feed_ttl_seconds(feed_name)
-          content = feed_content(feed_name, params, ttl_seconds, async_refresh)
+          content = feed_content(feed_name, params, format, ttl_seconds, async_refresh)
           [content, ttl_seconds]
         end
 
@@ -34,26 +36,28 @@ module Html2rss
 
         # @param feed_name [String]
         # @param params [Hash]
+        # @param format [Symbol]
         # @param ttl_seconds [Integer]
         # @param async_refresh [Boolean]
         # @return [String]
-        def feed_content(feed_name, params, ttl_seconds, async_refresh)
+        def feed_content(feed_name, params, format, ttl_seconds, async_refresh)
           FeedRuntime.read(
-            key: feed_cache_key(feed_name, params),
+            key: feed_cache_key(feed_name, params, format),
             ttl_seconds: ttl_seconds,
             async_refresh: async_refresh
           ) do
-            Feeds.generate_feed(feed_name, params).to_s
+            Feeds.generate_feed(feed_name, params, format:)
           end
         end
 
         # @param feed_name [String]
         # @param params [Hash]
+        # @param format [Symbol]
         # @return [String]
-        def feed_cache_key(feed_name, params)
+        def feed_cache_key(feed_name, params, format)
           normalized_params = params.to_h.sort_by { |key, _| key.to_s }
           digest = Digest::SHA256.hexdigest(Marshal.dump(normalized_params))
-          "local_feed:#{feed_name}:#{digest}"
+          "local_feed:#{feed_name}:#{format}:#{digest}"
         end
       end
     end

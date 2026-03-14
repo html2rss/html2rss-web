@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../request_target'
+
 module Html2rss
   module Web
     module Routes
@@ -16,8 +18,9 @@ module Html2rss
           # @return [void]
           def call(router, feed_handler:, index_renderer:)
             router.get String do |feed_name|
-              next if feed_name.include?('.') && !feed_name.end_with?('.xml', '.rss')
+              next if feed_name.include?('.') && !feed_name.end_with?('.json', '.xml', '.rss')
 
+              RequestTarget.mark!(router, RequestTarget::FEED)
               feed_handler.call(router, feed_name)
             end
 

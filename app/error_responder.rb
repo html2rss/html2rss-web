@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 require_relative 'api/v1/contract'
+require_relative 'feed_response_format'
+require_relative 'json_feed_builder'
 require_relative 'observability'
+require_relative 'request_target'
 
 module Html2rss
   module Web
@@ -27,6 +30,7 @@ module Html2rss
 
           client_message = client_message_for(error)
 
+          return render_feed_error(request, response, client_message) if RequestTarget.feed?(request)
           return render_api_error(response, client_message, error_code) if api_request?(request)
 
           render_xml_error(response, client_message)
@@ -35,8 +39,14 @@ module Html2rss
         private
 
         # @param request [Rack::Request]
-        # @return [Boolean] true when request path is within API v1.
+        # @return [Boolean]
         def api_request?(request)
+          RequestTarget.api?(request) || api_path?(request)
+        end
+
+        # @param request [Rack::Request]
+        # @return [Boolean]
+        def api_path?(request)
           path = request.path.to_s
           path == API_ROOT_PATH || path.start_with?("#{API_ROOT_PATH}/")
         end
@@ -48,6 +58,17 @@ module Html2rss
         def render_api_error(response, message, code)
           response['Content-Type'] = 'application/json'
           JSON.generate({ success: false, error: { message: message, code: code } })
+        end
+
+        # @param response [Rack::Response]
+        # @param message [String]
+        # @return [String] negotiated feed error payload.
+        def render_feed_error(request, response, message)
+          format = FeedResponseFormat.for_request(request)
+          response['Content-Type'] = FeedResponseFormat.content_type(format)
+          return JsonFeedBuilder.build_error_feed(message: message) if format == FeedResponseFormat::JSON_FEED
+
+          XmlBuilder.build_error_feed(message: message)
         end
 
         # @param response [Rack::Response]
