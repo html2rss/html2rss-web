@@ -1,16 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
+import { within } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse } from './mocks/server';
 import { App } from '../components/App';
 
 describe('App contract', () => {
-  const username = 'contract-user';
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.sessionStorage.setItem('html2rss_username', username);
-    window.sessionStorage.setItem('html2rss_token', token);
+    window.sessionStorage.setItem('html2rss_access_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {
@@ -40,19 +39,22 @@ describe('App contract', () => {
 
     render(<App />);
 
-    await screen.findByText(username);
+    await screen.findByText('Generate a feed from a web page');
 
-    const urlInput = screen.getByLabelText('URL') as HTMLInputElement;
+    const urlInput = screen.getByLabelText('Source URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Convert' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Feed created')).toBeInTheDocument();
+      const resultRegion = document.getElementById('feed-result');
+      expect(resultRegion).not.toBeNull();
+      const resultQueries = within(resultRegion!);
+
+      expect(screen.getByText('Feed ready')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
-      expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
+      expect(resultQueries.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
+      expect(resultQueries.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
     });
   });
 });

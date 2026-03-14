@@ -41,33 +41,24 @@ paths:
                         - description
                         - openapi_url
                         type: object
-                      demo:
+                      instance:
                         properties:
-                          enabled:
-                            type: boolean
-                          sources:
-                            items:
-                              properties:
-                                id:
-                                  type: string
-                                url:
-                                  type: string
-                              required:
-                              - id
-                              - url
-                              type: object
-                            type: array
-                          strategy:
-                            type: string
-                          token:
-                            type: string
+                          feed_creation:
+                            properties:
+                              access_token_required:
+                                type: boolean
+                              enabled:
+                                type: boolean
+                            required:
+                            - enabled
+                            - access_token_required
+                            type: object
                         required:
-                        - enabled
-                        - sources
+                        - feed_creation
                         type: object
                     required:
                     - api
-                    - demo
+                    - instance
                     type: object
                   success:
                     type: boolean
@@ -75,7 +66,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns OpenAPI document URL in metadata
+          description: returns instance feed-creation capability
       security: []
       summary: API metadata
       tags:

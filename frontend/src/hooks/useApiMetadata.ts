@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'preact/hooks';
 import { getApiMetadata } from '../api/generated';
 import { apiClient } from '../api/client';
-import type { DemoRecord } from '../api/contracts';
+import type { ApiMetadataRecord } from '../api/contracts';
 
 interface ApiMetadataState {
-  demo: DemoRecord | null;
+  metadata: ApiMetadataRecord | null;
   isLoading: boolean;
   error: string | null;
 }
 
 export function useApiMetadata() {
   const [state, setState] = useState<ApiMetadataState>({
-    demo: null,
+    metadata: null,
     isLoading: true,
     error: null,
   });
@@ -27,13 +27,14 @@ export function useApiMetadata() {
           client: apiClient,
           signal: controller.signal,
         });
+        const metadata = response.data?.data as unknown as ApiMetadataRecord | undefined;
 
-        if (response.error || !response.data?.success || !response.data.data?.demo) {
+        if (response.error || !response.data?.success || !metadata?.instance) {
           throw new Error('Invalid response format from API metadata');
         }
 
         setState({
-          demo: response.data.data.demo,
+          metadata,
           isLoading: false,
           error: null,
         });
@@ -41,7 +42,7 @@ export function useApiMetadata() {
         if (controller.signal.aborted) return;
 
         setState({
-          demo: null,
+          metadata: null,
           isLoading: false,
           error: error instanceof Error ? error.message : 'Failed to load API metadata',
         });

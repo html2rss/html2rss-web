@@ -13,7 +13,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
     /**
-     * returns OpenAPI document URL in metadata
+     * returns instance feed-creation capability
      */
     200: {
         data: {
@@ -22,14 +22,11 @@ export type GetApiMetadataResponses = {
                 name: string;
                 openapi_url: string;
             };
-            demo: {
-                enabled: boolean;
-                sources: Array<{
-                    id: string;
-                    url: string;
-                }>;
-                strategy?: string;
-                token?: string;
+            instance: {
+                feed_creation: {
+                    access_token_required: boolean;
+                    enabled: boolean;
+                };
             };
         };
         success: boolean;

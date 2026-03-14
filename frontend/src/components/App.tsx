@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
-import { GuestOnboardingPanel, MemberConvertPanel, type Strategy } from './AppPanels';
-import { useAuth } from '../hooks/useAuth';
+import { CreateFeedPanel, InstanceInfo, QuickToolsPanel, type Strategy } from './AppPanels';
+import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 
-type ViewMode = 'result' | 'guest-demo' | 'guest-auth' | 'member';
-
-const EMPTY_AUTH_ERRORS = { username: '', token: '', form: '' };
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 
 function BrandLockup() {
@@ -29,28 +26,32 @@ function BrandLockup() {
 
 export function App() {
   const {
-    isAuthenticated,
-    username,
     token,
-    login,
-    logout,
-    isLoading: authLoading,
-    error: authError,
-  } = useAuth();
-  const { demo, isLoading: metadataLoading, error: metadataError } = useApiMetadata();
-  const { isConverting, result, error, convertFeed, clearResult } = useFeedConversion();
-  const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies(token);
+    hasToken,
+    saveToken,
+    clearToken,
+    isLoading: tokenLoading,
+    error: tokenStateError,
+  } = useAccessToken();
+  const { metadata, isLoading: metadataLoading, error: metadataError } = useApiMetadata();
+  const { isConverting, result, error: conversionError, convertFeed, clearResult } = useFeedConversion();
+  const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies();
 
-  const [showAuthForm, setShowAuthForm] = useState(false);
-  const [authFormData, setAuthFormData] = useState({ username: '', token: '' });
-  const [authFieldErrors, setAuthFieldErrors] = useState(EMPTY_AUTH_ERRORS);
   const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
-  const [demoError, setDemoError] = useState('');
+  const [showTokenPrompt, setShowTokenPrompt] = useState(false);
+  const [tokenDraft, setTokenDraft] = useState('');
+  const [tokenError, setTokenError] = useState('');
 
   useEffect(() => {
-    if (isAuthenticated) setShowAuthForm(false);
-  }, [isAuthenticated]);
+    if (typeof window === 'undefined') return;
+    if (feedFormData.url) return;
+
+    const urlParam = new URLSearchParams(window.location.search).get('url');
+    if (!urlParam) return;
+
+    setFeedFormData((prev) => ({ ...prev, url: urlParam }));
+  }, [feedFormData.url]);
 
   useEffect(() => {
     const nextStrategy = strategies[0]?.id;
@@ -60,18 +61,7 @@ export function App() {
     if (!hasCurrentStrategy) setFeedFormData((prev) => ({ ...prev, strategy: nextStrategy }));
   }, [strategies, feedFormData.strategy]);
 
-  const mode: ViewMode = result
-    ? 'result'
-    : isAuthenticated
-      ? 'member'
-      : showAuthForm
-        ? 'guest-auth'
-        : 'guest-demo';
-
-  const setAuthField = (key: 'username' | 'token', value: string) => {
-    setAuthFormData((prev) => ({ ...prev, [key]: value }));
-    setAuthFieldErrors((prev) => ({ ...prev, [key]: '', form: '' }));
-  };
+  const feedCreation = metadata?.instance.feed_creation ?? { enabled: true, access_token_required: true };
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
     setFeedFormData((prev) => ({ ...prev, [key]: value }));
@@ -83,33 +73,10 @@ export function App() {
   };
 
   const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Direct fetch. Fast path for standard documents.';
+    if (strategy.id === 'ssrf_filter') return 'Direct fetch for standard documents and static pages.';
     if (strategy.id === 'browserless')
-      return 'Browser render. Use for JavaScript-heavy pages and SPA output.';
+      return 'Rendered browser pass for JavaScript-heavy pages, SPAs, and delayed content.';
     return strategy.name;
-  };
-
-  const handleAuthSubmit = async (event: Event) => {
-    event.preventDefault();
-    setAuthFieldErrors(EMPTY_AUTH_ERRORS);
-
-    if (!authFormData.username.trim()) {
-      setAuthFieldErrors({ ...EMPTY_AUTH_ERRORS, username: 'Username is required.' });
-      return;
-    }
-    if (!authFormData.token.trim()) {
-      setAuthFieldErrors({ ...EMPTY_AUTH_ERRORS, token: 'Token is required.' });
-      return;
-    }
-
-    try {
-      await login(authFormData.username, authFormData.token);
-    } catch (submitError) {
-      setAuthFieldErrors({
-        ...EMPTY_AUTH_ERRORS,
-        form: submitError instanceof Error ? submitError.message : 'Unable to authenticate.',
-      });
-    }
   };
 
   const handleFeedSubmit = async (event: Event) => {
@@ -117,14 +84,28 @@ export function App() {
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
 
     if (!feedFormData.url.trim()) {
-      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Website URL is required.' });
+      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
+      return;
+    }
+
+    if (!feedCreation.enabled) {
+      setFeedFieldErrors({
+        ...EMPTY_FEED_ERRORS,
+        form: 'Custom feed generation is disabled for this instance.',
+      });
+      return;
+    }
+
+    if (feedCreation.access_token_required && !hasToken) {
+      setShowTokenPrompt(true);
+      setTokenError('Add an access token to create a custom feed.');
       return;
     }
 
     try {
       await convertFeed(feedFormData.url, feedFormData.strategy, token ?? '');
     } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : 'Unable to start conversion.';
+      const message = submitError instanceof Error ? submitError.message : 'Unable to start feed generation.';
       if (message.toLowerCase().includes('url')) {
         setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: message });
       } else {
@@ -133,40 +114,30 @@ export function App() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    setShowAuthForm(false);
-    clearResult();
-  };
-
-  const handleDemoConversion = async (url: string) => {
-    setDemoError('');
-    if (!demo?.enabled || !demo.token || !demo.strategy) {
-      setDemoError('Demo unavailable.');
-      return;
-    }
-
+  const handleSaveToken = async () => {
     try {
-      await convertFeed(url, demo.strategy, demo.token);
-    } catch (submitError) {
-      setDemoError(submitError instanceof Error ? submitError.message : 'Demo conversion failed.');
+      await saveToken(tokenDraft);
+      setTokenError('');
+      setShowTokenPrompt(false);
+      setTokenDraft('');
+    } catch (error) {
+      setTokenError(error instanceof Error ? error.message : 'Unable to save access token.');
     }
   };
 
-  const handleSignInFromResult = () => {
+  const handleCreateAnother = () => {
     clearResult();
-    setShowAuthForm(true);
   };
 
-  if (authLoading) {
+  if (metadataLoading || tokenLoading) {
     return (
       <section class="workspace-shell workspace-shell--loading">
         <BrandLockup />
         <div class="status-card" aria-live="polite">
           <div class="status-card__spinner" aria-hidden="true" />
           <div>
-            <strong>Booting session</strong>
-            <p>Checking session state.</p>
+            <strong>Loading instance</strong>
+            <p>Reading feed-generation capabilities.</p>
           </div>
         </div>
       </section>
@@ -174,82 +145,67 @@ export function App() {
   }
 
   return (
-    <section class={`workspace-shell workspace-shell--${mode}`}>
+    <section class="workspace-shell">
       <header class="workspace-frame">
         <div class="workspace-frame__masthead">
           <BrandLockup />
-          <div class="workspace-frame__context">
-            <span>{isAuthenticated ? `operator:${username}` : 'guest:public'}</span>
-            <span>{mode === 'result' ? 'feed-ready' : 'interactive'}</span>
-          </div>
         </div>
         <div class="workspace-frame__titleblock">
-          <p class="eyebrow">html2rss</p>
-          <h1>
-            {mode === 'result'
-              ? 'Feed generated'
-              : isAuthenticated
-                ? 'Convert a page'
-                : 'Run the public demo or sign in'}
-          </h1>
-          <p class="lede">One input. One output. Fixed demo paths for guests.</p>
+          <h1>Turn web pages into stable feeds.</h1>
         </div>
       </header>
 
-      {authError && mode !== 'result' && (
+      {(metadataError || tokenStateError) && (
         <section class="notice notice--error" role="alert">
-          <div class="notice__title">Authentication error</div>
-          <p>{authError}</p>
-          <button type="button" onClick={() => window.location.reload()} class="btn btn--secondary">
-            Reload session
-          </button>
+          <div class="notice__title">Instance metadata unavailable</div>
+          <p>{metadataError ?? tokenStateError}</p>
         </section>
       )}
 
-      {mode === 'result' && result && (
-        <ResultDisplay
-          result={result}
-          onClose={clearResult}
-          isAuthenticated={isAuthenticated}
-          onLogout={isAuthenticated ? handleLogout : undefined}
-          username={username ?? undefined}
-          onRequestSignIn={!isAuthenticated ? handleSignInFromResult : undefined}
-        />
+      {result ? (
+        <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
+      ) : (
+        <div class="support-stack">
+          <CreateFeedPanel
+            feedFormData={feedFormData}
+            feedFieldErrors={feedFieldErrors}
+            conversionError={conversionError}
+            isConverting={isConverting}
+            strategies={strategies}
+            strategiesLoading={strategiesLoading}
+            strategiesError={strategiesError}
+            feedCreationEnabled={feedCreation.enabled}
+            accessTokenRequired={feedCreation.access_token_required}
+            hasAccessToken={hasToken}
+            tokenDraft={tokenDraft}
+            tokenError={tokenError}
+            showTokenPrompt={showTokenPrompt}
+            onFeedSubmit={handleFeedSubmit}
+            onFeedFieldChange={setFeedField}
+            onTokenDraftChange={(value) => {
+              setTokenDraft(value);
+              setTokenError('');
+            }}
+            onSaveToken={handleSaveToken}
+            onCancelTokenPrompt={() => {
+              setShowTokenPrompt(false);
+              setTokenError('');
+            }}
+            strategyHint={strategyHint}
+          />
+          <QuickToolsPanel />
+        </div>
       )}
 
-      {(mode === 'guest-demo' || mode === 'guest-auth') && !authError && (
-        <GuestOnboardingPanel
-          mode={mode}
-          demoError={demoError}
-          authFormData={authFormData}
-          authFieldErrors={authFieldErrors}
-          onModeChange={(nextMode) => setShowAuthForm(nextMode === 'guest-auth')}
-          onConvert={handleDemoConversion}
-          onAuthSubmit={handleAuthSubmit}
-          onAuthFieldChange={setAuthField}
-          onBackToDemo={() => setShowAuthForm(false)}
-          demoSources={demo?.sources ?? []}
-          demoLoading={metadataLoading}
-          demoStatusMessage={metadataError ?? (!demo?.enabled ? 'Demo unavailable.' : null)}
-        />
-      )}
-
-      {mode === 'member' && (
-        <MemberConvertPanel
-          username={username ?? ''}
-          onLogout={handleLogout}
-          feedFormData={feedFormData}
-          feedFieldErrors={feedFieldErrors}
-          conversionError={error}
-          isConverting={isConverting}
-          strategies={strategies}
-          strategiesLoading={strategiesLoading}
-          strategiesError={strategiesError}
-          onFeedSubmit={handleFeedSubmit}
-          onFeedFieldChange={setFeedField}
-          strategyHint={strategyHint}
-        />
-      )}
+      <InstanceInfo
+        feedCreationEnabled={feedCreation.enabled}
+        accessTokenRequired={feedCreation.access_token_required}
+        hasAccessToken={hasToken}
+        onClearToken={() => {
+          clearToken();
+          setShowTokenPrompt(false);
+        }}
+      />
     </section>
   );
 }

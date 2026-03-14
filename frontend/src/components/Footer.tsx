@@ -2,10 +2,8 @@ export function Footer() {
   return (
     <footer class="app-footer">
       <div class="app-footer__inner">
-        <span>Hosted instance</span>
-        <span>Independent deployment</span>
-        <a href="https://html2rss.github.io/" target="_blank" rel="noopener noreferrer">
-          Official docs
+        <a href="https://github.com/html2rss/html2rss-web" target="_blank" rel="noopener noreferrer">
+          Source code
         </a>
       </div>
     </footer>

@@ -1,38 +1,24 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { renderFeedByToken } from '../api/generated';
-import { apiClient } from '../api/client';
 import type { FeedRecord } from '../api/contracts';
 
 interface ResultDisplayProps {
   result: FeedRecord;
-  onClose: () => void;
-  isAuthenticated?: boolean;
-  username?: string;
-  onLogout?: () => void;
-  onRequestSignIn?: () => void;
+  onCreateAnother: () => void;
 }
 
-export function ResultDisplay({
-  result,
-  onClose,
-  isAuthenticated,
-  username,
-  onLogout,
-  onRequestSignIn,
-}: ResultDisplayProps) {
+export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   const [copyNotice, setCopyNotice] = useState('');
   const [feedTitle, setFeedTitle] = useState('');
   const [feedItems, setFeedItems] = useState<string[]>([]);
-  const [isLoadingPreview, setIsLoadingPreview] = useState(Boolean(isAuthenticated));
+  const [isLoadingPreview, setIsLoadingPreview] = useState(true);
   const copyResetRef = useRef<number | undefined>(undefined);
 
   const fullUrl = result.public_url.startsWith('http')
     ? result.public_url
     : `${window.location.origin}${result.public_url}`;
-  const feedProtocolUrl = `feed:${fullUrl}`;
 
   useEffect(() => {
-    const resultElement = document.getElementById('result-display');
+    const resultElement = document.getElementById('feed-result');
     resultElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
@@ -43,28 +29,14 @@ export function ResultDisplay({
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      setFeedTitle('');
-      setFeedItems([]);
-      setIsLoadingPreview(false);
-      return;
-    }
-
     const controller = new AbortController();
 
     const loadPreview = async () => {
       try {
-        if (!result.feed_token) throw new Error('Missing feed token');
         setIsLoadingPreview(true);
 
-        const content = await renderFeedByToken({
-          client: apiClient,
-          path: { token: result.feed_token },
-          parseAs: 'text',
-          signal: controller.signal,
-          responseStyle: 'data',
-        });
-        if (typeof content !== 'string') throw new Error('Invalid feed preview response');
+        const response = await fetch(fullUrl, { signal: controller.signal });
+        const content = await response.text();
 
         const xmlDoc = new DOMParser().parseFromString(content, 'text/xml');
         const parsedTitle =
@@ -84,13 +56,13 @@ export function ResultDisplay({
         setFeedTitle('');
         setFeedItems([]);
       } finally {
-        setIsLoadingPreview(false);
+        if (!controller.signal.aborted) setIsLoadingPreview(false);
       }
     };
 
     loadPreview();
     return () => controller.abort();
-  }, [isAuthenticated, result.feed_token]);
+  }, [fullUrl]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -103,95 +75,73 @@ export function ResultDisplay({
     }
   };
 
-  const shouldShowPreview =
-    Boolean(isAuthenticated) && (isLoadingPreview || Boolean(feedTitle) || feedItems.length > 0);
+  const displayTitle = feedTitle || result.name;
 
   return (
-    <section id="result-display" class="result-shell" aria-live="polite">
-      <div class="surface surface--result">
-        <div class="surface__header surface__header--row">
-          <div>
-            <p class="eyebrow">result</p>
-            <h2>Feed created</h2>
-          </div>
-          <div class="surface__toolbar">
-            {isAuthenticated && username && <span class="surface__operator">operator:{username}</span>}
-            <button type="button" class="btn btn--ghost" onClick={onClose}>
-              Convert another website
+    <section id="feed-result" class="surface surface--primary surface--result" aria-live="polite">
+      <div class="surface__header">
+        <p class="eyebrow">Feed ready</p>
+        <h2>{displayTitle}</h2>
+        <p class="muted-copy">
+          Copy the generated feed URL immediately, or open the endpoint to inspect the rendered output.
+        </p>
+      </div>
+
+      <div class="result-layout">
+        <section class="surface__section surface__section--strong">
+          <label class="field-block" htmlFor="feed-url">
+            <span class="field-label">Feed URL</span>
+            <input
+              id="feed-url"
+              name="feed-url"
+              type="text"
+              value={fullUrl}
+              readOnly
+              class="input input--mono"
+            />
+          </label>
+
+          <div class="result-actions">
+            <button type="button" class="btn btn--primary" onClick={() => copyToClipboard(fullUrl)}>
+              Copy feed URL
             </button>
-            {isAuthenticated && onLogout && (
-              <button type="button" class="btn btn--secondary" onClick={onLogout}>
-                Log out
-              </button>
-            )}
+            <a href={fullUrl} class="btn btn--secondary" target="_blank" rel="noopener noreferrer">
+              Open feed
+            </a>
+            <button type="button" class="btn btn--ghost" onClick={onCreateAnother}>
+              Create another feed
+            </button>
           </div>
-        </div>
 
-        <div class="result-grid">
-          <section class="surface__section surface__section--strong">
-            <p class="result-name">{result.name}</p>
-            <label class="field-block" htmlFor="feed-url">
-              <span class="field-label">Feed URL</span>
-              <input
-                id="feed-url"
-                name="feed-url"
-                type="text"
-                value={fullUrl}
-                readOnly
-                class="input input--mono"
-              />
-            </label>
-            <div class="result-actions">
-              <button type="button" class="btn btn--primary" onClick={() => copyToClipboard(fullUrl)}>
-                Copy URL
-              </button>
-              {isAuthenticated && (
-                <a href={feedProtocolUrl} class="btn btn--secondary" target="_blank" rel="noopener">
-                  Subscribe in reader
-                </a>
-              )}
+          {copyNotice && (
+            <div class="notice notice--success" role="status">
+              <p>{copyNotice}</p>
             </div>
-            {isAuthenticated && <p class="field-help">Opens your default RSS reader if configured.</p>}
-            {copyNotice && (
-              <div class="notice notice--success" role="status">
-                <p>{copyNotice}</p>
-              </div>
-            )}
-            {!isAuthenticated && onRequestSignIn && (
-              <div class="result-guest-row">
-                <span class="muted-copy">Sign in to convert another URL.</span>
-                <button type="button" class="btn btn--ghost" onClick={onRequestSignIn}>
-                  Sign in
-                </button>
-              </div>
-            )}
-          </section>
-
-          {shouldShowPreview && (
-            <aside class="surface__section feed-preview" aria-label="Feed preview">
-              <div class="feed-preview__header">
-                <p class="eyebrow">preview</p>
-                <h3>{feedTitle || 'Fetching feed items'}</h3>
-              </div>
-              {isLoadingPreview ? (
-                <div class="preview-loading">
-                  <span class="status-card__spinner" aria-hidden="true" />
-                  <p>Loading recent entries</p>
-                </div>
-              ) : feedItems.length > 0 ? (
-                <ol class="feed-preview__list">
-                  {feedItems.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ol>
-              ) : (
-                <p class="muted-copy">
-                  The feed endpoint is live. Preview items are not available for this response.
-                </p>
-              )}
-            </aside>
           )}
-        </div>
+        </section>
+
+        <aside class="surface__section feed-preview" aria-label="Feed preview">
+          <div class="feed-preview__header">
+            <p class="eyebrow">Preview</p>
+            <h3>{feedTitle || 'Previewing feed items'}</h3>
+          </div>
+          {isLoadingPreview ? (
+            <div class="preview-loading">
+              <span class="status-card__spinner" aria-hidden="true" />
+              <p>Loading recent entries</p>
+            </div>
+          ) : feedItems.length > 0 ? (
+            <ol class="feed-preview__list">
+              {feedItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ol>
+          ) : (
+            <p class="muted-copy">
+              The feed endpoint is live. Preview items were not available for this response.
+            </p>
+          )}
+        </aside>
       </div>
     </section>
   );

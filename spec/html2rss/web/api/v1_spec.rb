@@ -117,18 +117,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(json.dig('data', 'api', 'openapi_url')).to eq('http://example.org/api/v1/openapi.yaml')
     end
 
-    it 'returns public demo metadata', :aggregate_failures do
+    it 'returns instance feed-creation capability', :aggregate_failures do
       get '/api/v1'
 
       expect(last_response.status).to eq(200)
       json = expect_success_response(last_response)
-      expect(json.dig('data', 'demo', 'enabled')).to be(true)
-      expect(json.dig('data', 'demo', 'token')).to eq('CHANGE_ME_DEMO_TOKEN')
-      expect(json.dig('data', 'demo', 'strategy')).to eq('ssrf_filter')
-      expect(json.dig('data', 'demo', 'sources')).to include(
-        include('id' => 'chip-de-testberichte', 'url' => 'https://www.chip.de/testberichte'),
-        include('id' => 'news-ycombinator-com', 'url' => 'https://news.ycombinator.com'),
-        include('id' => 'github-com-trending', 'url' => 'https://github.com/trending')
+      expect(json.dig('data', 'instance', 'feed_creation')).to eq(
+        'enabled' => true,
+        'access_token_required' => true
       )
     end
   end

@@ -3,9 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { h } from 'preact';
 import { App } from '../components/App';
 
-// Mock the hooks
-vi.mock('../hooks/useAuth', () => ({
-  useAuth: vi.fn(),
+vi.mock('../hooks/useAccessToken', () => ({
+  useAccessToken: vi.fn(),
 }));
 
 vi.mock('../hooks/useFeedConversion', () => ({
@@ -20,41 +19,47 @@ vi.mock('../hooks/useStrategies', () => ({
   useStrategies: vi.fn(),
 }));
 
-import { useAuth } from '../hooks/useAuth';
+import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
 
-const mockUseAuth = useAuth as any;
+const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
 const mockUseFeedConversion = useFeedConversion as any;
 const mockUseStrategies = useStrategies as any;
 
 describe('App', () => {
-  const mockLogin = vi.fn();
-  const mockLogout = vi.fn();
+  const mockSaveToken = vi.fn();
+  const mockClearToken = vi.fn();
   const mockConvertFeed = vi.fn();
   const mockClearResult = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: false,
-      username: null,
+    mockUseAccessToken.mockReturnValue({
       token: null,
-      login: mockLogin,
-      logout: mockLogout,
+      hasToken: false,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
       isLoading: false,
       error: null,
     });
 
     mockUseApiMetadata.mockReturnValue({
-      demo: {
-        enabled: true,
-        token: 'CHANGE_ME_DEMO_TOKEN',
-        strategy: 'ssrf_filter',
-        sources: [{ id: 'github-com-trending', url: 'https://github.com/trending' }],
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'http://example.test/api/v1/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: true,
+            access_token_required: true,
+          },
+        },
       },
       isLoading: false,
       error: null,
@@ -69,105 +74,36 @@ describe('App', () => {
     });
 
     mockUseStrategies.mockReturnValue({
-      strategies: [],
-      isLoading: false,
-      error: null,
-    });
-  });
-
-  it('should render demo section when not authenticated', () => {
-    render(<App />);
-
-    expect(screen.getByText('Run a demo source')).toBeInTheDocument();
-    expect(screen.getByText('Run a known source. Sign in to submit your own URL.')).toBeInTheDocument();
-    expect(screen.getByText('Run demo')).toBeInTheDocument();
-  });
-
-  it('should render main content when authenticated', () => {
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: true,
-      username: 'testuser',
-      token: 'test-token',
-      login: mockLogin,
-      logout: mockLogout,
-      isLoading: false,
-      error: null,
-    });
-
-    mockUseStrategies.mockReturnValue({
       strategies: [
-        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'SSRF Filter' },
-        { id: 'browserless', name: 'browserless', display_name: 'Browserless' },
+        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard (recommended)' },
+        { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages' },
       ],
       isLoading: false,
       error: null,
     });
-
-    render(<App />);
-
-    expect(screen.getByText('testuser')).toBeInTheDocument();
-    expect(screen.getByLabelText('URL')).toBeInTheDocument();
-    expect(screen.getByText('Advanced: bookmarklet')).toBeInTheDocument();
   });
 
-  it('should call logout when logout button is clicked', () => {
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: true,
-      username: 'testuser',
-      token: 'test-token',
-      login: mockLogin,
-      logout: mockLogout,
-      isLoading: false,
-      error: null,
-    });
-
-    mockUseStrategies.mockReturnValue({
-      strategies: [{ id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'SSRF Filter' }],
-      isLoading: false,
-      error: null,
-    });
-
+  it('renders the streamlined hero and create section', () => {
     render(<App />);
 
-    const logoutButton = screen.getByText('Log out');
-    fireEvent.click(logoutButton);
-
-    expect(mockLogout).toHaveBeenCalled();
-    expect(mockClearResult).toHaveBeenCalled();
+    expect(screen.getByText('Turn web pages into stable feeds.')).toBeInTheDocument();
+    expect(screen.getByText('Create a feed')).toBeInTheDocument();
+    expect(screen.getByText('Run your own instance')).toBeInTheDocument();
   });
 
-  it('should surface conversion errors to the user', () => {
-    mockUseAuth.mockReturnValue({
-      isAuthenticated: true,
-      username: 'tester',
-      token: 'test-token',
-      login: mockLogin,
-      logout: mockLogout,
-      isLoading: false,
-      error: null,
-    });
-
-    mockUseStrategies.mockReturnValue({
-      strategies: [{ id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'SSRF Filter' }],
-      isLoading: false,
-      error: null,
-    });
-
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
-      result: null,
-      error: 'Access Denied',
-      convertFeed: mockConvertFeed,
-      clearResult: mockClearResult,
-    });
-
+  it('shows inline token prompt when submitting without a token', () => {
     render(<App />);
 
-    expect(screen.getByText('Conversion error')).toBeInTheDocument();
-    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+    fireEvent.input(screen.getByLabelText('Source URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    expect(screen.getByText('Unlock custom feed creation')).toBeInTheDocument();
+    expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
-  it('should allow guests to trigger sign-in handoff from result screen', async () => {
+  it('renders the result panel when a feed is available', async () => {
     vi.spyOn(window, 'fetch').mockResolvedValue({
       text: async () =>
         `<?xml version="1.0"?><rss><channel><title>Example Feed</title><item><title>Item One</title></item></channel></rss>`,
@@ -179,7 +115,6 @@ describe('App', () => {
         id: 'feed-123',
         name: 'Example Feed',
         url: 'https://example.com/articles',
-        username: 'guest',
         strategy: 'ssrf_filter',
         feed_token: 'example-token',
         public_url: '/api/v1/feeds/example-token',
@@ -191,10 +126,59 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+    expect(screen.getByText('Feed ready')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockClearResult).toHaveBeenCalled();
+      expect(screen.getByText('Example Feed')).toBeInTheDocument();
+    });
+  });
+
+  it('surfaces conversion errors to the user', () => {
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: false,
+      result: null,
+      error: 'Access denied',
+      convertFeed: mockConvertFeed,
+      clearResult: mockClearResult,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('Feed generation failed')).toBeInTheDocument();
+    expect(screen.getByText('Access denied')).toBeInTheDocument();
+  });
+
+  it('clears stored token from instance info', () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear token' }));
+
+    expect(mockClearToken).toHaveBeenCalled();
+  });
+
+  it('saves access token from the inline prompt', async () => {
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Source URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save token' }));
+
+    await waitFor(() => {
+      expect(mockSaveToken).toHaveBeenCalledWith('token-123');
     });
   });
 });

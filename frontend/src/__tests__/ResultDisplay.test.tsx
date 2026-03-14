@@ -4,12 +4,11 @@ import { h } from 'preact';
 import { ResultDisplay } from '../components/ResultDisplay';
 
 describe('ResultDisplay', () => {
-  const mockOnClose = vi.fn();
+  const mockOnCreateAnother = vi.fn();
   const mockResult = {
     id: 'test-id',
     name: 'Test Feed',
     url: 'https://example.com',
-    username: 'testuser',
     strategy: 'ssrf_filter',
     feed_token: 'test-feed-token',
     public_url: 'https://example.com/feed.xml',
@@ -23,51 +22,34 @@ describe('ResultDisplay', () => {
     } as Response);
   });
 
-  it('should render guest result with copy action only', () => {
-    render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
+  it('renders utility actions and preview state', async () => {
+    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    expect(screen.getByText('Feed created')).toBeInTheDocument();
+    expect(screen.getByText('Feed ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
-    expect(screen.queryByText('Copy the URL or open it in your RSS reader.')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Copy URL' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Subscribe in reader' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Opens your default RSS reader if configured.')).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Open feed in new tab' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Item One')).toBeInTheDocument();
+    });
   });
 
-  it('should render authenticated result actions', () => {
-    render(<ResultDisplay result={mockResult} onClose={mockOnClose} isAuthenticated username="testuser" />);
+  it('calls onCreateAnother when the reset button is clicked', () => {
+    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toBeInTheDocument();
-    expect(screen.getByText('Opens your default RSS reader if configured.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
+
+    expect(mockOnCreateAnother).toHaveBeenCalled();
   });
 
-  it('should call onClose when convert-another button is clicked', () => {
-    render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
+  it('copies feed URL to clipboard when copy button is clicked', async () => {
+    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    const resetButton = screen.getByRole('button', { name: 'Convert another website' });
-    fireEvent.click(resetButton);
-
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it('should copy feed URL to clipboard when copy button is clicked', async () => {
-    render(<ResultDisplay result={mockResult} onClose={mockOnClose} />);
-
-    const copyLinkButton = screen.getByRole('button', { name: 'Copy URL' });
-    fireEvent.click(copyLinkButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy feed URL' }));
 
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
     });
-  });
-
-  it('shows sign-in cue for guests and triggers callback', () => {
-    const onRequestSignIn = vi.fn();
-    render(<ResultDisplay result={mockResult} onClose={mockOnClose} onRequestSignIn={onRequestSignIn} />);
-
-    expect(screen.getByText('Sign in to convert another URL.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(onRequestSignIn).toHaveBeenCalled();
   });
 });

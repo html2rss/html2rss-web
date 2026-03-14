@@ -1,7 +1,5 @@
-import { useMemo } from 'preact/hooks';
-
 export function Bookmarklet() {
-  const bookmarkletHref = useMemo(() => {
+  const bookmarkletHref = (() => {
     if (typeof window === 'undefined') return '#';
 
     const baseUrl = new URL(window.location.origin);
@@ -9,17 +7,15 @@ export function Bookmarklet() {
     baseUrl.search = '?url=';
 
     return `javascript:window.location.href='${baseUrl.toString()}'+encodeURIComponent(window.location.href);`;
-  }, []);
+  })();
 
   return (
-    <details class="bookmarklet-inline" aria-label="Bookmarklet utility">
-      <summary>Advanced: bookmarklet</summary>
-      <p>
-        Drag this to your bookmarks bar:
-        <a id="bookmarklet" class="bookmarklet-link" href={bookmarkletHref}>
-          Convert to RSS
-        </a>
-      </p>
-    </details>
+    <div class="bookmarklet-inline" aria-label="Bookmarklet utility">
+      <p class="bookmarklet-inline__title">Browser shortcut</p>
+      <p>Drag this into your bookmarks bar to send the current page back here.</p>
+      <a id="bookmarklet" class="bookmarklet-link" href={bookmarkletHref}>
+        Convert page to feed
+      </a>
+    </div>
   );
 }

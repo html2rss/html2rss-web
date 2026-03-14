@@ -11,15 +11,11 @@ export const server = setupServer(
           description: 'RESTful API for converting websites to RSS feeds',
           openapi_url: 'http://example.test/api/v1/openapi.yaml',
         },
-        demo: {
-          enabled: true,
-          token: 'CHANGE_ME_DEMO_TOKEN',
-          strategy: 'ssrf_filter',
-          sources: [
-            { id: 'chip-de-testberichte', url: 'https://www.chip.de/testberichte' },
-            { id: 'news-ycombinator-com', url: 'https://news.ycombinator.com' },
-            { id: 'github-com-trending', url: 'https://github.com/trending' },
-          ],
+        instance: {
+          feed_creation: {
+            enabled: true,
+            access_token_required: true,
+          },
         },
       },
     });
