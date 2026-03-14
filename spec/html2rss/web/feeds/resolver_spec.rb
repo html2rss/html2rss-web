@@ -30,7 +30,7 @@ RSpec.describe Html2rss::Web::Feeds::Resolver do
         allow(Html2rss::RequestService).to receive(:default_strategy_name).and_return(:ssrf_filter)
       end
 
-      it 'normalizes the static source into shared generator input', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      it 'normalizes the static source into shared generator input', :aggregate_failures do
         resolved = described_class.call(feed_request)
 
         expect(resolved_tuple(resolved)).to match(

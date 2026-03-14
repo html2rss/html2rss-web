@@ -18,7 +18,7 @@ RSpec.describe Html2rss::Web::AccountManager do
   end
 
   describe '.reload!' do
-    it 'keeps memoized snapshot before reload' do # rubocop:disable RSpec/ExampleLength
+    it 'keeps memoized snapshot before reload' do
       allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
         { auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] } },
         { auth: { accounts: [{ username: 'bob', token: 'token-2', allowed_urls: ['*'] }] } }
@@ -28,7 +28,7 @@ RSpec.describe Html2rss::Web::AccountManager do
       expect(described_class.get_account('token-2')).to be_nil
     end
 
-    it 'clears memoized snapshot after reload' do # rubocop:disable RSpec/ExampleLength
+    it 'clears memoized snapshot after reload' do
       allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
         { auth: { accounts: [{ username: 'alice', token: 'token-1', allowed_urls: ['*'] }] } },
         { auth: { accounts: [{ username: 'bob', token: 'token-2', allowed_urls: ['*'] }] } }

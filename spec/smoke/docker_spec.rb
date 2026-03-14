@@ -4,7 +4,7 @@ require 'net/http'
 require 'json'
 require 'uri'
 
-RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/DescribeClass
+RSpec.describe 'Dockerized API smoke test', :docker do
   let(:base_url) { ENV.fetch('SMOKE_BASE_URL', 'http://127.0.0.1:4000') }
   let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN', 'CHANGE_ME_HEALTH_CHECK_TOKEN') }
   let(:feed_token) { ENV.fetch('SMOKE_API_TOKEN', 'CHANGE_ME_ADMIN_TOKEN') }
@@ -28,7 +28,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     [response, response.body.to_s.empty? ? {} : JSON.parse(response.body)]
   end
 
-  it 'exposes health endpoints without authentication requirements', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+  it 'exposes health endpoints without authentication requirements', :aggregate_failures do
     response, payload = get_json('/api/v1/health/ready')
     expect(response).to be_a(Net::HTTPOK)
     expect(payload.fetch('success')).to be(true)
@@ -38,7 +38,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     expect(payload.fetch('success')).to be(true)
   end
 
-  it 'requires authentication for the secure health endpoint', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+  it 'requires authentication for the secure health endpoint', :aggregate_failures do
     response, payload = get_json('/api/v1/health')
     expect(response).to be_a(Net::HTTPUnauthorized)
     expect(payload.dig('error', 'code')).to eq('UNAUTHORIZED')
@@ -48,7 +48,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     expect(payload.dig('data', 'health', 'status')).to eq('healthy')
   end
 
-  it 'creates a feed when provided with valid credentials', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+  it 'creates a feed when provided with valid credentials', :aggregate_failures do
     payload = {
       url: 'https://example.com/articles',
       strategy: 'ssrf_filter'
@@ -59,7 +59,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     expect(body.dig('error', 'code')).to eq('UNAUTHORIZED')
   end
 
-  it 'creates feed when auto source is enabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+  it 'creates feed when auto source is enabled', :aggregate_failures do
     next unless auto_source_enabled
 
     payload = {
@@ -76,7 +76,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do # rubocop:disable RSpec/D
     expect(body.dig('data', 'feed', 'public_url')).to match(%r{^/api/v1/feeds/})
   end
 
-  it 'returns forbidden for authenticated creation when auto source is disabled', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+  it 'returns forbidden for authenticated creation when auto source is disabled', :aggregate_failures do
     next if auto_source_enabled
 
     payload = {
