@@ -4,8 +4,6 @@ require 'digest'
 require_relative 'account_manager'
 require_relative 'auth'
 require_relative 'boundary_models'
-require_relative 'feed_response_format'
-require_relative 'feed_generator'
 require_relative 'url_validator'
 
 module Html2rss
@@ -61,30 +59,6 @@ module Html2rss
             username: token_data[:username],
             strategy: 'ssrf_filter'
           }
-        end
-
-        # @param url [String]
-        # @param strategy [String]
-        # @param format [Symbol]
-        # @return [Html2rss::Web::FeedRenderResult]
-        def generate_feed_result(url, strategy = 'ssrf_filter', format: FeedResponseFormat::RSS)
-          FeedGenerator.generate_feed_result(url, strategy, format:)
-        end
-
-        # @param url [String]
-        # @param strategy [String]
-        # @param format [Symbol]
-        # @return [Object] raw feed object from selected strategy.
-        def generate_feed_object(url, strategy = 'ssrf_filter', format: FeedResponseFormat::RSS)
-          FeedGenerator.call_strategy(url, strategy, format:)
-        end
-
-        # @param url [String]
-        # @param strategy [String]
-        # @param format [Symbol]
-        # @return [String] rendered RSS/XML content.
-        def generate_feed_content(url, strategy = 'ssrf_filter', format: FeedResponseFormat::RSS)
-          generate_feed_result(url, strategy, format:).body
         end
 
         private
