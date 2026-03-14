@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
-import { CreateFeedPanel, InstanceInfo, type Strategy } from './AppPanels';
+import { CreateFeedPanel, UtilityStrip, type Strategy } from './AppPanels';
 import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
@@ -17,10 +17,7 @@ function BrandLockup() {
         <span />
         <span />
       </span>
-      <div class="brand-lockup__text">
-        <strong>html2rss</strong>
-        <span>html to feed</span>
-      </div>
+      <strong class="brand-lockup__wordmark">html2rss</strong>
     </div>
   );
 }
@@ -141,7 +138,7 @@ export function App() {
 
   if (metadataLoading || tokenLoading) {
     return (
-      <section class="workspace-shell workspace-shell--loading">
+      <section class="workspace-shell workspace-shell--centered workspace-shell--loading">
         <BrandLockup />
         <div class="status-card" aria-live="polite">
           <div class="status-card__spinner" aria-hidden="true" />
@@ -155,16 +152,9 @@ export function App() {
   }
 
   return (
-    <section class="workspace-shell">
-      <header class={`workspace-frame${result ? ' workspace-frame--compact' : ''}`}>
-        <div class="workspace-frame__masthead">
-          <BrandLockup />
-        </div>
-        {!result && (
-          <div class="workspace-frame__titleblock">
-            <h1>Create a feed URL.</h1>
-          </div>
-        )}
+    <section class="workspace-shell workspace-shell--centered">
+      <header class="workspace-hero">
+        <BrandLockup />
       </header>
 
       {(metadataError || tokenStateError) && (
@@ -177,7 +167,7 @@ export function App() {
       {result ? (
         <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
       ) : (
-        <div class="workspace-grid">
+        <>
           <CreateFeedPanel
             focusComposerKey={focusCreateComposerKey}
             feedFormData={feedFormData}
@@ -206,15 +196,14 @@ export function App() {
             }}
             strategyHint={strategyHint}
           />
-
-          <InstanceInfo
+          <UtilityStrip
             hasAccessToken={hasToken}
             onClearToken={() => {
               clearToken();
               setShowTokenPrompt(false);
             }}
           />
-        </div>
+        </>
       )}
     </section>
   );

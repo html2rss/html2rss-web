@@ -13,12 +13,8 @@ export function Bookmarklet() {
   })();
 
   return (
-    <div class="bookmarklet-inline" aria-label="Bookmarklet utility">
-      <p class="bookmarklet-inline__title">Browser shortcut</p>
-      <p>Drag this into your bookmarks bar.</p>
-      <a id="bookmarklet" class="bookmarklet-link" href={bookmarkletHref}>
-        Convert page to feed
-      </a>
-    </div>
+    <a id="bookmarklet" class="utility-link" href={bookmarkletHref}>
+      Bookmarklet
+    </a>
   );
 }

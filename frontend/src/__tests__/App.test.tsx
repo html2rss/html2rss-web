@@ -83,24 +83,27 @@ describe('App', () => {
     });
   });
 
-  it('renders the streamlined hero and create section', () => {
+  it('renders the radical-simple create flow', () => {
     render(<App />);
 
-    expect(screen.getByText('Create a feed URL.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Source URL')).toBeInTheDocument();
-    expect(screen.getByText('Run your own instance')).toBeInTheDocument();
+    expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
+    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Bookmarklet' })).not.toBeInTheDocument();
   });
 
-  it('autofocuses the source url field', () => {
+  it('autofocuses the source url field', async () => {
     render(<App />);
 
-    expect(document.activeElement).toBe(screen.getByLabelText('Source URL'));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+    });
   });
 
   it('shows inline token prompt when submitting without a token', () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Source URL'), {
+    fireEvent.input(screen.getByLabelText('Page URL'), {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
@@ -110,11 +113,6 @@ describe('App', () => {
   });
 
   it('renders the result panel when a feed is available', async () => {
-    vi.spyOn(window, 'fetch').mockResolvedValue({
-      text: async () =>
-        `<?xml version="1.0"?><rss><channel><title>Example Feed</title><item><title>Item One</title></item></channel></rss>`,
-    } as Response);
-
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: {
@@ -132,13 +130,10 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Result')).toBeInTheDocument();
+    expect(screen.getByText('Feed URL ready')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-    expect(screen.queryByText('Run your own instance')).not.toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText('Example Feed')).toBeInTheDocument();
-    });
+    expect(screen.queryByRole('link', { name: 'Bookmarklet' })).not.toBeInTheDocument();
+    expect(screen.getByText('Example Feed')).toBeInTheDocument();
   });
 
   it('surfaces conversion errors to the user', () => {
@@ -168,8 +163,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Utilities')).toBeInTheDocument();
-    expect(screen.queryByText('Run your own instance')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
     fireEvent.click(screen.getByRole('button', { name: 'Clear saved token' }));
 
     expect(mockClearToken).toHaveBeenCalled();
@@ -178,7 +172,7 @@ describe('App', () => {
   it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Source URL'), {
+    fireEvent.input(screen.getByLabelText('Page URL'), {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
@@ -199,7 +193,7 @@ describe('App', () => {
   it('submits the token prompt with Enter', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Source URL'), {
+    fireEvent.input(screen.getByLabelText('Page URL'), {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
@@ -217,7 +211,8 @@ describe('App', () => {
     window.history.replaceState({}, '', 'http://localhost:3000/frontend/index.html');
     render(<App />);
 
-    const bookmarklet = screen.getByRole('link', { name: 'Convert page to feed' });
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
     expect(bookmarklet.getAttribute('href')).toContain('/frontend/index.html?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
