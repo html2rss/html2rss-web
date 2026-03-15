@@ -42,9 +42,15 @@ module Html2rss
             # @param router [Roda::RodaRequest]
             # @return [void]
             def mount_root(router)
+              router.root do
+                router.get do
+                  render_root_metadata(router)
+                end
+              end
+
               router.is do
                 router.get do
-                  JSON.generate(Api::V1::Response.success(data: Api::V1::RootMetadata.build(router)))
+                  render_root_metadata(router)
                 end
               end
             end
@@ -52,6 +58,12 @@ module Html2rss
             # @return [String]
             def openapi_spec_path
               File.expand_path('../../../../docs/api/v1/openapi.yaml', __dir__)
+            end
+
+            # @param router [Roda::RodaRequest]
+            # @return [String]
+            def render_root_metadata(router)
+              JSON.generate(Api::V1::Response.success(data: Api::V1::RootMetadata.build(router)))
             end
 
             # @return [String]

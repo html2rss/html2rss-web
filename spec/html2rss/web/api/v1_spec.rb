@@ -127,6 +127,16 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         'access_token_required' => true
       )
     end
+
+    it 'returns API information with trailing slash', :aggregate_failures do
+      get '/api/v1/'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.content_type).to include('application/json')
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'api', 'name')).to eq('html2rss-web API')
+    end
   end
 
   describe 'GET /api/v1/openapi.yaml', openapi: {

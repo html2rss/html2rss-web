@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'preact/hooks';
-import { getApiMetadata } from '../api/generated';
-import { apiClient } from '../api/client';
 import type { ApiMetadataRecord } from '../api/contracts';
 
 interface ApiMetadataState {
@@ -23,13 +21,14 @@ export function useApiMetadata() {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const response = await getApiMetadata({
-          client: apiClient,
+        const response = await fetch('/api/v1', {
           signal: controller.signal,
+          headers: { Accept: 'application/json' },
         });
-        const metadata = response.data?.data as unknown as ApiMetadataRecord | undefined;
+        const payload = (await response.json()) as { success?: boolean; data?: unknown };
+        const metadata = payload.data as ApiMetadataRecord | undefined;
 
-        if (response.error || !response.data?.success || !metadata?.instance) {
+        if (!response.ok || !payload.success || !metadata?.instance) {
           throw new Error('Invalid response format from API metadata');
         }
 
