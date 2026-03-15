@@ -9,6 +9,7 @@ require 'html2rss'
 require_relative 'app/web/boot'
 
 Html2rss::Web::Boot.setup!(reloadable: ENV['RACK_ENV'] == 'development')
+Html2rss::Web::Boot::Setup.call!
 
 module Html2rss
   module Web
@@ -33,13 +34,6 @@ module Html2rss
       def self.development? = EnvironmentValidator.development?
 
       def development? = self.class.development?
-      EnvironmentValidator.validate_environment!
-      EnvironmentValidator.validate_production_security!
-      Flags.validate!
-
-      Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
-      Html2rss::RequestService.default_strategy_name = :ssrf_filter
-      Html2rss::RequestService.unregister_strategy(:faraday)
       opts.merge!(check_dynamic_arity: false, check_arity: :warn)
       use RequestContextMiddleware
       use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
