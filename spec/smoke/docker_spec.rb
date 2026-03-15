@@ -16,6 +16,13 @@ RSpec.describe 'Dockerized API smoke test', :docker do
     perform_request(uri, request)
   end
 
+  def get_response(path, headers: {})
+    uri = URI.join(base_url, path)
+    request = Net::HTTP::Get.new(uri, headers)
+    response = Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
+    [response, response.body.to_s]
+  end
+
   def post_json(path, body:, headers: {})
     uri = URI.join(base_url, path)
     request = Net::HTTP::Post.new(uri, headers.merge('Content-Type' => 'application/json'))
@@ -26,6 +33,18 @@ RSpec.describe 'Dockerized API smoke test', :docker do
   def perform_request(uri, request)
     response = Net::HTTP.start(uri.host, uri.port) { |http| http.request(request) }
     [response, response.body.to_s.empty? ? {} : JSON.parse(response.body)]
+  end
+
+  def expect_created_feed_response(body)
+    expect(body.fetch('success')).to be(true)
+    expect(body.dig('data', 'feed', 'public_url')).to match(%r{^/api/v1/feeds/})
+    expect(body.dig('data', 'feed', 'json_public_url')).to match(%r{^/api/v1/feeds/.+\.json$})
+  end
+
+  def expect_json_feed_response(path)
+    feed_response, = get_response(path, headers: { 'Accept' => 'application/feed+json' })
+    expect(feed_response['Content-Type']).to include('application/feed+json')
+    expect(feed_response.code).not_to eq('401')
   end
 
   it 'exposes health endpoints without authentication requirements', :aggregate_failures do
@@ -72,9 +91,8 @@ RSpec.describe 'Dockerized API smoke test', :docker do
                                headers: { 'Authorization' => "Bearer #{feed_token}" })
 
     expect(response.code).to eq('201')
-    expect(body.fetch('success')).to be(true)
-    expect(body.dig('data', 'feed', 'public_url')).to match(%r{^/api/v1/feeds/})
-    expect(body.dig('data', 'feed', 'json_public_url')).to match(%r{^/api/v1/feeds/.+\.json$})
+    expect_created_feed_response(body)
+    expect_json_feed_response(body.dig('data', 'feed', 'json_public_url'))
   end
 
   it 'returns forbidden for authenticated creation when auto source is disabled', :aggregate_failures do

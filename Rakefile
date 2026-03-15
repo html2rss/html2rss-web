@@ -139,3 +139,14 @@ namespace :yard do
     puts 'YARD public method documentation check passed.'
   end
 end
+
+namespace :zeitwerk do
+  desc 'Fail when Zeitwerk cannot eager load the app tree cleanly'
+  task :verify do
+    ENV['RACK_ENV'] ||= 'test'
+    require_relative 'app'
+
+    Html2rss::Web::Boot.eager_load!
+    puts 'Zeitwerk eager load check passed.'
+  end
+end

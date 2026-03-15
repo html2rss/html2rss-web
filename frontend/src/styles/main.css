@@ -627,8 +627,11 @@ a:focus-visible {
 .result-actions--quiet {
   width: min(100%, 40rem);
   margin: 0 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-items: start;
-  justify-content: start;
+  justify-content: flex-start;
   gap: var(--space-4);
   margin-top: calc(var(--space-2) * -1);
 }
@@ -697,7 +700,7 @@ a:focus-visible {
   }
 
   .result-actions {
-    grid-template-columns: repeat(2, minmax(0, auto));
+    grid-template-columns: none;
   }
 
   .utility-strip__items {
@@ -727,6 +730,7 @@ a:focus-visible {
   }
 
   .result-actions--quiet {
+    display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-3);
   }

@@ -77,12 +77,12 @@ RSpec.describe Html2rss::Web::App do
 
   it { expect(described_class).to be < Roda }
 
-  context 'with Rack::Test' do
+  context 'with Rack::Test', :aggregate_failures do
     include Rack::Test::Methods
 
     def app = described_class
 
-    it 'serves the homepage with core security headers', :aggregate_failures do
+    it 'serves the homepage with core security headers' do
       get '/'
 
       expect(last_response).to be_ok
@@ -90,7 +90,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
-    it 'serves static feed routes with caching headers', :aggregate_failures do
+    it 'serves static feed routes with caching headers' do
       stub_static_feed
 
       get '/legacy'
@@ -103,7 +103,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<rss/>')
     end
 
-    it 'serves static json feed routes when json is requested by extension', :aggregate_failures do
+    it 'serves static json feed routes when json is requested by extension' do
       stub_static_feed
       get '/legacy.json'
 
@@ -112,7 +112,7 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'serves HEAD requests for static feed routes with negotiated headers only', :aggregate_failures do
+    it 'serves HEAD requests for static feed routes with negotiated headers only' do
       stub_static_feed
       head '/legacy'
 
@@ -122,7 +122,14 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('')
     end
 
-    it 'coerces string ttl values before cache expiry math', :aggregate_failures do
+    it 'returns method not allowed for unsupported verbs on token feed routes' do
+      post '/api/v1/feeds/test-token'
+
+      expect(last_response.status).to eq(405)
+      expect(last_response.headers['Allow']).to eq('GET')
+    end
+
+    it 'coerces string ttl values before cache expiry math' do
       stub_static_feed(ttl: '180')
 
       get '/legacy'
@@ -131,7 +138,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Cache-Control']).to include('max-age=10800')
     end
 
-    it 'renders XML error when static feed generation fails', :aggregate_failures do
+    it 'renders XML error when static feed generation fails' do
       allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
 
       get '/missing-feed'
@@ -141,7 +148,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.body).to eq('<error/>')
     end
 
-    it 'renders JSON Feed-shaped errors when static json feed generation fails', :aggregate_failures do
+    it 'renders JSON Feed-shaped errors when static json feed generation fails' do
       get '/missing-feed.json'
 
       expect(json_feed_error_tuple).to eq(
@@ -150,7 +157,7 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'renders service failures as non-cacheable xml feed errors', :aggregate_failures do
+    it 'renders service failures as non-cacheable xml feed errors' do
       stub_static_service_error('legacy-service-error')
 
       expect(service_error_response_tuple('/legacy-service-error')).to eq(
@@ -158,7 +165,7 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
-    it 'hides unexpected internal error details from API responses', :aggregate_failures do
+    it 'hides unexpected internal error details from API responses' do
       allow(Html2rss::Web::Routes::ApiV1).to receive(:call).and_raise(StandardError, 'boom')
 
       get '/api/v1'

@@ -60,10 +60,12 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(response_tuple(write_response)).to eq([200, 'application/xml', '<rss/>'])
     end
 
-    it 'marks the response as cacheable' do
+    it 'marks the response as cacheable', :aggregate_failures do
       write_response
 
+      expect(response['Cache-Control']).to include('max-age=600')
       expect(response['Cache-Control']).to include('public')
+      expect(response['Vary']).to eq('Accept')
     end
 
     it 'emits success after writing the response' do
@@ -112,10 +114,11 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(response_tuple(write_response)).to eq([500, 'application/feed+json', '{"title":"Error"}'])
     end
 
-    it 'marks the response as non-cacheable' do
+    it 'marks the response as non-cacheable', :aggregate_failures do
       write_response
 
       expect(response['Cache-Control']).to include('no-store')
+      expect(response['Vary']).to eq('Accept')
     end
   end
 

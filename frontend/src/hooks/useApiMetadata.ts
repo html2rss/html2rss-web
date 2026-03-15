@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'preact/hooks';
-import { getApiMetadata } from '../api/generated';
-import { apiClient } from '../api/client';
 import type { ApiMetadataRecord } from '../api/contracts';
 
 interface ApiMetadataState {
   metadata: ApiMetadataRecord | null;
   isLoading: boolean;
   error: string | null;
+}
+
+interface ApiMetadataPayload {
+  success?: boolean;
+  data?: unknown;
 }
 
 export function useApiMetadata() {
@@ -23,13 +26,14 @@ export function useApiMetadata() {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
-        const response = await getApiMetadata({
-          client: apiClient,
+        const response = await fetch('/api/v1', {
           signal: controller.signal,
+          headers: { Accept: 'application/json' },
         });
-        const metadata = response.data?.data as unknown as ApiMetadataRecord | undefined;
+        const payload = await parseMetadataPayload(response);
+        const metadata = payload.data as ApiMetadataRecord | undefined;
 
-        if (response.error || !response.data?.success || !metadata?.instance) {
+        if (!response.ok || !payload.success || !metadata?.instance) {
           throw new Error('Invalid response format from API metadata');
         }
 
@@ -54,4 +58,15 @@ export function useApiMetadata() {
   }, []);
 
   return state;
+}
+
+async function parseMetadataPayload(response: Response): Promise<ApiMetadataPayload> {
+  const body = await response.text();
+  if (!body.trim()) return {};
+
+  try {
+    return JSON.parse(body) as ApiMetadataPayload;
+  } catch {
+    return {};
+  }
 }

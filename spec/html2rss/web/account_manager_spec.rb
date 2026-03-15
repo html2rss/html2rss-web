@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/security/account_manager'
+require_relative '../../../app/web/security/account_manager'
 
 RSpec.describe Html2rss::Web::AccountManager do
   describe '.get_account' do

@@ -17,12 +17,12 @@ gem 'rack-cache'
 gem 'rack-timeout'
 gem 'roda'
 gem 'ssrf_filter'
+gem 'zeitwerk'
 
 gem 'puma', require: false
 
 group :development do
   gem 'byebug'
-  gem 'rack-unreloader'
   gem 'rake', require: false
   gem 'rubocop', require: false
   gem 'rubocop-performance', require: false

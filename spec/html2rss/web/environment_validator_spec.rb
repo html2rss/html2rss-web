@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'climate_control'
 
-require_relative '../../../app/config/environment_validator'
+require_relative '../../../app/web/config/environment_validator'
 
 RSpec.describe Html2rss::Web::EnvironmentValidator do
   describe '.auto_source_enabled?' do

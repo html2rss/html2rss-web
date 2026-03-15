@@ -3,8 +3,8 @@
 require 'spec_helper'
 require 'rack/mock'
 
-require_relative '../../../app/request/request_context'
-require_relative '../../../app/request/request_context_middleware'
+require_relative '../../../app/web/request/request_context'
+require_relative '../../../app/web/request/request_context_middleware'
 
 RSpec.describe Html2rss::Web::RequestContextMiddleware do
   it 'sets route group in request context' do
