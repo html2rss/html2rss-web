@@ -12,7 +12,7 @@ test.describe('frontend smoke', () => {
     await page.getByRole('button', { name: 'Generate feed URL' }).click();
 
     await expect(page.getByRole('heading', { name: 'Add access token' })).toBeVisible();
-    await expect(page.getByLabel('Access token')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save and continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
 
