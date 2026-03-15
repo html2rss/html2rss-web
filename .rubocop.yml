@@ -11,6 +11,12 @@ AllCops:
     - '**/*.yml'
     - '**/*.yaml'
     - '**/.tool-versions'
+    - 'coverage/**/*'
+    - 'frontend/node_modules/**/*'
+    - 'frontend/test-results/**/*'
+    - 'public/frontend/**/*'
+    - 'tmp/**/*'
+    - 'vendor/**/*'
 
 Layout/LineLength:
   Max: 120
