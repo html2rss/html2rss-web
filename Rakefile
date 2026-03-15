@@ -61,7 +61,7 @@ task :test do
       '-p 4000:4000',
       '--env PUMA_LOG_CONFIG=1',
       '--env HEALTH_CHECK_TOKEN=CHANGE_ME_HEALTH_CHECK_TOKEN',
-      '--env HTML2RSS_SECRET_KEY=CHANGE_ME_SMOKE_TEST_SECRET_KEY',
+      '--env HTML2RSS_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       "--env AUTO_SOURCE_ENABLED=#{smoke_auto_source_enabled}",
       "--mount type=bind,source=#{current_dir}/config,target=/app/config",
       '--name html2rss-web-test',
