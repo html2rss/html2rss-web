@@ -37,14 +37,13 @@ module Html2rss
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_static(feed_request)
             config = LocalConfig.find(feed_request.feed_name)
-            config[:params] = (config[:params] || {}).merge(feed_request.params) if feed_request.params.any?
-            config[:strategy] ||= Html2rss::RequestService.default_strategy_name
+            generator_input = static_generator_input(config, feed_request.params)
 
             Contracts::ResolvedSource.new(
               source_kind: :static,
               cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
-              generator_input: config,
-              ttl_seconds: CacheTtl.seconds_from_minutes(config.dig(:channel, :ttl))
+              generator_input: generator_input,
+              ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
           end
 
@@ -71,6 +70,25 @@ module Html2rss
             normalized_params = params.to_h.sort_by { |key, _| key.to_s }
             digest = Digest::SHA256.hexdigest(Marshal.dump(normalized_params))
             "static:#{feed_name}:#{digest}"
+          end
+
+          # @param config [Hash{Symbol=>Object}]
+          # @param params [Hash{Object=>Object}]
+          # @return [Hash{Symbol=>Object}]
+          def static_generator_input(config, params)
+            generator_input = config.dup
+            generator_input[:params] = merged_static_params(config, params)
+            generator_input[:strategy] ||= Html2rss::RequestService.default_strategy_name
+            generator_input
+          end
+
+          # @param config [Hash{Symbol=>Object}]
+          # @param params [Hash{Object=>Object}]
+          # @return [Hash{Object=>Object}]
+          def merged_static_params(config, params)
+            return (config[:params] || {}).dup if params.empty?
+
+            (config[:params] || {}).merge(params)
           end
 
           # @param token [String]

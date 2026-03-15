@@ -27,9 +27,10 @@ module Html2rss
             resolved_source = SourceResolver.call(feed_request)
             result = Service.call(resolved_source)
             normalized_identifier = feed_request.feed_name || identifier
+            body = write_response(response: request.response, representation: feed_request.representation, result:)
 
             emit_result(target_kind:, identifier: normalized_identifier, resolved_source:, result:)
-            write_response(response: request.response, representation: feed_request.representation, result:)
+            body
           rescue StandardError => error
             emit_failure(target_kind:, identifier:, error:)
             raise

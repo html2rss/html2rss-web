@@ -10,6 +10,13 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
     end
 
     context 'with a static request' do
+      let(:config) do
+        {
+          channel: { ttl: 15, url: 'https://example.com/feed' },
+          params: { 'existing' => '1' }
+        }
+      end
+
       let(:feed_request) do
         Html2rss::Web::Feeds::Contracts::Request.new(
           target_kind: :static,
@@ -21,12 +28,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       before do
-        allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(
-          {
-            channel: { ttl: 15, url: 'https://example.com/feed' },
-            params: { 'existing' => '1' }
-          }
-        )
+        allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
         allow(Html2rss::RequestService).to receive(:default_strategy_name).and_return(:ssrf_filter)
       end
 
@@ -40,6 +42,15 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
             900,
             include(params: { 'existing' => '1', 'page' => '3' }, strategy: :ssrf_filter)
           ]
+        )
+      end
+
+      it 'does not mutate the source config hash' do
+        described_class.call(feed_request)
+
+        expect(config).to eq(
+          channel: { ttl: 15, url: 'https://example.com/feed' },
+          params: { 'existing' => '1' }
         )
       end
     end

@@ -65,6 +65,17 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       expect(response['Cache-Control']).to include('public')
     end
+
+    it 'emits success after writing the response' do
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'success',
+        details: include(strategy: :ssrf_filter, url: 'https://example.com'),
+        level: :info
+      )
+    end
   end
 
   context 'with an error result' do
@@ -105,6 +116,48 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       write_response
 
       expect(response['Cache-Control']).to include('no-store')
+    end
+  end
+
+  context 'when response rendering fails after feed generation succeeds' do
+    subject(:write_response) do
+      described_class.call(
+        request: request,
+        target_kind: :token,
+        identifier: 'token'
+      )
+    end
+
+    let(:representation) { Html2rss::Web::FeedResponseFormat::RSS }
+
+    let(:result) do
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(
+        status: :ok,
+        payload: nil,
+        message: nil,
+        ttl_seconds: 600,
+        cache_key: 'feed_result:test',
+        error_message: nil
+      )
+    end
+
+    before do
+      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
+      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+      allow(Html2rss::Web::Observability).to receive(:emit)
+      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_raise(StandardError, 'render failed')
+    end
+
+    it 'emits only the failure event' do
+      expect { write_response }.to raise_error(StandardError, 'render failed')
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).once.with(
+        event_name: 'feed.render',
+        outcome: 'failure',
+        details: include(error_class: 'StandardError', error_message: 'render failed'),
+        level: :warn
+      )
     end
   end
 
