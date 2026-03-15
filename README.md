@@ -85,7 +85,7 @@ For contributors and AI agents changing backend structure, follow the rules in [
 | `make lint`                    | Run all linters.                                           |
 | `make lintfix`                 | Auto-fix lint warnings where possible.                     |
 | `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
-| `make openapi`                 | Regenerate `docs/api/v1/openapi.yaml` from request specs.  |
+| `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.       |
 | `make openapi-verify`          | Regenerate + fail if OpenAPI file is stale.                |
 | `make clean`                   | Remove build artefacts.                                    |
 

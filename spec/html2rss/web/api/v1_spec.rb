@@ -114,7 +114,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
       expect(last_response.status).to eq(200)
       json = expect_success_response(last_response)
-      expect(json.dig('data', 'api', 'openapi_url')).to eq('http://example.org/api/v1/openapi.yaml')
+      expect(json.dig('data', 'api', 'openapi_url')).to eq('http://example.org/openapi.yaml')
     end
 
     it 'returns instance feed-creation capability', :aggregate_failures do
@@ -139,18 +139,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
   end
 
-  describe 'GET /api/v1/openapi.yaml', openapi: {
-    summary: 'OpenAPI specification',
-    operation_id: 'getOpenApiSpec',
-    tags: ['Root'],
-    security: []
-  } do
-    it 'serves the OpenAPI document as YAML', :aggregate_failures do
+  describe 'GET /api/v1/openapi.yaml', openapi: false do
+    it 'redirects the versioned OpenAPI path to the public spec', :aggregate_failures do
       get '/api/v1/openapi.yaml'
 
-      expect(last_response.status).to eq(200)
-      expect(last_response.content_type).to include('application/yaml')
-      expect(last_response.body).to include('openapi: 3.0.3')
+      expect(last_response.status).to eq(301)
+      expect(last_response.headers['Location']).to eq('/openapi.yaml')
     end
   end
 

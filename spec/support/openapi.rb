@@ -4,7 +4,7 @@ return unless ENV['OPENAPI']
 
 require 'rspec/openapi'
 
-RSpec::OpenAPI.path = 'docs/api/v1/openapi.yaml'
+RSpec::OpenAPI.path = 'public/openapi.yaml'
 RSpec::OpenAPI.title = 'html2rss-web API'
 RSpec::OpenAPI.application_version = '1.0.0'
 RSpec::OpenAPI.enable_example = false

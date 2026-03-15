@@ -4,7 +4,7 @@ This is the only hand-written project document in `docs/`.
 
 Keep this file short, current, and operational. Do not add planning docs, migration diaries, redesign notes, or parallel architecture narratives back into this directory.
 
-The only other file that belongs in `docs/` is the generated OpenAPI contract at [`docs/api/v1/openapi.yaml`](/Users/gil/versioned/html2rss/html2rss-web/docs/api/v1/openapi.yaml).
+The only generated artifact intentionally exposed by the app is [`public/openapi.yaml`](/Users/gil/versioned/html2rss/html2rss-web/public/openapi.yaml).
 
 ## System Snapshot
 
@@ -55,7 +55,7 @@ Frontend verification lives at `http://127.0.0.1:4001/` while the dev container 
 
 ## API Contract Rules
 
-- `docs/api/v1/openapi.yaml` is generated output, not hand-edited design prose.
+- `public/openapi.yaml` is generated output, not hand-edited design prose.
 - Backend behavior and request specs define the contract.
 - Regenerate with `make openapi`.
 - Drift must fail with `make openapi-verify`.

@@ -449,21 +449,6 @@ paths:
       summary: Readiness probe
       tags:
       - Health
-  "/openapi.yaml":
-    get:
-      description: OpenAPI specification
-      operationId: getOpenApiSpec
-      responses:
-        '200':
-          content:
-            application/yaml:
-              schema:
-                type: string
-          description: serves the OpenAPI document as YAML
-      security: []
-      summary: OpenAPI specification
-      tags:
-      - Root
   "/strategies":
     get:
       description: List extraction strategies

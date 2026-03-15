@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetOpenApiSpecData, GetOpenApiSpecResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
+import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -71,13 +71,6 @@ export const getLivenessProbe = <ThrowOnError extends boolean = false>(options?:
  * Readiness probe
  */
 export const getReadinessProbe = <ThrowOnError extends boolean = false>(options?: Options<GetReadinessProbeData, ThrowOnError>) => (options?.client ?? client).get<GetReadinessProbeResponses, unknown, ThrowOnError>({ url: '/health/ready', ...options });
-
-/**
- * OpenAPI specification
- *
- * OpenAPI specification
- */
-export const getOpenApiSpec = <ThrowOnError extends boolean = false>(options?: Options<GetOpenApiSpecData, ThrowOnError>) => (options?.client ?? client).get<GetOpenApiSpecResponses, unknown, ThrowOnError>({ url: '/openapi.yaml', ...options });
 
 /**
  * List extraction strategies

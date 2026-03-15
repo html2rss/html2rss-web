@@ -245,22 +245,6 @@ export type GetReadinessProbeResponses = {
 
 export type GetReadinessProbeResponse = GetReadinessProbeResponses[keyof GetReadinessProbeResponses];
 
-export type GetOpenApiSpecData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/openapi.yaml';
-};
-
-export type GetOpenApiSpecResponses = {
-    /**
-     * serves the OpenAPI document as YAML
-     */
-    200: string;
-};
-
-export type GetOpenApiSpecResponse = GetOpenApiSpecResponses[keyof GetOpenApiSpecResponses];
-
 export type ListStrategiesData = {
     body?: never;
     path?: never;

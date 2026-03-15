@@ -82,7 +82,7 @@ describe('App contract', () => {
             api: {
               name: 'html2rss-web API',
               description: 'RESTful API for converting websites to RSS feeds',
-              openapi_url: 'http://example.test/api/v1/openapi.yaml',
+              openapi_url: 'http://example.test/openapi.yaml',
             },
             instance: {
               feed_creation: {

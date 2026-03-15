@@ -15,7 +15,7 @@ module Html2rss
                 api: {
                   name: 'html2rss-web API',
                   description: 'RESTful API for converting websites to RSS feeds',
-                  openapi_url: "#{router.base_url}/api/v1/openapi.yaml"
+                  openapi_url: "#{router.base_url}/openapi.yaml"
                 },
                 instance: instance_payload(router)
               }

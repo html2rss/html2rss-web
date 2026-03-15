@@ -13,9 +13,6 @@ app.json
 bin/
 coverage/
 docs/
-!docs/api/
-!docs/api/v1/
-!docs/api/v1/openapi.yaml
 Dockerfile
 Procfile
 Rakefile

@@ -23,8 +23,7 @@ module Html2rss
             def mount_openapi_spec(router)
               router.on 'openapi.yaml' do
                 router.get do
-                  router.response['Content-Type'] = 'application/yaml'
-                  openapi_spec_contents
+                  router.redirect '/openapi.yaml', 301
                 end
               end
             end
@@ -55,28 +54,10 @@ module Html2rss
               end
             end
 
-            # @return [String]
-            def openapi_spec_path
-              File.expand_path('../../../../docs/api/v1/openapi.yaml', __dir__)
-            end
-
             # @param router [Roda::RodaRequest]
             # @return [String]
             def render_root_metadata(router)
               JSON.generate(Api::V1::Response.success(data: Api::V1::RootMetadata.build(router)))
-            end
-
-            # @return [String]
-            def openapi_spec_contents
-              return File.read(openapi_spec_path) if File.exist?(openapi_spec_path)
-
-              <<~YAML
-                openapi: 3.0.3
-                info:
-                  title: html2rss-web API
-                  version: 1.0.0
-                paths: {}
-              YAML
             end
           end
         end

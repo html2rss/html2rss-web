@@ -102,26 +102,26 @@ ready: ## Pre-commit gate (quick checks + RSpec)
 yard-verify-public-docs: ## Verify essential YARD docs for all public methods in app/
 	bundle exec rake yard:verify_public_docs
 
-openapi: ## Regenerate docs/api/v1/openapi.yaml from request specs
+openapi: ## Regenerate public/openapi.yaml from request specs
 	bundle exec rake openapi:generate
 
-openapi-verify: ## Regenerate OpenAPI and fail if docs/api/v1/openapi.yaml or frontend client is stale
+openapi-verify: ## Regenerate OpenAPI and fail if public/openapi.yaml or frontend client is stale
 	bundle exec rake openapi:verify
 	$(MAKE) openapi-client-verify
 
-openapi-client: ## Generate frontend OpenAPI client/types from docs/api/v1/openapi.yaml
+openapi-client: ## Generate frontend OpenAPI client/types from public/openapi.yaml
 	@cd frontend && npm run openapi:generate
 
 openapi-client-verify: ## Generate frontend OpenAPI client and fail if generated files are stale
 	@cd frontend && npm run openapi:verify
 
-openapi-lint: openapi-lint-redocly openapi-lint-spectral ## Lint docs/api/v1/openapi.yaml with Redocly and Spectral
+openapi-lint: openapi-lint-redocly openapi-lint-spectral ## Lint public/openapi.yaml with Redocly and Spectral
 
 openapi-lint-redocly: ## Lint OpenAPI using Redocly recommended rules
-	npx --yes @redocly/cli lint --config .redocly.yaml docs/api/v1/openapi.yaml
+	npx --yes @redocly/cli lint --config .redocly.yaml public/openapi.yaml
 
 openapi-lint-spectral: ## Lint OpenAPI using Spectral OAS rules
-	npx --yes @stoplight/spectral-cli lint --ruleset .spectral.yaml docs/api/v1/openapi.yaml
+	npx --yes @stoplight/spectral-cli lint --ruleset .spectral.yaml public/openapi.yaml
 
 openai-lint-spectral: openapi-lint-spectral ## Alias for openapi-lint-spectral
 
