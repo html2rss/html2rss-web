@@ -7,6 +7,11 @@ interface ApiMetadataState {
   error: string | null;
 }
 
+interface ApiMetadataPayload {
+  success?: boolean;
+  data?: unknown;
+}
+
 export function useApiMetadata() {
   const [state, setState] = useState<ApiMetadataState>({
     metadata: null,
@@ -25,7 +30,7 @@ export function useApiMetadata() {
           signal: controller.signal,
           headers: { Accept: 'application/json' },
         });
-        const payload = (await response.json()) as { success?: boolean; data?: unknown };
+        const payload = await parseMetadataPayload(response);
         const metadata = payload.data as ApiMetadataRecord | undefined;
 
         if (!response.ok || !payload.success || !metadata?.instance) {
@@ -53,4 +58,15 @@ export function useApiMetadata() {
   }, []);
 
   return state;
+}
+
+async function parseMetadataPayload(response: Response): Promise<ApiMetadataPayload> {
+  const body = await response.text();
+  if (!body.trim()) return {};
+
+  try {
+    return JSON.parse(body) as ApiMetadataPayload;
+  } catch {
+    return {};
+  }
 }

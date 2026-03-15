@@ -109,4 +109,17 @@ describe('App contract', () => {
     expect(slashlessMetadataRequests).toBeGreaterThanOrEqual(1);
     expect(trailingSlashMetadataRequests).toBe(0);
   });
+
+  it('shows the metadata unavailable notice when /api/v1 responds with non-JSON content', async () => {
+    server.use(
+      http.get('/api/v1', () => HttpResponse.text('not-json', { status: 502 })),
+      http.get('/api/v1/', () => HttpResponse.text('', { status: 404 }))
+    );
+
+    render(<App />);
+
+    await screen.findByText('Instance metadata unavailable');
+
+    expect(screen.getByText('Invalid response format from API metadata')).toBeInTheDocument();
+  });
 });
