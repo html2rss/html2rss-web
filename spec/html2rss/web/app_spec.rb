@@ -90,6 +90,12 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
     end
 
+    it 'does not serve the removed legacy frontend entrypoint' do
+      get '/frontend/index.html'
+
+      expect(last_response.status).to eq(404)
+    end
+
     it 'serves static feed routes with caching headers' do
       stub_static_feed
 

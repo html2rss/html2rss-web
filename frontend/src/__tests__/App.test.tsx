@@ -272,13 +272,13 @@ describe('App', () => {
     });
   });
 
-  it('builds a bookmarklet that returns to the current frontend entry', () => {
-    window.history.replaceState({}, '', 'http://localhost:3000/frontend/index.html');
+  it('builds a bookmarklet that returns to the root app entry', () => {
+    window.history.replaceState({}, '', 'http://localhost:3000/');
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
     const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
-    expect(bookmarklet.getAttribute('href')).toContain('/frontend/index.html?url=');
+    expect(bookmarklet.getAttribute('href')).toContain('/?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
 });

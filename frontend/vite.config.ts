@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
 
 export default defineConfig({
+  base: '/',
   plugins: [preact()],
   server: {
     host: true,
@@ -19,7 +20,7 @@ export default defineConfig({
     exclude: ['msw/node'],
   },
   build: {
-    outDir: '../public/frontend',
-    emptyOutDir: true,
+    outDir: '../public',
+    emptyOutDir: false,
   },
 });

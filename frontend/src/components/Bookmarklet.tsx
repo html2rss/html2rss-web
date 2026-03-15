@@ -6,8 +6,7 @@ export function Bookmarklet() {
     appUrl.search = '';
     appUrl.hash = '';
 
-    const targetPath = appUrl.pathname.endsWith('/frontend/index.html') ? appUrl.pathname : '/';
-    const targetPrefix = `${appUrl.origin}${targetPath}?url=`;
+    const targetPrefix = `${appUrl.origin}/?url=`;
 
     return `javascript:window.location.href=${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href);`;
   })();

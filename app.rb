@@ -100,7 +100,7 @@ module Html2rss
       private
 
       def render_index_page(router)
-        index_path = 'public/frontend/index.html'
+        index_path = 'public/index.html'
         router.response['Content-Type'] = 'text/html'
         File.exist?(index_path) ? File.read(index_path) : FALLBACK_HTML
       end

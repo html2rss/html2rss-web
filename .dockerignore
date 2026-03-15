@@ -20,3 +20,6 @@ renovate.json
 spec/
 tmp/
 work/
+public/assets/
+public/frontend/
+public/index.html
