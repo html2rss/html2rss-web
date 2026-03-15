@@ -4,7 +4,7 @@
 ENV['RACK_ENV'] = 'test'
 ENV['HTML2RSS_SECRET_KEY'] = 'test-secret-key-for-specs'
 
-if ENV['CI'] || ENV['COVERAGE']
+if (ENV.fetch('CI', nil) || ENV.fetch('COVERAGE', nil)) && ENV['RUN_DOCKER_SPECS'] != 'true'
   require 'simplecov'
 
   SimpleCov.start do
