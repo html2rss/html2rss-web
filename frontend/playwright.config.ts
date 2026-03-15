@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -11,10 +13,12 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4001',
     headless: true,
     trace: 'on-first-retry',
-    launchOptions: {
-      executablePath: '/usr/bin/chromium-browser',
-      args: ['--no-sandbox'],
-    },
+    launchOptions: chromiumExecutablePath
+      ? {
+          executablePath: chromiumExecutablePath,
+          args: ['--no-sandbox'],
+        }
+      : undefined,
   },
   webServer: {
     command: 'npm run dev -- --host 0.0.0.0 --port 4001',

@@ -100,6 +100,12 @@ jobs:
       - name: Run frontend tests
         run: npm run test:ci
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run frontend smoke test
+        run: npm run test:e2e
+
   docker-test:
     needs:
       - hadolint
