@@ -31,6 +31,8 @@ module Html2rss
           </body>
         </html>
       HTML
+      FRONTEND_DIST_PATH = 'frontend/dist'
+      FRONTEND_INDEX_PATH = File.join(FRONTEND_DIST_PATH, 'index.html')
       def self.development? = EnvironmentValidator.development?
 
       def development? = self.class.development?
@@ -80,6 +82,10 @@ module Html2rss
       }
 
       plugin :json_parser
+      plugin :static,
+             ['/assets'],
+             root: FRONTEND_DIST_PATH,
+             headers: { 'Cache-Control' => 'public, max-age=31536000, immutable' }
       plugin :public
       plugin :head
       plugin :not_allowed
@@ -100,9 +106,8 @@ module Html2rss
       private
 
       def render_index_page(router)
-        index_path = 'public/index.html'
         router.response['Content-Type'] = 'text/html'
-        File.exist?(index_path) ? File.read(index_path) : FALLBACK_HTML
+        File.exist?(FRONTEND_INDEX_PATH) ? File.read(FRONTEND_INDEX_PATH) : FALLBACK_HTML
       end
     end
   end

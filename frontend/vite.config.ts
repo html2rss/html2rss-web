@@ -20,7 +20,7 @@ export default defineConfig({
     exclude: ['msw/node'],
   },
   build: {
-    outDir: '../public',
-    emptyOutDir: false,
+    outDir: './dist',
+    emptyOutDir: true,
   },
 });

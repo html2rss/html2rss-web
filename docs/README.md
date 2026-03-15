@@ -9,7 +9,7 @@ The only other file that belongs in `docs/` is the generated OpenAPI contract at
 ## System Snapshot
 
 - Backend: Ruby + Roda under the `Html2rss::Web` namespace.
-- Frontend: Preact + Vite, built into `public/`.
+- Frontend: Preact + Vite, built into `frontend/dist` and served at `/`.
 - Feed extraction: delegated to the `html2rss` gem.
 - Distribution: Docker Compose / Dev Container first.
 
