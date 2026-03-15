@@ -58,9 +58,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version-file: ".tool-versions"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Verify generated OpenAPI is up to date
-        run: bundle exec rake openapi:verify
+      - name: Install frontend dependencies for OpenAPI client verification
+        run: npm ci
+        working-directory: frontend
+
+      - name: Verify generated OpenAPI spec and client are up to date
+        run: make openapi-verify
 
       - name: Lint OpenAPI contract
         run: make openapi-lint
@@ -82,9 +88,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Verify generated OpenAPI client is up to date
-        run: npm run openapi:verify
 
       - name: Typecheck frontend
         run: npm run typecheck
