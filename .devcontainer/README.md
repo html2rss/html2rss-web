@@ -8,7 +8,7 @@ Containers extension) or GitHub Codespaces and use that environment for all work
 The devcontainer starts one service named `app` and exposes:
 
 - **Port 4000:** Ruby app
-- **Port 4001:** Astro dev server
+- **Port 4001:** Vite dev server
 
 The repo is mounted at `/workspace`. Bundler gems are cached in a Docker volume to speed up
 future launches.
@@ -29,9 +29,9 @@ network access is available.
 ## Common commands (run inside the container)
 
 ```
-make dev          # Ruby + Astro
+make dev          # Ruby + Vite
 make dev-ruby     # Ruby only
-make dev-frontend # Astro only
+make dev-frontend # frontend only
 make test         # Ruby + frontend tests
 make ready        # RuboCop + RSpec (pre-commit gate)
 ```

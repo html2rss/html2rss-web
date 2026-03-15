@@ -36,9 +36,8 @@
 /tmp/rack-cache-*
 
 
-# Ignore Astro frontend build output
+# Ignore frontend build output and tooling caches
 /frontend/dist/
-/frontend/.astro/
 /frontend/node_modules/
 /public/frontend
 /frontend/playwright-report/
@@ -50,5 +49,8 @@
 
 # Frontend logs
 *.log
+
+# macOS Finder metadata
+.DS_Store
 
 .yardoc
