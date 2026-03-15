@@ -112,6 +112,17 @@ RSpec.describe Html2rss::Web::App do
       )
     end
 
+    it 'serves nested static feed routes' do
+      allow(Html2rss::Web::LocalConfig).to receive(:find).with('team/releases').and_return({ channel: { ttl: 180 } })
+      stub_static_renderers(static_feed_result(ttl: 180), rss_body: '<rss/>', json_body: static_feed_json)
+
+      get '/team/releases.xml'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.body).to eq('<rss/>')
+    end
+
     it 'serves HEAD requests for static feed routes with negotiated headers only' do
       stub_static_feed
       head '/legacy'

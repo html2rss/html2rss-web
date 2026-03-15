@@ -61,10 +61,35 @@ module Html2rss
             # @param request [Rack::Request]
             # @return [void]
             def authorize_health_check!(request)
+              return if env_health_check_token?(request)
+
               account = Auth.authenticate(request)
               return if account && account[:username] == 'health-check'
 
               raise Html2rss::Web::UnauthorizedError, 'Health check authentication required'
+            end
+
+            # @param request [Rack::Request]
+            # @return [Boolean]
+            def env_health_check_token?(request)
+              configured_token = ENV.fetch('HEALTH_CHECK_TOKEN', '').to_s
+              provided_token = bearer_token(request)
+              return false if configured_token.empty? || provided_token.nil?
+              return false unless configured_token.bytesize == provided_token.bytesize
+
+              Rack::Utils.secure_compare(provided_token, configured_token)
+            end
+
+            # @param request [Rack::Request]
+            # @return [String, nil]
+            def bearer_token(request)
+              auth_header = request.env['HTTP_AUTHORIZATION']
+              return unless auth_header&.start_with?('Bearer ')
+
+              token = auth_header.delete_prefix('Bearer ')
+              return if token.empty?
+
+              token
             end
 
             # @return [void]

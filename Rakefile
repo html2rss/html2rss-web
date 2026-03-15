@@ -2,6 +2,7 @@
 
 require 'json'
 require 'fileutils'
+require 'open3'
 
 ##
 # Helper methods used during :test run
@@ -26,6 +27,16 @@ module Output
     end
     puts '. Time is up.'
   end
+end
+
+def test_container_exists?(container_name)
+  inspection, status = Open3.capture2e('docker', 'inspect', container_name)
+  return false unless status.success?
+  return false if inspection.strip.empty?
+
+  JSON.parse(inspection).any?
+rescue JSON::ParserError
+  false
 end
 
 task default: %w[test]
@@ -63,9 +74,7 @@ task :test do
   }
   sh smoke_env, 'bundle exec rspec --tag docker'
 ensure
-  test_container_exists = JSON.parse(`docker inspect html2rss-web-test`).any?
-
-  if test_container_exists
+  if test_container_exists?('html2rss-web-test')
     Output.describe 'Cleaning up test container'
 
     sh 'docker logs --tail all html2rss-web-test'

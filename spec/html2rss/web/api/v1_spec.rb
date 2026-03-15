@@ -179,6 +179,19 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(json.dig('data', 'health', 'status')).to eq('healthy')
     end
 
+    it 'returns health status when the configured environment token is valid', :aggregate_failures do
+      ClimateControl.modify(HEALTH_CHECK_TOKEN: 'rotated-health-token') do
+        allow(Html2rss::Web::Auth).to receive(:authenticate).and_call_original
+
+        header 'Authorization', 'Bearer rotated-health-token'
+        get '/api/v1/health'
+
+        expect(last_response.status).to eq(200)
+        json = expect_success_response(last_response)
+        expect(json.dig('data', 'health', 'status')).to eq('healthy')
+      end
+    end
+
     it 'returns error when configuration fails', :aggregate_failures do
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return({ username: 'health-check' })
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')
