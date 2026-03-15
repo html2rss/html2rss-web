@@ -109,10 +109,7 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
       XML
     },
     'application/feed+json' => {
-      'example' => {
-        'version' => 'https://jsonfeed.org/version/1.1',
-        'title' => 'Error'
-      }
+      'example' => '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
     }
   }
 

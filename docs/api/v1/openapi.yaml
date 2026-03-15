@@ -225,9 +225,7 @@ paths:
         '401':
           content:
             application/feed+json:
-              example:
-                title: Error
-                version: https://jsonfeed.org/version/1.1
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
               schema:
                 type: string
             application/xml:
@@ -240,9 +238,7 @@ paths:
         '403':
           content:
             application/feed+json:
-              example:
-                title: Error
-                version: https://jsonfeed.org/version/1.1
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
               schema:
                 type: string
             application/xml:
@@ -256,9 +252,7 @@ paths:
         '500':
           content:
             application/feed+json:
-              example:
-                title: Error
-                version: https://jsonfeed.org/version/1.1
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
               schema:
                 type: string
             application/xml:

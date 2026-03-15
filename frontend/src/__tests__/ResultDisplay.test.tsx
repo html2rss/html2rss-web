@@ -44,7 +44,7 @@ describe('ResultDisplay', () => {
       expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
       expect(screen.getByText('Item Two')).toBeInTheDocument();
     });
-    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.json', {
+    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
       headers: { Accept: 'application/feed+json' },
     });
   });
