@@ -104,41 +104,56 @@ jobs:
       - name: Run frontend smoke test
         run: npm run test:e2e
 
-  docker-test:
+  docker-build-smoke-image:
     needs:
       - hadolint
       - ruby
       - openapi
       - frontend
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build Docker smoke image
+        run: docker build -t html2rss/web -f Dockerfile .
+
+      - name: Export Docker smoke image
+        run: docker save html2rss/web -o /tmp/html2rss-web-smoke-image.tar
+
+      - name: Upload Docker smoke image
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-smoke-image
+          path: /tmp/html2rss-web-smoke-image.tar
+          retention-days: 1
+
+  docker-test:
+    needs:
+      - docker-build-smoke-image
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         smoke_auto_source_enabled: ["false", "true"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
 
-      - name: Setup Node.js for Docker smoke test
-        uses: actions/setup-node@v4
+      - name: Download Docker smoke image
+        uses: actions/download-artifact@v4
         with:
-          node-version-file: ".tool-versions"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          name: docker-smoke-image
+          path: /tmp
 
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend
-
-      - name: Build frontend static assets
-        run: npm run build
-        working-directory: frontend
+      - name: Load Docker smoke image
+        run: docker load -i /tmp/html2rss-web-smoke-image.tar
 
       - name: Run Docker smoke test
         env:
+          DOCKER_SMOKE_SKIP_BUILD: "true"
           SMOKE_AUTO_SOURCE_ENABLED: ${{ matrix.smoke_auto_source_enabled }}
         run: bundle exec rake
 
