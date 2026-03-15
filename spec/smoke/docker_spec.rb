@@ -9,6 +9,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
   let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN', 'CHANGE_ME_HEALTH_CHECK_TOKEN') }
   let(:feed_token) { ENV.fetch('SMOKE_API_TOKEN', 'CHANGE_ME_ADMIN_TOKEN') }
   let(:auto_source_enabled) { ENV.fetch('SMOKE_AUTO_SOURCE_ENABLED', 'false') == 'true' }
+  let(:feed_url) { 'https://www.ruby-lang.org/en/' }
 
   def get_json(path, headers: {})
     uri = URI.join(base_url, path)
@@ -69,7 +70,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
 
   it 'creates a feed when provided with valid credentials', :aggregate_failures do
     payload = {
-      url: 'https://example.com/articles',
+      url: feed_url,
       strategy: 'ssrf_filter'
     }
 
@@ -82,7 +83,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
     next unless auto_source_enabled
 
     payload = {
-      url: 'https://example.com/articles',
+      url: feed_url,
       strategy: 'ssrf_filter'
     }
 
@@ -99,7 +100,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
     next if auto_source_enabled
 
     payload = {
-      url: 'https://example.com/articles',
+      url: feed_url,
       strategy: 'ssrf_filter'
     }
 

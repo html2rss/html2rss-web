@@ -55,6 +55,7 @@ ARG UID=991
 ARG GID=991
 
 RUN apk add --no-cache \
+  'ca-certificates>=2024' \
   'curl>=8' \
   'gcompat>=0' \
   'tzdata>=2024' \
