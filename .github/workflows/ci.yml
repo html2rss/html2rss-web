@@ -26,7 +26,6 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version-file: ".tool-versions"
           bundler-cache: true
 
       - name: Run RuboCop
@@ -53,7 +52,6 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version-file: ".tool-versions"
           bundler-cache: true
 
       - name: Setup Node.js for OpenAPI lint tooling
@@ -122,7 +120,6 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version-file: ".tool-versions"
           bundler-cache: true
 
       - name: Setup Node.js for Docker smoke test

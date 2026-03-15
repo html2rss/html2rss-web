@@ -13,7 +13,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
     /**
-     * returns instance feed-creation capability
+     * returns API information with trailing slash
      */
     200: {
         data: {
@@ -172,7 +172,7 @@ export type GetHealthStatusError = GetHealthStatusErrors[keyof GetHealthStatusEr
 
 export type GetHealthStatusResponses = {
     /**
-     * returns health status when token is valid
+     * returns health status when the configured environment token is valid
      */
     200: {
         data: {

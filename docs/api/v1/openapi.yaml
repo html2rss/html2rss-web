@@ -20,6 +20,7 @@ paths:
     get:
       description: API metadata
       operationId: getApiMetadata
+      parameters: []
       responses:
         '200':
           content:
@@ -66,7 +67,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns instance feed-creation capability
+          description: returns API information with trailing slash
       security: []
       summary: API metadata
       tags:
@@ -110,6 +111,8 @@ paths:
                             type: string
                           id:
                             type: string
+                          json_public_url:
+                            type: string
                           name:
                             type: string
                           public_url:
@@ -127,6 +130,7 @@ paths:
                         - strategy
                         - feed_token
                         - public_url
+                        - json_public_url
                         - created_at
                         - updated_at
                         type: object
@@ -317,7 +321,8 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns health status when token is valid
+          description: returns health status when the configured environment token
+            is valid
         '401':
           content:
             application/json:

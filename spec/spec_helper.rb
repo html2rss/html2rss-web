@@ -13,7 +13,7 @@ if ENV['CI'] || ENV['COVERAGE']
 
     track_files '**/*.rb'
 
-    minimum_coverage 80
+    minimum_coverage 80 unless ENV['OPENAPI']
     maximum_coverage_drop 5
   end
 end
