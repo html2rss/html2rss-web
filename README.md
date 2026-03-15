@@ -66,6 +66,9 @@ make openapi
 
 Dev URLs: Ruby app at `http://localhost:4000`, frontend dev server at `http://localhost:4001`.
 
+Backend code under the `Html2rss::Web` namespace now lives under `app/web/**`, so Zeitwerk can mirror constant paths directly instead of relying on directory-specific namespace wiring.
+`make ready` also runs `rake zeitwerk:verify`, which eager-loads the app and fails on loader drift early.
+
 ## Make Targets
 
 | Command              | Purpose                                                 |

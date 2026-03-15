@@ -58,6 +58,8 @@ lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issue
 lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	@echo "Running RuboCop linting..."
 	bundle exec rubocop
+	@echo "Running Zeitwerk eager-load check..."
+	bundle exec rake zeitwerk:verify
 	@echo "Running YARD public-method docs check..."
 	bundle exec rake yard:verify_public_docs
 	@echo "Ruby linting complete!"
