@@ -3,6 +3,7 @@
 require 'rubygems'
 require 'bundler/setup'
 require 'rack-timeout'
+require_relative 'app/web/boot/development_reloader'
 
 if ENV.key?('SENTRY_DSN')
   Bundler.require(:sentry)
@@ -21,36 +22,17 @@ end
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
 
 if dev
-  require 'logger'
-  require 'rack/unreloader'
+  require_relative 'app'
 
-  logger = Logger.new($stdout)
-  logger.level = Logger::INFO
-
-  # Simple Unreloader configuration following official docs
-  Unreloader = Rack::Unreloader.new(
-    subclasses: %w[Roda Html2rss],
-    logger: logger,
-    reload: true
-  ) do
-    Html2rss::Web::App
-  end
-
-  # Load main app file
-  Unreloader.require('app.rb') { 'Html2rss::Web::App' }
-
-  # Load all directories - Unreloader handles the rest
-  Unreloader.require('helpers')
-  Unreloader.require('app')
-
-  run Unreloader
+  run Html2rss::Web::Boot::DevelopmentReloader.new(
+    loader: Html2rss::Web::Boot.loader,
+    app_provider: -> { Html2rss::Web::App.app }
+  )
 else
   use Rack::Timeout
 
-  # Production: load everything upfront for better performance
   require_relative 'app'
-  Dir['app/**/*.rb'].each { |f| require_relative f }
-  Dir['helpers/**/*.rb'].each { |f| require_relative f }
+  Html2rss::Web::Boot.eager_load!
 
   run(Html2rss::Web::App.freeze.app)
 end

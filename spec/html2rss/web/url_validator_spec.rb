@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../../../app/security/url_validator'
+require_relative '../../../app/web/url_validator'
 
 RSpec.describe Html2rss::Web::UrlValidator do
   describe '.url_allowed?' do

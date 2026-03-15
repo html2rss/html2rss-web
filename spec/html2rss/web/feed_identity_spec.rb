@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/domain/feed_identity'
+require_relative '../../../app/web/feed_identity'
 
 RSpec.describe Html2rss::Web::FeedIdentity do
   let(:attributes) do
