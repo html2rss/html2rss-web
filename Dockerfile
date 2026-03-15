@@ -54,7 +54,8 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD ruby -ruri -rnet/http -e ' \
     port = ENV.fetch("PORT", "4000") \
-    token = ENV.fetch("HEALTH_CHECK_TOKEN", "CHANGE_ME_HEALTH_CHECK_TOKEN") \
+    token = ENV["HEALTH_CHECK_TOKEN"] \
+    token = "CHANGE_ME_HEALTH_CHECK_TOKEN" if token.nil? || token.empty? \
     uri = URI("http://localhost:#{port}/api/v1/health") \
     request = Net::HTTP::Get.new(uri) \
     request["Authorization"] = "Bearer #{token}" \
