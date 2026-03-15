@@ -93,6 +93,7 @@ COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config
 COPY --chown=$USER:$USER public ./public
+COPY --chown=$USER:$USER docs/api/v1/openapi.yaml ./docs/api/v1/openapi.yaml
 COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./frontend/dist
 
 CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]
