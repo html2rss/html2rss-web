@@ -70,7 +70,7 @@ ARG GID=991
 RUN apk add --no-cache \
   'ca-certificates>=2024' \
   'tzdata>=2024' \
-  && apk upgrade --no-cache zlib \
+  'zlib=1.2.13-r1' \
   && addgroup --gid "$GID" "$USER" \
   && adduser \
   --disabled-password \
