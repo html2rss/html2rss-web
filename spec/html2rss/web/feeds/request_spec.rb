@@ -3,7 +3,7 @@
 require 'spec_helper'
 require_relative '../../../../app'
 
-RSpec.describe Html2rss::Web::Feeds::RequestParser do
+RSpec.describe Html2rss::Web::Feeds::Request do
   let(:request) { instance_double(Rack::Request, params: { 'page' => '2' }) }
 
   before do

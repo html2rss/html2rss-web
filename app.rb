@@ -29,12 +29,6 @@ module Html2rss
         </html>
       HTML
       def self.development? = EnvironmentValidator.development?
-      class << self
-        # @return [Html2rss::Web::AppContext::Context]
-        def context
-          AppContext.build
-        end
-      end
 
       def development? = self.class.development?
       EnvironmentValidator.validate_environment!
@@ -99,19 +93,10 @@ module Html2rss
       end
 
       route do |r|
-        context = self.class.context
         r.public
 
-        context.routes_api_v1.call(r, context: context) ||
-          context.routes_static.call(r,
-                                     feed_handler: lambda { |router_ctx, feed_name|
-                                       Http::FeedRouteHandler.call(
-                                         context: context,
-                                         router: router_ctx,
-                                         feed_name: feed_name
-                                       )
-                                     },
-                                     index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
+        Routes::ApiV1.call(r) ||
+          Routes::FeedPages.call(r, index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
 
       private

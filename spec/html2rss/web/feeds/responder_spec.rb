@@ -3,20 +3,42 @@
 require 'spec_helper'
 require_relative '../../../../app'
 
-RSpec.describe Html2rss::Web::Http::FeedResponse do
+RSpec.describe Html2rss::Web::Feeds::Responder do
   let(:response) { Rack::Response.new }
+  let(:request) { instance_double(Struct.new(:response), response: response) }
+
+  def feed_request(representation)
+    Html2rss::Web::Feeds::Contracts::Request.new(
+      target_kind: :token,
+      representation: representation,
+      feed_name: nil,
+      token: 'token',
+      params: {}
+    )
+  end
+
+  def resolved_source
+    Html2rss::Web::Feeds::Contracts::ResolvedSource.new(
+      source_kind: :token,
+      cache_identity: 'token:abc',
+      generator_input: { strategy: :ssrf_filter, channel: { url: 'https://example.com' } },
+      ttl_seconds: 600
+    )
+  end
 
   context 'with a cacheable success result' do
     subject(:write_response) do
       described_class.call(
-        response: response,
-        representation: Html2rss::Web::FeedResponseFormat::RSS,
-        result: result
+        request: request,
+        target_kind: :token,
+        identifier: 'token'
       )
     end
 
+    let(:representation) { Html2rss::Web::FeedResponseFormat::RSS }
+
     let(:result) do
-      Html2rss::Web::FeedContracts::RenderResult.new(
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(
         status: :ok,
         payload: nil,
         message: nil,
@@ -27,6 +49,10 @@ RSpec.describe Html2rss::Web::Http::FeedResponse do
     end
 
     before do
+      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
+      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+      allow(Html2rss::Web::Observability).to receive(:emit)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return('<rss/>')
     end
 
@@ -44,14 +70,16 @@ RSpec.describe Html2rss::Web::Http::FeedResponse do
   context 'with an error result' do
     subject(:write_response) do
       described_class.call(
-        response: response,
-        representation: Html2rss::Web::FeedResponseFormat::JSON_FEED,
-        result: result
+        request: request,
+        target_kind: :token,
+        identifier: 'token'
       )
     end
 
+    let(:representation) { Html2rss::Web::FeedResponseFormat::JSON_FEED }
+
     let(:result) do
-      Html2rss::Web::FeedContracts::RenderResult.new(
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(
         status: :error,
         payload: nil,
         message: 'Internal Server Error',
@@ -62,6 +90,10 @@ RSpec.describe Html2rss::Web::Http::FeedResponse do
     end
 
     before do
+      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
+      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+      allow(Html2rss::Web::Observability).to receive(:emit)
       allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return('{"title":"Error"}')
     end
 

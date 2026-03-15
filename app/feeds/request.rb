@@ -1,20 +1,20 @@
 # frozen_string_literal: true
 
 require 'cgi'
-require_relative '../domain/feed_contracts'
+require_relative 'contracts'
 require_relative '../rendering/feed_response_format'
 
 module Html2rss
   module Web
     module Feeds
       ##
-      # Parses route inputs into shared feed request contracts.
-      module RequestParser
+      # Builds normalized feed requests from route input.
+      module Request
         class << self
           # @param request [Rack::Request]
           # @param target_kind [Symbol]
           # @param identifier [String]
-          # @return [Html2rss::Web::FeedContracts::Request]
+          # @return [Html2rss::Web::Feeds::Contracts::Request]
           def call(request:, target_kind:, identifier:)
             build_request(
               request: request,
@@ -28,9 +28,9 @@ module Html2rss
           # @param request [Rack::Request]
           # @param target_kind [Symbol]
           # @param identifier [String]
-          # @return [Html2rss::Web::FeedContracts::Request]
+          # @return [Html2rss::Web::Feeds::Contracts::Request]
           def build_request(request:, target_kind:, identifier:)
-            FeedContracts::Request.new(
+            Contracts::Request.new(
               target_kind: target_kind,
               representation: FeedResponseFormat.for_request(request),
               feed_name: target_kind == :static ? identifier : nil,

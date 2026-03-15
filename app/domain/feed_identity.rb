@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
-require_relative 'feed_contracts'
+require_relative '../api/v1/feed_metadata'
 
 module Html2rss
   module Web
@@ -18,9 +18,9 @@ module Html2rss
         end
 
         # @param attributes [Hash{Symbol=>Object}]
-        # @return [Html2rss::Web::FeedContracts::Metadata]
+        # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
         def metadata(attributes)
-          FeedContracts::Metadata.new(**metadata_attributes(attributes))
+          Api::V1::FeedMetadata::Metadata.new(**metadata_attributes(attributes))
         end
 
         private

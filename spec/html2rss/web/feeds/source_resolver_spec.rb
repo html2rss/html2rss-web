@@ -3,7 +3,7 @@
 require 'spec_helper'
 require_relative '../../../../app'
 
-RSpec.describe Html2rss::Web::Feeds::Resolver do
+RSpec.describe Html2rss::Web::Feeds::SourceResolver do
   describe '.call' do
     def resolved_tuple(resolved)
       [resolved.source_kind, resolved.cache_identity, resolved.ttl_seconds, resolved.generator_input]
@@ -11,7 +11,7 @@ RSpec.describe Html2rss::Web::Feeds::Resolver do
 
     context 'with a static request' do
       let(:feed_request) do
-        Html2rss::Web::FeedContracts::Request.new(
+        Html2rss::Web::Feeds::Contracts::Request.new(
           target_kind: :static,
           representation: Html2rss::Web::FeedResponseFormat::RSS,
           feed_name: 'legacy',
@@ -46,7 +46,7 @@ RSpec.describe Html2rss::Web::Feeds::Resolver do
 
     context 'with a token request' do
       let(:feed_request) do
-        Html2rss::Web::FeedContracts::Request.new(
+        Html2rss::Web::Feeds::Contracts::Request.new(
           target_kind: :token,
           representation: Html2rss::Web::FeedResponseFormat::RSS,
           feed_name: nil,

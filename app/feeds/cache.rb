@@ -18,8 +18,8 @@ module Html2rss
           # @param key [String]
           # @param ttl_seconds [Integer]
           # @param cacheable [Boolean, Proc]
-          # @yieldreturn [Html2rss::Web::FeedContracts::RenderResult]
-          # @return [Html2rss::Web::FeedContracts::RenderResult]
+          # @yieldreturn [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def fetch(key, ttl_seconds:, cacheable: true)
             lock.synchronize do
               entry = read_entry(key)
@@ -59,7 +59,7 @@ module Html2rss
 
           # @param key [String]
           # @param ttl_seconds [Integer]
-          # @param result [Html2rss::Web::FeedContracts::RenderResult]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def write_entry(key, ttl_seconds, result)
             entries[key] = Entry.new(result: result, expires_at: Time.now.utc + normalize_ttl(ttl_seconds))
@@ -67,7 +67,7 @@ module Html2rss
           end
 
           # @param cacheable [Boolean, Proc]
-          # @param result [Html2rss::Web::FeedContracts::RenderResult]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Boolean]
           def cacheable_result?(cacheable, result)
             return cacheable.call(result) if cacheable.respond_to?(:call)

@@ -37,7 +37,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
   let(:json_body) { JSON.parse(last_response.body) }
   let(:json_feed_error) { JSON.parse(last_response.body).slice('version', 'title') }
   let(:feed_result) do
-    Html2rss::Web::FeedContracts::RenderResult.new(
+    Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: nil,
       message: nil,
@@ -248,7 +248,7 @@ RSpec.describe Html2rss::Web::App do # rubocop:disable RSpec/MultipleMemoizedHel
       end
 
       it 'returns bad request when URL is missing', :aggregate_failures do
-        allow(Html2rss::Web::Api::V1::Feeds).to receive(:extract_site_title).and_return('Example')
+        allow(Html2rss::Web::Api::V1::FeedMetadata).to receive(:site_title_for).and_return('Example')
 
         post '/api/v1/feeds', request_payload.merge(url: '').to_json, auth_headers
 

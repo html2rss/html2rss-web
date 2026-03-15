@@ -7,7 +7,7 @@ RSpec.describe Html2rss::Web::Feeds::RssRenderer do
   subject(:render_empty_feed) { described_class.call(empty_result) }
 
   let(:payload) do
-    Html2rss::Web::FeedContracts::RenderPayload.new(
+    Html2rss::Web::Feeds::Contracts::RenderPayload.new(
       feed: Object.new,
       site_title: 'https://example.com/articles',
       url: 'https://example.com/articles',
@@ -15,7 +15,7 @@ RSpec.describe Html2rss::Web::Feeds::RssRenderer do
     )
   end
   let(:empty_result) do
-    Html2rss::Web::FeedContracts::RenderResult.new(
+    Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :empty,
       payload: payload,
       message: nil,

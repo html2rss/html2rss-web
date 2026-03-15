@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require_relative '../api/v1/root_metadata'
+require_relative '../api/v1/create_feed'
 require_relative '../request/request_target'
+require_relative '../feeds/responder'
 
 module Html2rss
   module Web
@@ -16,17 +18,16 @@ module Html2rss
           # Mounts `/api/v1` routes on the provided router.
           #
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def call(router, context:)
+          def call(router)
             router.on 'api', 'v1' do
               RequestTarget.mark!(router, RequestTarget::API)
               router.response['Content-Type'] = 'application/json'
 
               mount_openapi_spec(router)
-              mount_health(router, context)
-              mount_strategies(router, context)
-              mount_feeds(router, context)
+              mount_health(router)
+              mount_strategies(router)
+              mount_feeds(router)
               mount_root(router)
             end
           end
@@ -45,71 +46,65 @@ module Html2rss
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_health(router, context)
+          def mount_health(router)
             router.on 'health' do
-              mount_health_subroutes(router, context)
+              mount_health_subroutes(router)
 
               router.get do
-                render_json(context.api_health.show(router))
+                render_json(Api::V1::Health.show(router))
               end
             end
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_health_subroutes(router, context)
-            mount_readiness_health(router, context)
-            mount_liveness_health(router, context)
+          def mount_health_subroutes(router)
+            mount_readiness_health(router)
+            mount_liveness_health(router)
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_readiness_health(router, context)
+          def mount_readiness_health(router)
             router.on 'ready' do
               router.get do
-                render_json(context.api_health.ready(router))
+                render_json(Api::V1::Health.ready(router))
               end
             end
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_liveness_health(router, context)
+          def mount_liveness_health(router)
             router.on 'live' do
               router.get do
-                render_json(context.api_health.live(router))
+                render_json(Api::V1::Health.live(router))
               end
             end
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_strategies(router, context)
+          def mount_strategies(router)
             router.on 'strategies' do
               router.get do
-                render_json(context.api_strategies.index(router))
+                render_json(Api::V1::Strategies.index(router))
               end
             end
           end
 
           # @param router [Roda::RodaRequest]
-          # @param context [Html2rss::Web::AppContext::Context]
           # @return [void]
-          def mount_feeds(router, context)
+          def mount_feeds(router)
             router.on 'feeds' do
               router.get String do |token|
                 RequestTarget.mark!(router, RequestTarget::FEED)
-                render_feed_response(context.api_feeds.show(router, token))
+                Feeds::Responder.call(request: router, target_kind: :token, identifier: token)
               end
 
               router.post do
-                render_json(context.api_feeds.create(router))
+                render_json(Api::V1::CreateFeed.call(router))
               end
             end
           end
@@ -131,12 +126,6 @@ module Html2rss
           # @option return [Hash] :demo public demo metadata block.
           def api_root_payload(router)
             Api::V1::RootMetadata.build(router)
-          end
-
-          # @param result [Hash, String]
-          # @return [String] JSON payload or XML feed body.
-          def render_feed_response(result)
-            result.is_a?(Hash) ? render_json(result) : result
           end
 
           # @param payload [Hash{Symbol=>Object}]

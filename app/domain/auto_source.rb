@@ -24,7 +24,7 @@ module Html2rss
         # @param url [String]
         # @param token_data [Hash{Symbol=>Object}] authenticated account data.
         # @param strategy [String]
-        # @return [Html2rss::Web::FeedContracts::Metadata, nil]
+        # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata, nil]
         def create_stable_feed(name, url, token_data, strategy = 'ssrf_filter')
           return nil unless token_data && FeedAccess.url_allowed_for_username?(token_data[:username], url)
 

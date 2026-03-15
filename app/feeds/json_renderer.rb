@@ -3,7 +3,7 @@
 require 'json'
 require 'time'
 
-require_relative '../domain/feed_contracts'
+require_relative 'contracts'
 require_relative '../errors/exceptions'
 require_relative '../rendering/json_feed_builder'
 
@@ -16,7 +16,7 @@ module Html2rss
         VERSION = 'https://jsonfeed.org/version/1.1'
 
         class << self
-          # @param result [Html2rss::Web::FeedContracts::RenderResult]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [String]
           def call(result)
             case result.status
@@ -31,7 +31,7 @@ module Html2rss
 
           private
 
-          # @param result [Html2rss::Web::FeedContracts::RenderResult]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [String]
           def empty_feed(result)
             JsonFeedBuilder.build_empty_feed_warning(
@@ -41,7 +41,7 @@ module Html2rss
             )
           end
 
-          # @param result [Html2rss::Web::FeedContracts::RenderResult]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [String]
           def error_feed(result)
             JsonFeedBuilder.build_error_feed(message: result.message || HttpError::DEFAULT_MESSAGE)
