@@ -30,7 +30,7 @@ describe('App contract', () => {
           })
         );
       }),
-      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
+      http.get('/api/v1/feeds/generated-token', ({ request }) => {
         expect(request.headers.get('accept')).toBe('application/feed+json');
 
         return HttpResponse.json(
@@ -66,5 +66,47 @@ describe('App contract', () => {
       expect(screen.getByText('Feed preview')).toBeInTheDocument();
       expect(screen.getByText('Contract Item')).toBeInTheDocument();
     });
+  });
+
+  it('loads instance metadata from /api/v1 without trailing slash', async () => {
+    let slashlessMetadataRequests = 0;
+    let trailingSlashMetadataRequests = 0;
+
+    server.use(
+      http.get('/api/v1', () => {
+        slashlessMetadataRequests += 1;
+
+        return HttpResponse.json({
+          success: true,
+          data: {
+            api: {
+              name: 'html2rss-web API',
+              description: 'RESTful API for converting websites to RSS feeds',
+              openapi_url: 'http://example.test/api/v1/openapi.yaml',
+            },
+            instance: {
+              feed_creation: {
+                enabled: true,
+                access_token_required: true,
+              },
+            },
+          },
+        });
+      }),
+      http.get('/api/v1/', () => {
+        trailingSlashMetadataRequests += 1;
+
+        return HttpResponse.text('', { status: 404 });
+      })
+    );
+
+    render(<App />);
+
+    await screen.findByLabelText('Page URL');
+
+    expect(screen.getByRole('button', { name: 'Generate feed URL' })).toBeInTheDocument();
+    expect(screen.queryByText('Instance metadata unavailable')).not.toBeInTheDocument();
+    expect(slashlessMetadataRequests).toBeGreaterThanOrEqual(1);
+    expect(trailingSlashMetadataRequests).toBe(0);
   });
 });
