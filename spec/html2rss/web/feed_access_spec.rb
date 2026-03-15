@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/web/feed_access'
+require_relative '../../../app/web/security/feed_access'
 
 RSpec.describe Html2rss::Web::FeedAccess do
   describe '.url_allowed_for_username?' do

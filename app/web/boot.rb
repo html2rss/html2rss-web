@@ -55,7 +55,15 @@ module Html2rss
         # @return [void]
         def configure_loader(new_loader)
           new_loader.push_dir(app_root, namespace: Html2rss)
+          collapsed_web_dirs.each { |path| new_loader.collapse(path) }
           new_loader.inflector.inflect('api_v1' => 'ApiV1')
+        end
+
+        # @return [Array<String>]
+        def collapsed_web_dirs
+          %w[config domain errors http rendering request security telemetry].map do |dir|
+            File.join(app_root, 'web', dir)
+          end
         end
 
         ##

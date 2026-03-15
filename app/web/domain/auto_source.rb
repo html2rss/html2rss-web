@@ -27,7 +27,7 @@ module Html2rss
           feed_token = Auth.generate_feed_token(token_data[:username], url, strategy: strategy)
           return nil unless feed_token
 
-          FeedIdentity.metadata(metadata_attributes(name, url, token_data, strategy, feed_token))
+          Api::V1::FeedMetadata.build(metadata_attributes(name, url, token_data, strategy, feed_token))
         end
 
         private

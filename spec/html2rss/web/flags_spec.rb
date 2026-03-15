@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'climate_control'
 
-require_relative '../../../app/web/flags'
+require_relative '../../../app/web/config/flags'
 
 RSpec.describe Html2rss::Web::Flags do
   describe '.auto_source_enabled?' do

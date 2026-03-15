@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'digest'
 
-require_relative '../../../app/web/feed_identity'
+require_relative '../../../../../app'
 
-RSpec.describe Html2rss::Web::FeedIdentity do
+RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
   let(:attributes) do
     {
       name: 'Example Feed',
@@ -18,7 +19,7 @@ RSpec.describe Html2rss::Web::FeedIdentity do
 
   let(:expected_hash) do
     {
-      id: described_class.stable_id('alice', 'https://example.com/articles', 'account-token'),
+      id: Digest::SHA256.hexdigest('alice:https://example.com/articles:account-token')[0..15],
       name: 'Example Feed',
       url: 'https://example.com/articles',
       username: 'alice',
@@ -29,9 +30,9 @@ RSpec.describe Html2rss::Web::FeedIdentity do
     }
   end
 
-  describe '.metadata' do
-    it 'builds stable feed metadata from domain identity inputs' do
-      expect(described_class.metadata(attributes).to_h).to eq(expected_hash)
+  describe '.build' do
+    it 'builds stable feed metadata from creation attributes' do
+      expect(described_class.build(attributes).to_h).to eq(expected_hash)
     end
   end
 end
