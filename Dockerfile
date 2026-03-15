@@ -1,7 +1,8 @@
-ARG RUBY_BASE_IMAGE=ruby:4.0.1-alpine3.23
+ARG RUBY_BASE_IMAGE=ruby:4.0.1-alpine3.23@sha256:7d1c4a23da9b3539fdeb5f970950a8fe044a707219e546f12152b84bbd5755d1
+ARG NODE_BASE_IMAGE=node:22-alpine@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
 
 # Stage 1: Frontend Build
-FROM node:22-alpine AS frontend-builder
+FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
@@ -31,7 +32,11 @@ RUN apk add --no-cache \
   && gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
   && bundle config set --local without 'development test' \
   && bundle install --retry=5 --jobs=$(nproc) \
-  && bundle binstubs bundler html2rss
+  && bundle binstubs bundler html2rss \
+  && bundle clean --force \
+  && rm -rf /usr/local/bundle/cache \
+    /usr/local/bundle/bundler/gems/*/.git \
+    /usr/local/bundle/cache/bundler/git
 
 # Stage 3: Runtime
 FROM ${RUBY_BASE_IMAGE}
@@ -47,8 +52,15 @@ ENV PORT=4000 \
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD TOKEN="${HEALTH_CHECK_TOKEN:-CHANGE_ME_HEALTH_CHECK_TOKEN}" && \
-    curl -f -H "Authorization: Bearer ${TOKEN}" http://localhost:${PORT}/api/v1/health || exit 1
+  CMD ruby -rnet/http -e ' \
+    port = ENV.fetch("PORT", "4000") \
+    token = ENV.fetch("HEALTH_CHECK_TOKEN", "CHANGE_ME_HEALTH_CHECK_TOKEN") \
+    uri = URI("http://localhost:#{port}/api/v1/health") \
+    request = Net::HTTP::Get.new(uri) \
+    request["Authorization"] = "Bearer #{token}" \
+    response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) } \
+    exit(response.is_a?(Net::HTTPSuccess) ? 0 : 1) \
+  '
 
 ARG USER=html2rss
 ARG UID=991
@@ -56,11 +68,8 @@ ARG GID=991
 
 RUN apk add --no-cache \
   'ca-certificates>=2024' \
-  'curl>=8' \
-  'gcompat>=0' \
   'tzdata>=2024' \
-  'libxml2>=2' \
-  'libxslt>=1' \
+  && apk upgrade --no-cache zlib \
   && addgroup --gid "$GID" "$USER" \
   && adduser \
   --disabled-password \
@@ -79,7 +88,10 @@ WORKDIR /app
 USER html2rss
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
-COPY --chown=$USER:$USER . /app
+COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
+COPY --chown=$USER:$USER app ./app
+COPY --chown=$USER:$USER config ./config
+COPY --chown=$USER:$USER public ./public
 COPY --from=frontend-builder --chown=$USER:$USER /app/public/frontend ./public/frontend
 
 CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]
