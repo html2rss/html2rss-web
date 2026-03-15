@@ -15,7 +15,7 @@ export RACK_ENV=${RACK_ENV:-development}
 echo "Starting html2rss-web development environment..."
 echo "Environment: $RACK_ENV"
 echo "Ruby server: http://localhost:4000"
-echo "Astro dev server: http://localhost:4001 (with live reload)"
+echo "Vite dev server: http://localhost:4001 (with live reload)"
 echo "Main development URL: http://localhost:4001"
 echo ""
 
@@ -24,10 +24,10 @@ cleanup() {
   echo ""
   echo "Shutting down servers..."
   kill $RUBY_PID 2>/dev/null || true
-  kill $ASTRO_PID 2>/dev/null || true
+  kill $FRONTEND_PID 2>/dev/null || true
   kill $WATCHER_PID 2>/dev/null || true
   wait $RUBY_PID 2>/dev/null || true
-  wait $ASTRO_PID 2>/dev/null || true
+  wait $FRONTEND_PID 2>/dev/null || true
   wait $WATCHER_PID 2>/dev/null || true
   echo "Servers stopped."
   exit 0
@@ -44,16 +44,16 @@ RUBY_PID=$!
 # Wait a moment for Ruby server to start
 sleep 3
 
-# Start Astro dev server with API proxy
-echo "Starting Astro dev server with API proxy..."
+# Start frontend dev server with API proxy
+echo "Starting frontend dev server with API proxy..."
 cd frontend
 
-# Start Astro dev server (it will proxy API calls to Ruby server)
+# Start frontend dev server (it will proxy API calls to Ruby server)
 npm run dev &
-ASTRO_PID=$!
+FRONTEND_PID=$!
 
-# Wait a moment for Astro server to start
+# Wait a moment for the frontend server to start
 sleep 3
 
 # Wait for both processes
-wait $RUBY_PID $ASTRO_PID
+wait $RUBY_PID $FRONTEND_PID
