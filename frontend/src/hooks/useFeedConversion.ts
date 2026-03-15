@@ -85,6 +85,7 @@ export function useFeedConversion() {
 }
 
 const toErrorMessage = (error: unknown): string => {
+  if (error instanceof SyntaxError) return 'Invalid response format from feed creation API';
   if (error instanceof Error) return error.message;
   if (typeof error === 'string' && error.trim()) return error;
 

@@ -122,4 +122,29 @@ describe('App contract', () => {
 
     expect(screen.getByText('Invalid response format from API metadata')).toBeInTheDocument();
   });
+
+  it('reopens token recovery when a saved token is rejected by /api/v1/feeds', async () => {
+    authenticate();
+
+    server.use(
+      http.post('/api/v1/feeds', async () =>
+        HttpResponse.json({ success: false, error: { message: 'Unauthorized' } }, { status: 401 })
+      )
+    );
+
+    render(<App />);
+
+    await screen.findByLabelText('Page URL');
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await screen.findByText('Access token was rejected. Paste a valid token to continue.');
+
+    expect(screen.getByText('Add access token')).toBeInTheDocument();
+    expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
+    expect(window.sessionStorage.getItem('html2rss_access_token')).toBeNull();
+  });
 });

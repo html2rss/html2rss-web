@@ -60,4 +60,26 @@ describe('useFeedConversion contract', () => {
     expect(result.current.result).toBeNull();
     expect(result.current.error).toBe('URL parameter is required');
   });
+
+  it('normalizes malformed successful responses', async () => {
+    server.use(
+      http.post('/api/v1/feeds', async () =>
+        HttpResponse.text('not-json', {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+    );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await expect(
+        result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'token')
+      ).rejects.toThrow('Invalid response format from feed creation API');
+    });
+
+    expect(result.current.result).toBeNull();
+    expect(result.current.error).toBe('Invalid response format from feed creation API');
+  });
 });
