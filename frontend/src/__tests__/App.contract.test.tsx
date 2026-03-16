@@ -18,7 +18,7 @@ describe('App contract', () => {
       http.post('/api/v1/feeds', async ({ request }) => {
         const body = (await request.json()) as { url: string; strategy: string };
 
-        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'ssrf_filter' });
+        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'browserless' });
         expect(request.headers.get('authorization')).toBe(`Bearer ${token}`);
 
         return HttpResponse.json(
@@ -47,6 +47,9 @@ describe('App contract', () => {
     render(<App />);
 
     await screen.findByLabelText('Page URL');
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+    });
 
     const urlInput = screen.getByLabelText('Page URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
@@ -135,6 +138,9 @@ describe('App contract', () => {
     render(<App />);
 
     await screen.findByLabelText('Page URL');
+    await waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+    });
 
     fireEvent.input(screen.getByLabelText('Page URL'), {
       target: { value: 'https://example.com/articles' },

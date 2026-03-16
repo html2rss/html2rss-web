@@ -38,6 +38,7 @@ describe('App', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, '', 'http://localhost:3000/');
 
     mockUseAccessToken.mockReturnValue({
       token: null,
@@ -77,8 +78,8 @@ describe('App', () => {
 
     mockUseStrategies.mockReturnValue({
       strategies: [
-        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard (recommended)' },
-        { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages' },
+        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard rendering' },
+        { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages (recommended)' },
       ],
       isLoading: false,
       error: null,
@@ -99,6 +100,50 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+    });
+  });
+
+  it('prefers browserless as the default strategy when available', () => {
+    render(<App />);
+
+    return waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+    });
+  });
+
+  it('falls back to the first available strategy when browserless is unavailable', () => {
+    mockUseStrategies.mockReturnValue({
+      strategies: [{ id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard rendering' }],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    return waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('ssrf_filter');
+    });
+  });
+
+  it('auto-submits a prefilled url using the resolved default strategy', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    window.history.replaceState({}, '', 'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockConvertFeed).toHaveBeenCalledWith(
+        'https://example.com/articles',
+        'browserless',
+        'saved-token'
+      );
     });
   });
 
@@ -196,7 +241,7 @@ describe('App', () => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
       expect(mockConvertFeed).toHaveBeenCalledWith(
         'https://example.com/articles',
-        'ssrf_filter',
+        'browserless',
         'token-123'
       );
     });

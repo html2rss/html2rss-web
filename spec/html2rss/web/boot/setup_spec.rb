@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-require_relative '../../../../app/web/boot/setup'
+require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Boot::Setup do
   describe '.call!' do
@@ -11,6 +11,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_production_security!)
       allow(Html2rss::Web::Flags).to receive(:validate!)
       allow(Html2rss::RequestService).to receive(:register_strategy)
+      allow(Html2rss::RequestService).to receive(:strategy_names).and_return(%i[ssrf_filter browserless])
       allow(Html2rss::RequestService).to receive(:default_strategy_name=)
       allow(Html2rss::RequestService).to receive(:unregister_strategy)
     end
@@ -23,8 +24,16 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       expect(Html2rss::Web::Flags).to have_received(:validate!).once
       expect(Html2rss::RequestService).to have_received(:register_strategy)
         .with(:ssrf_filter, Html2rss::Web::SsrfFilterStrategy).once
-      expect(Html2rss::RequestService).to have_received(:default_strategy_name=).with(:ssrf_filter).once
+      expect(Html2rss::RequestService).to have_received(:default_strategy_name=).with(:browserless).once
       expect(Html2rss::RequestService).to have_received(:unregister_strategy).with(:faraday).once
+    end
+
+    it 'falls back to ssrf_filter when browserless is unavailable' do
+      allow(Html2rss::RequestService).to receive(:strategy_names).and_return([:ssrf_filter])
+
+      described_class.call!
+
+      expect(Html2rss::RequestService).to have_received(:default_strategy_name=).with(:ssrf_filter).once
     end
   end
 end

@@ -24,6 +24,7 @@ interface CreateFeedPanelProps {
   feedFieldErrors: FeedFieldErrors;
   conversionError: string | null;
   isConverting: boolean;
+  submitDisabled: boolean;
   strategies: Strategy[];
   strategiesLoading: boolean;
   strategiesError: string | null;
@@ -47,6 +48,7 @@ export function CreateFeedPanel({
   feedFieldErrors,
   conversionError,
   isConverting,
+  submitDisabled,
   strategies,
   strategiesLoading,
   strategiesError,
@@ -68,7 +70,7 @@ export function CreateFeedPanel({
   const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const strategyOptionLabel = (strategy: Strategy) => {
     if (strategy.id === 'ssrf_filter') return 'Standard rendering';
-    if (strategy.id === 'browserless') return 'JavaScript pages';
+    if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
     return strategy.display_name;
   };
 
@@ -109,7 +111,7 @@ export function CreateFeedPanel({
           inputRef={urlInputRef}
           actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
-          disabled={isConverting || !feedCreationEnabled || showTokenPrompt}
+          disabled={submitDisabled}
           error={feedFieldErrors.url}
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
