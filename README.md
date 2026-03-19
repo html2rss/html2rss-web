@@ -15,7 +15,7 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 - Responsive Preact interface for demo, sign-in, conversion, and result flows.
 - Automatic source discovery with token-scoped permissions.
 - Signed public feed URLs that work in standard RSS readers.
-- Built-in SSRF defences, input validation, and HMAC-protected tokens.
+- Built-in URL validation, scoped feed access controls, and HMAC-protected tokens.
 
 ## Architecture
 

@@ -48,7 +48,7 @@ Frontend verification lives at `http://127.0.0.1:4001/` while the dev container 
 - Keep route composition in `app/web/routes/**`.
 - Keep `/api/v1` contract-specific code in `app/web/api/**`.
 - Keep feed fetching, caching, and orchestration in `app/web/feeds/**`.
-- Keep auth, token handling, SSRF strategy, and security logging in `app/web/security/**`.
+- Keep auth, token handling, URL validation, and security logging in `app/web/security/**`.
 - Keep request-scoped context in `app/web/request/**`.
 - Keep boot/runtime setup in `app/web/boot/**`.
 - Do not create generic buckets such as `services`, `helpers`, `utils`, or `concerns`.

@@ -77,9 +77,9 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await expect(
-        result.current.convertFeed('https://example.com', 'faraday', 'testtoken')
-      ).rejects.toThrow('Bad Request');
+      await expect(result.current.convertFeed('https://example.com', 'faraday', 'testtoken')).rejects.toThrow(
+        'Bad Request'
+      );
     });
 
     expect(result.current.isConverting).toBe(false);
@@ -93,9 +93,9 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await expect(
-        result.current.convertFeed('https://example.com', 'faraday', 'testtoken')
-      ).rejects.toThrow('Network error');
+      await expect(result.current.convertFeed('https://example.com', 'faraday', 'testtoken')).rejects.toThrow(
+        'Network error'
+      );
     });
 
     expect(result.current.isConverting).toBe(false);

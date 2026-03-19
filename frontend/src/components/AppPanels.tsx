@@ -158,7 +158,11 @@ export function CreateFeedPanel({
                   </p>
                 ))}
                 <p>
-                  <a href="https://html2rss.github.io/web-application/how-to/use-included-configs/" target="_blank" rel="noopener noreferrer">
+                  <a
+                    href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Learn how included configs work.
                   </a>
                 </p>

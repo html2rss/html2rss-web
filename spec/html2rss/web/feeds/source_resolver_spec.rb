@@ -62,7 +62,9 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       it 'returns a not-found error when the static feed is unavailable' do
-        allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy')
+        allow(Html2rss::Web::LocalConfig)
+          .to receive(:find)
+          .with('legacy')
           .and_raise(Html2rss::Web::LocalConfig::NotFound, 'missing')
 
         expect { described_class.call(feed_request) }

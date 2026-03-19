@@ -23,9 +23,13 @@ RSpec.describe Html2rss::Web::LocalConfig do
     end
 
     it 'falls back to embedded configs when the feed is not in local yaml' do
-      stub_const('Html2rss::Configs', Module.new)
+      stub_const('Html2rss::Configs', Module.new do
+        def self.find_by_name(_name); end
+      end)
       stub_const('Html2rss::Configs::ConfigNotFound', Class.new(StandardError))
-      allow(Html2rss::Configs).to receive(:find_by_name).with('support.apple.com/en_gb_ht201222')
+      allow(Html2rss::Configs)
+        .to receive(:find_by_name)
+        .with('support.apple.com/en_gb_ht201222')
         .and_return({ channel: { title: 'Apple security releases' } })
       allow(described_class).to receive(:snapshot)
         .and_return(Html2rss::Web::ConfigSnapshot::Snapshot.new(global: {}, feeds: {}, accounts: []))

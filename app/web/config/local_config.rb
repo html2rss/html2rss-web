@@ -97,8 +97,8 @@ module Html2rss
           deep_dup(Html2rss::Configs.find_by_name(normalized_name))
         rescue Html2rss::Configs::ConfigNotFound
           nil
-        rescue RuntimeError => e
-          return nil if e.message == 'name must be in folder/file format'
+        rescue RuntimeError => error
+          return nil if error.message == 'name must be in folder/file format'
 
           raise
         end

@@ -160,7 +160,7 @@ RSpec.describe Html2rss::Web::App do
 
       get '/missing-feed'
 
-      expect(last_response.status).to eq(500)
+      expect(last_response.status).to eq(404)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
       expect(last_response.body).to eq('<error/>')
     end
@@ -169,8 +169,15 @@ RSpec.describe Html2rss::Web::App do
       get '/missing-feed.json'
 
       expect(json_feed_error_tuple).to eq(
-        [500, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error',
-                                         'description' => 'Failed to generate feed: Internal Server Error' }]
+        [
+          404,
+          'application/feed+json',
+          {
+            'version' => 'https://jsonfeed.org/version/1.1',
+            'title' => 'Error',
+            'description' => "Failed to generate feed: Feed 'missing-feed' is not available on this instance"
+          }
+        ]
       )
     end
 
