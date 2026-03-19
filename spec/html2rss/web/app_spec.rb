@@ -156,13 +156,14 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'renders XML error when static feed generation fails' do
-      allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
-
       get '/missing-feed'
+      xml = Nokogiri::XML(last_response.body)
 
       expect(last_response.status).to eq(404)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
-      expect(last_response.body).to eq('<error/>')
+      expect(xml.at_xpath('/rss/channel/title')&.text).to eq('Error')
+      expect(xml.at_xpath('/rss/channel/description')&.text)
+        .to eq("Failed to generate feed: Feed 'missing-feed' is not available on this instance")
     end
 
     it 'renders JSON Feed-shaped errors when static json feed generation fails' do
