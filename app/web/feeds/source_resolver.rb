@@ -36,6 +36,8 @@ module Html2rss
               generator_input: generator_input,
               ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
+          rescue LocalConfig::NotFound
+            raise Html2rss::Web::NotFoundError, "Feed '#{feed_request.feed_name}' is not available on this instance"
           end
 
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
@@ -69,7 +71,7 @@ module Html2rss
           def static_generator_input(config, params)
             generator_input = config.dup
             generator_input[:params] = merged_static_params(config, params)
-            generator_input[:strategy] ||= Html2rss::RequestService.default_strategy_name
+            generator_input[:strategy] ||= :faraday
             generator_input
           end
 

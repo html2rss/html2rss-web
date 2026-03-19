@@ -27,7 +27,7 @@ describe('useFeedConversion', () => {
       id: 'test-id',
       name: 'Test Feed',
       url: 'https://example.com',
-      strategy: 'ssrf_filter',
+      strategy: 'faraday',
       feed_token: 'test-token',
       public_url: 'https://example.com/feed.xml',
       json_public_url: 'https://example.com/feed.json',
@@ -51,7 +51,7 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken');
+      await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
     });
 
     expect(result.current.isConverting).toBe(false);
@@ -78,7 +78,7 @@ describe('useFeedConversion', () => {
 
     await act(async () => {
       await expect(
-        result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken')
+        result.current.convertFeed('https://example.com', 'faraday', 'testtoken')
       ).rejects.toThrow('Bad Request');
     });
 
@@ -94,7 +94,7 @@ describe('useFeedConversion', () => {
 
     await act(async () => {
       await expect(
-        result.current.convertFeed('https://example.com', 'ssrf_filter', 'testtoken')
+        result.current.convertFeed('https://example.com', 'faraday', 'testtoken')
       ).rejects.toThrow('Network error');
     });
 

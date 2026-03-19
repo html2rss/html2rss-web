@@ -13,7 +13,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
         feed: Object.new,
         site_title: 'Example',
         url: 'https://example.com',
-        strategy: 'ssrf_filter'
+        strategy: 'faraday'
       ),
       message: nil,
       ttl_seconds: 60,

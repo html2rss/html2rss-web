@@ -9,7 +9,7 @@ describe('ResultDisplay', () => {
     id: 'test-id',
     name: 'Test Feed',
     url: 'https://example.com',
-    strategy: 'ssrf_filter',
+    strategy: 'faraday',
     feed_token: 'test-feed-token',
     public_url: 'https://example.com/feed.xml',
     json_public_url: 'https://example.com/feed.json',

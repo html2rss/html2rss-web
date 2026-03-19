@@ -11,7 +11,7 @@ RSpec.describe Html2rss::Web::Feeds::RssRenderer do
       feed: Object.new,
       site_title: 'https://example.com/articles',
       url: 'https://example.com/articles',
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     )
   end
   let(:empty_result) do
@@ -37,7 +37,7 @@ RSpec.describe Html2rss::Web::Feeds::RssRenderer do
   def expected_builder_args
     {
       url: 'https://example.com/articles',
-      strategy: 'ssrf_filter',
+      strategy: 'faraday',
       site_title: 'https://example.com/articles'
     }
   end

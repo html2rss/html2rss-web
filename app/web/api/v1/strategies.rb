@@ -33,7 +33,7 @@ module Html2rss
 
             def display_name_for(name)
               case name.to_s
-              when 'ssrf_filter' then 'Standard rendering'
+              when 'faraday' then 'Standard rendering'
               when 'browserless' then 'JavaScript pages (recommended)'
               else name.to_s.split('_').map(&:capitalize).join(' ')
               end

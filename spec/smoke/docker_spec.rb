@@ -71,7 +71,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
   it 'creates a feed when provided with valid credentials', :aggregate_failures do
     payload = {
       url: feed_url,
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     }
 
     response, body = post_json('/api/v1/feeds', body: payload)
@@ -84,7 +84,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
 
     payload = {
       url: feed_url,
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     }
 
     response, body = post_json('/api/v1/feeds',
@@ -101,7 +101,7 @@ RSpec.describe 'Dockerized API smoke test', :docker do
 
     payload = {
       url: feed_url,
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     }
 
     response, body = post_json('/api/v1/feeds',
