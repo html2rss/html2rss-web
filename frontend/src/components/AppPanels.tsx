@@ -71,7 +71,7 @@ export function CreateFeedPanel({
   const urlInputRef = useRef<HTMLInputElement | null>(null);
   const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const strategyOptionLabel = (strategy: Strategy) => {
-    if (strategy.id === 'faraday') return 'Standard rendering';
+    if (strategy.id === 'faraday') return 'Default';
     if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
     return strategy.display_name;
   };

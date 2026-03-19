@@ -79,7 +79,7 @@ describe('App', () => {
 
     mockUseStrategies.mockReturnValue({
       strategies: [
-        { id: 'faraday', name: 'faraday', display_name: 'Standard rendering' },
+        { id: 'faraday', name: 'faraday', display_name: 'Default' },
         { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages (recommended)' },
       ],
       isLoading: false,
@@ -114,7 +114,7 @@ describe('App', () => {
 
   it('falls back to the first available strategy when browserless is unavailable', () => {
     mockUseStrategies.mockReturnValue({
-      strategies: [{ id: 'faraday', name: 'faraday', display_name: 'Standard rendering' }],
+      strategies: [{ id: 'faraday', name: 'faraday', display_name: 'Default' }],
       isLoading: false,
       error: null,
     });

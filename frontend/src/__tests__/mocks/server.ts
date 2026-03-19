@@ -29,7 +29,7 @@ export const server = setupServer(
           {
             id: 'faraday',
             name: 'faraday',
-            display_name: 'Standard rendering',
+            display_name: 'Default',
           },
           {
             id: 'browserless',

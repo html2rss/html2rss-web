@@ -7,12 +7,11 @@ module Html2rss
       # Applies boot-time runtime configuration outside the Roda class body.
       module Setup
         class << self
-          # Validates environment configuration and wires the request service.
+          # Validates environment configuration.
           #
           # @return [void]
           def call!
             validate_environment!
-            configure_request_service!
           end
 
           private
@@ -22,11 +21,6 @@ module Html2rss
             EnvironmentValidator.validate_environment!
             EnvironmentValidator.validate_production_security!
             Flags.validate!
-          end
-
-          # @return [void]
-          def configure_request_service!
-            nil
           end
         end
       end
