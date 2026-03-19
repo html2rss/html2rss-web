@@ -92,6 +92,7 @@ describe('App contract', () => {
                 enabled: true,
                 access_token_required: true,
               },
+              featured_feeds: [],
             },
           },
         });

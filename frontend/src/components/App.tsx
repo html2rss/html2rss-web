@@ -74,6 +74,7 @@ export function App() {
   }, [strategies, feedFormData.strategy]);
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
+  const featuredFeeds = metadata?.instance.featured_feeds ?? [];
   const submitDisabled = isConverting || strategiesLoading || !feedCreation.enabled || showTokenPrompt;
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
@@ -87,7 +88,7 @@ export function App() {
   };
 
   const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Start here for most pages.';
+    if (strategy.id === 'faraday') return 'Start here for most pages.';
     if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
     return strategy.name;
   };
@@ -234,6 +235,7 @@ export function App() {
             strategiesLoading={strategiesLoading}
             strategiesError={strategiesError}
             feedCreationEnabled={feedCreation.enabled}
+            featuredFeeds={featuredFeeds}
             accessTokenRequired={feedCreation.access_token_required}
             hasAccessToken={hasToken}
             tokenDraft={tokenDraft}

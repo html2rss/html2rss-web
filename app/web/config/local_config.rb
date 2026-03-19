@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 require 'yaml'
+begin
+  require 'html2rss/configs'
+rescue LoadError
+  nil
+end
 
 module Html2rss
   module Web
@@ -27,10 +32,8 @@ module Html2rss
         # @return [Hash<Symbol, Any>]
         def find(name)
           normalized_name = normalize_name(name)
-          config = snapshot.feeds.fetch(normalized_name.to_sym) do
-            raise NotFound, "Did not find local feed config at '#{normalized_name}'"
-          end
-          config_hash = deep_dup(config.raw)
+          config_hash = local_feed_config(normalized_name) || embedded_feed_config(normalized_name)
+          raise NotFound, "Did not find local feed config at '#{normalized_name}'" unless config_hash
 
           apply_global_defaults(config_hash)
         end
@@ -76,6 +79,30 @@ module Html2rss
 
         private
 
+        # @param normalized_name [String]
+        # @return [Hash{Symbol=>Object}, nil]
+        def local_feed_config(normalized_name)
+          config = snapshot.feeds[normalized_name.to_sym]
+          return nil unless config
+
+          deep_dup(config.raw)
+        end
+
+        # @param normalized_name [String]
+        # @return [Hash{Symbol=>Object}, nil]
+        def embedded_feed_config(normalized_name)
+          return nil unless defined?(Html2rss::Configs)
+          return nil unless normalized_name.include?('/')
+
+          deep_dup(Html2rss::Configs.find_by_name(normalized_name))
+        rescue Html2rss::Configs::ConfigNotFound
+          nil
+        rescue RuntimeError => e
+          return nil if e.message == 'name must be in folder/file format'
+
+          raise
+        end
+
         # Applies global defaults only when feed-level keys are absent.
         #
         # @param config [Hash{Symbol=>Object}]
@@ -90,9 +117,9 @@ module Html2rss
         end
 
         # @param name [String, Symbol, #to_s]
-        # @return [String] basename without extension for feed lookup.
+        # @return [String] path without feed extension for feed lookup.
         def normalize_name(name)
-          File.basename(name.to_s).sub(FEED_EXTENSION_PATTERN, '')
+          name.to_s.delete_prefix('/').sub(FEED_EXTENSION_PATTERN, '')
         end
 
         # Deep-duplicates nested config structures to avoid mutating shared data.

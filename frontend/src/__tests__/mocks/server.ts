@@ -16,6 +16,7 @@ export const server = setupServer(
             enabled: true,
             access_token_required: true,
           },
+          featured_feeds: [],
         },
       },
     });
@@ -26,8 +27,8 @@ export const server = setupServer(
       data: {
         strategies: [
           {
-            id: 'ssrf_filter',
-            name: 'ssrf_filter',
+            id: 'faraday',
+            name: 'faraday',
             display_name: 'Standard rendering',
           },
           {
@@ -64,7 +65,7 @@ export function buildFeedResponse(overrides: FeedResponseOverrides = {}) {
         id: overrides.id ?? 'feed-123',
         name: overrides.name ?? 'Example Feed',
         url: overrides.url ?? 'https://example.com/articles',
-        strategy: overrides.strategy ?? 'ssrf_filter',
+        strategy: overrides.strategy ?? 'faraday',
         feed_token: overrides.feed_token ?? 'example-token',
         public_url: overrides.public_url ?? '/api/v1/feeds/example-token',
         json_public_url: overrides.json_public_url ?? '/api/v1/feeds/example-token.json',

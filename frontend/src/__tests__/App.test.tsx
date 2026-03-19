@@ -61,6 +61,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
+          featured_feeds: [],
         },
       },
       isLoading: false,
@@ -78,7 +79,7 @@ describe('App', () => {
 
     mockUseStrategies.mockReturnValue({
       strategies: [
-        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard rendering' },
+        { id: 'faraday', name: 'faraday', display_name: 'Standard rendering' },
         { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages (recommended)' },
       ],
       isLoading: false,
@@ -113,7 +114,7 @@ describe('App', () => {
 
   it('falls back to the first available strategy when browserless is unavailable', () => {
     mockUseStrategies.mockReturnValue({
-      strategies: [{ id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard rendering' }],
+      strategies: [{ id: 'faraday', name: 'faraday', display_name: 'Standard rendering' }],
       isLoading: false,
       error: null,
     });
@@ -121,7 +122,7 @@ describe('App', () => {
     render(<App />);
 
     return waitFor(() => {
-      expect(screen.getByRole('combobox')).toHaveValue('ssrf_filter');
+      expect(screen.getByRole('combobox')).toHaveValue('faraday');
     });
   });
 
@@ -168,6 +169,42 @@ describe('App', () => {
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
+  it('promotes included feeds when feed creation is disabled', () => {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'http://example.test/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: false,
+            access_token_required: false,
+          },
+          featured_feeds: [
+            {
+              path: '/microsoft.com/azure-products.rss',
+              title: 'Azure product updates',
+              description: 'Follow Microsoft Azure product announcements from your own instance.',
+            },
+          ],
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('Try a working included feed')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+      'href',
+      '/microsoft.com/azure-products.rss'
+    );
+    expect(screen.getByText('Custom feed generation is disabled for this instance.')).toBeInTheDocument();
+  });
+
   it('renders the result panel when a feed is available', async () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
@@ -175,7 +212,7 @@ describe('App', () => {
         id: 'feed-123',
         name: 'Example Feed',
         url: 'https://example.com/articles',
-        strategy: 'ssrf_filter',
+        strategy: 'faraday',
         feed_token: 'example-token',
         public_url: '/api/v1/feeds/example-token',
         json_public_url: '/api/v1/feeds/example-token.json',

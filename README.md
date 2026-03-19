@@ -38,6 +38,33 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
   -d '{"url":"https://example.com","name":"Example Feed"}'
 ```
 
+## Trial Run (Docker Pull And Run)
+
+The published image already includes a sample `config/feeds.yml`, so you can try the app without creating or mounting one first.
+
+```bash
+docker run --rm \
+  -p 4000:4000 \
+  -e RACK_ENV=production \
+  -e HTML2RSS_SECRET_KEY=$(openssl rand -hex 32) \
+  html2rss/web
+```
+
+Then open:
+
+- `http://localhost:4000/` for the web UI
+- `http://localhost:4000/microsoft.com/azure-products.rss` for a built-in Azure updates feed
+- `http://localhost:4000/phys.org/weekly.rss` for a built-in science headlines feed
+- `http://localhost:4000/softwareleadweekly.com/issues.rss` for a built-in newsletter archive feed
+
+This trial run is intentionally minimal:
+
+- it uses the image's bundled config set, including embedded `html2rss-configs` feeds
+- automatic feed generation stays disabled by default
+- Browserless is not wired in yet
+
+Move to Docker Compose when you want Browserless, update automation, or extra local feed overrides in `config/feeds.yml`.
+
 ## Deploy (Docker Compose)
 
 1. Generate a key: `openssl rand -hex 32`.
@@ -45,6 +72,9 @@ curl -X POST "https://your-domain.com/api/v1/feeds" \
 3. Start: `docker-compose up`.
 
 UI + API run on `http://localhost:4000`. The app exits if the secret key is missing.
+
+The default compose file now uses the bundled config set.
+If you want to add or override static feeds locally, uncomment the bind mount in [docker-compose.yml](docker-compose.yml) and provide `./config/feeds.yml`.
 
 ## Development (Dev Container)
 

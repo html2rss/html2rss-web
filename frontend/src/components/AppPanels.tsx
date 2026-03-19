@@ -29,6 +29,7 @@ interface CreateFeedPanelProps {
   strategiesLoading: boolean;
   strategiesError: string | null;
   feedCreationEnabled: boolean;
+  featuredFeeds: Array<{ path: string; title: string; description: string }>;
   accessTokenRequired: boolean;
   hasAccessToken: boolean;
   tokenDraft: string;
@@ -53,6 +54,7 @@ export function CreateFeedPanel({
   strategiesLoading,
   strategiesError,
   feedCreationEnabled,
+  featuredFeeds,
   accessTokenRequired,
   hasAccessToken,
   tokenDraft,
@@ -69,7 +71,7 @@ export function CreateFeedPanel({
   const urlInputRef = useRef<HTMLInputElement | null>(null);
   const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const strategyOptionLabel = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Standard rendering';
+    if (strategy.id === 'faraday') return 'Standard rendering';
     if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
     return strategy.display_name;
   };
@@ -142,7 +144,27 @@ export function CreateFeedPanel({
         )}
 
         {!feedCreationEnabled && (
-          <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+          <>
+            <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+            {featuredFeeds.length > 0 && (
+              <div class="notice" role="status" aria-label="Included feeds">
+                <div class="notice__title">Try a working included feed</div>
+                <p>Start with one of the embedded configs from this instance:</p>
+                {featuredFeeds.map((feed) => (
+                  <p key={feed.path}>
+                    <a href={feed.path}>{feed.title}</a>
+                    {' - '}
+                    {feed.description}
+                  </p>
+                ))}
+                <p>
+                  <a href="https://html2rss.github.io/web-application/how-to/use-included-configs/" target="_blank" rel="noopener noreferrer">
+                    Learn how included configs work.
+                  </a>
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
