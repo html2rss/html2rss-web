@@ -206,6 +206,11 @@ describe('App', () => {
   });
 
   it('renders the result panel when a feed is available', async () => {
+    vi.spyOn(window, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [] }),
+    } as Response);
+
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: {

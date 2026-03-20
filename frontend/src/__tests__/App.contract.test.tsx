@@ -35,7 +35,14 @@ describe('App contract', () => {
 
         return HttpResponse.json(
           {
-            items: [{ title: 'Contract Item' }],
+            items: [
+              {
+                title: 'Contract Item',
+                content_text: 'Contract preview excerpt.',
+                url: 'https://example.com/contract-item',
+                date_published: '2024-01-01T00:00:00Z',
+              },
+            ],
           },
           {
             headers: { 'content-type': 'application/feed+json' },
@@ -57,16 +64,18 @@ describe('App contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
+      expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'JSON Feed' })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Open JSON Feed' })).toHaveAttribute(
         'href',
         'http://localhost:3000/api/v1/feeds/generated-token.json'
       );
       expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-      expect(screen.getByText('Feed preview')).toBeInTheDocument();
+      expect(screen.getByText('Preview')).toBeInTheDocument();
+      expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
       expect(screen.getByText('Contract Item')).toBeInTheDocument();
     });
   });
