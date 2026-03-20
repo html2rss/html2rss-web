@@ -63,7 +63,7 @@ This trial run is intentionally minimal:
 - automatic feed generation stays disabled by default
 - Browserless is not wired in yet
 
-Move to Docker Compose when you want Browserless, update automation, or extra local feed overrides in `config/feeds.yml`.
+Use Docker Compose for Browserless, auto-updates, or local feed overrides.
 
 ## Deploy (Docker Compose)
 
