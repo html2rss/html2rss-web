@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
   --font-family-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
-  --font-family-display: "Fraunces", "Iowan Old Style", serif;
+  --font-family-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
   --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-size-00: 0.8125rem;
   --font-size-0: 0.9375rem;
@@ -17,17 +17,28 @@
   --space-6: 2rem;
   --space-7: 3rem;
   --border-width: 1px;
+  --border-default: var(--border-width) solid var(--border-subtle);
   --radius-sm: 0.35rem;
   --radius-md: 0.7rem;
+  --radius-lg: 0.95rem;
+  --eyebrow-letter-spacing: 0.08em;
+  --brand-lockup-gap: 0.3rem;
+  --brand-lockup-mark-size: 1.7rem;
+  --brand-lockup-mark-padding: 0.3rem;
+  --brand-lockup-mark-gap: 0.18rem;
+  --brand-lockup-mark-radius: 0.45rem;
+  --brand-lockup-line-1-height: 0.22rem;
+  --brand-lockup-line-2-width: 70%;
+  --brand-lockup-line-3-width: 46%;
+  --brand-lockup-wordmark-size: 0.96rem;
   --bg-page: #050505;
   --bg-page-muted: #090909;
   --bg-input: #111111;
   --bg-input-strong: #151515;
   --bg-success: rgba(110, 231, 183, 0.08);
   --bg-danger: rgba(248, 113, 113, 0.1);
-  --surface-1: rgba(255, 255, 255, 0.015);
-  --surface-2: rgba(255, 255, 255, 0.03);
-  --surface-3: rgba(255, 255, 255, 0.04);
+  --surface-base: rgba(255, 255, 255, 0.02);
+  --surface-elevated: rgba(255, 255, 255, 0.04);
   --border-muted: rgba(255, 255, 255, 0.12);
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.24);
@@ -110,9 +121,10 @@ textarea {
 .page-main {
   width: min(100%, var(--page-max-width));
   margin: 0 auto;
-  padding: clamp(0.85rem, 3vh, 2rem) var(--space-4) var(--space-5);
+  padding: clamp(0.85rem, 3vh, 2rem) clamp(var(--space-3), 3vw, var(--space-4)) var(--space-5);
 }
 
+/* Layout Engine */
 .workspace-shell,
 .form-shell,
 .field-stack,
@@ -123,7 +135,8 @@ textarea {
 .utility-strip__items,
 .result-actions,
 .status-card,
-.app-footer__inner {
+.app-footer__inner,
+.field-block {
   display: grid;
 }
 
@@ -175,17 +188,17 @@ textarea {
 .brand-lockup {
   display: inline-grid;
   justify-items: center;
-  gap: 0.3rem;
+  gap: var(--brand-lockup-gap);
 }
 
 .brand-lockup__mark {
-  width: 1.7rem;
-  height: 1.7rem;
-  padding: 0.3rem;
+  width: var(--brand-lockup-mark-size);
+  height: var(--brand-lockup-mark-size);
+  padding: var(--brand-lockup-mark-padding);
   display: grid;
-  gap: 0.18rem;
+  gap: var(--brand-lockup-mark-gap);
   border: var(--border-width) solid var(--border-muted);
-  border-radius: 0.45rem;
+  border-radius: var(--brand-lockup-mark-radius);
   background: transparent;
 }
 
@@ -196,24 +209,24 @@ textarea {
 
 .brand-lockup__mark span:nth-child(1) {
   width: 100%;
-  height: 0.22rem;
+  height: var(--brand-lockup-line-1-height);
 }
 
 .brand-lockup__mark span:nth-child(2) {
-  width: 70%;
-  height: 0.22rem;
+  width: var(--brand-lockup-line-2-width);
+  height: var(--brand-lockup-line-1-height);
 }
 
 .brand-lockup__mark span:nth-child(3) {
-  width: 46%;
-  height: 0.22rem;
+  width: var(--brand-lockup-line-3-width);
+  height: var(--brand-lockup-line-1-height);
 }
 
 .brand-lockup__wordmark {
   color: var(--text-strong);
   font-family: var(--font-family-display);
-  font-size: 0.96rem;
-  font-weight: 700;
+  font-size: var(--brand-lockup-wordmark-size);
+  font-weight: 600;
   letter-spacing: 0.01em;
 }
 
@@ -241,10 +254,13 @@ textarea {
 
 .result-shell {
   gap: var(--section-gap);
-  --input-hero-min-height: 3.85rem;
-  --input-hero-padding-inline: 1.35rem 5.2rem;
-  --input-hero-font-size: clamp(1rem, 1.8vw, 1.22rem);
-  --input-hero-letter-spacing: -0.01em;
+}
+
+.result-shell .dominant-field {
+  --input-lg-min-height: 3.85rem;
+  --input-lg-padding-inline: 1.35rem 5.2rem;
+  --input-lg-font-size: clamp(1rem, 1.8vw, 1.22rem);
+  --input-lg-letter-spacing: -0.01em;
   --dominant-field-action-top: 0.48rem;
   --dominant-field-action-right: 0.48rem;
   --dominant-field-action-text-min-width: 4.2rem;
@@ -256,12 +272,10 @@ textarea {
 .dominant-field {
   position: relative;
   width: 100%;
-  display: grid;
   align-items: center;
 }
 
 .field-block {
-  display: grid;
   gap: var(--space-2);
 }
 
@@ -291,13 +305,9 @@ textarea {
 .result-preview__label {
   color: var(--eyebrow-color);
   font-size: var(--font-size-00);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--eyebrow-letter-spacing);
   text-transform: uppercase;
   font-weight: 600;
-}
-
-.result-kicker {
-  letter-spacing: 0.1em;
 }
 
 .field-label--ghost {
@@ -335,7 +345,7 @@ textarea {
   padding: 0.95rem 1.1rem;
   border: var(--border-width) solid var(--border-muted);
   border-radius: 999px;
-  background: var(--bg-input);
+  background: var(--surface-elevated);
   color: var(--text-strong);
   transition:
     border-color var(--transition-fast),
@@ -362,15 +372,14 @@ a:focus-visible {
   font-family: var(--font-family-mono);
 }
 
-.input--hero {
-  min-height: var(--input-hero-min-height, 4.5rem);
-  padding-inline: var(--input-hero-padding-inline, 1.35rem 4.9rem);
-  font-size: var(--input-hero-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
-  letter-spacing: var(--input-hero-letter-spacing, -0.03em);
+.input--lg {
+  min-height: var(--input-lg-min-height, 4.5rem);
+  padding-inline: var(--input-lg-padding-inline, 1.35rem 4.9rem);
+  font-size: var(--input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
+  letter-spacing: var(--input-lg-letter-spacing, -0.03em);
 }
 
-.input--subtle,
-.input--select {
+.input--minimal {
   width: auto;
   min-width: min(100%, 18rem);
   background: transparent;
@@ -382,8 +391,7 @@ a:focus-visible {
   padding: 0;
 }
 
-.input:disabled,
-.input--select:disabled {
+.input:disabled {
   cursor: not-allowed;
 }
 
@@ -483,7 +491,7 @@ a:focus-visible {
 
 .btn--ghost {
   border-color: var(--border-subtle);
-  background: var(--surface-3);
+  background: var(--surface-elevated);
 }
 
 .btn--ghost:hover:not(:disabled) {
@@ -512,10 +520,6 @@ a:focus-visible {
   gap: var(--space-2);
   width: min(100%, 38rem);
   margin: 0 auto;
-  padding: var(--space-3) var(--space-4);
-  border: var(--border-width) solid var(--border-muted);
-  border-radius: var(--radius-md);
-  background: var(--bg-page-muted);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -622,7 +626,7 @@ a:focus-visible {
   min-height: 3.5rem;
   padding-inline: 1.1rem;
   border-color: var(--border-muted);
-  background: var(--surface-2);
+  background: var(--surface-elevated);
 }
 
 .field-block--token .input::placeholder {
@@ -664,7 +668,7 @@ a:focus-visible {
 .result-preview {
   justify-items: start;
   padding-top: var(--section-gap);
-  border-top: var(--border-width) solid var(--border-subtle);
+  border-top: var(--border-default);
 }
 
 .result-preview__intro {
@@ -684,7 +688,7 @@ a:focus-visible {
 
 .preview-card {
   width: 100%;
-  padding: 1.15rem;
+  padding: clamp(1rem, 3vw, 1.15rem);
 }
 
 .preview-card__title {
@@ -744,18 +748,25 @@ a:focus-visible {
   gap: var(--space-3);
   justify-items: center;
   text-align: center;
-  padding: var(--space-5);
-  border: var(--border-width) solid var(--border-muted);
-  border-radius: var(--radius-md);
-  background: var(--surface-1);
 }
 
 .ui-card {
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: calc(var(--radius-md) + 0.15rem);
+  border: var(--border-default);
+  border-radius: var(--radius-lg);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
-    var(--surface-1);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)), var(--surface-base);
+}
+
+.ui-card--padded {
+  padding: clamp(var(--space-3), 4vw, var(--space-4));
+}
+
+.ui-card--roomy {
+  padding: clamp(var(--space-4), 5vw, var(--space-6));
+}
+
+.ui-card--notice {
+  border-radius: var(--radius-md);
 }
 
 .status-card p {
@@ -806,10 +817,6 @@ a:focus-visible {
     padding-top: clamp(1rem, 6vh, 4rem);
   }
 
-  .result-actions {
-    grid-template-columns: none;
-  }
-
   .utility-strip__items {
     grid-auto-flow: column;
     gap: var(--space-4);
@@ -817,15 +824,11 @@ a:focus-visible {
 }
 
 @media (max-width: 47.9375rem) {
-  .page-main {
-    padding-inline: var(--space-3);
-  }
-
   .workspace-shell {
     gap: var(--space-4);
   }
 
-  .input--hero {
+  .input--lg {
     min-height: 4rem;
     padding-right: 4.2rem;
   }

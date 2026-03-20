@@ -118,11 +118,11 @@ export function CreateFeedPanel({
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
 
-        <label class="field-block field-block--select field-block--subtle" htmlFor="strategy">
+        <label class="field-block field-block--select" htmlFor="strategy">
           <select
             id="strategy"
             name="strategy"
-            class="input input--select input--subtle"
+            class="input input--minimal"
             value={feedFormData.strategy}
             disabled={strategiesLoading || showTokenPrompt}
             onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
@@ -147,7 +147,11 @@ export function CreateFeedPanel({
           <>
             <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
             {featuredFeeds.length > 0 && (
-              <div class="notice" role="status" aria-label="Included feeds">
+              <div
+                class="ui-card ui-card--notice ui-card--padded notice"
+                role="status"
+                aria-label="Included feeds"
+              >
                 <div class="notice__title">Try a working included feed</div>
                 <p>Start with one of the embedded configs from this instance:</p>
                 {featuredFeeds.map((feed) => (
@@ -184,7 +188,7 @@ export function CreateFeedPanel({
               id="access-token"
               name="access-token"
               type="password"
-              class="input input--mono input--subtle"
+              class="input input--mono input--minimal"
               aria-label="Access token"
               placeholder="Paste access token"
               autocomplete="off"
@@ -222,14 +226,14 @@ export function CreateFeedPanel({
       )}
 
       {conversionError && (
-        <div class="notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice notice--error" role="alert">
           <div class="notice__title">Feed generation failed</div>
           <p>{conversionError}</p>
         </div>
       )}
 
       {feedFieldErrors.form && (
-        <div class="notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice notice--error" role="alert">
           <p>{feedFieldErrors.form}</p>
         </div>
       )}

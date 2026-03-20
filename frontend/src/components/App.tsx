@@ -196,7 +196,7 @@ export function App() {
     return (
       <section class="workspace-shell workspace-shell--centered workspace-shell--loading">
         <BrandLockup />
-        <div class="status-card" aria-live="polite">
+        <div class="ui-card ui-card--notice ui-card--roomy status-card" aria-live="polite">
           <div class="status-card__spinner" aria-hidden="true" />
           <div>
             <strong>Loading instance</strong>
@@ -214,7 +214,7 @@ export function App() {
       </header>
 
       {(metadataError || tokenStateError) && (
-        <section class="notice notice--error" role="alert">
+        <section class="ui-card ui-card--notice ui-card--padded notice notice--error" role="alert">
           <div class="notice__title">Instance metadata unavailable</div>
           <p>{metadataError ?? tokenStateError}</p>
         </section>

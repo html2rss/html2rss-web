@@ -13,37 +13,79 @@
           :root {
             color-scheme: dark;
             --font-family-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
-            --font-family-display: "Iowan Old Style", "Georgia", serif;
+            --font-family-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+            --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
             --font-size-00: 0.8125rem;
             --font-size-0: 0.9375rem;
             --font-size-1: 1rem;
+            --font-size-2: 1.125rem;
+            --line-height-tight: 1.1;
+            --line-height-base: 1.5;
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.5rem;
+            --space-6: 2rem;
+            --space-7: 3rem;
+            --border-width: 1px;
+            --border-default: var(--border-width) solid var(--border-subtle);
+            --radius-sm: 0.35rem;
             --radius-md: 0.7rem;
+            --radius-lg: 0.95rem;
+            --eyebrow-letter-spacing: 0.08em;
+            --brand-lockup-gap: 0.3rem;
+            --brand-lockup-mark-size: 1.7rem;
+            --brand-lockup-mark-padding: 0.3rem;
+            --brand-lockup-mark-gap: 0.18rem;
+            --brand-lockup-mark-radius: 0.45rem;
+            --brand-lockup-line-1-height: 0.22rem;
+            --brand-lockup-line-2-width: 70%;
+            --brand-lockup-line-3-width: 46%;
+            --brand-lockup-wordmark-size: 0.96rem;
             --bg-page: #050505;
             --bg-page-muted: #090909;
-            --surface-1: rgba(255, 255, 255, 0.015);
-            --surface-2: rgba(255, 255, 255, 0.03);
-            --surface-3: rgba(255, 255, 255, 0.04);
+            --bg-input: #111111;
+            --bg-input-strong: #151515;
+            --bg-success: rgba(110, 231, 183, 0.08);
+            --bg-danger: rgba(248, 113, 113, 0.1);
+            --surface-base: rgba(255, 255, 255, 0.02);
+            --surface-elevated: rgba(255, 255, 255, 0.04);
             --border-muted: rgba(255, 255, 255, 0.12);
             --border-subtle: rgba(255, 255, 255, 0.08);
-            --border-strong: rgba(255, 255, 255, 0.18);
+            --border-strong: rgba(255, 255, 255, 0.24);
             --text-strong: #f3f3ef;
-            --text-body: rgba(243, 243, 239, 0.88);
-            --text-muted: rgba(243, 243, 239, 0.6);
-            --text-faint: rgba(243, 243, 239, 0.3);
+            --text-body: rgba(243, 243, 239, 0.9);
+            --text-muted: rgba(243, 243, 239, 0.58);
+            --text-faint: rgba(243, 243, 239, 0.28);
             --eyebrow-color: rgba(255, 255, 255, 0.72);
+            --text-inverse: #050505;
             --accent: #f3f3ef;
-            --notice-bg: rgba(255, 255, 255, 0.04);
+            --accent-strong: #ffffff;
+            --danger: #fca5a5;
+            --success: #9ae6b4;
+            --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.16);
             --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.32);
+            --page-max-width: 60rem;
             --rail-shell: 58rem;
             --rail-reading: 44rem;
             --rail-copy: 34rem;
-            --section-gap-tight: 1rem;
-            --section-gap: 1.5rem;
-            --section-gap-loose: 2rem;
+            --section-gap-tight: var(--space-4);
+            --section-gap: var(--space-5);
+            --section-gap-loose: var(--space-6);
+            --content-max-width: var(--rail-shell);
+            --transition-fast: 140ms ease;
           }
 
-          * {
+          *,
+          *::before,
+          *::after {
             box-sizing: border-box;
+          }
+
+          html,
+          body {
+            min-height: 100%;
           }
 
           html {
@@ -57,7 +99,10 @@
             min-width: 20rem;
             color: var(--text-body);
             font-family: var(--font-family-ui);
-            line-height: 1.5;
+            font-size: var(--font-size-0);
+            line-height: var(--line-height-base);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
             background: transparent;
           }
@@ -97,41 +142,62 @@
           }
 
           .ui-card {
-            border: 1px solid var(--border-subtle);
-            border-radius: calc(var(--radius-md) + 0.25rem);
+            border: var(--border-default);
+            border-radius: var(--radius-lg);
             background:
               linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
-              var(--surface-1);
+              var(--surface-base);
+          }
+
+          .ui-card--padded {
+            padding: clamp(var(--space-3), 4vw, var(--space-4));
+          }
+
+          .ui-card--roomy {
+            padding: clamp(var(--space-4), 5vw, var(--space-6));
+          }
+
+          .ui-card--notice {
+            border-radius: var(--radius-md);
           }
 
           .ui-eyebrow {
             margin: 0;
             color: var(--eyebrow-color);
             font-size: var(--font-size-00);
-            letter-spacing: 0.1em;
+            letter-spacing: var(--eyebrow-letter-spacing);
             text-transform: uppercase;
             font-weight: 600;
           }
 
           .feed-page {
-            padding: 1rem 1rem 2rem;
+            min-height: 100vh;
+            padding:
+              clamp(0.85rem, 3vh, 2rem)
+              clamp(var(--space-3), 3vw, var(--space-4))
+              var(--space-5);
+          }
+
+          .feed-page__brand {
+            display: grid;
+            justify-items: center;
           }
 
           .brand-lockup {
             display: inline-grid;
             justify-items: center;
-            gap: 0.3rem;
+            gap: var(--brand-lockup-gap);
             margin-bottom: var(--section-gap);
           }
 
           .brand-lockup__mark {
-            width: 1.7rem;
-            height: 1.7rem;
-            padding: 0.3rem;
+            width: var(--brand-lockup-mark-size);
+            height: var(--brand-lockup-mark-size);
+            padding: var(--brand-lockup-mark-padding);
             display: grid;
-            gap: 0.18rem;
-            border: 1px solid var(--border-muted);
-            border-radius: 0.45rem;
+            gap: var(--brand-lockup-mark-gap);
+            border: var(--border-width) solid var(--border-muted);
+            border-radius: var(--brand-lockup-mark-radius);
           }
 
           .brand-lockup__mark span {
@@ -141,34 +207,29 @@
 
           .brand-lockup__mark span:nth-child(1) {
             width: 100%;
-            height: 0.22rem;
+            height: var(--brand-lockup-line-1-height);
           }
 
           .brand-lockup__mark span:nth-child(2) {
-            width: 70%;
-            height: 0.22rem;
+            width: var(--brand-lockup-line-2-width);
+            height: var(--brand-lockup-line-1-height);
           }
 
           .brand-lockup__mark span:nth-child(3) {
-            width: 46%;
-            height: 0.22rem;
+            width: var(--brand-lockup-line-3-width);
+            height: var(--brand-lockup-line-1-height);
           }
 
           .brand-lockup__wordmark {
             color: var(--text-strong);
             font-family: var(--font-family-display);
-            font-size: 0.96rem;
-            font-weight: 700;
+            font-size: var(--brand-lockup-wordmark-size);
+            font-weight: 600;
             letter-spacing: 0.01em;
           }
 
           .feed-hero {
-            padding: 1.3rem;
-            border: 1px solid var(--border-muted);
-            border-radius: 1rem;
-            background:
-              linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
-              var(--surface-1);
+            --stack-gap: var(--space-3);
             box-shadow: var(--shadow-elevated);
           }
 
@@ -188,22 +249,22 @@
           }
 
           .feed-meta {
-            gap: 0.7rem;
-            padding-top: 0.4rem;
+            --stack-gap: var(--space-2);
+            padding-top: var(--space-2);
             border-top: 1px solid var(--border-subtle);
           }
 
           .feed-meta__row {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.5rem;
+            gap: var(--space-2);
             align-items: baseline;
           }
 
           .feed-meta__label {
             color: var(--eyebrow-color);
             font-size: var(--font-size-00);
-            letter-spacing: 0.08em;
+            letter-spacing: var(--eyebrow-letter-spacing);
             text-transform: uppercase;
             font-weight: 600;
           }
@@ -216,10 +277,6 @@
 
           .feed-notice {
             margin-top: var(--section-gap-tight);
-            padding: 0.95rem 1rem;
-            border: 1px solid var(--border-strong);
-            border-radius: 0.85rem;
-            background: var(--notice-bg);
           }
 
           .feed-notice p {
@@ -227,13 +284,13 @@
           }
 
           .feed-notice p + p {
-            margin-top: 0.45rem;
+            margin-top: var(--space-2);
             color: var(--text-muted);
           }
 
           .feed-section {
             margin-top: var(--section-gap);
-            gap: 0.95rem;
+            gap: var(--space-4);
           }
 
           .feed-section__label {
@@ -241,14 +298,14 @@
           }
 
           .feed-list {
+            --stack-gap: var(--space-4);
             margin: 0;
             padding: 0;
             list-style: none;
-            gap: 0.95rem;
           }
 
           .feed-card {
-            padding: 1rem 1.05rem;
+            padding: clamp(var(--space-3), 3vw, var(--space-4));
           }
 
           .feed-card__title {
@@ -286,47 +343,35 @@
           }
 
           .feed-empty {
-            padding: 1rem 1.05rem;
-            border: 1px solid var(--border-subtle);
-            border-radius: calc(var(--radius-md) + 0.25rem);
-            background: var(--surface-1);
             color: var(--text-muted);
           }
 
           @media (max-width: 47.9375rem) {
-            .feed-page {
-              padding-inline: 0.8rem;
-            }
-
             .feed-hero {
-              width: 100%;
-              padding: 1rem;
-            }
-
-            .feed-notice,
-            .feed-section {
-              width: 100%;
+              padding: var(--space-4);
             }
 
             .feed-meta__row {
               display: grid;
-              gap: 0.2rem;
+              gap: var(--space-1);
             }
           }
         </style>
       </head>
       <body>
         <main class="feed-page layout-shell">
-          <div class="brand-lockup" aria-label="html2rss">
-            <span class="brand-lockup__mark" aria-hidden="true">
-              <span></span>
-              <span></span>
-              <span></span>
-            </span>
-            <strong class="brand-lockup__wordmark">html2rss</strong>
+          <div class="feed-page__brand">
+            <div class="brand-lockup" aria-label="html2rss">
+              <span class="brand-lockup__mark" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
+              <strong class="brand-lockup__wordmark">html2rss</strong>
+            </div>
           </div>
 
-          <section class="feed-hero layout-rail-reading layout-stack" style="--stack-gap: 0.8rem;">
+          <section class="feed-hero ui-card ui-card--notice ui-card--roomy layout-rail-reading layout-stack">
             <h1 class="feed-title">
               <xsl:call-template name="clean-text">
                 <xsl:with-param name="text" select="string(rss/channel/title)" />
@@ -346,7 +391,7 @@
               </p>
             </xsl:if>
 
-            <div class="feed-meta layout-stack" style="--stack-gap: 0.7rem;">
+            <div class="feed-meta layout-stack">
               <div class="feed-meta__row">
                 <span class="feed-meta__label">Items</span>
                 <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
@@ -384,7 +429,7 @@
           </section>
 
           <xsl:if test="rss/channel/title = 'Error' or rss/channel/item[1]/title = 'Content Extraction Failed'">
-            <section class="feed-notice layout-rail-reading" aria-label="Feed status">
+            <section class="feed-notice ui-card ui-card--notice ui-card--padded layout-rail-reading" aria-label="Feed status">
               <p>
                 <xsl:call-template name="clean-text">
                   <xsl:with-param name="text" select="string(rss/channel/title)" />
@@ -403,7 +448,7 @@
 
             <xsl:choose>
               <xsl:when test="count(rss/channel/item) &gt; 0">
-                <ul class="feed-list layout-stack" style="--stack-gap: 0.95rem;">
+                <ul class="feed-list layout-stack">
                   <xsl:for-each select="rss/channel/item">
                     <li>
                       <article class="feed-card ui-card layout-stack layout-stack--tight">
@@ -460,7 +505,7 @@
                 </ul>
               </xsl:when>
               <xsl:otherwise>
-                <div class="feed-empty">This feed does not have any items yet.</div>
+                <div class="feed-empty ui-card ui-card--padded">This feed does not have any items yet.</div>
               </xsl:otherwise>
             </xsl:choose>
           </section>

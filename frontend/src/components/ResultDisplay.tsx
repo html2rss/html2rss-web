@@ -94,7 +94,10 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
 
   return (
     <section class="result-shell layout-stack" aria-live="polite">
-      <header class="result-hero layout-rail-reading layout-stack" style={{ '--stack-gap': 'var(--space-3)' }}>
+      <header
+        class="result-hero layout-rail-reading layout-stack"
+        style={{ '--stack-gap': 'var(--space-3)' }}
+      >
         <p class="result-kicker ui-eyebrow">Feed created</p>
         <h1 class="result-title">Your feed is ready</h1>
         <p class="result-meta layout-rail-copy">{result.name}</p>
@@ -163,7 +166,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       )}
 
       {copyNotice && (
-        <div class="notice notice--success" role="status">
+        <div class="ui-card ui-card--notice ui-card--padded notice notice--success" role="status">
           <p>{copyNotice}</p>
         </div>
       )}

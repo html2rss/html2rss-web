@@ -45,7 +45,7 @@ export function DominantField({
           id={id}
           name={id}
           type={type}
-          class="input input--mono input--hero"
+          class="input input--mono input--lg"
           placeholder={placeholder}
           autocomplete={type === 'url' ? 'url' : 'off'}
           autoFocus={autoFocus}
