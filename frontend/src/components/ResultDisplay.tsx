@@ -166,7 +166,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       )}
 
       {copyNotice && (
-        <div class="ui-card ui-card--notice ui-card--padded notice notice--success" role="status">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="success" role="status">
           <p>{copyNotice}</p>
         </div>
       )}

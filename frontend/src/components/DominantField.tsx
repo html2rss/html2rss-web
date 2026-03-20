@@ -39,7 +39,7 @@ export function DominantField({
 }: DominantFieldProps) {
   return (
     <div class={className ? `dominant-field ${className}` : 'dominant-field'}>
-      <label class="field-block field-block--primary field-block--hero" htmlFor={id}>
+      <label class="field-block field-block--centered" htmlFor={id}>
         <span class="field-label field-label--ghost">{label}</span>
         <input
           id={id}

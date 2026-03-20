@@ -118,7 +118,7 @@ export function CreateFeedPanel({
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
 
-        <label class="field-block field-block--select" htmlFor="strategy">
+        <label class="field-block field-block--centered field-block--compact" htmlFor="strategy">
           <select
             id="strategy"
             name="strategy"
@@ -182,7 +182,7 @@ export function CreateFeedPanel({
             <h2>Add access token</h2>
             <p class="token-gate__hint">This instance needs an access token.</p>
           </div>
-          <label class="field-block field-block--token" htmlFor="access-token">
+          <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
             <span class="field-label field-label--ghost">Access token</span>
             <input
               id="access-token"
@@ -226,14 +226,14 @@ export function CreateFeedPanel({
       )}
 
       {conversionError && (
-        <div class="ui-card ui-card--notice ui-card--padded notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <div class="notice__title">Feed generation failed</div>
           <p>{conversionError}</p>
         </div>
       )}
 
       {feedFieldErrors.form && (
-        <div class="ui-card ui-card--notice ui-card--padded notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <p>{feedFieldErrors.form}</p>
         </div>
       )}
