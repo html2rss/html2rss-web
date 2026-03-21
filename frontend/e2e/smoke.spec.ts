@@ -9,6 +9,11 @@ test.describe('frontend smoke', () => {
         body: JSON.stringify({
           success: true,
           data: {
+            api: {
+              name: 'html2rss-web API',
+              description: 'RESTful API for converting websites to RSS feeds',
+              openapi_url: 'http://example.test/openapi.yaml',
+            },
             instance: {
               feed_creation: {
                 enabled: true,
@@ -29,10 +34,15 @@ test.describe('frontend smoke', () => {
           success: true,
           data: {
             strategies: [
-              { id: 'faraday', name: 'Faraday' },
-              { id: 'browserless', name: 'Browserless' },
+              { id: 'faraday', name: 'faraday', display_name: 'Default' },
+              {
+                id: 'browserless',
+                name: 'browserless',
+                display_name: 'JavaScript pages (recommended)',
+              },
             ],
           },
+          meta: { total: 2 },
         }),
       });
     });
