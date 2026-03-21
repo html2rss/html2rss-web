@@ -282,12 +282,7 @@ export function UtilityStrip({
       </button>
       {isOpen && (
         <div class="utility-strip__items">
-          <a
-            href={includedFeedsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="utility-link"
-          >
+          <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
             Try included feeds
           </a>
           <Bookmarklet />
