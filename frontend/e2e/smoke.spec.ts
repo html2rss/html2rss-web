@@ -2,6 +2,41 @@ import { expect, test } from '@playwright/test';
 
 test.describe('frontend smoke', () => {
   test('loads create flow and inline access-token gate', async ({ page }) => {
+    await page.route('**/api/v1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            instance: {
+              feed_creation: {
+                enabled: true,
+                access_token_required: true,
+              },
+              featured_feeds: [],
+            },
+          },
+        }),
+      });
+    });
+
+    await page.route('**/api/v1/strategies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            strategies: [
+              { id: 'faraday', name: 'Faraday' },
+              { id: 'browserless', name: 'Browserless' },
+            ],
+          },
+        }),
+      });
+    });
+
     await page.goto('/');
 
     await expect(page.getByLabel('PAGE URL')).toBeVisible();
