@@ -4,20 +4,15 @@ This document provides a mental model of how `html2rss-web` processes requests.
 
 ## High-Level Data Flow
 
-```text
-[ User / RSS Reader ]
-       |
-       v
-[ Roda App (app/web/routes) ] <--- [ Auth / Security (app/web/security) ]
-       |
-       v
-[ Feeds Service (app/web/feeds) ] <--- [ Cache (app/web/feeds/cache.rb) ]
-       |
-       v
-[ html2rss Gem ] <--- [ Request Strategies (Faraday / Browserless) ]
-       |
-       v
-[ Target Website ]
+```mermaid
+flowchart TD
+    user["User / RSS Reader"] --> routes["Roda App (app/web/routes)"]
+    security["Auth / Security (app/web/security)"] --> routes
+    routes --> feeds["Feeds Service (app/web/feeds)"]
+    cache["Cache (app/web/feeds/cache.rb)"] --> feeds
+    feeds --> gem["html2rss Gem"]
+    strategies["Request Strategies (Faraday / Browserless)"] --> gem
+    gem --> target["Target Website"]
 ```
 
 ## Request Lifecycle
