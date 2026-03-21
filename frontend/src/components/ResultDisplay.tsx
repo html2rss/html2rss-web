@@ -5,10 +5,21 @@ import { DominantField } from './DominantField';
 interface JsonFeedItem {
   title?: string;
   content_text?: string;
+  content_html?: string;
+  url?: string;
+  external_url?: string;
+  date_published?: string;
 }
 
 interface JsonFeedResponse {
   items?: JsonFeedItem[];
+}
+
+interface PreviewItem {
+  title: string;
+  excerpt: string;
+  publishedLabel: string;
+  url?: string;
 }
 
 interface ResultDisplayProps {
@@ -18,7 +29,7 @@ interface ResultDisplayProps {
 
 export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   const [copyNotice, setCopyNotice] = useState('');
-  const [previewItems, setPreviewItems] = useState<string[]>([]);
+  const [previewItems, setPreviewItems] = useState<PreviewItem[]>([]);
   const [previewError, setPreviewError] = useState('');
   const copyResetRef = useRef<number | undefined>(undefined);
 
@@ -45,14 +56,14 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         });
         if (!response.ok) throw new Error('Preview request failed');
         const payload = (await response.json()) as JsonFeedResponse;
-        const itemTitles =
+        const items =
           payload.items
-            ?.map((item) => normalizePreviewText(item.title || item.content_text))
-            .filter((title): title is string => Boolean(title))
-            .slice(0, 3) || [];
+            ?.map((item) => normalizePreviewItem(item))
+            .filter((item): item is PreviewItem => Boolean(item))
+            .slice(0, 5) || [];
 
         if (!isCancelled) {
-          setPreviewItems(itemTitles);
+          setPreviewItems(items);
           setPreviewError('');
         }
       } catch {
@@ -82,12 +93,19 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   };
 
   return (
-    <section class="result-shell" aria-live="polite">
-      <div class="result-copy">
-        <p class="result-meta">{result.name}</p>
-      </div>
+    <section class="result-shell layout-stack" aria-live="polite">
+      <header
+        class="result-hero layout-rail-reading layout-stack"
+        style={{ '--stack-gap': 'var(--space-3)' }}
+      >
+        <p class="result-kicker ui-eyebrow">Feed created</p>
+        <h1 class="result-title">Your feed is ready</h1>
+        <p class="result-meta layout-rail-copy">{result.name}</p>
+        <p class="result-lede layout-rail-copy">Subscribe to this URL in your RSS reader.</p>
+      </header>
 
       <DominantField
+        className="layout-rail-reading"
         id="feed-url"
         label="Feed URL"
         value={fullUrl}
@@ -98,12 +116,12 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         onAction={() => void copyToClipboard(fullUrl)}
       />
 
-      <div class="result-actions result-actions--quiet">
-        <a href={fullUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
+      <div class="result-actions result-actions--quiet layout-rail-reading">
+        <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           Open feed
         </a>
-        <a href={jsonFeedUrl} class="btn btn--ghost btn--linkish" target="_blank" rel="noopener noreferrer">
-          JSON Feed
+        <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+          Open JSON Feed
         </a>
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
           Create another feed
@@ -111,25 +129,44 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       </div>
 
       {previewItems.length > 0 && (
-        <section class="result-preview" aria-label="Feed preview">
-          <p class="result-preview__label">Feed preview</p>
-          <ul class="result-preview__list">
+        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview">
+          <div class="result-preview__header layout-stack layout-stack--tight">
+            <p class="result-preview__label ui-eyebrow">Preview</p>
+            <p class="result-preview__intro">Latest items from this feed</p>
+          </div>
+          <ul class="result-preview__list" role="list">
             {previewItems.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={`${item.title}-${item.publishedLabel || 'undated'}`}>
+                <article class="preview-card ui-card layout-stack layout-stack--tight">
+                  <h2 class="preview-card__title">{item.title}</h2>
+                  {item.publishedLabel && <p class="preview-card__date">{item.publishedLabel}</p>}
+                  {item.excerpt && <p class="preview-card__excerpt">{item.excerpt}</p>}
+                  {item.url && (
+                    <p class="preview-card__actions">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer">
+                        Open original
+                      </a>
+                    </p>
+                  )}
+                </article>
+              </li>
             ))}
           </ul>
         </section>
       )}
 
       {previewError && (
-        <section class="result-preview" aria-label="Feed preview status">
-          <p class="result-preview__label">Feed preview</p>
+        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
+          <div class="result-preview__header layout-stack layout-stack--tight">
+            <p class="result-preview__label ui-eyebrow">Preview</p>
+            <p class="result-preview__intro">Latest items from this feed</p>
+          </div>
           <p class="field-help">{previewError}</p>
         </section>
       )}
 
       {copyNotice && (
-        <div class="notice notice--success" role="status">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="success" role="status">
           <p>{copyNotice}</p>
         </div>
       )}
@@ -141,12 +178,61 @@ function normalizePreviewText(value?: string): string | null {
   if (!value) return null;
 
   const normalized = decodeHtmlEntities(value)
+    .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
+    .replace(/\s+([.,!?;:])/g, '$1')
     .replace(/^\d+\.\s+/, '')
     .replace(/\s+\([^)]*\)\s*$/, '')
     .trim();
 
   return normalized || null;
+}
+
+function normalizePreviewItem(item: JsonFeedItem): PreviewItem | null {
+  const excerptSource = item.content_text || item.content_html;
+  const title = normalizePreviewText(item.title) || normalizePreviewText(excerptSource) || 'Untitled item';
+  const excerpt = normalizePreviewExcerpt(excerptSource, title);
+
+  return {
+    title,
+    excerpt,
+    publishedLabel: formatPublishedDate(item.date_published),
+    url: normalizePreviewUrl(item.url || item.external_url),
+  };
+}
+
+function normalizePreviewExcerpt(value: string | undefined, title: string): string {
+  const excerpt = normalizePreviewText(value);
+  if (!excerpt || excerpt === title) return '';
+  return truncateText(excerpt, 220);
+}
+
+function normalizePreviewUrl(value?: string): string | undefined {
+  if (!value) return undefined;
+  if (!/^https?:\/\//i.test(value)) return undefined;
+  return value;
+}
+
+function formatPublishedDate(value?: string): string {
+  if (!value) return '';
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return '';
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(parsed);
+}
+
+function truncateText(value: string, maxLength: number): string {
+  if (value.length <= maxLength) return value;
+
+  const clipped = value.slice(0, maxLength).trimEnd();
+  const safeBoundary = clipped.lastIndexOf(' ');
+
+  return `${(safeBoundary > maxLength * 0.6 ? clipped.slice(0, safeBoundary) : clipped).trimEnd()}...`;
 }
 
 function decodeHtmlEntities(value: string): string {

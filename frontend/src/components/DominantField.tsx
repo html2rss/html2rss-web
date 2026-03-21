@@ -1,6 +1,7 @@
 import type { JSX, Ref } from 'preact';
 
 interface DominantFieldProps {
+  className?: string;
   id: string;
   label: string;
   value: string;
@@ -19,6 +20,7 @@ interface DominantFieldProps {
 }
 
 export function DominantField({
+  className,
   id,
   label,
   value,
@@ -36,14 +38,14 @@ export function DominantField({
   error,
 }: DominantFieldProps) {
   return (
-    <div class="dominant-field">
-      <label class="field-block field-block--primary field-block--hero" htmlFor={id}>
+    <div class={className ? `dominant-field ${className}` : 'dominant-field'}>
+      <label class="field-block field-block--centered" htmlFor={id}>
         <span class="field-label field-label--ghost">{label}</span>
         <input
           id={id}
           name={id}
           type={type}
-          class="input input--mono input--hero"
+          class="input input--mono input--lg"
           placeholder={placeholder}
           autocomplete={type === 'url' ? 'url' : 'off'}
           autoFocus={autoFocus}

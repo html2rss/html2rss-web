@@ -3,6 +3,7 @@ import preact from '@preact/preset-vite';
 
 export default defineConfig({
   base: '/',
+  publicDir: '../public',
   plugins: [preact()],
   server: {
     host: true,

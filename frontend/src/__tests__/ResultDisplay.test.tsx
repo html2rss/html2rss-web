@@ -9,7 +9,7 @@ describe('ResultDisplay', () => {
     id: 'test-id',
     name: 'Test Feed',
     url: 'https://example.com',
-    strategy: 'ssrf_filter',
+    strategy: 'faraday',
     feed_token: 'test-feed-token',
     public_url: 'https://example.com/feed.xml',
     json_public_url: 'https://example.com/feed.json',
@@ -21,28 +21,44 @@ describe('ResultDisplay', () => {
       ok: true,
       json: async () => ({
         items: [
-          { title: 'Item One' },
-          { content_text: '56 points by canpan 1 hour ago | hide | 18&nbsp;comments' },
-          { content_text: '2. Item Two ( example.com )' },
+          {
+            title: 'Item One',
+            content_text: '<p>First preview item with <strong>markup</strong>.</p>',
+            url: 'https://example.com/item-one',
+            date_published: '2024-01-01T00:00:00Z',
+          },
+          {
+            content_text: '56 points by canpan 1 hour ago | hide | 18&nbsp;comments',
+            date_published: '2024-01-02T00:00:00Z',
+          },
+          {
+            content_text: '2. Item Two ( example.com )',
+            url: 'https://example.com/item-two',
+            date_published: '2024-01-03T00:00:00Z',
+          },
         ],
       }),
     } as Response);
   });
 
-  it('renders the simplified result actions and preview', async () => {
+  it('renders the success state actions and richer preview cards', async () => {
     render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
+    expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'JSON Feed' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Open JSON Feed' })).toHaveAttribute(
       'href',
       'https://example.com/feed.json'
     );
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
+      expect(screen.getByText('First preview item with markup.')).toBeInTheDocument();
+      expect(screen.getAllByText('Open original')).toHaveLength(2);
       expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
       expect(screen.getByText('Item Two')).toBeInTheDocument();
+      expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
     expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
       headers: { Accept: 'application/feed+json' },
@@ -59,6 +75,7 @@ describe('ResultDisplay', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
+      expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
   });
 

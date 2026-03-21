@@ -13,7 +13,7 @@ describe('useFeedConversion contract', () => {
         const body = (await request.json()) as { url: string; strategy: string };
         receivedAuthorization = request.headers.get('authorization');
 
-        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'ssrf_filter' });
+        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'faraday' });
 
         return HttpResponse.json(
           buildFeedResponse({
@@ -30,7 +30,7 @@ describe('useFeedConversion contract', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'test-token-123');
+      await result.current.convertFeed('https://example.com/articles', 'faraday', 'test-token-123');
     });
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
@@ -54,7 +54,7 @@ describe('useFeedConversion contract', () => {
 
     await act(async () => {
       await expect(
-        result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'token')
+        result.current.convertFeed('https://example.com/articles', 'faraday', 'token')
       ).rejects.toThrow('URL parameter is required');
     });
 
@@ -76,7 +76,7 @@ describe('useFeedConversion contract', () => {
 
     await act(async () => {
       await expect(
-        result.current.convertFeed('https://example.com/articles', 'ssrf_filter', 'token')
+        result.current.convertFeed('https://example.com/articles', 'faraday', 'token')
       ).rejects.toThrow('Invalid response format from feed creation API');
     });
 

@@ -1,0 +1,220 @@
+/* Shared design-system primitives for both the app UI and RSS/XSL surfaces. See docs/design-system.md before changing this file. */
+:root {
+  color-scheme: dark;
+  --font-family-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
+  --font-family-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  --font-size-00: 0.8125rem;
+  --font-size-0: 0.9375rem;
+  --font-size-1: 1rem;
+  --font-size-2: 1.125rem;
+  --line-height-tight: 1.1;
+  --line-height-base: 1.5;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --border-width: 1px;
+  --border-default: var(--border-width) solid var(--border-subtle);
+  --radius-sm: 0.35rem;
+  --radius-md: 0.7rem;
+  --radius-lg: 0.95rem;
+  --eyebrow-letter-spacing: 0.08em;
+  --brand-lockup-gap: 0.3rem;
+  --brand-lockup-mark-size: 1.7rem;
+  --brand-lockup-mark-padding: 0.3rem;
+  --brand-lockup-mark-gap: 0.18rem;
+  --brand-lockup-mark-radius: 0.45rem;
+  --brand-lockup-line-1-height: 0.22rem;
+  --brand-lockup-line-2-width: 70%;
+  --brand-lockup-line-3-width: 46%;
+  --brand-lockup-wordmark-size: 0.96rem;
+  --bg-page: #050505;
+  --bg-page-muted: #090909;
+  --bg-input: #111111;
+  --bg-input-strong: #151515;
+  --bg-success: rgba(110, 231, 183, 0.08);
+  --bg-danger: rgba(248, 113, 113, 0.1);
+  --surface-base: rgba(255, 255, 255, 0.02);
+  --surface-elevated: rgba(255, 255, 255, 0.04);
+  --border-muted: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.24);
+  --text-strong: #f3f3ef;
+  --text-body: rgba(243, 243, 239, 0.9);
+  --text-muted: rgba(243, 243, 239, 0.58);
+  --text-faint: rgba(243, 243, 239, 0.28);
+  --eyebrow-color: rgba(255, 255, 255, 0.72);
+  --text-inverse: #050505;
+  --accent: #f3f3ef;
+  --accent-strong: #ffffff;
+  --danger: #fca5a5;
+  --success: #9ae6b4;
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.16);
+  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.32);
+  --page-max-width: 60rem;
+  --rail-shell: 58rem;
+  --rail-reading: 44rem;
+  --rail-copy: 34rem;
+  --section-gap-tight: var(--space-4);
+  --section-gap: var(--space-5);
+  --section-gap-loose: var(--space-6);
+  --content-max-width: var(--rail-shell);
+  --transition-fast: 140ms ease;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 32%),
+    linear-gradient(180deg, #080808 0%, #040404 100%);
+}
+
+body {
+  margin: 0;
+  min-width: 20rem;
+  color: var(--text-body);
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-0);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: transparent;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover,
+a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+button,
+input,
+select,
+textarea {
+  margin: 0;
+}
+
+.layout-shell {
+  width: min(100%, var(--rail-shell));
+  margin: 0 auto;
+}
+
+.layout-rail-reading {
+  width: min(100%, var(--rail-reading));
+  margin: 0 auto;
+}
+
+.layout-rail-copy {
+  max-width: var(--rail-copy);
+}
+
+.layout-stack {
+  display: grid;
+  gap: var(--stack-gap, var(--space-4));
+}
+
+.layout-stack--tight {
+  --stack-gap: var(--space-3);
+}
+
+.ui-card {
+  border: var(--border-default);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    var(--surface-base);
+}
+
+.ui-card--padded {
+  padding: clamp(var(--space-3), 4vw, var(--space-4));
+}
+
+.ui-card--roomy {
+  padding: clamp(var(--space-4), 5vw, var(--space-6));
+}
+
+.ui-card--notice {
+  border-radius: var(--radius-md);
+}
+
+.ui-eyebrow {
+  margin: 0;
+  color: var(--eyebrow-color);
+  font-size: var(--font-size-00);
+  letter-spacing: var(--eyebrow-letter-spacing);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.brand-lockup {
+  display: inline-grid;
+  justify-items: center;
+  gap: var(--brand-lockup-gap);
+}
+
+.brand-lockup__mark {
+  width: var(--brand-lockup-mark-size);
+  height: var(--brand-lockup-mark-size);
+  padding: var(--brand-lockup-mark-padding);
+  display: grid;
+  gap: var(--brand-lockup-mark-gap);
+  border: var(--border-width) solid var(--border-muted);
+  border-radius: var(--brand-lockup-mark-radius);
+  background: transparent;
+}
+
+.brand-lockup__mark span {
+  display: block;
+  background: var(--accent);
+}
+
+.brand-lockup__mark span:nth-child(1) {
+  width: 100%;
+  height: var(--brand-lockup-line-1-height);
+}
+
+.brand-lockup__mark span:nth-child(2) {
+  width: var(--brand-lockup-line-2-width);
+  height: var(--brand-lockup-line-1-height);
+}
+
+.brand-lockup__mark span:nth-child(3) {
+  width: var(--brand-lockup-line-3-width);
+  height: var(--brand-lockup-line-1-height);
+}
+
+.brand-lockup__wordmark {
+  color: var(--text-strong);
+  font-family: var(--font-family-display);
+  font-size: var(--brand-lockup-wordmark-size);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
