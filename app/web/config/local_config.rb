@@ -3,8 +3,9 @@
 require 'yaml'
 begin
   require 'html2rss/configs'
-rescue LoadError
-  nil
+rescue LoadError => error
+  warn "[html2rss-web] Failed to load 'html2rss/configs': #{error.message}"
+  raise
 end
 
 module Html2rss
