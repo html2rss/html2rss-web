@@ -11,9 +11,12 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
   include Rack::Test::Methods
 
   let(:app) { described_class.freeze.app }
+  let(:secret_key) { ENV.fetch('HTML2RSS_SECRET_KEY') }
 
   let(:feed_url) { 'https://example.com/articles' }
-  let(:feed_token) { "valid-feed-token-#{SecureRandom.hex(4)}" }
+  let(:feed_token) do
+    Html2rss::Web::Auth.generate_feed_token(account[:username], feed_url, strategy: 'faraday')
+  end
   let(:encoded_feed_token) { CGI.escape(feed_token) }
 
   let(:account) do
@@ -55,18 +58,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
     stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
     stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
-    token_payload = instance_double(
-      Html2rss::Web::FeedToken,
-      url: feed_url,
-      username: account[:username],
-      strategy: 'faraday'
-    )
-    allow(Html2rss::Web::FeedToken).to receive_messages(
-      decode: token_payload,
-      validate_and_decode: token_payload
-    )
-    allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
-    allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
     allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
     allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
@@ -76,8 +67,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
   describe 'GET /api/v1/feeds/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
     it 'returns unauthorized for invalid tokens' do
-      allow(Html2rss::Web::FeedToken).to receive(:decode).and_return(nil)
-
       get '/api/v1/feeds/invalid-token', {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(401)
@@ -172,8 +161,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     end
 
     it 'returns JSON Feed-shaped errors for invalid json feed tokens' do
-      allow(Html2rss::Web::FeedToken).to receive(:decode).and_return(nil)
-
       get '/api/v1/feeds/invalid-token.json'
 
       expect([last_response.status, last_response.headers['Content-Type'], json_feed_error]).to eq(
@@ -225,8 +212,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     end
 
     context 'without authentication' do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      before { allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(nil) }
-
       it 'requires authentication' do
         post '/api/v1/feeds', request_payload.to_json, json_headers
 
@@ -237,10 +222,12 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     end
 
     context 'with authenticated account' do # rubocop:disable RSpec/MultipleMemoizedHelpers
-      before { allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(account) }
+      before do
+        allow(Html2rss::Web::Api::V1::FeedMetadata).to receive(:site_title_for).and_return('Example Feed')
+      end
 
       it 'returns bad request when JSON payload is invalid' do
-        post '/api/v1/feeds', '{ invalid', json_headers
+        post '/api/v1/feeds', '{ invalid', auth_headers
 
         expect(last_response.status).to eq(400)
         expect(last_response.content_type).to include('application/json')
@@ -248,8 +235,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       end
 
       it 'returns bad request when URL is missing' do
-        allow(Html2rss::Web::Api::V1::FeedMetadata).to receive(:site_title_for).and_return('Example')
-
         post '/api/v1/feeds', request_payload.merge(url: '').to_json, auth_headers
 
         expect(last_response.status).to eq(400)

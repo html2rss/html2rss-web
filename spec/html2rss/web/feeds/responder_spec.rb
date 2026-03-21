@@ -1,58 +1,44 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'rack'
 require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::Responder do
   let(:response) { Rack::Response.new }
-  let(:request) { instance_double(Struct.new(:response), response: response) }
-
-  def feed_request(representation)
-    Html2rss::Web::Feeds::Contracts::Request.new(
-      target_kind: :token,
-      representation: representation,
-      feed_name: nil,
-      token: 'token',
-      params: {}
+  let(:result) do
+    Html2rss::Web::Feeds::Contracts::RenderResult.new(
+      status: :ok,
+      payload: nil,
+      message: nil,
+      ttl_seconds: 600,
+      cache_key: 'feed_result:test',
+      error_message: nil
     )
   end
+  let(:static_config) do
+    {
+      channel: { url: 'https://example.com', ttl: 10 },
+      strategy: :faraday
+    }
+  end
 
-  def resolved_source
-    Html2rss::Web::Feeds::Contracts::ResolvedSource.new(
-      source_kind: :token,
-      cache_identity: 'token:abc',
-      generator_input: { strategy: :faraday, channel: { url: 'https://example.com' } },
-      ttl_seconds: 600
-    )
+  before do
+    allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
+    allow(Html2rss::Web::Observability).to receive(:emit)
   end
 
   context 'with a cacheable success result' do
     subject(:write_response) do
       described_class.call(
-        request: request,
-        target_kind: :token,
-        identifier: 'token'
-      )
-    end
-
-    let(:representation) { Html2rss::Web::FeedResponseFormat::RSS }
-
-    let(:result) do
-      Html2rss::Web::Feeds::Contracts::RenderResult.new(
-        status: :ok,
-        payload: nil,
-        message: nil,
-        ttl_seconds: 600,
-        cache_key: 'feed_result:test',
-        error_message: nil
+        request: request_for(path: '/example', accept: 'application/xml'),
+        target_kind: :static,
+        identifier: 'example'
       )
     end
 
     before do
-      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
-      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Observability).to receive(:emit)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return('<rss/>')
     end
 
@@ -60,9 +46,17 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(response_tuple(write_response)).to eq([200, 'application/xml', '<rss/>'])
     end
 
-    it 'marks the response as cacheable', :aggregate_failures do
+    it 'resolves the source through the real request and source resolver path', :aggregate_failures do
       write_response
 
+      expect(Html2rss::Web::Feeds::Service).to have_received(:call).with(
+        have_attributes(
+          source_kind: :static,
+          cache_identity: a_string_starting_with('static:example:'),
+          generator_input: include(strategy: :faraday, channel: { url: 'https://example.com', ttl: 10 }),
+          ttl_seconds: 600
+        )
+      )
       expect(response['Cache-Control']).to include('max-age=600')
       expect(response['Cache-Control']).to include('public')
       expect(response['Vary']).to eq('Accept')
@@ -74,7 +68,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'success',
-        details: include(strategy: :faraday, url: 'https://example.com'),
+        details: include(strategy: :faraday, url: 'https://example.com', feed_name: 'example'),
         level: :info
       )
     end
@@ -83,13 +77,11 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   context 'with an error result' do
     subject(:write_response) do
       described_class.call(
-        request: request,
-        target_kind: :token,
-        identifier: 'token'
+        request: request_for(path: '/example.json', accept: 'application/feed+json'),
+        target_kind: :static,
+        identifier: 'example.json'
       )
     end
-
-    let(:representation) { Html2rss::Web::FeedResponseFormat::JSON_FEED }
 
     let(:result) do
       Html2rss::Web::Feeds::Contracts::RenderResult.new(
@@ -103,10 +95,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     end
 
     before do
-      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
-      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Observability).to receive(:emit)
       allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return('{"title":"Error"}')
     end
 
@@ -125,30 +114,14 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   context 'when response rendering fails after feed generation succeeds' do
     subject(:write_response) do
       described_class.call(
-        request: request,
-        target_kind: :token,
-        identifier: 'token'
-      )
-    end
-
-    let(:representation) { Html2rss::Web::FeedResponseFormat::RSS }
-
-    let(:result) do
-      Html2rss::Web::Feeds::Contracts::RenderResult.new(
-        status: :ok,
-        payload: nil,
-        message: nil,
-        ttl_seconds: 600,
-        cache_key: 'feed_result:test',
-        error_message: nil
+        request: request_for(path: '/example', accept: 'application/xml'),
+        target_kind: :static,
+        identifier: 'example'
       )
     end
 
     before do
-      allow(Html2rss::Web::Feeds::Request).to receive(:call).and_return(feed_request(representation))
-      allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(resolved_source)
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Observability).to receive(:emit)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_raise(StandardError, 'render failed')
     end
 
@@ -158,13 +131,26 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).once.with(
         event_name: 'feed.render',
         outcome: 'failure',
-        details: include(error_class: 'StandardError', error_message: 'render failed'),
+        details: include(error_class: 'StandardError', error_message: 'render failed', feed_name: 'example'),
         level: :warn
       )
     end
   end
 
   private
+
+  # @param path [String]
+  # @param accept [String]
+  # @return [Rack::Request]
+  def request_for(path:, accept:)
+    rack_response = response
+
+    Rack::Request.new(
+      Rack::MockRequest.env_for(path, 'HTTP_ACCEPT' => accept)
+    ).tap do |request|
+      request.define_singleton_method(:response) { rack_response }
+    end
+  end
 
   # @param body [String]
   # @return [Array<(Integer, String, String)>]
