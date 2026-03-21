@@ -1,8 +1,8 @@
 /* Shared design-system primitives for both the app UI and RSS/XSL surfaces. See docs/design-system.md before changing this file. */
 :root {
   color-scheme: dark;
-  --font-family-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
-  --font-family-display: "Fraunces", "Iowan Old Style", "Georgia", serif;
+  --font-family-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-family-display: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   --font-size-00: 0.8125rem;
   --font-size-0: 0.9375rem;
