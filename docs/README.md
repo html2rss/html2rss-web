@@ -6,6 +6,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 - **Start here for contributors**: This document.
 - **UI/Design rules**: [docs/design-system.md](design-system.md)
+- **Agent execution constraints**: [AGENTS.md](../AGENTS.md)
 - **Generated contract artifacts**: `public/openapi.yaml`
 - **Public-facing intro**: [README.md](../README.md)
 
@@ -53,6 +54,19 @@ Running the app directly on the host is not supported.
 | `npm run build`         | Build static assets into `frontend/dist/`.   |
 | `npm run test:run`      | Unit tests (Vitest).                         |
 | `npm run test:contract` | Contract tests with MSW.                     |
+
+---
+
+## Contract-Driven Development Loop
+
+To change or add API endpoints, follow this sequence:
+
+1. **Ruby Request Spec**: Define the new behavior or endpoint in `spec/html2rss/web/app_integration_spec.rb` or a dedicated request spec.
+2. **OpenAPI Generation**: Run `make openapi` inside the Dev Container to regenerate `public/openapi.yaml` from the spec metadata.
+3. **Verify Contract**: Run `make openapi-verify` and `make openapi-lint` to ensure the generated file matches the specs and is valid.
+4. **Frontend Client**: The frontend generated client in `frontend/src/api/generated` is updated by the build process.
+
+Always verify the contract before committing API changes.
 
 ---
 
@@ -133,6 +147,7 @@ Search these pages for examples, plugins, and configuration options:
   - Add `# frozen_string_literal: true` to all Ruby files.
   - Do not use `send(...)` to reach into private APIs; expose what is needed at the module level.
 - **Frontend Style**:
+  - Follow visual and CSS rules in [design-system.md](design-system.md).
   - Use Preact components in `frontend/src/`.
   - Use shared styles in `public/shared-ui.css` or app-specific styles in `frontend/src/styles/`.
   - Do not modify `frontend/dist/` directly.
