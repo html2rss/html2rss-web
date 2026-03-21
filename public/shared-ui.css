@@ -1,3 +1,4 @@
+/* Shared design-system primitives for both the app UI and RSS/XSL surfaces. See docs/design-system.md before changing this file. */
 :root {
   color-scheme: dark;
   --font-family-ui: "IBM Plex Sans", "Avenir Next", "Segoe UI", sans-serif;
