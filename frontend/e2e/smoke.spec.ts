@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('frontend smoke', () => {
   test('loads create flow and inline access-token gate', async ({ page }) => {
-    await page.route('**/api/v1', async (route) => {
+    await page.route(/\/api\/v1$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -21,7 +21,7 @@ test.describe('frontend smoke', () => {
       });
     });
 
-    await page.route('**/api/v1/strategies', async (route) => {
+    await page.route(/\/api\/v1\/strategies$/, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

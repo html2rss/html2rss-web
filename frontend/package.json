@@ -27,10 +27,11 @@
   },
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.93.1",
-    "@preact/preset-vite": "^2.10.2",
     "@playwright/test": "^1.58.2",
+    "@preact/preset-vite": "^2.10.2",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/preact": "^3.2.4",
+    "baseline-browser-mapping": "^2.10.9",
     "jsdom": "^27.0.0",
     "msw": "^2.11.3",
     "prettier": "^3.x.x",
