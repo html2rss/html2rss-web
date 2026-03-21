@@ -400,6 +400,7 @@ describe('App', () => {
   });
 
   it('shows the utility links in a user-focused order', () => {
+    window.history.replaceState({}, '', 'http://localhost:3000/#result');
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -419,7 +420,7 @@ describe('App', () => {
     );
     expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
       'href',
-      'https://html2rss.github.io/web-application/how-to/use-included-configs/'
+      'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );
     expect(screen.getByRole('link', { name: 'Install from Docker Hub' })).toHaveAttribute(
       'href',

@@ -255,6 +255,16 @@ export function UtilityStrip({
   onClearToken,
 }: UtilityStripProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const includedFeedsHref = (() => {
+    const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
+    if (typeof window === 'undefined') return directoryUrl.toString();
+
+    const instanceUrl = new URL(window.location.href);
+    instanceUrl.search = '';
+    instanceUrl.hash = '';
+    directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.toString())}`;
+    return directoryUrl.toString();
+  })();
 
   if (hidden) return null;
 
@@ -271,7 +281,7 @@ export function UtilityStrip({
       {isOpen && (
         <div class="utility-strip__items">
           <a
-            href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+            href={includedFeedsHref}
             target="_blank"
             rel="noopener noreferrer"
             class="utility-link"
