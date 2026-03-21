@@ -7,6 +7,7 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 ## Links
 
 - Docs & feed directory: https://html2rss.github.io
+- Contributor Guide: [docs/README.md](docs/README.md)
 - Discussions: https://github.com/orgs/html2rss/discussions
 - Sponsor: https://github.com/sponsors/gildesmarais
 
@@ -17,26 +18,13 @@ html2rss-web converts arbitrary websites into RSS 2.0 feeds with a slim Ruby bac
 - Signed public feed URLs that work in standard RSS readers.
 - Built-in URL validation, scoped feed access controls, and HMAC-protected tokens.
 
-## Architecture
+## Architecture Overview
 
 - **Backend:** Ruby + Roda, backed by the `html2rss` gem for extraction.
 - **Frontend:** Preact app built with Vite into `frontend/dist` and served at `/`.
-- **Distribution:** Docker Compose by default; other deployments require manual wiring.
-- [Project notes](docs/README.md)
+- **Distribution:** Docker Compose by default.
 
-## REST API Snapshot
-
-```bash
-# List available strategies
-curl -H "Authorization: Bearer <token>" \
-  "https://your-domain.com/api/v1/strategies"
-
-# Create a feed and capture the signed public URL
-curl -X POST "https://your-domain.com/api/v1/feeds" \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"url":"https://example.com","name":"Example Feed"}'
-```
+For detailed architecture and internal rules, see [docs/README.md](docs/README.md).
 
 ## Trial Run (Docker Pull And Run)
 
@@ -54,16 +42,8 @@ Then open:
 
 - `http://localhost:4000/` for the web UI
 - `http://localhost:4000/microsoft.com/azure-products.rss` for a built-in Azure updates feed
-- `http://localhost:4000/phys.org/weekly.rss` for a built-in science headlines feed
-- `http://localhost:4000/softwareleadweekly.com/issues.rss` for a built-in newsletter archive feed
 
-This trial run is intentionally minimal:
-
-- it uses the image's bundled config set, including embedded `html2rss-configs` feeds
-- automatic feed generation stays disabled by default
-- Browserless is not wired in yet
-
-Use Docker Compose for Browserless, auto-updates, or local feed overrides.
+This trial run is intentionally minimal. Use Docker Compose for Browserless, auto-updates, or local feed overrides.
 
 ## Deploy (Docker Compose)
 
@@ -73,76 +53,12 @@ Use Docker Compose for Browserless, auto-updates, or local feed overrides.
 
 UI + API run on `http://localhost:4000`. The app exits if the secret key is missing.
 
-The default compose file now uses the bundled config set.
-If you want to add or override static feeds locally, uncomment the bind mount in [docker-compose.yml](docker-compose.yml) and provide `./config/feeds.yml`.
-
-## Development (Dev Container)
+## Development
 
 Use the repository's [Dev Container](.devcontainer/README.md) for all local development and tests.
 Running the app directly on the host is not supported.
 
-Quick start inside the Dev Container:
-
-```
-make setup
-make dev
-make test
-make ready
-make yard-verify-public-docs
-bundle exec rubocop -F
-bundle exec rspec
-make openapi
-```
-
-Dev URLs: Ruby app at `http://localhost:4000`, frontend dev server at `http://localhost:4001`.
-
-Backend code under the `Html2rss::Web` namespace now lives under `app/web/**`, so Zeitwerk can mirror constant paths directly instead of relying on directory-specific namespace wiring.
-`make ready` also runs `rake zeitwerk:verify`, which eager-loads the app and fails on loader drift early.
-For contributors and AI agents changing backend structure, follow the rules in [docs/README.md](docs/README.md).
-
-## Make Targets
-
-| Command                        | Purpose                                                    |
-| ------------------------------ | ---------------------------------------------------------- |
-| `make help`                    | List available shortcuts.                                  |
-| `make setup`                   | Install Ruby and Node dependencies.                        |
-| `make dev`                     | Run Ruby (port 4000) and frontend (port 4001) dev servers. |
-| `make dev-ruby`                | Start only the Ruby server.                                |
-| `make dev-frontend`            | Start only the frontend dev server (port 4001).            |
-| `make test`                    | Run Ruby and frontend test suites.                         |
-| `make test-ruby`               | Run Ruby specs.                                            |
-| `make test-frontend`           | Run frontend unit and contract tests.                      |
-| `make lint`                    | Run all linters.                                           |
-| `make lintfix`                 | Auto-fix lint warnings where possible.                     |
-| `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
-| `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.       |
-| `make openapi-verify`          | Regenerate + fail if OpenAPI file is stale.                |
-| `make clean`                   | Remove build artefacts.                                    |
-
-## OpenAPI Contract
-
-The OpenAPI file is generated from Ruby request specs only.
-
-- Regenerate: `make openapi`
-- Verify drift (CI behavior): `make openapi-verify`
-
-## Frontend npm Scripts (inside Dev Container)
-
-| Command                 | Purpose                                      |
-| ----------------------- | -------------------------------------------- |
-| `npm run dev`           | Vite dev server with hot reload (port 4001). |
-| `npm run build`         | Build static assets into `frontend/dist/`.   |
-| `npm run test:run`      | Unit tests (Vitest).                         |
-| `npm run test:contract` | Contract tests with MSW.                     |
-
-## Testing Strategy
-
-| Layer             | Tooling                  | Focus                                                |
-| ----------------- | ------------------------ | ---------------------------------------------------- |
-| Ruby API          | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
-| Frontend unit     | Vitest + Testing Library | Component rendering and hooks with mocked fetch.     |
-| Frontend contract | Vitest + MSW             | End-to-end fetch flows against mocked API responses. |
-| Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
+See the [Contributor Guide](docs/README.md) for setup commands, testing strategy, and backend structure rules.
 
 ## Contributing
 
