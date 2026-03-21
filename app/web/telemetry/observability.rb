@@ -14,17 +14,12 @@ module Html2rss
         # @param level [Symbol]
         # @return [void]
         def emit(event_name:, outcome:, details: {}, level: :info)
-          logger.public_send(level, build_payload(event_name, outcome, details).to_json)
+          LogEvent.emit(payload: build_payload(event_name, outcome, details), level: level)
         rescue StandardError => error
           handle_emit_error(error, event_name, outcome)
         end
 
         private
-
-        # @return [Logger]
-        def logger
-          AppLogger.logger
-        end
 
         # @param error [StandardError]
         # @param event_name [String]
@@ -41,7 +36,7 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def build_payload(event_name, outcome, details)
           context = RequestContext.current_h
-          base_payload(event_name, outcome, context).merge(details: LogSanitizer.sanitize_details(details))
+          base_payload(event_name, outcome, context).merge(details: details)
         end
 
         # @param event_name [String]

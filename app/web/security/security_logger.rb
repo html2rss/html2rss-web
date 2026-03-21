@@ -10,16 +10,10 @@ module Html2rss
     # Provides structured logging for security events to stdout
     module SecurityLogger
       class << self
-        # Initialize logger to stdout with structured JSON output
-        # @return [Logger]
-        def logger
-          Thread.current[:security_logger] ||= create_logger
-        end
-
-        # Reset logger (for testing)
+        # Reset shared logger state for tests.
         # @return [void]
         def reset_logger!
-          Thread.current[:security_logger] = nil
+          AppLogger.reset_logger!
         end
 
         ##
@@ -133,23 +127,18 @@ module Html2rss
 
         private
 
-        def create_logger
-          AppLogger.logger
-        end
-
         ##
         # Log a security event
         # @param event_type [String] type of security event
         # @param data [Hash] event data
         def log_event(event_type, data, severity: :warn)
-          context_data = RequestContext.current_h
-          payload = {
-            security_event: event_type,
-            **context_data,
-            **LogSanitizer.sanitize_details(data)
-          }.to_json
-
-          logger.public_send(severity, payload)
+          LogEvent.emit(
+            level: severity,
+            payload: {
+              security_event: event_type,
+              **data
+            }
+          )
         rescue StandardError => error
           handle_logging_error(error, event_type, data)
         end
