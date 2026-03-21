@@ -48,7 +48,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     expected_url = {
       host: 'news.ycombinator.com',
       scheme: 'https',
-      hash: Digest::SHA256.hexdigest('https://news.ycombinator.com')[0..11]
+      hash: url_hash('https://news.ycombinator.com')
     }
 
     expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_url)
@@ -60,6 +60,14 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     )
   end
 
+  it 'sanitizes nested url fields when emitting shared log events' do
+    Html2rss::Web::LogEvent.emit(payload: nested_url_payload)
+
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+
+    expect(payload.slice(:url, :related_urls, :details)).to eq(expected_nested_url_payload)
+  end
+
   it 'sanitizes security logger token usage fields' do
     Html2rss::Web::SecurityLogger.log_token_usage('very-secret-token', 'https://news.ycombinator.com', true)
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
@@ -69,7 +77,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       url: {
         host: 'news.ycombinator.com',
         scheme: 'https',
-        hash: Digest::SHA256.hexdigest('https://news.ycombinator.com')[0..11]
+        hash: url_hash('https://news.ycombinator.com')
       },
       token_hash: Digest::SHA256.hexdigest('very-secret-token')[0..7]
     )
@@ -88,7 +96,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     expect(observability_payload.dig(:details, :url)).to eq(
       host: 'news.ycombinator.com',
       scheme: 'https',
-      hash: Digest::SHA256.hexdigest('https://news.ycombinator.com')[0..11]
+      hash: url_hash('https://news.ycombinator.com')
     )
   end
 
@@ -102,5 +110,42 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       timeout: '15000ms',
       state: 'completed'
     )
+  end
+
+  private
+
+  # @return [Hash{Symbol=>Object}]
+  def nested_url_payload
+    {
+      url: 'https://news.ycombinator.com',
+      related_urls: ['https://example.com/feed.xml'],
+      details: { url: 'https://lobste.rs/s/test' }
+    }
+  end
+
+  # @return [Hash{Symbol=>Object}]
+  def expected_nested_url_payload
+    {
+      url: sanitized_url('news.ycombinator.com', 'https://news.ycombinator.com'),
+      related_urls: [
+        sanitized_url('example.com', 'https://example.com/feed.xml')
+      ],
+      details: {
+        url: sanitized_url('lobste.rs', 'https://lobste.rs/s/test')
+      }
+    }
+  end
+
+  # @param host [String]
+  # @param url [String]
+  # @return [Hash{Symbol=>String}]
+  def sanitized_url(host, url)
+    { host:, scheme: 'https', hash: url_hash(url) }
+  end
+
+  # @param url [String]
+  # @return [String]
+  def url_hash(url)
+    Digest::SHA256.hexdigest(url)[0..11]
   end
 end
