@@ -4,10 +4,11 @@ queue_rules:
       - author=dependabot[bot]
     merge_conditions:
       - author=dependabot[bot]
-      - status-success=docker-test
+      - check-success=docker-test (false)
+      - check-success=docker-test (true)
       - status-success=hadolint
       - status-success=ruby
-      - base=master
+      - base=main
     merge_method: squash
 
 pull_request_rules:
