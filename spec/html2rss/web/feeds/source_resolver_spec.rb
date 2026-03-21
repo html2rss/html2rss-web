@@ -29,6 +29,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
       before do
         allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
+        allow(Html2rss::RequestService).to receive(:default_strategy_name).and_return(:browserless)
       end
 
       it 'normalizes the static source into shared generator input', :aggregate_failures do
@@ -39,7 +40,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
             :static,
             start_with('static:legacy:'),
             900,
-            include(params: { 'existing' => '1', 'page' => '3' }, strategy: :faraday)
+            include(params: { 'existing' => '1', 'page' => '3' }, strategy: :browserless)
           ]
         )
       end

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip, type Strategy } from './AppPanels';
 import { useAccessToken } from '../hooks/useAccessToken';
@@ -8,6 +8,8 @@ import { useStrategies } from '../hooks/useStrategies';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
+const preferredStrategy = (strategies: { id: string }[]) =>
+  strategies.find((strategy) => strategy.id === 'browserless')?.id ?? strategies[0]?.id;
 
 function BrandLockup() {
   return (
@@ -42,25 +44,29 @@ export function App() {
   } = useFeedConversion();
   const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies();
 
-  const [feedFormData, setFeedFormData] = useState({ url: '', strategy: 'ssrf_filter' });
+  const [feedFormData, setFeedFormData] = useState({ url: '', strategy: '' });
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
   const [showTokenPrompt, setShowTokenPrompt] = useState(false);
   const [tokenDraft, setTokenDraft] = useState('');
   const [tokenError, setTokenError] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
+  const autoSubmitUrlRef = useRef<string | null>(null);
+  const hasAutoSubmittedRef = useRef(false);
+  const selectedStrategy = feedFormData.strategy || preferredStrategy(strategies) || '';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (feedFormData.url) return;
 
     const urlParam = new URLSearchParams(window.location.search).get('url');
     if (!urlParam) return;
+    autoSubmitUrlRef.current = urlParam;
+    if (feedFormData.url) return;
 
     setFeedFormData((prev) => ({ ...prev, url: urlParam }));
   }, [feedFormData.url]);
 
   useEffect(() => {
-    const nextStrategy = strategies[0]?.id;
+    const nextStrategy = preferredStrategy(strategies);
     if (!nextStrategy) return;
 
     const hasCurrentStrategy = strategies.some((strategy) => strategy.id === feedFormData.strategy);
@@ -68,6 +74,8 @@ export function App() {
   }, [strategies, feedFormData.strategy]);
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
+  const featuredFeeds = metadata?.instance.featured_feeds ?? [];
+  const submitDisabled = isConverting || strategiesLoading || !feedCreation.enabled || showTokenPrompt;
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
     setFeedFormData((prev) => ({ ...prev, [key]: value }));
@@ -80,7 +88,7 @@ export function App() {
   };
 
   const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Start here for most pages.';
+    if (strategy.id === 'faraday') return 'Start here for most pages.';
     if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
     return strategy.name;
   };
@@ -96,8 +104,15 @@ export function App() {
   };
 
   const attemptFeedCreation = async (accessToken: string) => {
+    const strategy = selectedStrategy;
+
     if (!feedFormData.url.trim()) {
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
+      return false;
+    }
+
+    if (!strategy) {
+      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: 'Strategy is required' });
       return false;
     }
 
@@ -117,7 +132,7 @@ export function App() {
     }
 
     try {
-      await convertFeed(feedFormData.url, feedFormData.strategy, accessToken);
+      await convertFeed(feedFormData.url, strategy, accessToken);
       setShowTokenPrompt(false);
       setTokenError('');
       return true;
@@ -166,12 +181,23 @@ export function App() {
     setFocusCreateComposerKey((current) => current + 1);
   };
 
+  useEffect(() => {
+    const autoSubmitUrl = autoSubmitUrlRef.current;
+    if (!autoSubmitUrl || hasAutoSubmittedRef.current) return;
+    if (strategiesLoading || metadataLoading || tokenLoading) return;
+    if (feedFormData.url !== autoSubmitUrl || !selectedStrategy) return;
+
+    hasAutoSubmittedRef.current = true;
+    setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    void attemptFeedCreation(token ?? '');
+  }, [feedFormData.url, metadataLoading, selectedStrategy, strategiesLoading, token, tokenLoading]);
+
   if (metadataLoading || tokenLoading) {
     return (
       <section class="workspace-shell workspace-shell--centered workspace-shell--loading">
         <BrandLockup />
-        <div class="status-card" aria-live="polite">
-          <div class="status-card__spinner" aria-hidden="true" />
+        <div class="ui-card ui-card--notice ui-card--roomy notice" data-state="loading" aria-live="polite">
+          <div class="notice__spinner" aria-hidden="true" />
           <div>
             <strong>Loading instance</strong>
             <p>Reading feed-generation capabilities.</p>
@@ -188,7 +214,7 @@ export function App() {
       </header>
 
       {(metadataError || tokenStateError) && (
-        <section class="notice notice--error" role="alert">
+        <section class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <div class="notice__title">Instance metadata unavailable</div>
           <p>{metadataError ?? tokenStateError}</p>
         </section>
@@ -200,14 +226,16 @@ export function App() {
         <>
           <CreateFeedPanel
             focusComposerKey={focusCreateComposerKey}
-            feedFormData={feedFormData}
+            feedFormData={{ ...feedFormData, strategy: selectedStrategy }}
             feedFieldErrors={feedFieldErrors}
             conversionError={conversionError}
             isConverting={isConverting}
+            submitDisabled={submitDisabled}
             strategies={strategies}
             strategiesLoading={strategiesLoading}
             strategiesError={strategiesError}
             feedCreationEnabled={feedCreation.enabled}
+            featuredFeeds={featuredFeeds}
             accessTokenRequired={feedCreation.access_token_required}
             hasAccessToken={hasToken}
             tokenDraft={tokenDraft}
@@ -231,6 +259,7 @@ export function App() {
           <UtilityStrip
             hidden={showTokenPrompt}
             hasAccessToken={hasToken}
+            openapiUrl={metadata?.api.openapi_url ?? null}
             onClearToken={() => {
               clearToken();
               setShowTokenPrompt(false);

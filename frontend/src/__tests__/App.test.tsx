@@ -38,6 +38,7 @@ describe('App', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, '', 'http://localhost:3000/');
 
     mockUseAccessToken.mockReturnValue({
       token: null,
@@ -60,6 +61,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
+          featured_feeds: [],
         },
       },
       isLoading: false,
@@ -77,8 +79,8 @@ describe('App', () => {
 
     mockUseStrategies.mockReturnValue({
       strategies: [
-        { id: 'ssrf_filter', name: 'ssrf_filter', display_name: 'Standard (recommended)' },
-        { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages' },
+        { id: 'faraday', name: 'faraday', display_name: 'Default' },
+        { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages (recommended)' },
       ],
       isLoading: false,
       error: null,
@@ -99,6 +101,50 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+    });
+  });
+
+  it('prefers browserless as the default strategy when available', () => {
+    render(<App />);
+
+    return waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+    });
+  });
+
+  it('falls back to the first available strategy when browserless is unavailable', () => {
+    mockUseStrategies.mockReturnValue({
+      strategies: [{ id: 'faraday', name: 'faraday', display_name: 'Default' }],
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    return waitFor(() => {
+      expect(screen.getByRole('combobox')).toHaveValue('faraday');
+    });
+  });
+
+  it('auto-submits a prefilled url using the resolved default strategy', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    window.history.replaceState({}, '', 'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(mockConvertFeed).toHaveBeenCalledWith(
+        'https://example.com/articles',
+        'browserless',
+        'saved-token'
+      );
     });
   });
 
@@ -123,14 +169,55 @@ describe('App', () => {
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
+  it('promotes included feeds when feed creation is disabled', () => {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'http://example.test/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: false,
+            access_token_required: false,
+          },
+          featured_feeds: [
+            {
+              path: '/microsoft.com/azure-products.rss',
+              title: 'Azure product updates',
+              description: 'Follow Microsoft Azure product announcements from your own instance.',
+            },
+          ],
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('Try a working included feed')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+      'href',
+      '/microsoft.com/azure-products.rss'
+    );
+    expect(screen.getByText('Custom feed generation is disabled for this instance.')).toBeInTheDocument();
+  });
+
   it('renders the result panel when a feed is available', async () => {
+    vi.spyOn(window, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [] }),
+    } as Response);
+
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: {
         id: 'feed-123',
         name: 'Example Feed',
         url: 'https://example.com/articles',
-        strategy: 'ssrf_filter',
+        strategy: 'faraday',
         feed_token: 'example-token',
         public_url: '/api/v1/feeds/example-token',
         json_public_url: '/api/v1/feeds/example-token.json',
@@ -196,7 +283,7 @@ describe('App', () => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
       expect(mockConvertFeed).toHaveBeenCalledWith(
         'https://example.com/articles',
-        'ssrf_filter',
+        'browserless',
         'token-123'
       );
     });
@@ -280,5 +367,23 @@ describe('App', () => {
     const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
     expect(bookmarklet.getAttribute('href')).toContain('/?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
+  });
+
+  it('shows the utility links in a user-focused order', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const utilityLinks = screen.getAllByRole('link').map((link) => link.textContent);
+    expect(utilityLinks).toEqual(['Try included feeds', 'Bookmarklet', 'OpenAPI spec', 'Source code']);
+
+    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+      'href',
+      'http://example.test/openapi.yaml'
+    );
+    expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/web-application/how-to/use-included-configs/'
+    );
   });
 });

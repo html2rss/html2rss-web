@@ -7,11 +7,9 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
-    volumes:
-      - type: bind
-        source: ./config/feeds.yml
-        target: /app/config/feeds.yml
-        read_only: true
+    env_file:
+      - path: .env
+        required: false
     environment:
       RACK_ENV: production
       PORT: 4000
@@ -19,6 +17,13 @@ services:
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:?set HEALTH_CHECK_TOKEN}
       BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:4002
       BROWSERLESS_IO_API_TOKEN: ${BROWSERLESS_IO_API_TOKEN:?set BROWSERLESS_IO_API_TOKEN}
+    # Trial runs use the image's bundled config/feeds.yml.
+    # Uncomment the block below when you want to replace it with your own file.
+    # volumes:
+    #   - type: bind
+    #     source: ./config/feeds.yml
+    #     target: /app/config/feeds.yml
+    #     read_only: true
 
   watchtower:
     image: containrrr/watchtower

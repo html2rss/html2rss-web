@@ -81,6 +81,17 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     ]
   end
 
+  def expected_featured_feeds
+    [
+      ['/microsoft.com/azure-products.rss', 'Azure product updates',
+       'Follow Microsoft Azure product announcements from your own instance.'],
+      ['/phys.org/weekly.rss', 'Top science news of the week',
+       'Try a high-signal feed with stable weekly headlines from the built-in config set.'],
+      ['/softwareleadweekly.com/issues.rss', 'Software Lead Weekly issues',
+       'Follow a long-running newsletter archive from the embedded config catalog.']
+    ].map { |path, title, description| { 'path' => path, 'title' => title, 'description' => description } }
+  end
+
   around do |example|
     ClimateControl.modify(AUTO_SOURCE_ENABLED: 'true') { example.run }
   end
@@ -126,6 +137,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         'enabled' => true,
         'access_token_required' => true
       )
+    end
+
+    it 'returns featured included feeds for trial runs', :aggregate_failures do
+      get '/api/v1'
+
+      expect(last_response.status).to eq(200)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'instance', 'featured_feeds')).to eq(expected_featured_feeds)
     end
 
     it 'returns API information with trailing slash', :aggregate_failures do

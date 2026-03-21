@@ -24,10 +24,12 @@ interface CreateFeedPanelProps {
   feedFieldErrors: FeedFieldErrors;
   conversionError: string | null;
   isConverting: boolean;
+  submitDisabled: boolean;
   strategies: Strategy[];
   strategiesLoading: boolean;
   strategiesError: string | null;
   feedCreationEnabled: boolean;
+  featuredFeeds: Array<{ path: string; title: string; description: string }>;
   accessTokenRequired: boolean;
   hasAccessToken: boolean;
   tokenDraft: string;
@@ -47,10 +49,12 @@ export function CreateFeedPanel({
   feedFieldErrors,
   conversionError,
   isConverting,
+  submitDisabled,
   strategies,
   strategiesLoading,
   strategiesError,
   feedCreationEnabled,
+  featuredFeeds,
   accessTokenRequired,
   hasAccessToken,
   tokenDraft,
@@ -67,8 +71,8 @@ export function CreateFeedPanel({
   const urlInputRef = useRef<HTMLInputElement | null>(null);
   const tokenInputRef = useRef<HTMLInputElement | null>(null);
   const strategyOptionLabel = (strategy: Strategy) => {
-    if (strategy.id === 'ssrf_filter') return 'Standard rendering';
-    if (strategy.id === 'browserless') return 'JavaScript pages';
+    if (strategy.id === 'faraday') return 'Default';
+    if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
     return strategy.display_name;
   };
 
@@ -109,16 +113,16 @@ export function CreateFeedPanel({
           inputRef={urlInputRef}
           actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
-          disabled={isConverting || !feedCreationEnabled || showTokenPrompt}
+          disabled={submitDisabled}
           error={feedFieldErrors.url}
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
 
-        <label class="field-block field-block--select field-block--subtle" htmlFor="strategy">
+        <label class="field-block field-block--centered field-block--compact" htmlFor="strategy">
           <select
             id="strategy"
             name="strategy"
-            class="input input--select input--subtle"
+            class="input input--minimal"
             value={feedFormData.strategy}
             disabled={strategiesLoading || showTokenPrompt}
             onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
@@ -140,7 +144,35 @@ export function CreateFeedPanel({
         )}
 
         {!feedCreationEnabled && (
-          <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+          <>
+            <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+            {featuredFeeds.length > 0 && (
+              <div
+                class="ui-card ui-card--notice ui-card--padded notice"
+                role="status"
+                aria-label="Included feeds"
+              >
+                <div class="notice__title">Try a working included feed</div>
+                <p>Start with one of the embedded configs from this instance:</p>
+                {featuredFeeds.map((feed) => (
+                  <p key={feed.path}>
+                    <a href={feed.path}>{feed.title}</a>
+                    {' - '}
+                    {feed.description}
+                  </p>
+                ))}
+                <p>
+                  <a
+                    href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Learn how included configs work.
+                  </a>
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -150,13 +182,13 @@ export function CreateFeedPanel({
             <h2>Add access token</h2>
             <p class="token-gate__hint">This instance needs an access token.</p>
           </div>
-          <label class="field-block field-block--token" htmlFor="access-token">
+          <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
             <span class="field-label field-label--ghost">Access token</span>
             <input
               id="access-token"
               name="access-token"
               type="password"
-              class="input input--mono input--subtle"
+              class="input input--mono input--minimal"
               aria-label="Access token"
               placeholder="Paste access token"
               autocomplete="off"
@@ -194,14 +226,14 @@ export function CreateFeedPanel({
       )}
 
       {conversionError && (
-        <div class="notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <div class="notice__title">Feed generation failed</div>
           <p>{conversionError}</p>
         </div>
       )}
 
       {feedFieldErrors.form && (
-        <div class="notice notice--error" role="alert">
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <p>{feedFieldErrors.form}</p>
         </div>
       )}
@@ -212,10 +244,16 @@ export function CreateFeedPanel({
 interface UtilityStripProps {
   hidden?: boolean;
   hasAccessToken: boolean;
+  openapiUrl: string | null;
   onClearToken: () => void;
 }
 
-export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: UtilityStripProps) {
+export function UtilityStrip({
+  hidden = false,
+  hasAccessToken,
+  openapiUrl,
+  onClearToken,
+}: UtilityStripProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (hidden) return null;
@@ -232,7 +270,20 @@ export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: U
       </button>
       {isOpen && (
         <div class="utility-strip__items">
+          <a
+            href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="utility-link"
+          >
+            Try included feeds
+          </a>
           <Bookmarklet />
+          {openapiUrl && (
+            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
+              OpenAPI spec
+            </a>
+          )}
           <a
             href="https://github.com/html2rss/html2rss-web"
             target="_blank"
