@@ -39,11 +39,11 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByLabel('PAGE URL')).toBeVisible();
+    await expect(page.getByLabel('Page URL')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Generate feed URL' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'MORE' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'More' })).toBeVisible();
 
-    await page.getByLabel('PAGE URL').fill('https://example.com/articles');
+    await page.getByLabel('Page URL').fill('https://example.com/articles');
     await page.getByRole('button', { name: 'Generate feed URL' }).click();
 
     await expect(page.getByRole('heading', { name: 'Add access token' })).toBeVisible();
@@ -53,6 +53,6 @@ test.describe('frontend smoke', () => {
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page.getByRole('button', { name: 'Generate feed URL' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'MORE' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'More' })).toBeVisible();
   });
 });
