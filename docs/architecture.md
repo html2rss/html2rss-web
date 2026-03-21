@@ -11,7 +11,7 @@ This document provides a mental model of how `html2rss-web` processes requests.
 [ Roda App (app/web/routes) ] <--- [ Auth / Security (app/web/security) ]
        |
        v
-[ Feeds Service (app/web/feeds) ] <--- [ Cache (app/web/feeds/cache) ]
+[ Feeds Service (app/web/feeds) ] <--- [ Cache (app/web/feeds/cache.rb) ]
        |
        v
 [ html2rss Gem ] <--- [ Request Strategies (Faraday / Browserless) ]
@@ -42,7 +42,7 @@ The `Html2rss::Web::Feeds::Service` orchestrates the extraction:
 
 1. Checks the `Html2rss::Web::Feeds::Cache`.
 2. If stale/missing, calls the `html2rss` gem with the resolved strategy.
-3. Renders the output using `RSSRenderer` (XML) or `JSONRenderer`.
+3. Renders the output using `RssRenderer` (XML) or `JsonRenderer`.
 
 ## Extension Points
 

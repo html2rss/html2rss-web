@@ -32,7 +32,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 ## Development Setup (Dev Container)
 
-Use the repository's [Dev Container](.devcontainer/README.md) for all local development and tests.
+Use the repository's [Dev Container](../.devcontainer/README.md) for all local development and tests.
 Running the app directly on the host is not supported.
 
 ### Common Commands (Inside Dev Container)
