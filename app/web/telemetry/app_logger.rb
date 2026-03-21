@@ -3,7 +3,6 @@
 require 'json'
 require 'logger'
 require 'time'
-require 'uri'
 
 module Html2rss
   module Web

@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'digest'
-require 'uri'
+require 'html2rss/url'
 
 module Html2rss
   module Web
     ##
-    # Sanitizes request and detail payloads before structured logging.
+    # Sanitizes request paths and log payloads before they are emitted.
     module LogSanitizer
-      FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/.?]+)(\.(?:json|xml|rss))?\z}
+      FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/?]+)\z}
 
       class << self
         # @param path [String, nil]
@@ -16,7 +16,11 @@ module Html2rss
         def sanitize_path(path)
           return if path.nil?
 
-          path.to_s.gsub(FEED_TOKEN_ROUTE, '\1[REDACTED]\3')
+          path_string = path.to_s
+          suffix = feed_suffix(path_string)
+          token_path = suffix ? path_string.delete_suffix(suffix) : path_string
+
+          token_path.gsub(FEED_TOKEN_ROUTE, "\\1[REDACTED]#{suffix}")
         end
 
         # @param details [Hash]
@@ -28,6 +32,16 @@ module Html2rss
         end
 
         private
+
+        # @param path [String]
+        # @return [String, nil]
+        def feed_suffix(path)
+          return '.json' if path.end_with?('.json')
+          return '.xml' if path.end_with?('.xml')
+          return '.rss' if path.end_with?('.rss')
+
+          nil
+        end
 
         # @param key [Object]
         # @param value [Object]
@@ -46,13 +60,13 @@ module Html2rss
           url = value.to_s
           return value if url.empty?
 
-          uri = URI.parse(url)
+          normalized_url = Html2rss::Url.for_channel(url)
           {
-            host: uri.host,
-            scheme: uri.scheme,
+            host: normalized_url.host,
+            scheme: normalized_url.scheme,
             hash: Digest::SHA256.hexdigest(url)[0..11]
           }.compact
-        rescue URI::InvalidURIError
+        rescue StandardError
           { hash: Digest::SHA256.hexdigest(url)[0..11] }
         end
       end

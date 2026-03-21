@@ -7,7 +7,7 @@ require_relative '../../../app/web/request/request_context'
 require_relative '../../../app/web/security/security_logger'
 require_relative '../../../app/web/telemetry/app_logger'
 require_relative '../../../app/web/telemetry/log_event'
-require_relative '../../../app/web/telemetry/log_sanitizer'
+require_relative '../../../app/web/security/log_sanitizer'
 require_relative '../../../app/web/telemetry/observability'
 
 RSpec.describe Html2rss::Web::LogSanitizer do
@@ -36,9 +36,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::RequestContext.clear!
   end
 
-  it 'redacts feed tokens from token feed request paths' do
+  it 'redacts feed tokens from token feed request paths', :aggregate_failures do
     expect(described_class.sanitize_path('/api/v1/feeds/token-value-123')).to eq('/api/v1/feeds/[REDACTED]')
     expect(described_class.sanitize_path('/api/v1/feeds/token-value-123.json')).to eq('/api/v1/feeds/[REDACTED].json')
+    expect(
+      described_class.sanitize_path('/api/v1/feeds/eyJwIjoiYS5iLmMifQ==.xml')
+    ).to eq('/api/v1/feeds/[REDACTED].xml')
   end
 
   it 'replaces logged urls with hashed host metadata' do
@@ -49,6 +52,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     }
 
     expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_url)
+  end
+
+  it 'falls back to a hash for malformed urls' do
+    expect(described_class.sanitize_details(url: '://bad url')).to eq(
+      url: { hash: Digest::SHA256.hexdigest('://bad url')[0..11] }
+    )
   end
 
   it 'sanitizes security logger token usage fields' do
