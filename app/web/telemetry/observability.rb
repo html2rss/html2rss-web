@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-require 'logger'
-require 'time'
-
 module Html2rss
   module Web
     ##
@@ -27,16 +23,7 @@ module Html2rss
 
         # @return [Logger]
         def logger
-          Thread.current[:observability_logger] ||= Logger.new($stdout).tap do |log|
-            log.formatter = proc do |severity, datetime, _progname, msg|
-              "#{{
-                timestamp: datetime.iso8601,
-                level: severity,
-                service: 'html2rss-web',
-                **JSON.parse(msg, symbolize_names: true)
-              }.to_json}\n"
-            end
-          end
+          AppLogger.logger
         end
 
         # @param error [StandardError]
@@ -54,7 +41,7 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def build_payload(event_name, outcome, details)
           context = RequestContext.current_h
-          base_payload(event_name, outcome, context).merge(details: details)
+          base_payload(event_name, outcome, context).merge(details: LogSanitizer.sanitize_details(details))
         end
 
         # @param event_name [String]
