@@ -49,14 +49,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       .create_with_validation(
         username: 'ghost',
         url: feed_url,
-        strategy: 'ssrf_filter',
+        strategy: 'faraday',
         secret_key: ENV.fetch('HTML2RSS_SECRET_KEY')
       )
       .encode
   end
 
   def valid_feed_token
-    Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+    Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
   end
 
   def json_feed_response_for(token)
@@ -285,7 +285,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'renders feed for a valid token', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
@@ -305,7 +305,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'prefers xml when Accept quality outranks json', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
@@ -317,7 +317,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
@@ -346,7 +346,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns forbidden when auto source is disabled', :aggregate_failures do
       unique_url = "#{feed_url}/disabled"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 
       ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
         get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
@@ -359,7 +359,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns JSON Feed-shaped forbidden errors when requested through Accept', :aggregate_failures do
       unique_url = "#{feed_url}/disabled-json"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 
       ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
         get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
@@ -372,7 +372,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns non-cacheable xml feed errors when service generation fails', :aggregate_failures do
       unique_url = "#{feed_url}/service-error-xml"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(service_error_result)
 
@@ -386,7 +386,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns non-cacheable json feed errors when service generation fails', :aggregate_failures do
       unique_url = "#{feed_url}/service-error-json"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'ssrf_filter')
+      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 
       status, content_type, cache_control, title = json_feed_service_error_tuple(token)
 
@@ -404,7 +404,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     let(:request_params) do
       {
         url: feed_url,
-        strategy: 'ssrf_filter'
+        strategy: 'faraday'
       }
     end
 

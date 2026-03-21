@@ -59,7 +59,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       Html2rss::Web::FeedToken,
       url: feed_url,
       username: account[:username],
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     )
     allow(Html2rss::Web::FeedToken).to receive_messages(
       decode: token_payload,
@@ -187,7 +187,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         Html2rss::Web::FeedToken,
         url: feed_url,
         username: account[:username],
-        strategy: 'ssrf_filter'
+        strategy: 'faraday'
       )
 
       allow(Html2rss::Web::FeedToken).to receive(:decode).with(raw_token).and_return(escaped_token_payload)
@@ -203,7 +203,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     let(:request_payload) do
       {
         url: feed_url,
-        strategy: 'ssrf_filter'
+        strategy: 'faraday'
       }
     end
 
@@ -212,7 +212,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         id: 'feed-123',
         name: 'Example Feed',
         url: feed_url,
-        strategy: 'ssrf_filter',
+        strategy: 'faraday',
         feed_token: feed_token,
         public_url: "/api/v1/feeds/#{feed_token}",
         json_public_url: "/api/v1/feeds/#{feed_token}.json",

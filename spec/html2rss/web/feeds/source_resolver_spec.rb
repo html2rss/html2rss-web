@@ -29,7 +29,6 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
       before do
         allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
-        allow(Html2rss::RequestService).to receive(:default_strategy_name).and_return(:ssrf_filter)
       end
 
       it 'normalizes the static source into shared generator input', :aggregate_failures do
@@ -40,7 +39,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
             :static,
             start_with('static:legacy:'),
             900,
-            include(params: { 'existing' => '1', 'page' => '3' }, strategy: :ssrf_filter)
+            include(params: { 'existing' => '1', 'page' => '3' }, strategy: :faraday)
           ]
         )
       end
@@ -52,6 +51,14 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           channel: { ttl: 15, url: 'https://example.com/feed' },
           params: { 'existing' => '1' }
         )
+      end
+
+      it 'preserves an explicit static strategy when configured' do
+        config[:strategy] = :browserless
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.generator_input[:strategy]).to eq(:browserless)
       end
     end
 
@@ -70,7 +77,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           Html2rss::Web::FeedToken,
           username: 'admin',
           url: 'https://example.com/private',
-          strategy: 'ssrf_filter'
+          strategy: 'faraday'
         )
       end
 
@@ -82,7 +89,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
         allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?)
           .with({ username: 'admin' }, 'https://example.com/private').and_return(true)
         allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
-        allow(Html2rss::RequestService).to receive(:strategy_names).and_return([:ssrf_filter])
+        allow(Html2rss::RequestService).to receive(:strategy_names).and_return([:faraday])
         allow(Html2rss::Web::LocalConfig).to receive(:global)
           .and_return({ headers: { 'User-Agent' => 'html2rss-web' } })
       end
@@ -92,7 +99,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
         expect(resolved_tuple(resolved)).to match(
           [:token, start_with('token:'), 300,
-           include(strategy: :ssrf_filter, channel: { url: 'https://example.com/private' }, auto_source: {})]
+           include(strategy: :faraday, channel: { url: 'https://example.com/private' }, auto_source: {})]
         )
       end
     end

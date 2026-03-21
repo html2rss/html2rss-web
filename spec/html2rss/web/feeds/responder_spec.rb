@@ -21,7 +21,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     Html2rss::Web::Feeds::Contracts::ResolvedSource.new(
       source_kind: :token,
       cache_identity: 'token:abc',
-      generator_input: { strategy: :ssrf_filter, channel: { url: 'https://example.com' } },
+      generator_input: { strategy: :faraday, channel: { url: 'https://example.com' } },
       ttl_seconds: 600
     )
   end
@@ -74,7 +74,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'success',
-        details: include(strategy: :ssrf_filter, url: 'https://example.com'),
+        details: include(strategy: :faraday, url: 'https://example.com'),
         level: :info
       )
     end

@@ -69,7 +69,7 @@ module Html2rss
           def static_generator_input(config, params)
             generator_input = config.dup
             generator_input[:params] = merged_static_params(config, params)
-            generator_input[:strategy] ||= Html2rss::RequestService.default_strategy_name
+            generator_input[:strategy] ||= :faraday
             generator_input
           end
 

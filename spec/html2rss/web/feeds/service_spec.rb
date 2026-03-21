@@ -11,7 +11,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       source_kind: :static,
       cache_identity: 'example-feed:abc123',
       generator_input: {
-        strategy: :ssrf_filter,
+        strategy: :faraday,
         channel: { url: 'https://example.com/articles' },
         auto_source: {}
       },
@@ -109,7 +109,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       feed: feed,
       site_title: 'Example Feed',
       url: 'https://example.com/articles',
-      strategy: 'ssrf_filter'
+      strategy: 'faraday'
     )
   end
 end

@@ -26,9 +26,7 @@ module Html2rss
 
           # @return [void]
           def configure_request_service!
-            Html2rss::RequestService.register_strategy(:ssrf_filter, SsrfFilterStrategy)
-            Html2rss::RequestService.default_strategy_name = :ssrf_filter
-            Html2rss::RequestService.unregister_strategy(:faraday)
+            nil
           end
         end
       end

@@ -11,7 +11,7 @@ RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
       name: 'Example Feed',
       url: 'https://example.com/articles',
       username: 'alice',
-      strategy: 'ssrf_filter',
+      strategy: 'faraday',
       feed_token: 'generated-token',
       identity_token: 'account-token'
     }
@@ -23,7 +23,7 @@ RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
       name: 'Example Feed',
       url: 'https://example.com/articles',
       username: 'alice',
-      strategy: 'ssrf_filter',
+      strategy: 'faraday',
       feed_token: 'generated-token',
       public_url: '/api/v1/feeds/generated-token',
       json_public_url: '/api/v1/feeds/generated-token.json'
