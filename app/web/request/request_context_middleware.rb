@@ -57,7 +57,7 @@ module Html2rss
         path = request.path_info.to_s
         RequestContext::Context.new(
           request_id: request_id_for(request),
-          path: path,
+          path: LogSanitizer.sanitize_path(path),
           http_method: request.request_method.to_s.upcase,
           route_group: route_group_for(path),
           actor: nil,

@@ -13,6 +13,7 @@ module Html2rss
           def call!
             validate_environment!
             configure_request_service!
+            configure_runtime_logging!
           end
 
           private
@@ -27,6 +28,13 @@ module Html2rss
           # @return [void]
           def configure_request_service!
             nil
+          end
+
+          # @return [void]
+          def configure_runtime_logging!
+            return unless defined?(Rack::Timeout::Logger)
+
+            Rack::Timeout::Logger.logger = AppLogger.logger
           end
         end
       end
