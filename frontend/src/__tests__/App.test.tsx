@@ -369,16 +369,24 @@ describe('App', () => {
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
 
-  it('shows the OpenAPI spec and included-config links in the more menu', () => {
+  it('shows the utility links in a user-focused order', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const utilityLinks = screen.getAllByRole('link').map((link) => link.textContent);
+    expect(utilityLinks).toEqual([
+      'Try included feeds',
+      'Bookmarklet',
+      'OpenAPI spec',
+      'Source code',
+    ]);
 
     expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
       'href',
       'http://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: 'Included configs' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/web-application/how-to/use-included-configs/'
     );

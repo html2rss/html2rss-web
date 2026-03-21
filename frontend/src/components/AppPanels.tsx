@@ -270,20 +270,20 @@ export function UtilityStrip({
       </button>
       {isOpen && (
         <div class="utility-strip__items">
-          <Bookmarklet />
-          {openapiUrl && (
-            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
-              OpenAPI spec
-            </a>
-          )}
           <a
             href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
             target="_blank"
             rel="noopener noreferrer"
             class="utility-link"
           >
-            Included configs
+            Try included feeds
           </a>
+          <Bookmarklet />
+          {openapiUrl && (
+            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
+              OpenAPI spec
+            </a>
+          )}
           <a
             href="https://github.com/html2rss/html2rss-web"
             target="_blank"
