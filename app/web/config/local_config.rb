@@ -22,6 +22,7 @@ module Html2rss
       # raised when the local config shape is invalid
       class InvalidConfig < RuntimeError; end
       FEED_EXTENSION_PATTERN = /\.(json|rss|xml)\z/
+      EMBEDDED_FEED_NAME_PATTERN = %r{\A[^/]+/.+\z}
 
       # Path to local feed configuration file.
       CONFIG_FILE = 'config/feeds.yml'
@@ -92,15 +93,11 @@ module Html2rss
         # @return [Hash{Symbol=>Object}, nil]
         def embedded_feed_config(normalized_name)
           return nil unless defined?(Html2rss::Configs)
-          return nil unless normalized_name.include?('/')
+          return nil unless normalized_name.match?(EMBEDDED_FEED_NAME_PATTERN)
 
           deep_dup(Html2rss::Configs.find_by_name(normalized_name))
         rescue Html2rss::Configs::ConfigNotFound
           nil
-        rescue RuntimeError => error
-          return nil if error.message == 'name must be in folder/file format'
-
-          raise
         end
 
         # Applies global defaults only when feed-level keys are absent.

@@ -2,7 +2,10 @@
 
 require 'spec_helper'
 
-require_relative '../../../../app'
+require_relative '../../../../app/web/boot'
+
+Html2rss::Web::Boot.setup!
+require_relative '../../../../app/web/boot/setup'
 
 RSpec.describe Html2rss::Web::Boot::Setup do
   describe '.call!' do

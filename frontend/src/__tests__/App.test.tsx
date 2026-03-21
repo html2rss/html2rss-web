@@ -368,4 +368,19 @@ describe('App', () => {
     expect(bookmarklet.getAttribute('href')).toContain('/?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
+
+  it('shows the OpenAPI spec and included-config links in the more menu', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+      'href',
+      'http://example.test/openapi.yaml'
+    );
+    expect(screen.getByRole('link', { name: 'Included configs' })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/web-application/how-to/use-included-configs/'
+    );
+  });
 });

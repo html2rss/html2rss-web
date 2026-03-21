@@ -259,6 +259,7 @@ export function App() {
           <UtilityStrip
             hidden={showTokenPrompt}
             hasAccessToken={hasToken}
+            openapiUrl={metadata?.api.openapi_url ?? null}
             onClearToken={() => {
               clearToken();
               setShowTokenPrompt(false);

@@ -244,10 +244,16 @@ export function CreateFeedPanel({
 interface UtilityStripProps {
   hidden?: boolean;
   hasAccessToken: boolean;
+  openapiUrl: string | null;
   onClearToken: () => void;
 }
 
-export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: UtilityStripProps) {
+export function UtilityStrip({
+  hidden = false,
+  hasAccessToken,
+  openapiUrl,
+  onClearToken,
+}: UtilityStripProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (hidden) return null;
@@ -265,6 +271,19 @@ export function UtilityStrip({ hidden = false, hasAccessToken, onClearToken }: U
       {isOpen && (
         <div class="utility-strip__items">
           <Bookmarklet />
+          {openapiUrl && (
+            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
+              OpenAPI spec
+            </a>
+          )}
+          <a
+            href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="utility-link"
+          >
+            Included configs
+          </a>
           <a
             href="https://github.com/html2rss/html2rss-web"
             target="_blank"
