@@ -44,6 +44,21 @@ paths:
                         type: object
                       instance:
                         properties:
+                          featured_feeds:
+                            items:
+                              properties:
+                                description:
+                                  type: string
+                                path:
+                                  type: string
+                                title:
+                                  type: string
+                              required:
+                              - path
+                              - title
+                              - description
+                              type: object
+                            type: array
                           feed_creation:
                             properties:
                               access_token_required:
@@ -56,6 +71,7 @@ paths:
                             type: object
                         required:
                         - feed_creation
+                        - featured_feeds
                         type: object
                     required:
                     - api

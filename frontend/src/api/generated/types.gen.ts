@@ -23,6 +23,11 @@ export type GetApiMetadataResponses = {
                 openapi_url: string;
             };
             instance: {
+                featured_feeds: Array<{
+                    description: string;
+                    path: string;
+                    title: string;
+                }>;
                 feed_creation: {
                     access_token_required: boolean;
                     enabled: boolean;
