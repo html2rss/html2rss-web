@@ -292,6 +292,14 @@ export function UtilityStrip({
           >
             Source code
           </a>
+          <a
+            href="https://hub.docker.com/r/html2rss/web"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="utility-link"
+          >
+            Install from Docker Hub
+          </a>
           {hasAccessToken && (
             <button type="button" class="utility-button" onClick={onClearToken}>
               Clear saved token

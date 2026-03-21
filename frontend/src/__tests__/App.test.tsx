@@ -268,6 +268,36 @@ describe('App', () => {
     expect(mockClearToken).toHaveBeenCalled();
   });
 
+  it('keeps the Docker Hub link before token clear when a token is saved', () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+
+    const utilityItems = Array.from(
+      screen
+        .getByLabelText('Utilities')
+        .querySelectorAll('.utility-strip__items > a, .utility-strip__items > button')
+    ).map((element) => element.textContent);
+
+    expect(utilityItems).toEqual([
+      'Try included feeds',
+      'Bookmarklet',
+      'OpenAPI spec',
+      'Source code',
+      'Install from Docker Hub',
+      'Clear saved token',
+    ]);
+  });
+
   it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
@@ -375,7 +405,13 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const utilityLinks = screen.getAllByRole('link').map((link) => link.textContent);
-    expect(utilityLinks).toEqual(['Try included feeds', 'Bookmarklet', 'OpenAPI spec', 'Source code']);
+    expect(utilityLinks).toEqual([
+      'Try included feeds',
+      'Bookmarklet',
+      'OpenAPI spec',
+      'Source code',
+      'Install from Docker Hub',
+    ]);
 
     expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
       'href',
@@ -384,6 +420,10 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/web-application/how-to/use-included-configs/'
+    );
+    expect(screen.getByRole('link', { name: 'Install from Docker Hub' })).toHaveAttribute(
+      'href',
+      'https://hub.docker.com/r/html2rss/web'
     );
   });
 });
