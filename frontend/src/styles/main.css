@@ -342,6 +342,7 @@ a:focus-visible {
 
 .notice__title {
   color: var(--text-strong);
+  font-weight: var(--text-strong);
 }
 
 .notice[data-tone='error'] {

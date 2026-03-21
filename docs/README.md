@@ -5,6 +5,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 ## Docs Index
 
 - **Start here for contributors**: This document.
+- **Architecture & Request Lifecycle**: [docs/architecture.md](architecture.md)
 - **UI/Design rules**: [docs/design-system.md](design-system.md)
 - **Agent execution constraints**: [AGENTS.md](../AGENTS.md)
 - **Generated contract artifacts**: `public/openapi.yaml`
