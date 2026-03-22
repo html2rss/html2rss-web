@@ -8,7 +8,7 @@ module Html2rss
     ##
     # Sanitizes request paths and log payloads before they are emitted.
     module LogSanitizer
-      FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/?]+)\z}
+      FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/?]+?)(\.(?:json|xml|rss))?\z}
 
       class << self
         # @param path [String, nil]
@@ -16,11 +16,7 @@ module Html2rss
         def sanitize_path(path)
           return if path.nil?
 
-          path_string = path.to_s
-          suffix = feed_suffix(path_string)
-          token_path = suffix ? path_string.delete_suffix(suffix) : path_string
-
-          token_path.gsub(FEED_TOKEN_ROUTE, "\\1[REDACTED]#{suffix}")
+          path.to_s.gsub(FEED_TOKEN_ROUTE, '\1[REDACTED]\3')
         end
 
         # @param details [Hash]
@@ -32,16 +28,6 @@ module Html2rss
         end
 
         private
-
-        # @param path [String]
-        # @return [String, nil]
-        def feed_suffix(path)
-          return '.json' if path.end_with?('.json')
-          return '.xml' if path.end_with?('.xml')
-          return '.rss' if path.end_with?('.rss')
-
-          nil
-        end
 
         # @param key [Object]
         # @param value [Object]

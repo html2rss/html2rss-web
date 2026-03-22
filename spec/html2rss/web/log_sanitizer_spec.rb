@@ -51,6 +51,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     ).to eq('/api/v1/feeds/[REDACTED].xml')
   end
 
+  it 'leaves non-feed paths unchanged when they use supported suffixes', :aggregate_failures do
+    expect(described_class.sanitize_path('/api/v1/health.json')).to eq('/api/v1/health.json')
+    expect(described_class.sanitize_path('/api/v1/status.xml')).to eq('/api/v1/status.xml')
+    expect(described_class.sanitize_path('/feeds/public.rss')).to eq('/feeds/public.rss')
+  end
+
   it 'replaces logged urls with hashed host metadata' do
     expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_news_url)
   end
