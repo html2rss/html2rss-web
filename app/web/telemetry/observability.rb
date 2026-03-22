@@ -26,8 +26,8 @@ module Html2rss
         # @param outcome [String]
         # @return [void]
         def handle_emit_error(error, event_name, outcome)
-          Kernel.warn("Observability emit error: #{error.message}")
-          Kernel.warn("event_name=#{event_name} outcome=#{outcome}")
+          Kernel.warn("Structured logging fallback: #{error.class}: #{error.message}")
+          Kernel.warn("component=observability event_name=#{event_name} outcome=#{outcome}")
         end
 
         # @param event_name [String]

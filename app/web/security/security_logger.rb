@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'digest'
-require 'time'
 module Html2rss
   module Web
     ##
@@ -103,12 +102,13 @@ module Html2rss
         # Log configuration validation failure
         # @param component [String] component that failed validation
         # @param details [String] validation failure details
+        # @param severity [Symbol]
         # @return [void]
-        def log_config_validation_failure(component, details)
+        def log_config_validation_failure(component, details, severity: :error)
           log_event('config_validation_failure', {
                       component: component,
                       details: details
-                    }, severity: :error)
+                    }, severity: severity)
         end
 
         # Log lifecycle events for in-memory config/cache snapshots
@@ -135,7 +135,7 @@ module Html2rss
             level: severity,
             payload: {
               security_event: event_type,
-              **data
+              details: data
             }
           )
         rescue StandardError => error
@@ -148,8 +148,8 @@ module Html2rss
         # @param event_type [String] type of security event
         # @param data [Hash] event data
         def handle_logging_error(error, event_type, data)
-          Kernel.warn("Security logging error: #{error.message}")
-          Kernel.warn("Security event: #{event_type} - #{data}")
+          Kernel.warn("Structured logging fallback: #{error.class}: #{error.message}")
+          Kernel.warn("component=security_logger security_event=#{event_type} details=#{data}")
         end
       end
     end

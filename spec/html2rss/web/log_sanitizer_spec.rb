@@ -13,6 +13,13 @@ require_relative '../../../app/web/telemetry/observability'
 RSpec.describe Html2rss::Web::LogSanitizer do
   let(:io) { StringIO.new }
   let(:logger) { Logger.new(io).tap { |log| log.formatter = Html2rss::Web::AppLogger.send(:method, :format_entry) } }
+  let(:sanitized_url) do
+    {
+      host: 'news.ycombinator.com',
+      scheme: 'https',
+      hash: Digest::SHA256.hexdigest('https://news.ycombinator.com')[0..11]
+    }
+  end
   let(:context) do
     Html2rss::Web::RequestContext::Context.new(
       request_id: 'req-123',
@@ -45,13 +52,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   end
 
   it 'replaces logged urls with hashed host metadata' do
-    expected_url = {
-      host: 'news.ycombinator.com',
-      scheme: 'https',
-      hash: url_hash('https://news.ycombinator.com')
-    }
-
-    expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_url)
+    expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: sanitized_url)
   end
 
   it 'falls back to a hash for malformed urls' do
@@ -72,14 +73,13 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::SecurityLogger.log_token_usage('very-secret-token', 'https://news.ycombinator.com', true)
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
 
-    expect(payload.slice(:path, :url, :token_hash)).to eq(
+    expect(payload.slice(:path, :details)).to eq(
       path: '/api/v1/feeds/[REDACTED]',
-      url: {
-        host: 'news.ycombinator.com',
-        scheme: 'https',
-        hash: url_hash('https://news.ycombinator.com')
-      },
-      token_hash: Digest::SHA256.hexdigest('very-secret-token')[0..7]
+      details: {
+        url: sanitized_url,
+        token_hash: Digest::SHA256.hexdigest('very-secret-token')[0..7],
+        success: true
+      }
     )
   end
 
@@ -93,11 +93,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     lines = io.string.lines.map { |line| JSON.parse(line, symbolize_names: true) }
     observability_payload = lines.first
 
-    expect(observability_payload.dig(:details, :url)).to eq(
-      host: 'news.ycombinator.com',
-      scheme: 'https',
-      hash: url_hash('https://news.ycombinator.com')
-    )
+    expect(observability_payload.dig(:details, :url)).to eq(sanitized_url)
   end
 
   it 'formats rack-timeout logfmt as json' do
