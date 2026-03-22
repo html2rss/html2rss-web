@@ -52,15 +52,25 @@ module Html2rss
         # @param message [Object]
         # @return [Hash{Symbol=>Object}]
         def normalize_message(message)
-          parsed_json(message) || parse_logfmt(message.to_s) || { message: message.to_s }
+          message_string = message.to_s
+          return parsed_json(message_string) if json_like?(message_string)
+
+          parse_logfmt(message_string) || { message: message_string }
         end
 
-        # @param message [Object]
+        # @param message [String]
         # @return [Hash{Symbol=>Object}, nil]
         def parsed_json(message)
-          JSON.parse(message.to_s, symbolize_names: true)
+          JSON.parse(message, symbolize_names: true)
         rescue JSON::ParserError, TypeError
           nil
+        end
+
+        # @param message [String]
+        # @return [Boolean]
+        def json_like?(message)
+          stripped = message.lstrip
+          stripped.start_with?('{', '[')
         end
 
         # @param message [String]

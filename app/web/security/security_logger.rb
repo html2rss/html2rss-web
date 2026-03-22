@@ -148,8 +148,9 @@ module Html2rss
         # @param event_type [String] type of security event
         # @param data [Hash] event data
         def handle_logging_error(error, event_type, data)
+          sanitized_data = LogSanitizer.sanitize_details(data)
           Kernel.warn("Structured logging fallback: #{error.class}: #{error.message}")
-          Kernel.warn("component=security_logger security_event=#{event_type} details=#{data}")
+          Kernel.warn("component=security_logger security_event=#{event_type} details=#{sanitized_data}")
         end
       end
     end

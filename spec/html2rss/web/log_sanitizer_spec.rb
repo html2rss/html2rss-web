@@ -12,8 +12,8 @@ require_relative '../../../app/web/telemetry/observability'
 
 RSpec.describe Html2rss::Web::LogSanitizer do
   let(:io) { StringIO.new }
-  let(:logger) { Logger.new(io).tap { |log| log.formatter = Html2rss::Web::AppLogger.send(:method, :format_entry) } }
-  let(:sanitized_url) do
+  let(:test_logger) { Logger.new(io).tap { |log| log.formatter = Html2rss::Web::AppLogger.send(:method, :format_entry) } }
+  let(:expected_news_url) do
     {
       host: 'news.ycombinator.com',
       scheme: 'https',
@@ -36,7 +36,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::RequestContext.set!(context)
     Html2rss::Web::AppLogger.reset_logger!
     Html2rss::Web::SecurityLogger.reset_logger!
-    allow(Html2rss::Web::AppLogger).to receive(:logger).and_return(logger)
+    allow(Logger).to receive(:new).and_return(test_logger)
   end
 
   after do
@@ -52,7 +52,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   end
 
   it 'replaces logged urls with hashed host metadata' do
-    expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: sanitized_url)
+    expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_news_url)
   end
 
   it 'falls back to a hash for malformed urls' do
@@ -76,11 +76,20 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     expect(payload.slice(:path, :details)).to eq(
       path: '/api/v1/feeds/[REDACTED]',
       details: {
-        url: sanitized_url,
+        url: expected_news_url,
         token_hash: Digest::SHA256.hexdigest('very-secret-token')[0..7],
         success: true
       }
     )
+  end
+
+  it 'sanitizes security logger fallback output when structured logging fails' do
+    allow(Html2rss::Web::LogEvent).to receive(:emit).and_raise(JSON::GeneratorError, 'boom')
+    allow(Kernel).to receive(:warn)
+    emit_failing_token_usage_log
+
+    expect(Kernel).to have_received(:warn).with('Structured logging fallback: JSON::GeneratorError: boom')
+    expect(fallback_warning_line).to eq(expected_fallback_warning_line)
   end
 
   it 'sanitizes observability details' do
@@ -93,11 +102,11 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     lines = io.string.lines.map { |line| JSON.parse(line, symbolize_names: true) }
     observability_payload = lines.first
 
-    expect(observability_payload.dig(:details, :url)).to eq(sanitized_url)
+    expect(observability_payload.dig(:details, :url)).to eq(expected_news_url)
   end
 
   it 'formats rack-timeout logfmt as json' do
-    logger.info('source=rack-timeout id=req-123 timeout=15000ms state=completed')
+    Html2rss::Web::AppLogger.logger.info('source=rack-timeout id=req-123 timeout=15000ms state=completed')
 
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
     expect(payload).to include(
@@ -122,12 +131,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   # @return [Hash{Symbol=>Object}]
   def expected_nested_url_payload
     {
-      url: sanitized_url('news.ycombinator.com', 'https://news.ycombinator.com'),
+      url: expected_sanitized_url('news.ycombinator.com', 'https://news.ycombinator.com'),
       related_urls: [
-        sanitized_url('example.com', 'https://example.com/feed.xml')
+        expected_sanitized_url('example.com', 'https://example.com/feed.xml')
       ],
       details: {
-        url: sanitized_url('lobste.rs', 'https://lobste.rs/s/test')
+        url: expected_sanitized_url('lobste.rs', 'https://lobste.rs/s/test')
       }
     }
   end
@@ -135,7 +144,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   # @param host [String]
   # @param url [String]
   # @return [Hash{Symbol=>String}]
-  def sanitized_url(host, url)
+  def expected_sanitized_url(host, url)
     { host:, scheme: 'https', hash: url_hash(url) }
   end
 
@@ -143,5 +152,31 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   # @return [String]
   def url_hash(url)
     Digest::SHA256.hexdigest(url)[0..11]
+  end
+
+  # @return [void]
+  def emit_failing_token_usage_log
+    Html2rss::Web::SecurityLogger.log_token_usage(
+      'very-secret-token',
+      'https://news.ycombinator.com/private/feed',
+      true
+    )
+  end
+
+  # @return [String]
+  def fallback_warning_line
+    warning_messages = RSpec::Mocks.space.proxy_for(Kernel).messages_arg_list.map(&:first)
+    warning_messages.find { |message| message.include?('component=security_logger') }
+  end
+
+  # @return [Hash{Symbol=>String}]
+  def sanitized_fallback_url
+    expected_sanitized_url('news.ycombinator.com', 'https://news.ycombinator.com/private/feed')
+  end
+
+  # @return [String]
+  def expected_fallback_warning_line
+    'component=security_logger security_event=token_usage ' \
+      "details={success: true, url: #{sanitized_fallback_url.inspect}, token_hash: \"01cadf39\"}"
   end
 end
