@@ -206,21 +206,22 @@ describe('App', () => {
   });
 
   it('renders the result panel when a feed is available', async () => {
-    vi.spyOn(window, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({ items: [] }),
-    } as Response);
-
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: {
-        id: 'feed-123',
-        name: 'Example Feed',
-        url: 'https://example.com/articles',
-        strategy: 'faraday',
-        feed_token: 'example-token',
-        public_url: '/api/v1/feeds/example-token',
-        json_public_url: '/api/v1/feeds/example-token.json',
+        feed: {
+          id: 'feed-123',
+          name: 'Example Feed',
+          url: 'https://example.com/articles',
+          strategy: 'faraday',
+          feed_token: 'example-token',
+          public_url: '/api/v1/feeds/example-token',
+          json_public_url: '/api/v1/feeds/example-token.json',
+        },
+        preview: {
+          items: [],
+          error: 'Preview unavailable right now.',
+        },
       },
       error: null,
       convertFeed: mockConvertFeed,
@@ -233,6 +234,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Bookmarklet' })).not.toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();
+    expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
   });
 
   it('surfaces conversion errors to the user', () => {
@@ -248,6 +250,24 @@ describe('App', () => {
 
     expect(screen.getByText('Feed generation failed')).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
+  });
+
+  it('shows an explicit loading notice while feed creation is still resolving preview state', () => {
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: true,
+      result: null,
+      error: null,
+      convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
+      clearResult: mockClearResult,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('Preparing feed')).toBeInTheDocument();
+    expect(
+      screen.getByText('Creating the feed and loading its preview before showing the result.')
+    ).toBeInTheDocument();
   });
 
   it('clears stored token from instance info', () => {

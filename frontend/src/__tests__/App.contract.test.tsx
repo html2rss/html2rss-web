@@ -30,7 +30,7 @@ describe('App contract', () => {
           })
         );
       }),
-      http.get('/api/v1/feeds/generated-token', ({ request }) => {
+      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
         expect(request.headers.get('accept')).toBe('application/feed+json');
 
         return HttpResponse.json(

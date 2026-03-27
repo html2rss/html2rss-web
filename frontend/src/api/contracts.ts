@@ -2,6 +2,22 @@ import type { CreateFeedResponses, GetApiMetadataResponses, ListStrategiesRespon
 
 export type FeedRecord = CreateFeedResponses[201]['data']['feed'];
 export type StrategyRecord = ListStrategiesResponses[200]['data']['strategies'][number];
+export interface FeedPreviewItem {
+  title: string;
+  excerpt: string;
+  publishedLabel: string;
+  url?: string;
+}
+
+export interface FeedPreviewState {
+  items: FeedPreviewItem[];
+  error: string | null;
+}
+
+export interface CreatedFeedResult {
+  feed: FeedRecord;
+  preview: FeedPreviewState;
+}
 
 export interface ApiMetadataRecord {
   api: GetApiMetadataResponses[200]['data']['api'];

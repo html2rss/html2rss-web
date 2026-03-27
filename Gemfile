@@ -23,6 +23,7 @@ gem 'puma', require: false
 
 group :development do
   gem 'byebug'
+  gem 'irb', require: false
   gem 'rake', require: false
   gem 'rubocop', require: false
   gem 'rubocop-performance', require: false

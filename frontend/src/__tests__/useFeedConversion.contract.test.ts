@@ -24,6 +24,20 @@ describe('useFeedConversion contract', () => {
           }),
           { status: 201 }
         );
+      }),
+      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
+        expect(request.headers.get('accept')).toBe('application/feed+json');
+
+        return HttpResponse.json({
+          items: [
+            {
+              title: 'Generated item',
+              content_text: 'Contract preview',
+              url: 'https://example.com/items/generated',
+              date_published: '2024-01-02T00:00:00Z',
+            },
+          ],
+        });
       })
     );
 
@@ -35,9 +49,11 @@ describe('useFeedConversion contract', () => {
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
     expect(result.current.error).toBeNull();
-    expect(result.current.result?.feed_token).toBe('generated-token');
-    expect(result.current.result?.public_url).toBe('/api/v1/feeds/generated-token');
-    expect(result.current.result?.json_public_url).toBe('/api/v1/feeds/generated-token.json');
+    expect(result.current.result?.feed.feed_token).toBe('generated-token');
+    expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
+    expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
+    expect(result.current.result?.preview.error).toBeNull();
+    expect(result.current.result?.preview.items).toHaveLength(1);
   });
 
   it('propagates API validation errors', async () => {
@@ -82,5 +98,32 @@ describe('useFeedConversion contract', () => {
 
     expect(result.current.result).toBeNull();
     expect(result.current.error).toBe('Invalid response format from feed creation API');
+  });
+
+  it('preserves the created feed when preview loading fails', async () => {
+    server.use(
+      http.post('/api/v1/feeds', async () =>
+        HttpResponse.json(
+          buildFeedResponse({
+            feed_token: 'generated-token',
+            public_url: '/api/v1/feeds/generated-token',
+            json_public_url: '/api/v1/feeds/generated-token.json',
+          }),
+          { status: 201 }
+        )
+      ),
+      http.get('/api/v1/feeds/generated-token.json', async () => new HttpResponse(null, { status: 502 }))
+    );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com/articles', 'faraday', 'token');
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.result?.feed.feed_token).toBe('generated-token');
+    expect(result.current.result?.preview.items).toEqual([]);
+    expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
   });
 });

@@ -111,7 +111,7 @@ export function CreateFeedPanel({
           placeholder="https://example.com/article"
           autoFocus
           inputRef={urlInputRef}
-          actionLabel={isConverting ? 'Generating feed URL' : 'Generate feed URL'}
+          actionLabel={isConverting ? 'Preparing feed' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
@@ -233,6 +233,13 @@ export function CreateFeedPanel({
         <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <div class="notice__title">Feed generation failed</div>
           <p>{conversionError}</p>
+        </div>
+      )}
+
+      {isConverting && (
+        <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
+          <div class="notice__title">Preparing feed</div>
+          <p>Creating the feed and loading its preview before showing the result.</p>
         </div>
       )}
 

@@ -6,39 +6,41 @@ import { ResultDisplay } from '../components/ResultDisplay';
 describe('ResultDisplay', () => {
   const mockOnCreateAnother = vi.fn();
   const mockResult = {
-    id: 'test-id',
-    name: 'Test Feed',
-    url: 'https://example.com',
-    strategy: 'faraday',
-    feed_token: 'test-feed-token',
-    public_url: 'https://example.com/feed.xml',
-    json_public_url: 'https://example.com/feed.json',
+    feed: {
+      id: 'test-id',
+      name: 'Test Feed',
+      url: 'https://example.com',
+      strategy: 'faraday',
+      feed_token: 'test-feed-token',
+      public_url: 'https://example.com/feed.xml',
+      json_public_url: 'https://example.com/feed.json',
+    },
+    preview: {
+      items: [
+        {
+          title: 'Item One',
+          excerpt: 'First preview item with markup.',
+          url: 'https://example.com/item-one',
+          publishedLabel: 'Jan 1, 2024',
+        },
+        {
+          title: '56 points by canpan 1 hour ago | hide | 18 comments',
+          excerpt: '',
+          publishedLabel: 'Jan 2, 2024',
+        },
+        {
+          title: 'Item Two',
+          excerpt: '',
+          url: 'https://example.com/item-two',
+          publishedLabel: 'Jan 3, 2024',
+        },
+      ],
+      error: null,
+    },
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(window, 'fetch').mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        items: [
-          {
-            title: 'Item One',
-            content_text: '<p>First preview item with <strong>markup</strong>.</p>',
-            url: 'https://example.com/item-one',
-            date_published: '2024-01-01T00:00:00Z',
-          },
-          {
-            content_text: '56 points by canpan 1 hour ago | hide | 18&nbsp;comments',
-            date_published: '2024-01-02T00:00:00Z',
-          },
-          {
-            content_text: '2. Item Two ( example.com )',
-            url: 'https://example.com/item-two',
-            date_published: '2024-01-03T00:00:00Z',
-          },
-        ],
-      }),
-    } as Response);
   });
 
   it('renders the success state actions and richer preview cards', async () => {
@@ -60,18 +62,15 @@ describe('ResultDisplay', () => {
       expect(screen.getByText('Item Two')).toBeInTheDocument();
       expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
-    expect(window.fetch).toHaveBeenCalledWith('https://example.com/feed.xml', {
-      headers: { Accept: 'application/feed+json' },
-    });
   });
 
-  it('surfaces preview fetch failures as a result-state message', async () => {
-    vi.mocked(window.fetch).mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({}),
-    } as Response);
-
-    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
+  it('surfaces preview failures as a result-state message', async () => {
+    render(
+      <ResultDisplay
+        result={{ ...mockResult, preview: { items: [], error: 'Preview unavailable right now.' } }}
+        onCreateAnother={mockOnCreateAnother}
+      />
+    );
 
     await waitFor(() => {
       expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();

@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
 import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/preact';
-import { server } from './mocks/server';
+
+let server: typeof import('./mocks/server').server;
 
 // Mock window and document for tests
 Object.defineProperty(window, 'matchMedia', {
@@ -49,8 +50,14 @@ const session = createStorageMock();
 Object.defineProperty(window, 'localStorage', {
   value: local.api,
 });
+Object.defineProperty(globalThis, 'localStorage', {
+  value: local.api,
+});
 
 Object.defineProperty(window, 'sessionStorage', {
+  value: session.api,
+});
+Object.defineProperty(globalThis, 'sessionStorage', {
   value: session.api,
 });
 
@@ -80,7 +87,10 @@ Object.assign(navigator, {
 Element.prototype.scrollIntoView = vi.fn();
 
 // Wire up MSW in node environment
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+beforeAll(async () => {
+  ({ server } = await import('./mocks/server'));
+  server.listen({ onUnhandledRequest: 'error' });
+});
 afterEach(() => {
   server.resetHandlers();
   cleanup();

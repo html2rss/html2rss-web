@@ -20,14 +20,13 @@ export function useApiMetadata() {
   });
 
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
 
     const load = async () => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
         const response = await fetch('/api/v1', {
-          signal: controller.signal,
           headers: { Accept: 'application/json' },
         });
         const payload = await parseMetadataPayload(response);
@@ -36,6 +35,7 @@ export function useApiMetadata() {
         if (!response.ok || !payload.success || !metadata?.instance) {
           throw new Error('Invalid response format from API metadata');
         }
+        if (cancelled) return;
 
         setState({
           metadata,
@@ -43,7 +43,7 @@ export function useApiMetadata() {
           error: null,
         });
       } catch (error) {
-        if (controller.signal.aborted) return;
+        if (cancelled) return;
 
         setState({
           metadata: null,
@@ -54,7 +54,9 @@ export function useApiMetadata() {
     };
 
     load();
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return state;

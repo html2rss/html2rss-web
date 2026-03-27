@@ -23,13 +23,13 @@ describe('useFeedConversion', () => {
   });
 
   it('should handle successful conversion', async () => {
-    const mockResult = {
+    const mockFeed = {
       id: 'test-id',
       name: 'Test Feed',
       url: 'https://example.com',
       strategy: 'faraday',
       feed_token: 'test-token',
-      public_url: 'https://example.com/feed.xml',
+      public_url: 'https://example.com/feed',
       json_public_url: 'https://example.com/feed.json',
       created_at: '2024-01-01T00:00:00Z',
       updated_at: '2024-01-01T00:00:00Z',
@@ -39,11 +39,29 @@ describe('useFeedConversion', () => {
       new Response(
         JSON.stringify({
           success: true,
-          data: { feed: mockResult },
+          data: { feed: mockFeed },
         }),
         {
           status: 201,
           headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              title: 'Preview item',
+              content_text: 'Preview excerpt',
+              url: 'https://example.com/item',
+              date_published: '2024-01-02T00:00:00Z',
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/feed+json' },
         }
       )
     );
@@ -55,9 +73,22 @@ describe('useFeedConversion', () => {
     });
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toEqual(mockResult);
+    expect(result.current.result).toEqual({
+      feed: mockFeed,
+      preview: {
+        items: [
+          {
+            title: 'Preview item',
+            excerpt: 'Preview excerpt',
+            publishedLabel: 'Jan 2, 2024',
+            url: 'https://example.com/item',
+          },
+        ],
+        error: null,
+      },
+    });
     expect(result.current.error).toBeNull();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('should handle conversion error', async () => {
@@ -101,5 +132,51 @@ describe('useFeedConversion', () => {
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toBeNull();
     expect(result.current.error).toBe('Network error');
+  });
+
+  it('preserves the created feed when preview loading fails after feed creation', async () => {
+    const createdFeed = {
+      id: 'test-id',
+      name: 'Test Feed',
+      url: 'https://example.com',
+      strategy: 'faraday',
+      feed_token: 'test-token',
+      public_url: 'https://example.com/feed',
+      json_public_url: 'https://example.com/feed.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            feed: createdFeed,
+          },
+        }),
+        {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+    fetchMock.mockResolvedValueOnce(new Response('nope', { status: 502 }));
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+    });
+
+    expect(result.current.isConverting).toBe(false);
+    expect(result.current.result).toEqual({
+      feed: createdFeed,
+      preview: {
+        items: [],
+        error: 'Preview unavailable right now.',
+      },
+    });
+    expect(result.current.error).toBeNull();
   });
 });
