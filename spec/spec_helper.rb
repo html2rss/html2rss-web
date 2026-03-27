@@ -47,10 +47,16 @@ Dir[File.join(__dir__, 'support/**/*.rb')].each { |support_file| require support
 RSpec.configure do |config|
   # Reset SecurityLogger before each test to avoid double leakage
   config.before do
+    ENV['HTML2RSS_SECRET_KEY'] ||= 'test-secret-key-for-specs'
     # Only reset if SecurityLogger is defined (loaded)
     Html2rss::Web::SecurityLogger.reset_logger! if defined?(Html2rss::Web::SecurityLogger)
+    Html2rss::Web::RuntimeEnv.reset! if defined?(Html2rss::Web::RuntimeEnv)
     Html2rss::Web::AccountManager.reload! if defined?(Html2rss::Web::AccountManager)
     Html2rss::Web::LocalConfig.reload! if defined?(Html2rss::Web::LocalConfig)
+  end
+
+  config.after do
+    Html2rss::Web::RuntimeEnv.reset! if defined?(Html2rss::Web::RuntimeEnv)
   end
 
   # rspec-expectations config goes here. You can use an alternate

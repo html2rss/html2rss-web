@@ -35,7 +35,9 @@ module Html2rss
         # @param message [String]
         # @return [String]
         def format_entry(severity, datetime, _progname, message)
-          "#{base_payload(severity, datetime).merge(normalize_message(message)).to_json}\n"
+          payload = base_payload(severity, datetime).merge(normalize_message(message))
+          SentryLogs.emit(payload)
+          "#{payload.to_json}\n"
         end
 
         # @param severity [String]

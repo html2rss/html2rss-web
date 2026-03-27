@@ -3,6 +3,7 @@
 require 'spec_helper'
 require 'rack/test'
 require 'cgi'
+require 'climate_control'
 require 'json'
 require 'securerandom'
 require_relative '../../../app'
@@ -11,7 +12,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
   include Rack::Test::Methods
 
   let(:app) { described_class.freeze.app }
-  let(:secret_key) { ENV.fetch('HTML2RSS_SECRET_KEY') }
 
   let(:feed_url) { 'https://example.com/articles' }
   let(:feed_token) do
@@ -109,6 +109,20 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       expect([last_response.status, last_response.headers['Content-Type']]).to eq([200, 'application/feed+json'])
       expect(last_response.headers['Cache-Control']).to include('max-age=600')
       expect(last_response.headers['Vary']).to include('Accept')
+    end
+
+    it 'validates feed tokens after production-style env scrubbing', :aggregate_failures do
+      capture_scrubbed_runtime_env(
+        'RACK_ENV' => 'production',
+        'HTML2RSS_SECRET_KEY' => 'scrubbed-secret-key-for-request-specs'
+      ) do
+        generated_token = Html2rss::Web::Auth.generate_feed_token(account[:username], feed_url, strategy: 'faraday')
+        get "/api/v1/feeds/#{generated_token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
+
+        expect(ENV.fetch('HTML2RSS_SECRET_KEY', nil)).to be_nil
+        expect(last_response.status).to eq(200)
+        expect(last_response.headers['Content-Type']).to eq('application/xml')
+      end
     end
 
     it 'prefers the path extension over Accept negotiation' do

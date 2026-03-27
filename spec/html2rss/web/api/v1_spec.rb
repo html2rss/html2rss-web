@@ -227,6 +227,21 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       end
     end
 
+    it 'returns health status after production-style env scrubbing', :aggregate_failures do
+      capture_scrubbed_runtime_env(
+        'RACK_ENV' => 'production',
+        'HEALTH_CHECK_TOKEN' => 'scrubbed-health-token'
+      ) do
+        header 'Authorization', 'Bearer scrubbed-health-token'
+        get '/api/v1/health'
+
+        expect(ENV.fetch('HEALTH_CHECK_TOKEN', nil)).to be_nil
+        expect(last_response.status).to eq(200)
+        json = expect_success_response(last_response)
+        expect(json.dig('data', 'health', 'status')).to eq('healthy')
+      end
+    end
+
     it 'returns error when configuration fails', :aggregate_failures do
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return({ username: 'health-check' })
       allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_raise(StandardError, 'boom')

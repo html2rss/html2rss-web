@@ -5,7 +5,8 @@ module Html2rss
     ##
     # Environment validation for html2rss-web
     # Handles validation of environment variables and configuration
-    module EnvironmentValidator
+    module EnvironmentValidator # rubocop:disable Metrics/ModuleLength
+      # rubocop:disable Metrics/ClassLength
       class << self
         ##
         # Validate required environment variables on startup
@@ -28,6 +29,7 @@ module Html2rss
 
           validate_secret_key!
           validate_account_configuration!
+          validate_build_metadata!
         end
 
         # @return [Boolean]
@@ -92,6 +94,15 @@ module Html2rss
           exit 1
         end
 
+        # @return [void]
+        def validate_build_metadata!
+          return unless missing_build_metadata?
+
+          log_missing_build_metadata!
+          warn_lines(*missing_build_metadata_warning_lines)
+          exit 1
+        end
+
         def validate_account_configuration!
           accounts = AccountManager.accounts
           weak_tokens = accounts.select { |acc| acc[:token].length < 16 }
@@ -128,7 +139,34 @@ module Html2rss
           )
           exit 1
         end
+
+        # @return [Boolean]
+        def missing_build_metadata?
+          build_metadata_values.any?(&:empty?)
+        end
+
+        # @return [Array<String>]
+        def build_metadata_values
+          %w[BUILD_TAG GIT_SHA].map { |key| ENV.fetch(key, '').strip }
+        end
+
+        # @return [void]
+        def log_missing_build_metadata!
+          SecurityLogger.log_config_validation_failure(
+            'build_metadata',
+            'Missing BUILD_TAG or GIT_SHA'
+          )
+        end
+
+        # @return [Array<String>]
+        def missing_build_metadata_warning_lines
+          [
+            'CRITICAL: Missing build metadata for production deployment!',
+            'Set BUILD_TAG to the release build tag and GIT_SHA to the deployed commit SHA.'
+          ]
+        end
       end
+      # rubocop:enable Metrics/ClassLength
     end
   end
 end

@@ -168,12 +168,15 @@ Managed flags and environment keys:
 | `async_feed_refresh_enabled`      | `ASYNC_FEED_REFRESH_ENABLED`      | boolean        | `false`                                  |
 | `async_feed_refresh_stale_factor` | `ASYNC_FEED_REFRESH_STALE_FACTOR` | integer `>= 1` | `3`                                      |
 | `health_check_token`              | `HEALTH_CHECK_TOKEN`              | string         | `nil`                                    |
+| `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
+| `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
 | `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
 
 Rules:
 
 - Invalid managed flag values must fail fast at boot.
 - Unknown managed feature-style env keys must fail fast at boot.
+- `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
 - Add or change flags in code, tests, and this table together.
 
 ---

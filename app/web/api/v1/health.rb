@@ -72,7 +72,7 @@ module Html2rss
             # @param request [Rack::Request]
             # @return [Boolean]
             def env_health_check_token?(request)
-              configured_token = ENV.fetch('HEALTH_CHECK_TOKEN', '').to_s
+              configured_token = RuntimeEnv.health_check_token.to_s
               provided_token = bearer_token(request)
               return false if configured_token.empty? || provided_token.nil?
               return false unless configured_token.bytesize == provided_token.bytesize

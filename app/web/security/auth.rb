@@ -117,7 +117,7 @@ module Html2rss
 
         # @return [String]
         def secret_key
-          ENV.fetch('HTML2RSS_SECRET_KEY')
+          RuntimeEnv.secret_key
         end
 
         # @param username [String, nil]
