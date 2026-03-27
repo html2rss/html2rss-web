@@ -20,11 +20,18 @@ const createStorageMock = (): MockedStorage => {
   } as unknown as MockedStorage;
 };
 
+let localStorageMock: MockedStorage;
 let sessionStorageMock: MockedStorage;
 
 describe('useAuth', () => {
   beforeEach(() => {
+    localStorageMock = createStorageMock();
     sessionStorageMock = createStorageMock();
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorageMock,
+      configurable: true,
+      writable: true,
+    });
     Object.defineProperty(window, 'sessionStorage', {
       value: sessionStorageMock,
       configurable: true,
@@ -34,7 +41,7 @@ describe('useAuth', () => {
   });
 
   it('should initialize with unauthenticated state', () => {
-    sessionStorageMock.getItem.mockReturnValue(null);
+    localStorageMock.getItem.mockReturnValue(null);
 
     const { result } = renderHook(() => useAuth());
 
@@ -44,7 +51,7 @@ describe('useAuth', () => {
   });
 
   it('should load auth state from sessionStorage on mount', () => {
-    sessionStorageMock.getItem
+    localStorageMock.getItem
       .mockReturnValueOnce('testuser') // username
       .mockReturnValueOnce('testtoken'); // token
 
@@ -53,12 +60,12 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.username).toBe('testuser');
     expect(result.current.token).toBe('testtoken');
-    expect(sessionStorageMock.getItem).toHaveBeenCalledWith('html2rss_username');
-    expect(sessionStorageMock.getItem).toHaveBeenCalledWith('html2rss_token');
+    expect(localStorageMock.getItem).toHaveBeenCalledWith('html2rss_username');
+    expect(localStorageMock.getItem).toHaveBeenCalledWith('html2rss_token');
   });
 
   it('should login and store credentials', async () => {
-    sessionStorageMock.getItem.mockReturnValue(null);
+    localStorageMock.getItem.mockReturnValue(null);
 
     const { result } = renderHook(() => useAuth());
 
@@ -69,12 +76,12 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.username).toBe('newuser');
     expect(result.current.token).toBe('newtoken');
-    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('html2rss_username', 'newuser');
-    expect(sessionStorageMock.setItem).toHaveBeenCalledWith('html2rss_token', 'newtoken');
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('html2rss_username', 'newuser');
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('html2rss_token', 'newtoken');
   });
 
   it('should logout and clear credentials', () => {
-    sessionStorageMock.getItem.mockReturnValueOnce('testuser').mockReturnValueOnce('testtoken');
+    localStorageMock.getItem.mockReturnValueOnce('testuser').mockReturnValueOnce('testtoken');
 
     const { result } = renderHook(() => useAuth());
 
@@ -85,7 +92,7 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.username).toBeNull();
     expect(result.current.token).toBeNull();
-    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('html2rss_username');
-    expect(sessionStorageMock.removeItem).toHaveBeenCalledWith('html2rss_token');
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_username');
+    expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_token');
   });
 });

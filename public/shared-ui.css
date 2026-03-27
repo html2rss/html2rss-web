@@ -178,6 +178,7 @@ textarea {
   display: inline-grid;
   justify-items: center;
   gap: var(--brand-lockup-gap);
+  text-decoration: none;
 }
 
 .brand-lockup__mark {

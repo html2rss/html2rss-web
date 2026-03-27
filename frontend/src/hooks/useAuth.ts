@@ -38,9 +38,13 @@ const resolveStorage = (): Storage => {
   }
 
   try {
-    return window.sessionStorage ?? memoryStorage;
+    return window.localStorage ?? window.sessionStorage ?? memoryStorage;
   } catch (error) {
-    return memoryStorage;
+    try {
+      return window.sessionStorage ?? memoryStorage;
+    } catch {
+      return memoryStorage;
+    }
   }
 };
 

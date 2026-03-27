@@ -59,6 +59,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
   end
 
+  def post_feed_request(payload)
+    header 'Authorization', "Bearer #{admin_token}"
+    header 'Content-Type', 'application/json'
+    post '/api/v1/feeds', payload.to_json
+  end
+
   def json_feed_response_for(token)
     stub_json_feed_success
     get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
@@ -451,6 +457,23 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       json = expect_success_response(last_response)
       expect_feed_payload(json)
       expect(last_response.headers['Content-Type']).to include('application/json')
+    end
+
+    it 'normalizes hostname-only input to https before feed creation', :aggregate_failures do
+      allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_call_original
+
+      post_feed_request(url: 'example.com/articles', strategy: 'faraday')
+
+      expect(Html2rss::Web::AutoSource).to have_received(:create_stable_feed).with(
+        anything,
+        'https://example.com/articles',
+        kind_of(Hash),
+        'faraday'
+      )
+
+      expect(last_response.status).to eq(201)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'feed', 'url')).to eq('https://example.com/articles')
     end
 
     it 'returns forbidden for authenticated requests when auto source is disabled', :aggregate_failures do

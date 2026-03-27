@@ -35,11 +35,13 @@ interface CreateFeedPanelProps {
   tokenDraft: string;
   tokenError: string;
   showTokenPrompt: boolean;
+  manualRetryStrategy: string;
   onFeedSubmit: (event: Event) => void;
   onFeedFieldChange: (key: 'url' | 'strategy', value: string) => void;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
+  onRetryWithStrategy: () => void;
   strategyHint: (strategy: Strategy) => string;
 }
 
@@ -60,11 +62,13 @@ export function CreateFeedPanel({
   tokenDraft,
   tokenError,
   showTokenPrompt,
+  manualRetryStrategy,
   onFeedSubmit,
   onFeedFieldChange,
   onTokenDraftChange,
   onSaveToken,
   onCancelTokenPrompt,
+  onRetryWithStrategy,
   strategyHint,
 }: CreateFeedPanelProps) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
@@ -106,9 +110,12 @@ export function CreateFeedPanel({
         <DominantField
           id="url"
           label="Page URL"
-          type="url"
+          type="text"
           value={feedFormData.url}
-          placeholder="https://example.com/article"
+          placeholder="example.com/articles"
+          inputMode="url"
+          autoCapitalize="off"
+          spellcheck={false}
           autoFocus
           inputRef={urlInputRef}
           actionLabel={isConverting ? 'Preparing feed' : 'Generate feed URL'}
@@ -191,11 +198,16 @@ export function CreateFeedPanel({
             <input
               id="access-token"
               name="access-token"
-              type="password"
+              type="text"
               class="input input--mono input--minimal"
               aria-label="Access token"
               placeholder="Paste access token"
-              autocomplete="off"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellcheck={false}
+              data-1p-ignore="true"
+              data-lpignore="true"
               ref={tokenInputRef}
               value={tokenDraft}
               onKeyDown={(event) => {
@@ -246,6 +258,13 @@ export function CreateFeedPanel({
       {feedFieldErrors.form && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
           <p>{feedFieldErrors.form}</p>
+          {manualRetryStrategy && (
+            <div class="notice__actions">
+              <button type="button" class="btn btn--ghost" onClick={onRetryWithStrategy}>
+                Try {manualRetryStrategy} instead
+              </button>
+            </div>
+          )}
         </div>
       )}
     </form>

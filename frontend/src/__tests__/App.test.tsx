@@ -91,9 +91,20 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'html2rss' })).toHaveAttribute('href', '/');
     expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Bookmarklet' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the page url field permissive enough for hostname-only input', () => {
+    render(<App />);
+
+    const urlInput = screen.getByLabelText('Page URL');
+
+    expect(urlInput).toHaveAttribute('type', 'text');
+    expect(urlInput).toHaveAttribute('inputmode', 'url');
+    expect(urlInput).toHaveAttribute('autocapitalize', 'off');
   });
 
   it('autofocuses the source url field', async () => {
@@ -104,11 +115,11 @@ describe('App', () => {
     });
   });
 
-  it('prefers browserless as the default strategy when available', () => {
+  it('prefers faraday as the default strategy when available', () => {
     render(<App />);
 
     return waitFor(() => {
-      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+      expect(screen.getByRole('combobox')).toHaveValue('faraday');
     });
   });
 
@@ -140,11 +151,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith(
-        'https://example.com/articles',
-        'browserless',
-        'saved-token'
-      );
+      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'faraday', 'saved-token');
     });
   });
 
@@ -221,7 +228,9 @@ describe('App', () => {
         preview: {
           items: [],
           error: 'Preview unavailable right now.',
+          isLoading: false,
         },
+        retry: null,
       },
       error: null,
       convertFeed: mockConvertFeed,
@@ -243,6 +252,7 @@ describe('App', () => {
       result: null,
       error: 'Access denied',
       convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
       clearResult: mockClearResult,
     });
 
@@ -331,11 +341,7 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
-      expect(mockConvertFeed).toHaveBeenCalledWith(
-        'https://example.com/articles',
-        'browserless',
-        'token-123'
-      );
+      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'faraday', 'token-123');
     });
   });
 
@@ -419,13 +425,87 @@ describe('App', () => {
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
 
+  it('opens token entry immediately for bookmarklet urls when no token is saved', async () => {
+    window.history.replaceState({}, '', 'http://localhost:3000/?url=example.com%2Farticles');
+
+    render(<App />);
+
+    await screen.findByText('Add access token');
+    expect(screen.getByLabelText('Page URL')).toHaveValue('https://example.com/articles');
+    expect(mockConvertFeed).not.toHaveBeenCalled();
+  });
+
+  it('offers a direct alternate strategy retry after conversion failure', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    mockConvertFeed
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Tried faraday first, then browserless. Browserless failed.'), {
+          manualRetryStrategy: 'browserless',
+        })
+      )
+      .mockResolvedValueOnce(undefined);
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await screen.findByRole('button', { name: 'Try browserless instead' });
+    fireEvent.click(screen.getByRole('button', { name: 'Try browserless instead' }));
+
+    await waitFor(() => {
+      expect(mockConvertFeed).toHaveBeenLastCalledWith(
+        'https://example.com/articles',
+        'browserless',
+        'saved-token'
+      );
+    });
+  });
+
+  it('does not offer a duplicate retry action after automatic fallback already failed', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    mockConvertFeed.mockRejectedValueOnce(
+      Object.assign(new Error('Tried faraday first, then browserless. Browserless failed.'), {
+        manualRetryStrategy: '',
+      })
+    );
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await screen.findByText('Tried faraday first, then browserless. Browserless failed.');
+    expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
+  });
+
   it('shows the utility links in a user-focused order', () => {
     window.history.replaceState({}, '', 'http://localhost:3000/#result');
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
-    const utilityLinks = screen.getAllByRole('link').map((link) => link.textContent);
+    const utilityLinks = Array.from(
+      screen.getByLabelText('Utilities').querySelectorAll('.utility-strip__items > a')
+    ).map((link) => link.textContent);
     expect(utilityLinks).toEqual([
       'Try included feeds',
       'Bookmarklet',

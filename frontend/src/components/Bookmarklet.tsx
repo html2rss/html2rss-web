@@ -2,17 +2,18 @@ export function Bookmarklet() {
   const bookmarkletHref = (() => {
     if (typeof window === 'undefined') return '#';
 
-    const appUrl = new URL(window.location.href);
-    appUrl.search = '';
-    appUrl.hash = '';
+    const targetPrefix = `${new URL('/', window.location.href).toString()}?url=`;
 
-    const targetPrefix = `${appUrl.origin}/?url=`;
-
-    return `javascript:window.location.href=${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href);`;
+    return `javascript:window.location.assign(${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href));`;
   })();
 
   return (
-    <a id="bookmarklet" class="utility-link" href={bookmarkletHref}>
+    <a
+      id="bookmarklet"
+      class="utility-link"
+      href={bookmarkletHref}
+      title="Drag this bookmarklet to your bookmarks bar"
+    >
       Bookmarklet
     </a>
   );

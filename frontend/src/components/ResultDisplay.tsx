@@ -18,6 +18,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   const jsonFeedUrl = feed.json_public_url.startsWith('http')
     ? feed.json_public_url
     : `${window.location.origin}${feed.json_public_url}`;
+  const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : null;
 
   useEffect(() => {
     return () => {
@@ -46,6 +47,11 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         <h1 class="result-title">Your feed is ready</h1>
         <p class="result-meta layout-rail-copy">{feed.name}</p>
         <p class="result-lede layout-rail-copy">Subscribe to this URL in your RSS reader.</p>
+        {result.retry && (
+          <p class="field-help">
+            {`Retried automatically with ${result.retry.to} after ${result.retry.from} could not finish the page.`}
+          </p>
+        )}
       </header>
 
       <DominantField
@@ -61,6 +67,11 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       />
 
       <div class="result-actions result-actions--quiet layout-rail-reading">
+        {subscribeUrl && (
+          <a href={subscribeUrl} class="btn btn--ghost">
+            Subscribe in reader
+          </a>
+        )}
         <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           Open feed
         </a>
@@ -71,6 +82,16 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
           Create another feed
         </button>
       </div>
+
+      {preview.isLoading && (
+        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
+          <div class="result-preview__header layout-stack layout-stack--tight">
+            <p class="result-preview__label ui-eyebrow">Preview</p>
+            <p class="result-preview__intro">Latest items from this feed</p>
+          </div>
+          <p class="field-help">Loading preview…</p>
+        </section>
+      )}
 
       {preview.items.length > 0 && (
         <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview">
@@ -99,7 +120,7 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
         </section>
       )}
 
-      {preview.error && (
+      {!preview.isLoading && preview.error && (
         <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
           <div class="result-preview__header layout-stack layout-stack--tight">
             <p class="result-preview__label ui-eyebrow">Preview</p>

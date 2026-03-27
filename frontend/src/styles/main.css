@@ -616,6 +616,10 @@ a:focus-visible {
   color: var(--text-muted);
 }
 
+.notice__actions {
+  margin-top: var(--space-3);
+}
+
 .notice__spinner {
   width: 1rem;
   height: 1rem;

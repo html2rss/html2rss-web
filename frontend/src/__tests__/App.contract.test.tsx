@@ -8,7 +8,7 @@ describe('App contract', () => {
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.sessionStorage.setItem('html2rss_access_token', token);
+    window.localStorage.setItem('html2rss_access_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {
@@ -18,7 +18,7 @@ describe('App contract', () => {
       http.post('/api/v1/feeds', async ({ request }) => {
         const body = (await request.json()) as { url: string; strategy: string };
 
-        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'browserless' });
+        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'faraday' });
         expect(request.headers.get('authorization')).toBe(`Bearer ${token}`);
 
         return HttpResponse.json(
@@ -55,7 +55,7 @@ describe('App contract', () => {
 
     await screen.findByLabelText('Page URL');
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+      expect(screen.getByRole('combobox')).toHaveValue('faraday');
     });
 
     const urlInput = screen.getByLabelText('Page URL') as HTMLInputElement;
@@ -149,7 +149,7 @@ describe('App contract', () => {
 
     await screen.findByLabelText('Page URL');
     await waitFor(() => {
-      expect(screen.getByRole('combobox')).toHaveValue('browserless');
+      expect(screen.getByRole('combobox')).toHaveValue('faraday');
     });
 
     fireEvent.input(screen.getByLabelText('Page URL'), {
@@ -161,6 +161,6 @@ describe('App contract', () => {
 
     expect(screen.getByText('Add access token')).toBeInTheDocument();
     expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
-    expect(window.sessionStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(window.localStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

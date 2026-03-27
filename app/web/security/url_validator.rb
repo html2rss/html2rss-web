@@ -11,9 +11,15 @@ module Html2rss
 
       class << self
         # @param url [String]
+        # @return [String, nil]
+        def canonical_url(url)
+          normalize_url(url)
+        end
+
+        # @param url [String]
         # @return [Boolean]
         def valid_url?(url)
-          !normalize_url(url).nil?
+          !canonical_url(url).nil?
         end
 
         # @param account [Hash]
@@ -23,7 +29,7 @@ module Html2rss
           return false unless account && url
 
           allowed_urls = Array(account[:allowed_urls])
-          return false unless (normalized_url = normalize_url(url))
+          return false unless (normalized_url = canonical_url(url))
 
           return false if allowed_urls.empty?
 
@@ -37,7 +43,7 @@ module Html2rss
         def match_exact?(pattern, normalized_url)
           return true if pattern == normalized_url
 
-          normalized_pattern = normalize_url(pattern)
+          normalized_pattern = canonical_url(pattern)
           normalized_pattern ? normalized_pattern == normalized_url : false
         end
 

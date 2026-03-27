@@ -5,22 +5,27 @@ import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useStrategies } from '../hooks/useStrategies';
+import { normalizeUserUrl } from '../utils/url';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
 const preferredStrategy = (strategies: { id: string }[]) =>
-  strategies.find((strategy) => strategy.id === 'browserless')?.id ?? strategies[0]?.id;
+  strategies.find((strategy) => strategy.id === 'faraday')?.id ?? strategies[0]?.id;
+
+interface ConversionErrorWithMeta extends Error {
+  manualRetryStrategy?: string;
+}
 
 function BrandLockup() {
   return (
-    <div class="brand-lockup" aria-label="html2rss">
+    <a class="brand-lockup" href="/" aria-label="html2rss">
       <span class="brand-lockup__mark" aria-hidden="true">
         <span />
         <span />
         <span />
       </span>
       <strong class="brand-lockup__wordmark">html2rss</strong>
-    </div>
+    </a>
   );
 }
 
@@ -49,6 +54,7 @@ export function App() {
   const [showTokenPrompt, setShowTokenPrompt] = useState(false);
   const [tokenDraft, setTokenDraft] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [manualRetryStrategy, setManualRetryStrategy] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
   const autoSubmitUrlRef = useRef<string | null>(null);
   const hasAutoSubmittedRef = useRef(false);
@@ -84,6 +90,7 @@ export function App() {
       url: key === 'url' ? '' : prev.url,
       form: '',
     }));
+    setManualRetryStrategy('');
     clearError();
   };
 
@@ -103,10 +110,11 @@ export function App() {
     );
   };
 
-  const attemptFeedCreation = async (accessToken: string) => {
-    const strategy = selectedStrategy;
+  const attemptFeedCreation = async (accessToken: string, strategyOverride?: string) => {
+    const strategy = strategyOverride || selectedStrategy;
+    const normalizedUrl = normalizeUserUrl(feedFormData.url);
 
-    if (!feedFormData.url.trim()) {
+    if (!normalizedUrl) {
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
       return false;
     }
@@ -125,6 +133,7 @@ export function App() {
     }
 
     if (feedCreation.access_token_required && !accessToken) {
+      setFeedFormData((prev) => ({ ...prev, url: normalizedUrl }));
       clearError();
       setShowTokenPrompt(true);
       setTokenError('');
@@ -132,12 +141,16 @@ export function App() {
     }
 
     try {
-      await convertFeed(feedFormData.url, strategy, accessToken);
+      setFeedFormData((prev) => ({ ...prev, url: normalizedUrl }));
+      await convertFeed(normalizedUrl, strategy, accessToken);
       setShowTokenPrompt(false);
       setTokenError('');
+      setManualRetryStrategy('');
       return true;
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Unable to start feed generation.';
+      const retryStrategy = (submitError as ConversionErrorWithMeta).manualRetryStrategy ?? '';
+      setManualRetryStrategy(retryStrategy);
 
       if (feedCreation.access_token_required && isAccessTokenError(message)) {
         clearToken();
@@ -178,7 +191,17 @@ export function App() {
 
   const handleCreateAnother = () => {
     clearResult();
+    setManualRetryStrategy('');
     setFocusCreateComposerKey((current) => current + 1);
+  };
+
+  const handleRetryWithStrategy = () => {
+    if (!manualRetryStrategy) return;
+
+    setFeedFormData((prev) => ({ ...prev, strategy: manualRetryStrategy }));
+    setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    clearError();
+    void attemptFeedCreation(token ?? '', manualRetryStrategy);
   };
 
   useEffect(() => {
@@ -187,10 +210,26 @@ export function App() {
     if (strategiesLoading || metadataLoading || tokenLoading) return;
     if (feedFormData.url !== autoSubmitUrl || !selectedStrategy) return;
 
+    if (feedCreation.access_token_required && !token) {
+      hasAutoSubmittedRef.current = true;
+      setFeedFormData((prev) => ({ ...prev, url: normalizeUserUrl(autoSubmitUrl) }));
+      setShowTokenPrompt(true);
+      setTokenError('');
+      return;
+    }
+
     hasAutoSubmittedRef.current = true;
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     void attemptFeedCreation(token ?? '');
-  }, [feedFormData.url, metadataLoading, selectedStrategy, strategiesLoading, token, tokenLoading]);
+  }, [
+    feedCreation.access_token_required,
+    feedFormData.url,
+    metadataLoading,
+    selectedStrategy,
+    strategiesLoading,
+    token,
+    tokenLoading,
+  ]);
 
   if (metadataLoading || tokenLoading) {
     return (
@@ -254,6 +293,8 @@ export function App() {
               setTokenError('');
               clearError();
             }}
+            manualRetryStrategy={manualRetryStrategy}
+            onRetryWithStrategy={handleRetryWithStrategy}
             strategyHint={strategyHint}
           />
           <UtilityStrip

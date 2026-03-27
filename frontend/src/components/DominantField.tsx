@@ -7,6 +7,9 @@ interface DominantFieldProps {
   value: string;
   placeholder?: string;
   type?: string;
+  inputMode?: JSX.HTMLAttributes<HTMLInputElement>['inputMode'];
+  autoCapitalize?: JSX.HTMLAttributes<HTMLInputElement>['autoCapitalize'];
+  spellcheck?: boolean;
   readOnly?: boolean;
   autoFocus?: boolean;
   disabled?: boolean;
@@ -26,6 +29,9 @@ export function DominantField({
   value,
   placeholder,
   type = 'text',
+  inputMode,
+  autoCapitalize,
+  spellcheck,
   readOnly = false,
   autoFocus = false,
   disabled = false,
@@ -47,7 +53,10 @@ export function DominantField({
           type={type}
           class="input input--mono input--lg"
           placeholder={placeholder}
-          autocomplete={type === 'url' ? 'url' : 'off'}
+          autoComplete={type === 'url' ? 'url' : 'off'}
+          inputMode={inputMode}
+          autoCapitalize={autoCapitalize}
+          spellcheck={spellcheck}
           autoFocus={autoFocus}
           ref={inputRef}
           value={value}

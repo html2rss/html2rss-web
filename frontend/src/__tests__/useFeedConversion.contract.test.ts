@@ -53,6 +53,7 @@ describe('useFeedConversion contract', () => {
     expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
     expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
     expect(result.current.result?.preview.error).toBeNull();
+    expect(result.current.result?.preview.isLoading).toBe(false);
     expect(result.current.result?.preview.items).toHaveLength(1);
   });
 
@@ -125,5 +126,6 @@ describe('useFeedConversion contract', () => {
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     expect(result.current.result?.preview.items).toEqual([]);
     expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
+    expect(result.current.result?.preview.isLoading).toBe(false);
   });
 });

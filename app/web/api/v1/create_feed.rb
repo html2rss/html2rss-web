@@ -61,14 +61,44 @@ module Html2rss
             # @param account [Hash]
             # @return [String]
             def validated_url(raw_url, account)
-              url = raw_url.to_s.strip
+              url = normalized_input_url(raw_url)
               raise Html2rss::Web::BadRequestError, 'URL parameter is required' if url.empty?
-              raise Html2rss::Web::BadRequestError, 'Invalid URL format' unless UrlValidator.valid_url?(url)
+
+              url = UrlValidator.canonical_url(url)
+              raise Html2rss::Web::BadRequestError, 'Invalid URL format' unless url
               unless UrlValidator.url_allowed?(account, url)
                 raise Html2rss::Web::ForbiddenError, 'URL not allowed for this account'
               end
 
               url
+            end
+
+            # @param raw_url [String, nil]
+            # @return [String]
+            def normalized_input_url(raw_url)
+              url = raw_url.to_s.strip
+              return url if url.empty?
+              return "https:#{url}" if url.start_with?('//')
+              return url if absolute_url?(url)
+
+              hostname_input?(url) ? "https://#{url}" : url
+            end
+
+            # @param url [String]
+            # @return [Boolean]
+            def absolute_url?(url)
+              url.match?(%r{\A[a-z][a-z0-9+\-.]*://}i)
+            end
+
+            # @param url [String]
+            # @return [Boolean]
+            def hostname_input?(url)
+              %r{
+                \A
+                (localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
+                (?:[/?#].*)?
+                \z
+              }ix.match?(url)
             end
 
             # @param raw_strategy [String, nil]

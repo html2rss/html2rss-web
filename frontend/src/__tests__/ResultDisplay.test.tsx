@@ -36,7 +36,9 @@ describe('ResultDisplay', () => {
         },
       ],
       error: null,
+      isLoading: false,
     },
+    retry: null,
   };
 
   beforeEach(() => {
@@ -49,6 +51,10 @@ describe('ResultDisplay', () => {
     expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toHaveAttribute(
+      'href',
+      'feed:https://example.com/feed.xml'
+    );
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open JSON Feed' })).toHaveAttribute(
       'href',
@@ -67,7 +73,10 @@ describe('ResultDisplay', () => {
   it('surfaces preview failures as a result-state message', async () => {
     render(
       <ResultDisplay
-        result={{ ...mockResult, preview: { items: [], error: 'Preview unavailable right now.' } }}
+        result={{
+          ...mockResult,
+          preview: { items: [], error: 'Preview unavailable right now.', isLoading: false },
+        }}
         onCreateAnother={mockOnCreateAnother}
       />
     );
@@ -75,6 +84,39 @@ describe('ResultDisplay', () => {
     await waitFor(() => {
       expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
       expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps the result state visible while preview is still loading', async () => {
+    render(
+      <ResultDisplay
+        result={{ ...mockResult, preview: { items: [], error: null, isLoading: true } }}
+        onCreateAnother={mockOnCreateAnother}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
+      expect(screen.getByText('Loading preview…')).toBeInTheDocument();
+    });
+  });
+
+  it('shows an automatic retry notice when fallback strategy succeeded', async () => {
+    render(
+      <ResultDisplay
+        result={{
+          ...mockResult,
+          retry: { automatic: true, from: 'faraday', to: 'browserless' },
+        }}
+        onCreateAnother={mockOnCreateAnother}
+      />
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Retried automatically with browserless after faraday could not finish the page.')
+      ).toBeInTheDocument();
     });
   });
 

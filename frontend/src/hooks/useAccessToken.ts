@@ -31,9 +31,13 @@ const resolveStorage = (): Storage => {
   if (typeof window === 'undefined') return memoryStorage;
 
   try {
-    return window.sessionStorage ?? memoryStorage;
+    return window.localStorage ?? window.sessionStorage ?? memoryStorage;
   } catch {
-    return memoryStorage;
+    try {
+      return window.sessionStorage ?? memoryStorage;
+    } catch {
+      return memoryStorage;
+    }
   }
 };
 
@@ -49,9 +53,18 @@ export function useAccessToken() {
 
     try {
       const token = storage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
+      const legacyToken =
+        token || typeof window === 'undefined'
+          ? ''
+          : (window.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '');
+
+      if (!token && legacyToken) {
+        storage.setItem(ACCESS_TOKEN_KEY, legacyToken);
+        window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+      }
 
       setState({
-        token: token || null,
+        token: token || legacyToken || null,
         isLoading: false,
         error: null,
       });
@@ -70,6 +83,7 @@ export function useAccessToken() {
 
     const storage = resolveStorage();
     storage.setItem(ACCESS_TOKEN_KEY, normalized);
+    if (typeof window !== 'undefined') window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
 
     setState({
       token: normalized,
@@ -81,6 +95,7 @@ export function useAccessToken() {
   const clearToken = () => {
     const storage = resolveStorage();
     storage.removeItem(ACCESS_TOKEN_KEY);
+    if (typeof window !== 'undefined') window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
 
     setState({
       token: null,
