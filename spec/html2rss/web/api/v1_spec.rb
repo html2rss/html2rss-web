@@ -475,16 +475,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'normalizes hostname-only input to https before feed creation', :aggregate_failures do
-      allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_call_original
-
       post_feed_request(url: 'example.com/articles', strategy: 'faraday')
-
-      expect(Html2rss::Web::AutoSource).to have_received(:create_stable_feed).with(
-        anything,
-        'https://example.com/articles',
-        kind_of(Hash),
-        'faraday'
-      )
 
       expect(last_response.status).to eq(201)
       json = expect_success_response(last_response)

@@ -412,6 +412,33 @@ describe('useFeedConversion', () => {
     });
   });
 
+  it('does not auto-retry browserless for unauthorized faraday failures', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: { message: 'Unauthorized' },
+        }),
+        {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await expect(
+        result.current.convertFeed('https://example.com/articles', 'faraday', 'testtoken')
+      ).rejects.toThrow('Unauthorized');
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.current.result).toBeNull();
+    expect(result.current.error).toBe('Unauthorized');
+  });
+
   it('does not offer a duplicate manual retry after automatic fallback also fails', async () => {
     fetchMock
       .mockResolvedValueOnce(
@@ -458,5 +485,126 @@ describe('useFeedConversion', () => {
     expect(result.current.error).toBe(
       'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
     );
+  });
+
+  it('ignores stale preview updates from an earlier conversion request', async () => {
+    const feedA = {
+      id: 'feed-a-id',
+      name: 'Feed A',
+      url: 'https://example.com/a',
+      strategy: 'faraday',
+      feed_token: 'feed-a-token',
+      public_url: 'https://example.com/feed-a',
+      json_public_url: 'https://example.com/feed-a.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+    const feedB = {
+      id: 'feed-b-id',
+      name: 'Feed B',
+      url: 'https://example.com/b',
+      strategy: 'faraday',
+      feed_token: 'feed-b-token',
+      public_url: 'https://example.com/feed-b',
+      json_public_url: 'https://example.com/feed-b.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    let resolvePreviewA: ((value: Response) => void) | null = null;
+    const previewAPromise = new Promise<Response>((resolve) => {
+      resolvePreviewA = resolve;
+    });
+    let resolvePreviewB: ((value: Response) => void) | null = null;
+    const previewBPromise = new Promise<Response>((resolve) => {
+      resolvePreviewB = resolve;
+    });
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { feed: feedA },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockReturnValueOnce(previewAPromise as Promise<Response>)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { feed: feedB },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockReturnValueOnce(previewBPromise as Promise<Response>);
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com/a', 'faraday', 'testtoken');
+    });
+    await act(async () => {
+      await result.current.convertFeed('https://example.com/b', 'faraday', 'testtoken');
+    });
+
+    expect(result.current.result?.feed.feed_token).toBe('feed-b-token');
+
+    resolvePreviewB?.(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              title: 'Preview B',
+              content_text: 'Current preview item',
+              url: 'https://example.com/b/item',
+              date_published: '2024-01-02T00:00:00Z',
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/feed+json' },
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(result.current.result?.feed.feed_token).toBe('feed-b-token');
+      expect(result.current.result?.preview.items[0]?.title).toBe('Preview B');
+    });
+
+    resolvePreviewA?.(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              title: 'Preview A',
+              content_text: 'Stale preview item',
+              url: 'https://example.com/a/item',
+              date_published: '2024-01-03T00:00:00Z',
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/feed+json' },
+        }
+      )
+    );
+
+    await waitFor(() => {
+      expect(result.current.result?.feed.feed_token).toBe('feed-b-token');
+      expect(result.current.result?.preview.items[0]?.title).toBe('Preview B');
+    });
   });
 });
