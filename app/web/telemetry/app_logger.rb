@@ -101,9 +101,17 @@ module Html2rss
         # @param payload [Hash{Symbol=>Object}]
         # @return [void]
         def emit_to_sentry(payload)
+          return unless sentry_payload?(payload)
+
           SentryLogs.emit(payload)
         rescue StandardError
           nil
+        end
+
+        # @param payload [Hash{Symbol=>Object}]
+        # @return [Boolean]
+        def sentry_payload?(payload)
+          payload.key?(:event_name) || payload.key?(:security_event)
         end
       end
     end

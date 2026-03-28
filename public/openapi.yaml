@@ -331,7 +331,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns health status after production-style env scrubbing
+          description: returns current health status when a valid bearer token is provided
         '401':
           content:
             application/json:

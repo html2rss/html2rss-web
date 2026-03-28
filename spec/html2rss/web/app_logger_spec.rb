@@ -35,5 +35,16 @@ RSpec.describe Html2rss::Web::AppLogger do
       end.not_to raise_error
       expect(io.string).to include('"event_name":"boot.test"')
     end
+
+    it 'does not forward plain string logs to the Sentry bridge' do
+      allow(Logger).to receive(:new).and_return(test_logger)
+      allow(Html2rss::Web::SentryLogs).to receive(:emit)
+
+      described_class.reset_logger!
+      described_class.logger.info('plain-text log line with request details')
+
+      expect(Html2rss::Web::SentryLogs).not_to have_received(:emit)
+      expect(io.string).to include('"message":"plain-text log line with request details"')
+    end
   end
 end

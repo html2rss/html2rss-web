@@ -7,6 +7,7 @@ module Html2rss
     # enabled for the current runtime.
     module SentryLogs
       OMIT = Object.new.freeze
+      ALLOWED_LEVELS = %i[debug info warn error fatal].freeze
       SENSITIVE_ATTRIBUTE_KEYS = %w[actor email ip remote_ip user_agent username x_forwarded_for].freeze
 
       class << self
@@ -40,7 +41,10 @@ module Html2rss
         # @param payload [Hash{Symbol=>Object}]
         # @return [Symbol]
         def level(payload)
-          payload.fetch(:level, 'INFO').to_s.downcase.to_sym
+          requested_level = payload.fetch(:level, 'INFO').to_s.downcase.to_sym
+          return requested_level if ALLOWED_LEVELS.include?(requested_level)
+
+          :info
         end
 
         # @param payload [Hash{Symbol=>Object}]
