@@ -117,11 +117,7 @@ export function App() {
     );
   };
 
-  const isActionableStrategySwitch = (
-    message: string,
-    currentStrategy: string,
-    retryStrategy: string
-  ) => {
+  const isActionableStrategySwitch = (message: string, currentStrategy: string, retryStrategy: string) => {
     if (currentStrategy !== 'faraday' || retryStrategy !== 'browserless') return false;
 
     const normalized = message.toLowerCase();

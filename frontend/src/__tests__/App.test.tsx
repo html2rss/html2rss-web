@@ -522,7 +522,9 @@ describe('App', () => {
     await screen.findByText('URL not allowed for this account');
     expect(mockClearToken).not.toHaveBeenCalled();
     expect(screen.queryByText('Add access token')).not.toBeInTheDocument();
-    expect(screen.queryByText('Access token was rejected. Paste a valid token to continue.')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Access token was rejected. Paste a valid token to continue.')
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
   });
 
