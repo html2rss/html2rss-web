@@ -116,11 +116,11 @@ export type RenderFeedByTokenData = {
 
 export type RenderFeedByTokenErrors = {
     /**
-     * returns JSON Feed-shaped errors when requested by json extension
+     * returns unauthorized for invalid tokens
      */
     401: string;
     /**
-     * returns JSON Feed-shaped forbidden errors when requested through Accept
+     * returns forbidden when auto source is disabled
      */
     403: string;
     /**
