@@ -46,6 +46,8 @@ desc 'Build and run docker image/container, and send requests to it'
 task :test do
   current_dir = ENV.fetch('GITHUB_WORKSPACE', __dir__)
   smoke_auto_source_enabled = ENV.fetch('SMOKE_AUTO_SOURCE_ENABLED', 'false')
+  smoke_build_tag = ENV.fetch('SMOKE_BUILD_TAG', ENV.fetch('BUILD_TAG', 'docker-smoke'))
+  smoke_git_sha = ENV.fetch('SMOKE_GIT_SHA', ENV.fetch('GITHUB_SHA', ENV.fetch('GIT_SHA', 'docker-smoke')))
   image_name = 'html2rss/web'
   skip_build = ENV.fetch('DOCKER_SMOKE_SKIP_BUILD', 'false') == 'true'
 
@@ -60,6 +62,8 @@ task :test do
       '-d',
       '-p 4000:4000',
       '--env PUMA_LOG_CONFIG=1',
+      "--env BUILD_TAG=#{smoke_build_tag}",
+      "--env GIT_SHA=#{smoke_git_sha}",
       '--env HEALTH_CHECK_TOKEN=CHANGE_ME_HEALTH_CHECK_TOKEN',
       '--env HTML2RSS_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       "--env AUTO_SOURCE_ENABLED=#{smoke_auto_source_enabled}",
