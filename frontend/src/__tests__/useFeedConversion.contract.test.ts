@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook, act } from '@testing-library/preact';
+import { renderHook, act, waitFor } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse } from './mocks/server';
 import { useFeedConversion } from '../hooks/useFeedConversion';
@@ -52,9 +52,11 @@ describe('useFeedConversion contract', () => {
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
     expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
-    expect(result.current.result?.preview.error).toBeNull();
-    expect(result.current.result?.preview.isLoading).toBe(false);
-    expect(result.current.result?.preview.items).toHaveLength(1);
+    await waitFor(() => {
+      expect(result.current.result?.preview.error).toBeNull();
+      expect(result.current.result?.preview.isLoading).toBe(false);
+      expect(result.current.result?.preview.items).toHaveLength(1);
+    });
   });
 
   it('propagates API validation errors', async () => {
@@ -124,8 +126,10 @@ describe('useFeedConversion contract', () => {
 
     expect(result.current.error).toBeNull();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
-    expect(result.current.result?.preview.items).toEqual([]);
-    expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
-    expect(result.current.result?.preview.isLoading).toBe(false);
+    await waitFor(() => {
+      expect(result.current.result?.preview.items).toEqual([]);
+      expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
+      expect(result.current.result?.preview.isLoading).toBe(false);
+    });
   });
 });

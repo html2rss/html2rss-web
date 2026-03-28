@@ -251,6 +251,7 @@ function shouldAutoRetry(
     normalized.includes('forbidden') ||
     normalized.includes('access token') ||
     normalized.includes('authentication') ||
+    normalized.includes('invalid response format') ||
     normalized.includes('network error') ||
     normalized.includes('url') ||
     normalized.includes('unsupported strategy')
