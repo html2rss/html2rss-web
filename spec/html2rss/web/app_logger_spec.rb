@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'climate_control'
 require 'stringio'
 
 require_relative '../../../app/web/config/runtime_env'
@@ -23,6 +22,17 @@ RSpec.describe Html2rss::Web::AppLogger do
       expect(Html2rss::Web::SentryLogs).to have_received(:emit).with(
         include(component: 'boot', event_name: 'boot.test', service: 'html2rss-web')
       )
+      expect(io.string).to include('"event_name":"boot.test"')
+    end
+
+    it 'still writes structured logs when the Sentry bridge raises' do
+      allow(Logger).to receive(:new).and_return(test_logger)
+      allow(Html2rss::Web::SentryLogs).to receive(:emit).and_raise(StandardError, 'boom')
+
+      described_class.reset_logger!
+      expect do
+        described_class.logger.info({ event_name: 'boot.test', component: 'boot' }.to_json)
+      end.not_to raise_error
       expect(io.string).to include('"event_name":"boot.test"')
     end
   end

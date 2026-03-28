@@ -29,11 +29,28 @@ RSpec.describe Html2rss::Web::SentryLogs do
 
   it 'filters auth and security pii before forwarding payloads to Sentry', :aggregate_failures do
     stub_const('Sentry', fake_sentry)
-    allow(described_class).to receive_messages(enabled?: true, logger: sentry_logger)
-
+    allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: true, sentry_logs_enabled?: true)
+    allow(described_class).to receive(:logger).and_return(sentry_logger)
+    expect(described_class.send(:enabled?)).to be(true)
     described_class.emit(raw_payload)
 
     expect_forwarded_payload
+  end
+
+  it 'does not forward payloads when sentry logs are disabled' do
+    stub_const('Sentry', fake_sentry)
+    allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: true, sentry_logs_enabled?: false)
+    described_class.emit(raw_payload)
+
+    expect(captured_call).to eq({})
+  end
+
+  it 'does not forward payloads when sentry is disabled' do
+    stub_const('Sentry', fake_sentry)
+    allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: false, sentry_logs_enabled?: true)
+    described_class.emit(raw_payload)
+
+    expect(captured_call).to eq({})
   end
 
   def build_sentry_logger
@@ -44,13 +61,11 @@ RSpec.describe Html2rss::Web::SentryLogs do
       end
     end
 
-    logger_class.new(captured_call).tap do |logger|
-      allow(logger).to receive(:info).and_call_original
-    end
+    logger_class.new(captured_call)
   end
 
   def expect_forwarded_payload
-    expect(sentry_logger).to have_received(:info)
+    expect(captured_call).to include(:message, :attributes)
     expect_forwarded_message
     expect_forwarded_attributes
   end

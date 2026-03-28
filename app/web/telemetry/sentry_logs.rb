@@ -24,7 +24,10 @@ module Html2rss
 
         # @return [Boolean]
         def enabled?
-          RuntimeEnv.sentry_enabled? && defined?(::Sentry) && !logger.nil?
+          RuntimeEnv.sentry_enabled? &&
+            RuntimeEnv.sentry_logs_enabled? &&
+            defined?(::Sentry) &&
+            !logger.nil?
         end
 
         # @return [Object, nil]
