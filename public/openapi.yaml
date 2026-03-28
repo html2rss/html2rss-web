@@ -167,7 +167,7 @@ paths:
                 - data
                 - meta
                 type: object
-          description: creates a feed when request is valid
+          description: normalizes hostname-only input to https before feed creation
         '401':
           content:
             application/json:
