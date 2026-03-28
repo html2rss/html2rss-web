@@ -239,9 +239,23 @@ function buildConversionError(message: string, metadata: Partial<ConversionError
 
 const toErrorMessage = (error: unknown): string => {
   const details = extractErrorDetails(error);
+  const detailsMessage = details?.message?.toLowerCase();
+  if (
+    detailsMessage &&
+    (detailsMessage.includes('not valid json') || detailsMessage.includes('unexpected token'))
+  ) {
+    return 'Invalid response format from feed creation API';
+  }
   if (details?.message) return details.message;
   if (error instanceof SyntaxError) return 'Invalid response format from feed creation API';
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    const normalizedMessage = error.message.toLowerCase();
+    if (normalizedMessage.includes('not valid json') || normalizedMessage.includes('unexpected token')) {
+      return 'Invalid response format from feed creation API';
+    }
+
+    return error.message;
+  }
   if (typeof error === 'string' && error.trim()) return error;
   return 'An unexpected error occurred';
 };
@@ -291,24 +305,28 @@ function failConversion(
   throw buildConversionError(message, metadata);
 }
 
-const extractErrorDetails = (error: unknown): { message?: string; code?: string } | null => {
+const extractErrorDetails = (error: unknown): { message?: string; code?: string; status?: number } | null => {
   if (!error || typeof error !== 'object') return null;
 
   const candidate = error as {
-    error?: { message?: unknown; code?: unknown };
+    error?: { message?: unknown; code?: unknown; status?: unknown };
     message?: unknown;
     code?: unknown;
+    status?: unknown;
   };
 
   const message = normalizeString(candidate.error?.message ?? candidate.message);
   const code = normalizeString(candidate.error?.code ?? candidate.code);
-  return { message, code };
+  const status = normalizeStatus(candidate.error?.status ?? candidate.status);
+  return { message, code, status };
 };
 
 function retryableForFallback(error: unknown): boolean {
   const details = extractErrorDetails(error);
   const errorCode = details?.code?.toUpperCase();
+  const status = details?.status;
   if (errorCode && NON_RETRYABLE_ERROR_CODES.has(errorCode)) return false;
+  if (status && status < 500) return false;
 
   const message = (details?.message ?? toErrorMessage(error)).toLowerCase();
   if (!details?.code && (message.includes('unauthorized') || message.includes('forbidden'))) return false;
@@ -316,8 +334,13 @@ function retryableForFallback(error: unknown): boolean {
   if (message.includes('access token') || message.includes('authentication')) return false;
   if (message.includes('unsupported strategy')) return false;
   if (message.includes('invalid response format')) return false;
+  if (message.includes('not valid json') || message.includes('unexpected token')) return false;
+  if (message === 'network error') return false;
+  if (error instanceof SyntaxError) return false;
 
-  return !networkFailure(error, message);
+  if (status && status >= 500) return true;
+  if (message.includes('failed to fetch http')) return true;
+  return message.includes('internal server error') || message.includes('upstream timeout');
 }
 
 function networkFailure(error: unknown, normalizedMessage: string): boolean {
@@ -327,6 +350,10 @@ function networkFailure(error: unknown, normalizedMessage: string): boolean {
 
 function normalizeString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function normalizeStatus(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 function normalizePreviewText(value?: string): string | null {
