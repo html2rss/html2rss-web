@@ -177,7 +177,7 @@ export type GetHealthStatusError = GetHealthStatusErrors[keyof GetHealthStatusEr
 
 export type GetHealthStatusResponses = {
     /**
-     * returns health status when the configured environment token is valid
+     * returns health status after production-style env scrubbing
      */
     200: {
         data: {

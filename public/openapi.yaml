@@ -331,8 +331,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns health status when the configured environment token
-            is valid
+          description: returns health status after production-style env scrubbing
         '401':
           content:
             application/json:
