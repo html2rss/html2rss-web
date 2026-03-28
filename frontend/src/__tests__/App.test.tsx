@@ -276,7 +276,7 @@ describe('App', () => {
 
     expect(screen.getByText('Preparing feed')).toBeInTheDocument();
     expect(
-      screen.getByText('Creating the feed and loading its preview before showing the result.')
+      screen.getByText('Creating the feed now. The result appears first, then preview loading continues.')
     ).toBeInTheDocument();
   });
 
@@ -494,6 +494,35 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await screen.findByText('Tried faraday first, then browserless. Browserless failed.');
+    expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
+  });
+
+  it('does not treat non-token forbidden failures as token rejection or strategy-recovery UX', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: null,
+    });
+    mockConvertFeed.mockRejectedValueOnce(
+      Object.assign(new Error('URL not allowed for this account'), {
+        manualRetryStrategy: 'browserless',
+      })
+    );
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await screen.findByText('URL not allowed for this account');
+    expect(mockClearToken).not.toHaveBeenCalled();
+    expect(screen.queryByText('Add access token')).not.toBeInTheDocument();
+    expect(screen.queryByText('Access token was rejected. Paste a valid token to continue.')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
   });
 

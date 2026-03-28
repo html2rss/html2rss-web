@@ -102,11 +102,40 @@ export function App() {
 
   const isAccessTokenError = (message: string) => {
     const normalized = message.toLowerCase();
+    const mentionsAuthToken =
+      normalized.includes('access token') ||
+      normalized.includes('token') ||
+      normalized.includes('authentication') ||
+      normalized.includes('bearer');
+
     return (
       normalized.includes('unauthorized') ||
+      normalized.includes('invalid token') ||
+      normalized.includes('token rejected') ||
+      normalized.includes('authentication') ||
+      (normalized.includes('forbidden') && mentionsAuthToken)
+    );
+  };
+
+  const isActionableStrategySwitch = (
+    message: string,
+    currentStrategy: string,
+    retryStrategy: string
+  ) => {
+    if (currentStrategy !== 'faraday' || retryStrategy !== 'browserless') return false;
+
+    const normalized = message.toLowerCase();
+    return !(
+      normalized.includes('unauthorized') ||
       normalized.includes('forbidden') ||
+      normalized.includes('not allowed') ||
+      normalized.includes('disabled') ||
       normalized.includes('access token') ||
-      normalized.includes('authentication')
+      normalized.includes('token') ||
+      normalized.includes('authentication') ||
+      normalized.includes('bad request') ||
+      normalized.includes('url') ||
+      normalized.includes('unsupported strategy')
     );
   };
 
@@ -150,7 +179,9 @@ export function App() {
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : 'Unable to start feed generation.';
       const retryStrategy = (submitError as ConversionErrorWithMeta).manualRetryStrategy ?? '';
-      setManualRetryStrategy(retryStrategy);
+      setManualRetryStrategy(
+        isActionableStrategySwitch(message, strategy, retryStrategy) ? retryStrategy : ''
+      );
 
       if (feedCreation.access_token_required && isAccessTokenError(message)) {
         clearToken();

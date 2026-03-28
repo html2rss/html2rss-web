@@ -198,7 +198,7 @@ export function CreateFeedPanel({
             <input
               id="access-token"
               name="access-token"
-              type="password"
+              type="text"
               class="input input--mono input--minimal"
               aria-label="Access token"
               placeholder="Paste access token"
@@ -251,7 +251,7 @@ export function CreateFeedPanel({
       {isConverting && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
           <div class="notice__title">Preparing feed</div>
-          <p>Creating the feed and loading its preview before showing the result.</p>
+          <p>Creating the feed now. The result appears first, then preview loading continues.</p>
         </div>
       )}
 
