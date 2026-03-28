@@ -277,8 +277,7 @@ paths:
                 <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
               schema:
                 type: string
-          description: returns non-cacheable json feed errors when service generation
-            fails
+          description: returns non-cacheable feed errors when service generation fails
       security: []
       summary: Render feed by token
       tags:
@@ -331,7 +330,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns current health status when a valid bearer token is provided
+          description: returns health status when token is valid
         '401':
           content:
             application/json:

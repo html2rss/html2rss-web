@@ -214,7 +214,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(json.dig('data', 'health', 'status')).to eq('healthy')
     end
 
-    it 'returns health status when the configured environment token is valid', :aggregate_failures do
+    it 'returns health status when the configured environment token is valid', :aggregate_failures, openapi: false do
       ClimateControl.modify(HEALTH_CHECK_TOKEN: 'rotated-health-token') do
         allow(Html2rss::Web::Auth).to receive(:authenticate).and_call_original
 
@@ -227,7 +227,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       end
     end
 
-    it 'returns health status after production-style env scrubbing', :aggregate_failures do
+    it 'returns health status after production-style env scrubbing', :aggregate_failures, openapi: false do
       capture_scrubbed_runtime_env(
         'RACK_ENV' => 'production',
         'HEALTH_CHECK_TOKEN' => 'scrubbed-health-token'
@@ -410,7 +410,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
-    it 'returns non-cacheable xml feed errors when service generation fails', :aggregate_failures do
+    it 'returns non-cacheable feed errors when service generation fails', :aggregate_failures do
       unique_url = "#{feed_url}/service-error-xml"
       token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 
@@ -424,7 +424,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.body).to include('Internal Server Error')
     end
 
-    it 'returns non-cacheable json feed errors when service generation fails', :aggregate_failures do
+    it 'returns non-cacheable json feed errors when service generation fails', :aggregate_failures, openapi: false do
       unique_url = "#{feed_url}/service-error-json"
       token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'faraday')
 

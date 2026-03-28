@@ -47,16 +47,23 @@ This trial run is intentionally minimal. Use Docker Compose for Browserless, aut
 
 ## Deploy (Docker Compose)
 
-1. Generate a key: `openssl rand -hex 32`.
-2. Export `HTML2RSS_SECRET_KEY`, `HEALTH_CHECK_TOKEN`, and `BROWSERLESS_IO_API_TOKEN` in your shell or `.env`.
-3. Export build metadata required by `docker-compose.yml`:
-   ```bash
-   export BUILD_TAG=local
-   export GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo dev)"
-   ```
-4. Optionally export `SENTRY_DSN` to send application errors to Sentry.
-5. Optionally export `SENTRY_ENABLE_LOGS=true` to forward structured application logs to Sentry.
-6. Start: `docker-compose up`.
+Quick start:
+
+```bash
+export HTML2RSS_SECRET_KEY="$(openssl rand -hex 32)"
+export HEALTH_CHECK_TOKEN="replace-with-a-strong-token"
+export BROWSERLESS_IO_API_TOKEN="replace-with-your-browserless-token"
+export BUILD_TAG="local"
+export GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo dev)"
+docker-compose up
+```
+
+Optional:
+
+```bash
+export SENTRY_DSN="https://examplePublicKey@o0.ingest.sentry.io/0"
+export SENTRY_ENABLE_LOGS=true
+```
 
 UI + API run on `http://localhost:4000`. The app exits if the secret key is missing.
 
