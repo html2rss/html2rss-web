@@ -55,6 +55,7 @@ export HEALTH_CHECK_TOKEN="replace-with-a-strong-token"
 export BROWSERLESS_IO_API_TOKEN="replace-with-your-browserless-token"
 export BUILD_TAG="local"
 export GIT_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo dev)"
+export AUTO_SOURCE_ENABLED=true
 docker-compose up
 ```
 
