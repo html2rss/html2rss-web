@@ -35,7 +35,7 @@ module Html2rss
           def apply_settings(config)
             config.dsn = RuntimeEnv.sentry_dsn
             config.environment = RuntimeEnv.rack_env
-            config.enable_logs = true
+            config.enable_logs = RuntimeEnv.sentry_logs_enabled?
             config.send_default_pii = false
             config.release = release_name
           end

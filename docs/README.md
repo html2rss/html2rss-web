@@ -171,6 +171,7 @@ Managed flags and environment keys:
 | `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
 | `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
 | `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
+| `sentry_enable_logs`              | `SENTRY_ENABLE_LOGS`              | boolean        | `false`                                  |
 
 Rules:
 

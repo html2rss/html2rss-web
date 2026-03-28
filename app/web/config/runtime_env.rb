@@ -7,7 +7,7 @@ module Html2rss
     # from the process environment after validation.
     module RuntimeEnv
       SENSITIVE_KEYS = %w[HTML2RSS_SECRET_KEY HEALTH_CHECK_TOKEN SENTRY_DSN].freeze
-      BOOT_METADATA_KEYS = %w[BUILD_TAG GIT_SHA RACK_ENV].freeze
+      BOOT_METADATA_KEYS = %w[BUILD_TAG GIT_SHA RACK_ENV SENTRY_ENABLE_LOGS].freeze
 
       class << self
         # @return [void]
@@ -40,6 +40,11 @@ module Html2rss
         # @return [Boolean]
         def sentry_enabled?
           !sentry_dsn.to_s.strip.empty?
+        end
+
+        # @return [Boolean]
+        def sentry_logs_enabled?
+          parse_boolean(fetch('SENTRY_ENABLE_LOGS', 'false'), default: false)
         end
 
         # @return [String]
@@ -85,6 +90,18 @@ module Html2rss
 
           SENSITIVE_KEYS.each { |key| ENV.delete(key) }
           nil
+        end
+
+        # @param value [Object]
+        # @param default [Boolean]
+        # @return [Boolean]
+        def parse_boolean(value, default:)
+          normalized = value.to_s.strip.downcase
+          return true if normalized == 'true'
+          return false if normalized == 'false'
+          return default if normalized.empty?
+
+          raise ArgumentError, "Malformed env 'SENTRY_ENABLE_LOGS': expected true/false, got '#{value}'"
         end
       end
     end

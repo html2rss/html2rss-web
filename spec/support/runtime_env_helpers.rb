@@ -14,7 +14,7 @@ module RuntimeEnvHelpers
   private
 
   def preserved_runtime_env
-    %w[HTML2RSS_SECRET_KEY HEALTH_CHECK_TOKEN SENTRY_DSN].each_with_object({}) do |key, env|
+    %w[HTML2RSS_SECRET_KEY HEALTH_CHECK_TOKEN SENTRY_DSN SENTRY_ENABLE_LOGS].each_with_object({}) do |key, env|
       value = ENV.fetch(key, nil)
       env[key] = value unless value.nil?
     end

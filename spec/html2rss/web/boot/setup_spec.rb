@@ -13,7 +13,8 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       'RACK_ENV' => 'development',
       'HTML2RSS_SECRET_KEY' => boot_secret_key,
       'BUILD_TAG' => '2026-03-27',
-      'GIT_SHA' => 'abc1234'
+      'GIT_SHA' => 'abc1234',
+      'SENTRY_ENABLE_LOGS' => nil
     }
   end
 
@@ -56,7 +57,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       end
     end
 
-    it 'configures Sentry for errors and logs when a DSN is present', :aggregate_failures do
+    it 'configures Sentry for error reporting when a DSN is present', :aggregate_failures do
       stub_environment_validation
       allow(Html2rss::Web::Boot::Sentry).to receive(:configure!).and_call_original
       allow(Html2rss::Web::Boot::Sentry).to receive(:require).with('sentry-ruby').and_return(true)
@@ -69,6 +70,36 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       end
 
       expect_sentry_to_be_configured
+    end
+
+    it 'enables Sentry logs when SENTRY_ENABLE_LOGS is true', :aggregate_failures do
+      stub_environment_validation
+      allow(Html2rss::Web::Boot::Sentry).to receive(:configure!).and_call_original
+      allow(Html2rss::Web::Boot::Sentry).to receive(:require).with('sentry-ruby').and_return(true)
+      allow(Bundler).to receive(:require)
+      fake_sentry = build_fake_sentry
+      stub_const('Sentry', fake_sentry)
+
+      ClimateControl.modify(boot_env.merge('SENTRY_DSN' => sentry_dsn, 'SENTRY_ENABLE_LOGS' => 'true')) do
+        described_class.call!
+      end
+
+      expect_sentry_config(:enable_logs, true)
+    end
+
+    it 'fails fast when SENTRY_ENABLE_LOGS is malformed' do
+      stub_environment_validation
+      allow(Html2rss::Web::Boot::Sentry).to receive(:configure!).and_call_original
+      allow(Html2rss::Web::Boot::Sentry).to receive(:require).with('sentry-ruby').and_return(true)
+      allow(Bundler).to receive(:require)
+      fake_sentry = build_fake_sentry
+      stub_const('Sentry', fake_sentry)
+
+      expect do
+        ClimateControl.modify(boot_env.merge('SENTRY_DSN' => sentry_dsn, 'SENTRY_ENABLE_LOGS' => '1')) do
+          described_class.call!
+        end
+      end.to raise_error(ArgumentError, /SENTRY_ENABLE_LOGS/)
     end
 
     it 'logs build metadata on startup' do
@@ -113,7 +144,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
   def expect_sentry_to_be_configured
     expect(Bundler).to have_received(:require).with(:sentry)
     expect_sentry_config(:dsn, sentry_dsn)
-    expect_sentry_config(:enable_logs, true)
+    expect_sentry_config(:enable_logs, false)
     expect_sentry_config(:release, '2026-03-27+abc1234')
   end
 
