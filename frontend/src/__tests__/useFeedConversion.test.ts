@@ -439,6 +439,101 @@ describe('useFeedConversion', () => {
     expect(result.current.error).toBe('Unauthorized');
   });
 
+  it('does not auto-retry when API returns a non-retryable BAD_REQUEST code', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          success: false,
+          error: { code: 'BAD_REQUEST', message: 'Input rejected' },
+        }),
+        {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      )
+    );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await expect(
+        result.current.convertFeed('https://example.com/articles', 'faraday', 'testtoken')
+      ).rejects.toThrow('Input rejected');
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.current.result).toBeNull();
+    expect(result.current.error).toBe('Input rejected');
+  });
+
+  it('still auto-retries when API returns INTERNAL_SERVER_ERROR even if message contains a url', async () => {
+    const createdFeed = {
+      id: 'test-id',
+      name: 'Test Feed',
+      url: 'https://example.com/articles',
+      strategy: 'browserless',
+      feed_token: 'test-token',
+      public_url: 'https://example.com/feed',
+      json_public_url: 'https://example.com/feed.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: false,
+            error: {
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to fetch https://example.com/articles',
+            },
+          }),
+          {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              feed: createdFeed,
+            },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ items: [] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/feed+json' },
+        })
+      );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com/articles', 'faraday', 'testtoken');
+    });
+
+    const retryRequest = fetchMock.mock.calls[1]?.[0] as Request;
+    expect(await retryRequest.clone().json()).toEqual({
+      url: 'https://example.com/articles',
+      strategy: 'browserless',
+    });
+    expect(result.current.result?.retry).toEqual({
+      automatic: true,
+      from: 'faraday',
+      to: 'browserless',
+    });
+  });
+
   it('does not offer a duplicate manual retry after automatic fallback also fails', async () => {
     fetchMock
       .mockResolvedValueOnce(

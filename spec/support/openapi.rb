@@ -72,6 +72,19 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
   end
 
   merge_responses = lambda do |existing_responses, new_responses|
+    canonical_description = lambda do |*responses|
+      descriptions = responses
+                     .filter_map { |response| response['description']&.to_s&.strip }
+                     .reject(&:empty?)
+                     .uniq
+
+      next nil if descriptions.empty?
+
+      # Prefer the most generic/canonical wording when duplicate examples define
+      # the same status differently.
+      descriptions.min_by { |description| [description.length, description] }
+    end
+
     statuses = existing_responses.keys | new_responses.keys
 
     statuses.each_with_object({}) do |status, merged_responses|
@@ -96,7 +109,7 @@ RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
         merged_response['headers'] = current_headers.merge(incoming_headers)
       end
 
-      merged_response['description'] ||= current['description'] || incoming['description']
+      merged_response['description'] = canonical_description.call(current, incoming)
       merged_responses[status] = merged_response
     end
   end

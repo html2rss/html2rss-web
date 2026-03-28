@@ -250,7 +250,7 @@ paths:
                 <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
               schema:
                 type: string
-          description: returns JSON Feed-shaped errors when requested by json extension
+          description: returns unauthorized for invalid tokens
         '403':
           content:
             application/feed+json:
@@ -263,8 +263,7 @@ paths:
                 <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
               schema:
                 type: string
-          description: returns JSON Feed-shaped forbidden errors when requested through
-            Accept
+          description: returns forbidden when auto source is disabled
         '500':
           content:
             application/feed+json:

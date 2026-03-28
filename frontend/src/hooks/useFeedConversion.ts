@@ -25,8 +25,10 @@ interface ConversionState {
 
 interface ConversionError extends Error {
   manualRetryStrategy?: string;
-  autoRetryAttempted?: boolean;
 }
+
+const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
+const NON_RETRYABLE_ERROR_CODES = new Set(['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN']);
 
 export function useFeedConversion() {
   const requestIdRef = useRef(0);
@@ -50,32 +52,22 @@ export function useFeedConversion() {
 
     const requestId = requestIdRef.current + 1;
     requestIdRef.current = requestId;
-    setState((prev) => ({ ...prev, isConverting: true, error: null }));
+    markConversionStarted(setState);
 
     try {
       const feed = await requestFeedCreation(normalizedUrl, requestedStrategy, token);
-      const result = {
-        feed,
-        preview: buildLoadingPreviewState(),
-        retry: null,
-      };
-
-      setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
-      void hydratePreview(feed, requestId, null, setState, requestIdRef);
-      return result;
+      return publishCreatedFeed(feed, null, requestId, setState, requestIdRef);
     } catch (firstError) {
       if (shouldAutoRetry(requestedStrategy, fallbackStrategy, firstError)) {
         try {
           const feed = await requestFeedCreation(normalizedUrl, fallbackStrategy, token);
-          const result = {
+          return publishCreatedFeed(
             feed,
-            preview: buildLoadingPreviewState(),
-            retry: { automatic: true, from: requestedStrategy, to: fallbackStrategy },
-          };
-
-          setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
-          void hydratePreview(feed, requestId, result.retry, setState, requestIdRef);
-          return result;
+            { automatic: true, from: requestedStrategy, to: fallbackStrategy },
+            requestId,
+            setState,
+            requestIdRef
+          );
         } catch (secondError) {
           const message = buildRetryFailureMessage(
             firstError,
@@ -83,33 +75,12 @@ export function useFeedConversion() {
             requestedStrategy,
             fallbackStrategy
           );
-          const retryError = buildConversionError(message, {
-            manualRetryStrategy: undefined,
-            autoRetryAttempted: true,
-          });
-
-          setState((prev) => ({
-            ...prev,
-            isConverting: false,
-            error: message,
-            result: null,
-          }));
-          throw retryError;
+          failConversion(setState, message, { manualRetryStrategy: undefined });
         }
       }
 
       const message = toErrorMessage(firstError);
-      const retryError = buildConversionError(message, {
-        manualRetryStrategy: alternateStrategy(requestedStrategy),
-      });
-
-      setState((prev) => ({
-        ...prev,
-        isConverting: false,
-        error: message,
-        result: null,
-      }));
-      throw retryError;
+      failConversion(setState, message, { manualRetryStrategy: alternateStrategy(requestedStrategy) });
     }
   };
 
@@ -143,7 +114,7 @@ async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview
     headers: { Accept: 'application/feed+json' },
   });
 
-  if (!response.ok) throw new Error('Preview unavailable right now.');
+  if (!response.ok) throw new Error(PREVIEW_UNAVAILABLE_MESSAGE);
 
   const payload = (await response.json()) as JsonFeedResponse;
   const items =
@@ -154,7 +125,7 @@ async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview
 
   return {
     items,
-    error: items.length > 0 ? null : 'Preview unavailable right now.',
+    error: items.length > 0 ? null : PREVIEW_UNAVAILABLE_MESSAGE,
     isLoading: false,
   };
 }
@@ -243,19 +214,7 @@ function shouldAutoRetry(
   error: unknown
 ): fallbackStrategy is string {
   if (strategy !== 'faraday' || !fallbackStrategy) return false;
-
-  const normalized = toErrorMessage(error).toLowerCase();
-  return !(
-    normalized.includes('unauthorized') ||
-    normalized.includes('bad request') ||
-    normalized.includes('forbidden') ||
-    normalized.includes('access token') ||
-    normalized.includes('authentication') ||
-    normalized.includes('invalid response format') ||
-    normalized.includes('network error') ||
-    normalized.includes('url') ||
-    normalized.includes('unsupported strategy')
-  );
+  return retryableForFallback(error);
 }
 
 function buildRetryFailureMessage(
@@ -279,29 +238,96 @@ function buildConversionError(message: string, metadata: Partial<ConversionError
 }
 
 const toErrorMessage = (error: unknown): string => {
+  const details = extractErrorDetails(error);
+  if (details?.message) return details.message;
   if (error instanceof SyntaxError) return 'Invalid response format from feed creation API';
   if (error instanceof Error) return error.message;
   if (typeof error === 'string' && error.trim()) return error;
-
-  const message = extractMessage(error);
-  return message ?? 'An unexpected error occurred';
+  return 'An unexpected error occurred';
 };
 
 const toPreviewErrorMessage = (error: unknown): string => {
-  if (error instanceof SyntaxError) return 'Preview unavailable right now.';
+  if (error instanceof SyntaxError) return PREVIEW_UNAVAILABLE_MESSAGE;
   if (error instanceof Error && error.message.trim()) return error.message;
-  return 'Preview unavailable right now.';
+  return PREVIEW_UNAVAILABLE_MESSAGE;
 };
 
-const extractMessage = (error: unknown): string | null => {
+function markConversionStarted(
+  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void
+) {
+  setState((prev) => ({ ...prev, isConverting: true, error: null }));
+}
+
+function publishCreatedFeed(
+  feed: FeedRecord,
+  retry: CreatedFeedResult['retry'],
+  requestId: number,
+  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void,
+  requestIdRef: { current: number }
+): CreatedFeedResult {
+  const result: CreatedFeedResult = {
+    feed,
+    preview: buildLoadingPreviewState(),
+    retry,
+  };
+
+  setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
+  void hydratePreview(feed, requestId, retry, setState, requestIdRef);
+  return result;
+}
+
+function failConversion(
+  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void,
+  message: string,
+  metadata: Partial<ConversionError>
+): never {
+  setState((prev) => ({
+    ...prev,
+    isConverting: false,
+    error: message,
+    result: null,
+  }));
+
+  throw buildConversionError(message, metadata);
+}
+
+const extractErrorDetails = (error: unknown): { message?: string; code?: string } | null => {
   if (!error || typeof error !== 'object') return null;
 
-  const candidate =
-    (error as { error?: { message?: unknown }; message?: unknown }).error?.message ??
-    (error as { message?: unknown }).message;
+  const candidate = error as {
+    error?: { message?: unknown; code?: unknown };
+    message?: unknown;
+    code?: unknown;
+  };
 
-  return typeof candidate === 'string' && candidate.trim() ? candidate : null;
+  const message = normalizeString(candidate.error?.message ?? candidate.message);
+  const code = normalizeString(candidate.error?.code ?? candidate.code);
+  return { message, code };
 };
+
+function retryableForFallback(error: unknown): boolean {
+  const details = extractErrorDetails(error);
+  const errorCode = details?.code?.toUpperCase();
+  if (errorCode && NON_RETRYABLE_ERROR_CODES.has(errorCode)) return false;
+
+  const message = (details?.message ?? toErrorMessage(error)).toLowerCase();
+  if (!details?.code && (message.includes('unauthorized') || message.includes('forbidden'))) return false;
+  if (!details?.code && message.includes('bad request')) return false;
+  if (message.includes('access token') || message.includes('authentication')) return false;
+  if (message.includes('unsupported strategy')) return false;
+  if (message.includes('invalid response format')) return false;
+
+  return !networkFailure(error, message);
+}
+
+function networkFailure(error: unknown, normalizedMessage: string): boolean {
+  if (error instanceof TypeError) return true;
+  return normalizedMessage.includes('network error');
+}
+
+function normalizeString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
 
 function normalizePreviewText(value?: string): string | null {
   if (!value) return null;

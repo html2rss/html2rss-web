@@ -100,7 +100,7 @@ module Html2rss
 
           log_missing_build_metadata!
           warn_lines(*missing_build_metadata_warning_lines)
-          exit 1
+          nil
         end
 
         def validate_account_configuration!
@@ -154,15 +154,16 @@ module Html2rss
         def log_missing_build_metadata!
           SecurityLogger.log_config_validation_failure(
             'build_metadata',
-            'Missing BUILD_TAG or GIT_SHA'
+            'Missing BUILD_TAG or GIT_SHA',
+            severity: :warn
           )
         end
 
         # @return [Array<String>]
         def missing_build_metadata_warning_lines
           [
-            'CRITICAL: Missing build metadata for production deployment!',
-            'Set BUILD_TAG to the release build tag and GIT_SHA to the deployed commit SHA.'
+            'WARNING: Missing build metadata for production deployment.',
+            'Set BUILD_TAG and GIT_SHA to improve release traceability.'
           ]
         end
       end

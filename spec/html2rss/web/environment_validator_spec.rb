@@ -64,7 +64,7 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
         .with('secret_key', 'Invalid or weak secret key')
     end
 
-    it 'logs missing build metadata before exiting' do
+    it 'logs missing build metadata as a warning' do
       stub_validation_logging
       allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return([])
 
@@ -74,11 +74,11 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
         'BUILD_TAG' => nil,
         'GIT_SHA' => nil
       ) do
-        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
+        expect { described_class.validate_production_security! }.not_to raise_error
       end
 
       expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
-        .with('build_metadata', 'Missing BUILD_TAG or GIT_SHA')
+        .with('build_metadata', 'Missing BUILD_TAG or GIT_SHA', severity: :warn)
     end
   end
 
