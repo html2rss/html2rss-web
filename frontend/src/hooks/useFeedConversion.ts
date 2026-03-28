@@ -270,7 +270,7 @@ function buildRetryFailureMessage(
     return `Tried ${requestedStrategy} first, then ${fallbackStrategy}. ${secondMessage}`;
   }
 
-  return `Tried ${requestedStrategy} first, then ${fallbackStrategy}. ${secondMessage}`;
+  return `Tried ${requestedStrategy} first, then ${fallbackStrategy}. First attempt failed with: ${firstMessage}. Second attempt failed with: ${secondMessage}`;
 }
 
 function buildConversionError(message: string, metadata: Partial<ConversionError>): ConversionError {

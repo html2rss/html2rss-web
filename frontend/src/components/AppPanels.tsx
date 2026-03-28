@@ -198,7 +198,7 @@ export function CreateFeedPanel({
             <input
               id="access-token"
               name="access-token"
-              type="text"
+              type="password"
               class="input input--mono input--minimal"
               aria-label="Access token"
               placeholder="Paste access token"

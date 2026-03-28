@@ -63,10 +63,15 @@ export function useAccessToken() {
 
     try {
       const token = storage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
-      const legacyToken =
-        token || typeof window === 'undefined'
-          ? ''
-          : (window.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '');
+      let legacyToken = '';
+      if (!token && typeof window !== 'undefined') {
+        try {
+          legacyToken = window.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
+        } catch {
+          // Treat restricted sessionStorage access as no legacy token.
+          legacyToken = '';
+        }
+      }
 
       if (!token && legacyToken) {
         storage.setItem(ACCESS_TOKEN_KEY, legacyToken);
