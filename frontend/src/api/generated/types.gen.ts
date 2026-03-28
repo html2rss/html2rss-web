@@ -80,7 +80,7 @@ export type CreateFeedError = CreateFeedErrors[keyof CreateFeedErrors];
 
 export type CreateFeedResponses = {
     /**
-     * creates a feed when request is valid
+     * normalizes hostname-only input to https before feed creation
      */
     201: {
         data: {
