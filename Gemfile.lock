@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: 04720b83c69f8b2fcf6d9ba7f360b84f6bcb5fe6
+  revision: e11e2513046ca688cba6178f20ca23adef3d92b7
   branch: master
   specs:
-    html2rss (0.17.0)
+    html2rss (0.18.0)
       addressable (~> 2.7)
       brotli
       dry-validation
@@ -455,7 +455,7 @@ CHECKSUMS
   fiber-local (1.1.0) sha256=c885f94f210fb9b05737de65d511136ea602e00c5105953748aa0f8793489f06
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.17.0)
+  html2rss (0.18.0)
   html2rss-configs (0.2.0)
   i18n (1.14.8) sha256=285778639134865c5e0f6269e0b818256017e8cde89993fdfcbfb64d088824a5
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
