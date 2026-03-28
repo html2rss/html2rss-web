@@ -450,9 +450,13 @@ describe('useFeedConversion', () => {
       }
     });
 
-    expect(thrownError?.message).toBe('Tried faraday first, then browserless. Browserless also failed');
+    expect(thrownError?.message).toBe(
+      'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
+    );
     expect(thrownError?.manualRetryStrategy).toBeUndefined();
     expect(result.current.result).toBeNull();
-    expect(result.current.error).toBe('Tried faraday first, then browserless. Browserless also failed');
+    expect(result.current.error).toBe(
+      'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
+    );
   });
 });
