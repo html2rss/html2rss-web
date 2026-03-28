@@ -13,6 +13,7 @@ RUN apk add --no-cache \
     npm \
     openssl-dev \
     python3 \
+    yaml-dev \
     tzdata
 
 ARG USER=vscode

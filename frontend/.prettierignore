@@ -4,5 +4,6 @@ yarn.lock
 
 # Generated and transient frontend output
 .astro/
+dist/
 test-results/
 src/api/generated/

@@ -13,8 +13,8 @@ services:
     environment:
       RACK_ENV: production
       PORT: 4000
-      BUILD_TAG: ${BUILD_TAG:?set BUILD_TAG}
-      GIT_SHA: ${GIT_SHA:?set GIT_SHA}
+      BUILD_TAG: ${BUILD_TAG:-local}
+      GIT_SHA: ${GIT_SHA:-local}
       HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY}
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:?set HEALTH_CHECK_TOKEN}
       SENTRY_DSN: ${SENTRY_DSN:-}
