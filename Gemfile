@@ -4,8 +4,8 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-# gem 'html2rss', '~> 0.14'
-gem 'html2rss', github: 'html2rss/html2rss', branch: :master
+gem 'html2rss', '~> 0.18'
+# gem 'html2rss', github: 'html2rss/html2rss', branch: :master
 gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 # Use these instead of the two above (uncomment them) when developing locally:
