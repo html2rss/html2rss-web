@@ -41,6 +41,16 @@ const resolveStorage = (): Storage => {
   }
 };
 
+const clearLegacySessionToken = () => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    // Ignore restricted sessionStorage access (privacy mode, sandboxed contexts).
+  }
+};
+
 export function useAccessToken() {
   const [state, setState] = useState<AccessTokenState>({
     token: null,
@@ -60,7 +70,7 @@ export function useAccessToken() {
 
       if (!token && legacyToken) {
         storage.setItem(ACCESS_TOKEN_KEY, legacyToken);
-        window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+        clearLegacySessionToken();
       }
 
       setState({
@@ -83,7 +93,7 @@ export function useAccessToken() {
 
     const storage = resolveStorage();
     storage.setItem(ACCESS_TOKEN_KEY, normalized);
-    if (typeof window !== 'undefined') window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+    clearLegacySessionToken();
 
     setState({
       token: normalized,
@@ -95,7 +105,7 @@ export function useAccessToken() {
   const clearToken = () => {
     const storage = resolveStorage();
     storage.removeItem(ACCESS_TOKEN_KEY);
-    if (typeof window !== 'undefined') window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+    clearLegacySessionToken();
 
     setState({
       token: null,
