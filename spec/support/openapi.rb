@@ -3,10 +3,11 @@
 return unless ENV['OPENAPI']
 
 require 'rspec/openapi'
+require_relative '../../config/version'
 
 RSpec::OpenAPI.path = 'public/openapi.yaml'
 RSpec::OpenAPI.title = 'html2rss-web API'
-RSpec::OpenAPI.application_version = '1.0.0'
+RSpec::OpenAPI.application_version = Html2rss::Web::VERSION
 RSpec::OpenAPI.enable_example = false
 RSpec::OpenAPI.enable_example_summary = false
 RSpec::OpenAPI.example_types = [:request]
