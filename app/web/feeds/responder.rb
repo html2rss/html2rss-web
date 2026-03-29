@@ -12,13 +12,9 @@ module Html2rss
           # @param identifier [String]
           # @return [String] serialized feed body.
           def call(request:, target_kind:, identifier:)
-            feed_request = Request.call(request:, target_kind:, identifier:)
-            resolved_source = SourceResolver.call(feed_request)
-            result = Service.call(resolved_source)
-            normalized_identifier = feed_request.feed_name || identifier
+            feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
             body = write_response(response: request.response, representation: feed_request.representation, result:)
-
-            emit_result(target_kind:, identifier: normalized_identifier, resolved_source:, result:)
+            emit_response_result(target_kind:, identifier:, feed_request:, resolved_source:, result:)
             body
           rescue StandardError => error
             emit_failure(target_kind:, identifier:, error:)
@@ -26,6 +22,39 @@ module Html2rss
           end
 
           private
+
+          # @param request [Rack::Request]
+          # @param target_kind [Symbol]
+          # @param identifier [String]
+          # @return [Array<(Html2rss::Web::Feeds::Contracts::Request, Html2rss::Web::Feeds::Contracts::ResolvedSource, Html2rss::Web::Feeds::Contracts::RenderResult)>]
+          def resolve_request(request:, target_kind:, identifier:)
+            feed_request = Request.call(request:, target_kind:, identifier:)
+            resolved_source = SourceResolver.call(feed_request)
+            result = Service.call(resolved_source)
+            [feed_request, resolved_source, result]
+          end
+
+          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
+          # @param identifier [String]
+          # @return [String]
+          def normalized_identifier(feed_request, identifier)
+            feed_request.feed_name || identifier
+          end
+
+          # @param target_kind [Symbol]
+          # @param identifier [String]
+          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [void]
+          def emit_response_result(target_kind:, identifier:, feed_request:, resolved_source:, result:)
+            emit_result(
+              target_kind:,
+              identifier: normalized_identifier(feed_request, identifier),
+              resolved_source:,
+              result:
+            )
+          end
 
           # @param response [Rack::Response]
           # @param representation [Symbol]

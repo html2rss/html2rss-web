@@ -64,7 +64,7 @@ describe('App contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
+      expect(screen.getByText('Feed ready')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();

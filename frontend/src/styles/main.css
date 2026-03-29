@@ -263,71 +263,6 @@ a:focus-visible {
   box-shadow: var(--focus-ring);
 }
 
-.btn {
-  min-height: 3rem;
-  padding: 0 1.25rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: var(--border-width) solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-strong);
-  text-decoration: none;
-  cursor: pointer;
-  font-weight: 600;
-  transition:
-    transform var(--transition-fast),
-    background-color var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    opacity var(--transition-fast);
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-0.04rem);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn--primary {
-  background: var(--accent);
-  color: var(--text-inverse);
-}
-
-.btn--primary:hover:not(:disabled) {
-  background: var(--accent-strong);
-}
-
-.btn--ghost {
-  border-color: var(--border-subtle);
-  background: var(--surface-elevated);
-}
-
-.btn--ghost:hover:not(:disabled) {
-  border-color: var(--border-strong);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.btn--quiet,
-.btn--linkish {
-  min-height: auto;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-muted);
-}
-
-.btn--quiet:hover:not(:disabled),
-.btn--linkish:hover:not(:disabled) {
-  background: transparent;
-  color: var(--text-strong);
-}
-
 .notice {
   display: grid;
   gap: var(--space-2);
@@ -504,18 +439,9 @@ a:focus-visible {
   text-align: left;
 }
 
-.result-hero {
-  justify-items: start;
-  text-align: left;
-}
-
-.result-title {
-  margin: 0;
-  color: var(--text-strong);
-  font-family: var(--font-family-display);
-  font-size: clamp(1.9rem, 4.2vw, 2.85rem);
-  line-height: 0.98;
-  letter-spacing: -0.03em;
+.result-hero__reader {
+  border-color: rgba(255, 147, 0, 0.24);
+  background: rgba(255, 147, 0, 0.12);
 }
 
 .result-meta {
@@ -524,12 +450,6 @@ a:focus-visible {
   line-height: 1.18;
   color: var(--text-strong);
   text-align: left;
-}
-
-.result-lede {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: var(--font-size-1);
 }
 
 .result-preview {

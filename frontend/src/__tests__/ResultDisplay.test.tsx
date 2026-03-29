@@ -48,10 +48,10 @@ describe('ResultDisplay', () => {
   it('renders the success state actions and richer preview cards', async () => {
     render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
 
-    expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
+    expect(screen.getByText('Feed ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Subscribe in reader' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Open in feed reader' })).toHaveAttribute(
       'href',
       'feed:https://example.com/feed.xml'
     );
@@ -96,7 +96,7 @@ describe('ResultDisplay', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
+      expect(screen.getByText('Feed ready')).toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
       expect(screen.getByText('Loading preview…')).toBeInTheDocument();
     });

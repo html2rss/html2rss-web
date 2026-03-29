@@ -49,17 +49,8 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     it 'resolves the source through the real request and source resolver path', :aggregate_failures do
       write_response
 
-      expect(Html2rss::Web::Feeds::Service).to have_received(:call).with(
-        have_attributes(
-          source_kind: :static,
-          cache_identity: a_string_starting_with('static:example:'),
-          generator_input: include(strategy: :faraday, channel: { url: 'https://example.com', ttl: 10 }),
-          ttl_seconds: 600
-        )
-      )
-      expect(response['Cache-Control']).to include('max-age=600')
-      expect(response['Cache-Control']).to include('public')
-      expect(response['Vary']).to eq('Accept')
+      expect_resolved_static_source
+      expect_cache_headers
     end
 
     it 'emits success after writing the response' do
@@ -156,5 +147,24 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   # @return [Array<(Integer, String, String)>]
   def response_tuple(body)
     [response.status, response['Content-Type'], body]
+  end
+
+  # @return [void]
+  def expect_resolved_static_source
+    expect(Html2rss::Web::Feeds::Service).to have_received(:call).with(
+      have_attributes(
+        source_kind: :static,
+        cache_identity: a_string_starting_with('static:example:'),
+        generator_input: include(strategy: :faraday, channel: { url: 'https://example.com', ttl: 10 }),
+        ttl_seconds: 600
+      )
+    )
+  end
+
+  # @return [void]
+  def expect_cache_headers
+    expect(response['Cache-Control']).to include('max-age=600')
+    expect(response['Cache-Control']).to include('public')
+    expect(response['Vary']).to eq('Accept')
   end
 end

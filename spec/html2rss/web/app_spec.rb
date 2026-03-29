@@ -2,6 +2,7 @@
 
 require 'spec_helper'
 require 'climate_control'
+require 'securerandom'
 
 require_relative '../../../app'
 
@@ -97,9 +98,8 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'serves static feed routes with caching headers' do
-      stub_static_feed
-
-      get '/legacy'
+      stub_static_feed(rss_body: '<rss/>')
+      get "/legacy-#{SecureRandom.hex(4)}"
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')

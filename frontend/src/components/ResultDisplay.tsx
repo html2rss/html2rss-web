@@ -40,13 +40,28 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
   return (
     <section class="result-shell layout-stack" aria-live="polite">
       <header
-        class="result-hero layout-rail-reading layout-stack"
+        class="result-hero ui-card ui-card--roomy ui-hero layout-rail-reading layout-stack"
         style={{ '--stack-gap': 'var(--space-3)' }}
       >
-        <p class="result-kicker ui-eyebrow">Feed created</p>
-        <h1 class="result-title">Your feed is ready</h1>
-        <p class="result-meta layout-rail-copy">{feed.name}</p>
-        <p class="result-lede layout-rail-copy">Subscribe to this URL in your RSS reader.</p>
+        <div class="result-hero__masthead ui-hero__masthead">
+          <div class="result-hero__icon-wrap ui-hero__icon-wrap" aria-hidden="true">
+            <img class="result-hero__icon ui-hero__icon" src="/feed.svg" alt="" />
+          </div>
+          <div class="layout-stack layout-stack--tight">
+            <h1 class="result-title ui-display-title">Feed ready</h1>
+            <p class="result-meta layout-rail-copy">{feed.name}</p>
+          </div>
+        </div>
+        <div class="result-hero__actions ui-hero__actions">
+          {subscribeUrl && (
+            <a href={subscribeUrl} class="btn btn--ghost result-hero__reader">
+              Open in feed reader
+            </a>
+          )}
+          <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+            Open feed
+          </a>
+        </div>
         {result.retry && (
           <p class="field-help">
             {`Retried automatically with ${result.retry.to} after ${result.retry.from} could not finish the page.`}
@@ -67,14 +82,6 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
       />
 
       <div class="result-actions result-actions--quiet layout-rail-reading">
-        {subscribeUrl && (
-          <a href={subscribeUrl} class="btn btn--ghost">
-            Subscribe in reader
-          </a>
-        )}
-        <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
-          Open feed
-        </a>
         <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           Open JSON Feed
         </a>
