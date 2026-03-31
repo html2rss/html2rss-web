@@ -67,9 +67,11 @@ lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	bundle exec rake yard:verify_public_docs
 	@echo "Ruby linting complete!"
 
-lint-js: ## Run JavaScript/Frontend linter (Prettier) - errors when issues found
+lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Prettier) - errors when issues found
 	@echo "Running TypeScript typecheck..."
 	@cd frontend && npm run typecheck
+	@echo "Running ESLint..."
+	@cd frontend && npm run lint
 	@echo "Running Prettier format check..."
 	@cd frontend && npm run format:check
 	@echo "JavaScript linting complete!"
@@ -83,6 +85,8 @@ lintfix-ruby: ## Auto-fix Ruby linting issues
 	@echo "Ruby lintfix complete!"
 
 lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
+	@echo "Running ESLint auto-fix..."
+	@cd frontend && npm run lint:fix
 	@echo "Running Prettier formatting..."
 	@cd frontend && npm run format
 	@echo "JavaScript lintfix complete!"

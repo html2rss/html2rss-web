@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
-import { h } from 'preact';
 import { App } from '../components/App';
 
 vi.mock('../hooks/useAccessToken', () => ({
@@ -38,15 +37,15 @@ describe('App', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    window.history.replaceState({}, '', 'http://localhost:3000/');
+    globalThis.history.replaceState({}, '', 'http://localhost:3000/');
 
     mockUseAccessToken.mockReturnValue({
-      token: null,
+      token: undefined,
       hasToken: false,
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     mockUseApiMetadata.mockReturnValue({
@@ -65,13 +64,13 @@ describe('App', () => {
         },
       },
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
-      result: null,
-      error: null,
+      result: undefined,
+      error: undefined,
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
@@ -83,7 +82,7 @@ describe('App', () => {
         { id: 'browserless', name: 'browserless', display_name: 'JavaScript pages (recommended)' },
       ],
       isLoading: false,
-      error: null,
+      error: undefined,
     });
   });
 
@@ -127,7 +126,7 @@ describe('App', () => {
     mockUseStrategies.mockReturnValue({
       strategies: [{ id: 'faraday', name: 'faraday', display_name: 'Default' }],
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     render(<App />);
@@ -144,9 +143,13 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
-    window.history.replaceState({}, '', 'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles');
+    globalThis.history.replaceState(
+      {},
+      '',
+      'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles'
+    );
 
     render(<App />);
 
@@ -171,7 +174,7 @@ describe('App', () => {
     expect(screen.getByText('This instance needs an access token.')).toBeInTheDocument();
     expect(screen.queryByText('Paste an access token to keep going.')).not.toBeInTheDocument();
     await waitFor(() => {
-      expect(document.activeElement).toBe(document.getElementById('access-token'));
+      expect(document.activeElement).toBe(document.querySelector('#access-token'));
     });
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
@@ -199,7 +202,7 @@ describe('App', () => {
         },
       },
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     render(<App />);
@@ -230,9 +233,9 @@ describe('App', () => {
           error: 'Preview unavailable right now.',
           isLoading: false,
         },
-        retry: null,
+        retry: undefined,
       },
-      error: null,
+      error: undefined,
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
@@ -249,7 +252,7 @@ describe('App', () => {
   it('surfaces conversion errors to the user', () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
-      result: null,
+      result: undefined,
       error: 'Access denied',
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
@@ -265,8 +268,8 @@ describe('App', () => {
   it('shows an explicit loading notice while feed creation is still resolving preview state', () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: true,
-      result: null,
-      error: null,
+      result: undefined,
+      error: undefined,
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
@@ -287,7 +290,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     render(<App />);
@@ -305,18 +308,18 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
 
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
-    const utilityItems = Array.from(
+    const utilityItems = [
       screen
         .getByLabelText('Utilities')
-        .querySelectorAll('.utility-strip__items > a, .utility-strip__items > button')
-    ).map((element) => element.textContent);
+        .querySelectorAll('.utility-strip__items > a, .utility-strip__items > button'),
+    ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
       'Try included feeds',
@@ -335,7 +338,7 @@ describe('App', () => {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
-    const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
 
@@ -352,7 +355,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
     mockConvertFeed.mockRejectedValueOnce(new Error('Unauthorized'));
 
@@ -380,7 +383,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
     mockConvertFeed.mockRejectedValueOnce(new Error('Unauthorized'));
 
@@ -406,7 +409,7 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    const accessTokenInput = document.getElementById('access-token') as HTMLInputElement;
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
     fireEvent.keyDown(accessTokenInput, { key: 'Enter' });
 
@@ -416,7 +419,7 @@ describe('App', () => {
   });
 
   it('builds a bookmarklet that returns to the root app entry', () => {
-    window.history.replaceState({}, '', 'http://localhost:3000/');
+    globalThis.history.replaceState({}, '', 'http://localhost:3000/');
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
@@ -426,7 +429,7 @@ describe('App', () => {
   });
 
   it('opens token entry immediately for bookmarklet urls when no token is saved', async () => {
-    window.history.replaceState({}, '', 'http://localhost:3000/?url=example.com%2Farticles');
+    globalThis.history.replaceState({}, '', 'http://localhost:3000/?url=example.com%2Farticles');
 
     render(<App />);
 
@@ -442,7 +445,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
     mockConvertFeed
       .mockRejectedValueOnce(
@@ -450,7 +453,7 @@ describe('App', () => {
           manualRetryStrategy: 'browserless',
         })
       )
-      .mockResolvedValueOnce(undefined);
+      .mockResolvedValueOnce();
 
     render(<App />);
 
@@ -478,7 +481,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
     mockConvertFeed.mockRejectedValueOnce(
       Object.assign(new Error('Tried faraday first, then browserless. Browserless failed.'), {
@@ -504,7 +507,7 @@ describe('App', () => {
       saveToken: mockSaveToken,
       clearToken: mockClearToken,
       isLoading: false,
-      error: null,
+      error: undefined,
     });
     mockConvertFeed.mockRejectedValueOnce(
       Object.assign(new Error('URL not allowed for this account'), {
@@ -529,14 +532,14 @@ describe('App', () => {
   });
 
   it('shows the utility links in a user-focused order', () => {
-    window.history.replaceState({}, '', 'http://localhost:3000/#result');
+    globalThis.history.replaceState({}, '', 'http://localhost:3000/#result');
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
-    const utilityLinks = Array.from(
-      screen.getByLabelText('Utilities').querySelectorAll('.utility-strip__items > a')
-    ).map((link) => link.textContent);
+    const utilityLinks = [
+      ...screen.getByLabelText('Utilities').querySelectorAll('.utility-strip__items > a'),
+    ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
       'Try included feeds',
       'Bookmarklet',

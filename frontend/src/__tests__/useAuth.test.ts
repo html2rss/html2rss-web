@@ -27,12 +27,12 @@ describe('useAuth', () => {
   beforeEach(() => {
     localStorageMock = createStorageMock();
     sessionStorageMock = createStorageMock();
-    Object.defineProperty(window, 'localStorage', {
+    Object.defineProperty(globalThis, 'localStorage', {
       value: localStorageMock,
       configurable: true,
       writable: true,
     });
-    Object.defineProperty(window, 'sessionStorage', {
+    Object.defineProperty(globalThis, 'sessionStorage', {
       value: sessionStorageMock,
       configurable: true,
       writable: true,
@@ -41,13 +41,13 @@ describe('useAuth', () => {
   });
 
   it('should initialize with unauthenticated state', () => {
-    localStorageMock.getItem.mockReturnValue(null);
+    localStorageMock.getItem.mockReturnValue();
 
     const { result } = renderHook(() => useAuth());
 
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.username).toBeNull();
-    expect(result.current.token).toBeNull();
+    expect(result.current.username).toBeUndefined();
+    expect(result.current.token).toBeUndefined();
   });
 
   it('should load auth state from sessionStorage on mount', () => {
@@ -65,7 +65,7 @@ describe('useAuth', () => {
   });
 
   it('should login and store credentials', async () => {
-    localStorageMock.getItem.mockReturnValue(null);
+    localStorageMock.getItem.mockReturnValue();
 
     const { result } = renderHook(() => useAuth());
 
@@ -90,8 +90,8 @@ describe('useAuth', () => {
     });
 
     expect(result.current.isAuthenticated).toBe(false);
-    expect(result.current.username).toBeNull();
-    expect(result.current.token).toBeNull();
+    expect(result.current.username).toBeUndefined();
+    expect(result.current.token).toBeUndefined();
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_username');
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('html2rss_token');
   });

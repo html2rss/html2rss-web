@@ -2,9 +2,9 @@ import { useEffect, useState } from 'preact/hooks';
 import type { ApiMetadataRecord } from '../api/contracts';
 
 interface ApiMetadataState {
-  metadata: ApiMetadataRecord | null;
+  metadata?: ApiMetadataRecord;
   isLoading: boolean;
-  error: string | null;
+  error?: string;
 }
 
 interface ApiMetadataPayload {
@@ -14,16 +14,14 @@ interface ApiMetadataPayload {
 
 export function useApiMetadata() {
   const [state, setState] = useState<ApiMetadataState>({
-    metadata: null,
     isLoading: true,
-    error: null,
   });
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      setState((previous) => ({ ...previous, isLoading: true, error: undefined }));
 
       try {
         const response = await fetch('/api/v1', {
@@ -40,13 +38,11 @@ export function useApiMetadata() {
         setState({
           metadata,
           isLoading: false,
-          error: null,
         });
       } catch (error) {
         if (cancelled) return;
 
         setState({
-          metadata: null,
           isLoading: false,
           error: error instanceof Error ? error.message : 'Failed to load API metadata',
         });

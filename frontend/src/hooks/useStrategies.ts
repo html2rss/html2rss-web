@@ -6,18 +6,17 @@ import type { StrategyRecord } from '../api/contracts';
 interface StrategiesState {
   strategies: StrategyRecord[];
   isLoading: boolean;
-  error: string | null;
+  error?: string;
 }
 
 export function useStrategies() {
   const [state, setState] = useState<StrategiesState>({
     strategies: [],
     isLoading: true,
-    error: null,
   });
 
   const fetchStrategies = async () => {
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    setState((previous) => ({ ...previous, isLoading: true, error: undefined }));
 
     try {
       const response = await listStrategies({
@@ -31,7 +30,6 @@ export function useStrategies() {
       setState({
         strategies: response.data.data.strategies,
         isLoading: false,
-        error: null,
       });
     } catch (error) {
       setState({

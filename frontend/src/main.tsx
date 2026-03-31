@@ -12,4 +12,4 @@ function Root() {
   );
 }
 
-render(<Root />, document.getElementById('app')!);
+render(<Root />, document.querySelector('#app')!);

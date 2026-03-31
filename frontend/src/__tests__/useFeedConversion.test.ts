@@ -7,7 +7,7 @@ describe('useFeedConversion', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchMock = vi.spyOn(global, 'fetch');
+    fetchMock = vi.spyOn(globalThis, 'fetch');
   });
 
   afterEach(() => {
@@ -18,8 +18,8 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
-    expect(result.current.error).toBeNull();
+    expect(result.current.result).toBeUndefined();
+    expect(result.current.error).toBeUndefined();
   });
 
   it('should handle successful conversion', async () => {
@@ -78,10 +78,10 @@ describe('useFeedConversion', () => {
       feed: mockFeed,
       preview: {
         items: [],
-        error: null,
+        error: undefined,
         isLoading: true,
       },
-      retry: null,
+      retry: undefined,
     });
     await waitFor(() => {
       expect(result.current.result).toEqual({
@@ -95,13 +95,13 @@ describe('useFeedConversion', () => {
               url: 'https://example.com/item',
             },
           ],
-          error: null,
+          error: undefined,
           isLoading: false,
         },
-        retry: null,
+        retry: undefined,
       });
     });
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -128,7 +128,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toContain('Bad Request');
   });
 
@@ -144,7 +144,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Network error');
   });
 
@@ -189,10 +189,10 @@ describe('useFeedConversion', () => {
       feed: createdFeed,
       preview: {
         items: [],
-        error: null,
+        error: undefined,
         isLoading: true,
       },
-      retry: null,
+      retry: undefined,
     });
     await waitFor(() => {
       expect(result.current.result).toEqual({
@@ -202,10 +202,10 @@ describe('useFeedConversion', () => {
           error: 'Preview unavailable right now.',
           isLoading: false,
         },
-        retry: null,
+        retry: undefined,
       });
     });
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeUndefined();
   });
 
   it('publishes the result before preview loading finishes', async () => {
@@ -221,7 +221,7 @@ describe('useFeedConversion', () => {
       updated_at: '2024-01-01T00:00:00Z',
     };
 
-    let resolvePreviewResponse: ((value: Response) => void) | null = null;
+    let resolvePreviewResponse: ((value: Response) => void) | undefined;
     const previewResponse = new Promise<Response>((resolve) => {
       resolvePreviewResponse = resolve;
     });
@@ -251,10 +251,10 @@ describe('useFeedConversion', () => {
       feed: createdFeed,
       preview: {
         items: [],
-        error: null,
+        error: undefined,
         isLoading: true,
       },
-      retry: null,
+      retry: undefined,
     });
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toEqual(conversionResult);
@@ -288,7 +288,7 @@ describe('useFeedConversion', () => {
             url: 'https://example.com/item',
           },
         ],
-        error: null,
+        error: undefined,
         isLoading: false,
       });
     });
@@ -435,7 +435,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Unauthorized');
   });
 
@@ -462,7 +462,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Input rejected');
   });
 
@@ -576,7 +576,7 @@ describe('useFeedConversion', () => {
       'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
     );
     expect(thrownError?.manualRetryStrategy).toBeUndefined();
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe(
       'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
     );
@@ -606,11 +606,11 @@ describe('useFeedConversion', () => {
       updated_at: '2024-01-01T00:00:00Z',
     };
 
-    let resolvePreviewA: ((value: Response) => void) | null = null;
+    let resolvePreviewA: ((value: Response) => void) | undefined;
     const previewAPromise = new Promise<Response>((resolve) => {
       resolvePreviewA = resolve;
     });
-    let resolvePreviewB: ((value: Response) => void) | null = null;
+    let resolvePreviewB: ((value: Response) => void) | undefined;
     const previewBPromise = new Promise<Response>((resolve) => {
       resolvePreviewB = resolve;
     });

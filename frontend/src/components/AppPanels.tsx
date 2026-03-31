@@ -18,20 +18,18 @@ export interface FeedFieldErrors {
   form: string;
 }
 
-interface CreateFeedPanelProps {
+interface CreateFeedPanelProperties {
   focusComposerKey: number;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
-  conversionError: string | null;
+  conversionError?: string;
   isConverting: boolean;
   submitDisabled: boolean;
   strategies: Strategy[];
   strategiesLoading: boolean;
-  strategiesError: string | null;
+  strategiesError?: string;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
-  accessTokenRequired: boolean;
-  hasAccessToken: boolean;
   tokenDraft: string;
   tokenError: string;
   showTokenPrompt: boolean;
@@ -43,6 +41,12 @@ interface CreateFeedPanelProps {
   onCancelTokenPrompt: () => void;
   onRetryWithStrategy: () => void;
   strategyHint: (strategy: Strategy) => string;
+}
+
+function strategyOptionLabel(strategy: Strategy) {
+  if (strategy.id === 'faraday') return 'Default';
+  if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
+  return strategy.display_name;
 }
 
 export function CreateFeedPanel({
@@ -57,8 +61,6 @@ export function CreateFeedPanel({
   strategiesError,
   feedCreationEnabled,
   featuredFeeds,
-  accessTokenRequired,
-  hasAccessToken,
   tokenDraft,
   tokenError,
   showTokenPrompt,
@@ -70,38 +72,33 @@ export function CreateFeedPanel({
   onCancelTokenPrompt,
   onRetryWithStrategy,
   strategyHint,
-}: CreateFeedPanelProps) {
+}: CreateFeedPanelProperties) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
-  const urlInputRef = useRef<HTMLInputElement | null>(null);
-  const tokenInputRef = useRef<HTMLInputElement | null>(null);
-  const strategyOptionLabel = (strategy: Strategy) => {
-    if (strategy.id === 'faraday') return 'Default';
-    if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
-    return strategy.display_name;
-  };
+  const urlInputReference = useRef<HTMLInputElement>(undefined as never);
+  const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
 
   useLayoutEffect(() => {
-    if (!urlInputRef.current || typeof window === 'undefined') return;
+    if (!urlInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = window.requestAnimationFrame(() => {
-      const input = urlInputRef.current;
+    const focusHandle = globalThis.requestAnimationFrame(() => {
+      const input = urlInputReference.current;
       if (!input) return;
 
       input.focus();
       input.select();
     });
 
-    return () => window.cancelAnimationFrame(focusHandle);
+    return () => globalThis.cancelAnimationFrame(focusHandle);
   }, [focusComposerKey]);
 
   useLayoutEffect(() => {
-    if (!showTokenPrompt || !tokenInputRef.current || typeof window === 'undefined') return;
+    if (!showTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = window.requestAnimationFrame(() => {
-      tokenInputRef.current?.focus();
+    const focusHandle = globalThis.requestAnimationFrame(() => {
+      tokenInputReference.current?.focus();
     });
 
-    return () => window.cancelAnimationFrame(focusHandle);
+    return () => globalThis.cancelAnimationFrame(focusHandle);
   }, [showTokenPrompt]);
 
   return (
@@ -117,7 +114,7 @@ export function CreateFeedPanel({
           autoCapitalize="off"
           spellcheck={false}
           autoFocus
-          inputRef={urlInputRef}
+          inputRef={urlInputReference}
           actionLabel={isConverting ? 'Preparing feed' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
           disabled={submitDisabled}
@@ -208,7 +205,7 @@ export function CreateFeedPanel({
               spellcheck={false}
               data-1p-ignore="true"
               data-lpignore="true"
-              ref={tokenInputRef}
+              ref={tokenInputReference}
               value={tokenDraft}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter') return;
@@ -271,10 +268,10 @@ export function CreateFeedPanel({
   );
 }
 
-interface UtilityStripProps {
+interface UtilityStripProperties {
   hidden?: boolean;
   hasAccessToken: boolean;
-  openapiUrl: string | null;
+  openapiUrl?: string;
   onClearToken: () => void;
 }
 
@@ -283,18 +280,18 @@ export function UtilityStrip({
   hasAccessToken,
   openapiUrl,
   onClearToken,
-}: UtilityStripProps) {
+}: UtilityStripProperties) {
   const [isOpen, setIsOpen] = useState(false);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
-    if (typeof window === 'undefined') return directoryUrl.toString();
+    if (globalThis.window === undefined) return directoryUrl.toString();
 
-    const instanceUrl = new URL('/', window.location.origin);
+    const instanceUrl = new URL('/', globalThis.location.origin);
     directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.toString())}`;
     return directoryUrl.toString();
   })();
 
-  if (hidden) return null;
+  if (hidden) return;
 
   return (
     <section class="utility-strip" aria-label="Utilities">

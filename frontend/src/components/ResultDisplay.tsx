@@ -2,27 +2,27 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult } from '../api/contracts';
 import { DominantField } from './DominantField';
 
-interface ResultDisplayProps {
+interface ResultDisplayProperties {
   result: CreatedFeedResult;
   onCreateAnother: () => void;
 }
 
-export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
+export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperties) {
   const [copyNotice, setCopyNotice] = useState('');
-  const copyResetRef = useRef<number | undefined>(undefined);
+  const copyResetReference = useRef<number | undefined>(undefined);
   const { feed, preview } = result;
 
   const fullUrl = feed.public_url.startsWith('http')
     ? feed.public_url
-    : `${window.location.origin}${feed.public_url}`;
+    : `${globalThis.location.origin}${feed.public_url}`;
   const jsonFeedUrl = feed.json_public_url.startsWith('http')
     ? feed.json_public_url
-    : `${window.location.origin}${feed.json_public_url}`;
-  const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : null;
+    : `${globalThis.location.origin}${feed.json_public_url}`;
+  const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
 
   useEffect(() => {
     return () => {
-      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+      if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
     };
   }, []);
 
@@ -30,8 +30,8 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProps) {
     try {
       await navigator.clipboard.writeText(text);
       setCopyNotice('Feed URL copied to clipboard.');
-      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
-      copyResetRef.current = window.setTimeout(() => setCopyNotice(''), 2500);
+      if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
+      copyResetReference.current = globalThis.setTimeout(() => setCopyNotice(''), 2500);
     } catch {
       setCopyNotice('Clipboard copy failed. Copy the feed URL manually.');
     }

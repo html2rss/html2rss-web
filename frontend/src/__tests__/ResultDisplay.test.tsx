@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
-import { h } from 'preact';
 import { ResultDisplay } from '../components/ResultDisplay';
 
 describe('ResultDisplay', () => {
@@ -35,10 +34,10 @@ describe('ResultDisplay', () => {
           publishedLabel: 'Jan 3, 2024',
         },
       ],
-      error: null,
+      error: undefined,
       isLoading: false,
     },
-    retry: null,
+    retry: undefined,
   };
 
   beforeEach(() => {
@@ -90,7 +89,7 @@ describe('ResultDisplay', () => {
   it('keeps the result state visible while preview is still loading', async () => {
     render(
       <ResultDisplay
-        result={{ ...mockResult, preview: { items: [], error: null, isLoading: true } }}
+        result={{ ...mockResult, preview: { items: [], error: undefined, isLoading: true } }}
         onCreateAnother={mockOnCreateAnother}
       />
     );

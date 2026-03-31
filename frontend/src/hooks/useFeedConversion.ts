@@ -19,8 +19,8 @@ interface JsonFeedResponse {
 
 interface ConversionState {
   isConverting: boolean;
-  result: CreatedFeedResult | null;
-  error: string | null;
+  result?: CreatedFeedResult;
+  error?: string;
 }
 
 interface ConversionError extends Error {
@@ -31,17 +31,15 @@ const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
 const NON_RETRYABLE_ERROR_CODES = new Set(['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN']);
 
 export function useFeedConversion() {
-  const requestIdRef = useRef(0);
+  const requestIdReference = useRef(0);
   const [state, setState] = useState<ConversionState>({
     isConverting: false,
-    result: null,
-    error: null,
   });
 
   const convertFeed = async (url: string, strategy: string, token: string) => {
     const normalizedUrl = normalizeUserUrl(url);
     const requestedStrategy = strategy.trim();
-    const fallbackStrategy = requestedStrategy === 'faraday' ? 'browserless' : null;
+    const fallbackStrategy = requestedStrategy === 'faraday' ? 'browserless' : undefined;
 
     if (!normalizedUrl) throw new Error('URL is required');
     if (!requestedStrategy) throw new Error('Strategy is required');
@@ -50,13 +48,13 @@ export function useFeedConversion() {
       throw new Error('Invalid URL format');
     }
 
-    const requestId = requestIdRef.current + 1;
-    requestIdRef.current = requestId;
+    const requestId = requestIdReference.current + 1;
+    requestIdReference.current = requestId;
     markConversionStarted(setState);
 
     try {
       const feed = await requestFeedCreation(normalizedUrl, requestedStrategy, token);
-      return publishCreatedFeed(feed, null, requestId, setState, requestIdRef);
+      return publishCreatedFeed(feed, undefined, requestId, setState, requestIdReference);
     } catch (firstError) {
       if (shouldAutoRetry(requestedStrategy, fallbackStrategy, firstError)) {
         try {
@@ -66,7 +64,7 @@ export function useFeedConversion() {
             { automatic: true, from: requestedStrategy, to: fallbackStrategy },
             requestId,
             setState,
-            requestIdRef
+            requestIdReference
           );
         } catch (secondError) {
           const message = buildRetryFailureMessage(
@@ -85,18 +83,16 @@ export function useFeedConversion() {
   };
 
   const clearResult = () => {
-    window.document.body.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    requestIdRef.current += 1;
+    globalThis.document.body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    requestIdReference.current += 1;
 
     setState({
       isConverting: false,
-      result: null,
-      error: null,
     });
   };
 
   const clearError = () => {
-    setState((prev) => ({ ...prev, error: null }));
+    setState((previous) => ({ ...previous, error: undefined }));
   };
 
   return {
@@ -110,7 +106,7 @@ export function useFeedConversion() {
 }
 
 async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview']> {
-  const response = await window.fetch(feed.json_public_url, {
+  const response = await globalThis.fetch(feed.json_public_url, {
     headers: { Accept: 'application/feed+json' },
   });
 
@@ -120,12 +116,12 @@ async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview
   const items =
     payload.items
       ?.map((item) => normalizePreviewItem(item))
-      .filter((item): item is FeedPreviewItem => Boolean(item))
+      .filter((item): item is FeedPreviewItem => item !== undefined)
       .slice(0, 5) || [];
 
   return {
     items,
-    error: items.length > 0 ? null : PREVIEW_UNAVAILABLE_MESSAGE,
+    error: items.length > 0 ? undefined : PREVIEW_UNAVAILABLE_MESSAGE,
     isLoading: false,
   };
 }
@@ -133,7 +129,7 @@ async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview
 function buildLoadingPreviewState(): CreatedFeedResult['preview'] {
   return {
     items: [],
-    error: null,
+    error: undefined,
     isLoading: true,
   };
 }
@@ -142,8 +138,8 @@ async function hydratePreview(
   feed: FeedRecord,
   requestId: number,
   retry: CreatedFeedResult['retry'],
-  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void,
-  requestIdRef: { current: number }
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  requestIdReference: { current: number }
 ) {
   const preview = await loadPreview(feed).catch((error: unknown) => ({
     items: [],
@@ -151,19 +147,19 @@ async function hydratePreview(
     isLoading: false,
   }));
 
-  if (requestIdRef.current !== requestId) return;
+  if (requestIdReference.current !== requestId) return;
 
-  setState((prev) => {
+  setState((previous) => {
     if (
-      requestIdRef.current !== requestId ||
-      !prev.result ||
-      prev.result.feed.feed_token !== feed.feed_token
+      requestIdReference.current !== requestId ||
+      !previous.result ||
+      previous.result.feed.feed_token !== feed.feed_token
     ) {
-      return prev;
+      return previous;
     }
 
     return {
-      ...prev,
+      ...previous,
       result: {
         feed,
         preview,
@@ -210,7 +206,7 @@ function alternateStrategy(strategy: string): string | undefined {
 
 function shouldAutoRetry(
   strategy: string,
-  fallbackStrategy: string | null,
+  fallbackStrategy: string | undefined,
   error: unknown
 ): fallbackStrategy is string {
   if (strategy !== 'faraday' || !fallbackStrategy) return false;
@@ -267,17 +263,17 @@ const toPreviewErrorMessage = (error: unknown): string => {
 };
 
 function markConversionStarted(
-  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void
 ) {
-  setState((prev) => ({ ...prev, isConverting: true, error: null }));
+  setState((previous) => ({ ...previous, isConverting: true, error: undefined }));
 }
 
 function publishCreatedFeed(
   feed: FeedRecord,
   retry: CreatedFeedResult['retry'],
   requestId: number,
-  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void,
-  requestIdRef: { current: number }
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  requestIdReference: { current: number }
 ): CreatedFeedResult {
   const result: CreatedFeedResult = {
     feed,
@@ -285,28 +281,30 @@ function publishCreatedFeed(
     retry,
   };
 
-  setState((prev) => ({ ...prev, isConverting: false, result, error: null }));
-  void hydratePreview(feed, requestId, retry, setState, requestIdRef);
+  setState((previous) => ({ ...previous, isConverting: false, result, error: undefined }));
+  void hydratePreview(feed, requestId, retry, setState, requestIdReference);
   return result;
 }
 
 function failConversion(
-  setState: (value: ConversionState | ((prev: ConversionState) => ConversionState)) => void,
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
   message: string,
   metadata: Partial<ConversionError>
 ): never {
-  setState((prev) => ({
-    ...prev,
+  setState((previous) => ({
+    ...previous,
     isConverting: false,
     error: message,
-    result: null,
+    result: undefined,
   }));
 
   throw buildConversionError(message, metadata);
 }
 
-const extractErrorDetails = (error: unknown): { message?: string; code?: string; status?: number } | null => {
-  if (!error || typeof error !== 'object') return null;
+const extractErrorDetails = (
+  error: unknown
+): { message?: string; code?: string; status?: number } | undefined => {
+  if (!error || typeof error !== 'object') return undefined;
 
   const candidate = error as {
     error?: { message?: unknown; code?: unknown; status?: unknown };
@@ -343,11 +341,6 @@ function retryableForFallback(error: unknown): boolean {
   return message.includes('internal server error') || message.includes('upstream timeout');
 }
 
-function networkFailure(error: unknown, normalizedMessage: string): boolean {
-  if (error instanceof TypeError) return true;
-  return normalizedMessage.includes('network error');
-}
-
 function normalizeString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value : undefined;
 }
@@ -356,21 +349,21 @@ function normalizeStatus(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
-function normalizePreviewText(value?: string): string | null {
-  if (!value) return null;
+function normalizePreviewText(value?: string): string | undefined {
+  if (!value) return undefined;
 
   const normalized = decodeHtmlEntities(value)
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/\s+([.,!?;:])/g, '$1')
+    .replaceAll(/<[^>]*>/g, ' ')
+    .replaceAll(/\s+/g, ' ')
+    .replaceAll(/\s+([!,.:;?])/g, '$1')
     .replace(/^\d+\.\s+/, '')
     .replace(/\s+\([^)]*\)\s*$/, '')
     .trim();
 
-  return normalized || null;
+  return normalized || undefined;
 }
 
-function normalizePreviewItem(item: JsonFeedItem): FeedPreviewItem | null {
+function normalizePreviewItem(item: JsonFeedItem): FeedPreviewItem | undefined {
   const excerptSource = item.content_text || item.content_html;
   const title = normalizePreviewText(item.title) || normalizePreviewText(excerptSource) || 'Untitled item';
   const excerpt = normalizePreviewExcerpt(excerptSource, title);

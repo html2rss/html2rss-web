@@ -11,7 +11,7 @@ export interface FeedPreviewItem {
 
 export interface FeedPreviewState {
   items: FeedPreviewItem[];
-  error: string | null;
+  error?: string;
   isLoading: boolean;
 }
 
@@ -24,7 +24,7 @@ export interface FeedRetryState {
 export interface CreatedFeedResult {
   feed: FeedRecord;
   preview: FeedPreviewState;
-  retry: FeedRetryState | null;
+  retry?: FeedRetryState;
 }
 
 export interface ApiMetadataRecord {

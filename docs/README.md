@@ -53,6 +53,7 @@ Running the app directly on the host is not supported.
 | ----------------------- | -------------------------------------------- |
 | `npm run dev`           | Vite dev server with hot reload (port 4001). |
 | `npm run build`         | Build static assets into `frontend/dist/`.   |
+| `npm run lint`          | Run ESLint across the frontend workspace.    |
 | `npm run test:run`      | Unit tests (Vitest).                         |
 | `npm run test:contract` | Contract tests with MSW.                     |
 

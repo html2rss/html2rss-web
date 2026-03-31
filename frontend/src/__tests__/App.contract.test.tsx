@@ -8,7 +8,7 @@ describe('App contract', () => {
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.localStorage.setItem('html2rss_access_token', token);
+    globalThis.localStorage.setItem('html2rss_access_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {
@@ -161,6 +161,6 @@ describe('App contract', () => {
 
     expect(screen.getByText('Add access token')).toBeInTheDocument();
     expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
-    expect(window.localStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeUndefined();
   });
 });

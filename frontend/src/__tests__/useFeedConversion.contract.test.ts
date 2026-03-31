@@ -6,7 +6,7 @@ import { useFeedConversion } from '../hooks/useFeedConversion';
 
 describe('useFeedConversion contract', () => {
   it('sends feed creation request with bearer token', async () => {
-    let receivedAuthorization: string | null = null;
+    let receivedAuthorization: string | undefined;
 
     server.use(
       http.post('/api/v1/feeds', async ({ request }) => {
@@ -48,12 +48,12 @@ describe('useFeedConversion contract', () => {
     });
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
     expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
     await waitFor(() => {
-      expect(result.current.result?.preview.error).toBeNull();
+      expect(result.current.result?.preview.error).toBeUndefined();
       expect(result.current.result?.preview.isLoading).toBe(false);
       expect(result.current.result?.preview.items).toHaveLength(1);
     });
@@ -77,7 +77,7 @@ describe('useFeedConversion contract', () => {
       ).rejects.toThrow('URL parameter is required');
     });
 
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('URL parameter is required');
   });
 
@@ -99,7 +99,7 @@ describe('useFeedConversion contract', () => {
       ).rejects.toThrow('Invalid response format from feed creation API');
     });
 
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Invalid response format from feed creation API');
   });
 
@@ -115,7 +115,7 @@ describe('useFeedConversion contract', () => {
           { status: 201 }
         )
       ),
-      http.get('/api/v1/feeds/generated-token.json', async () => new HttpResponse(null, { status: 502 }))
+      http.get('/api/v1/feeds/generated-token.json', async () => new HttpResponse(undefined, { status: 502 }))
     );
 
     const { result } = renderHook(() => useFeedConversion());
@@ -124,7 +124,7 @@ describe('useFeedConversion contract', () => {
       await result.current.convertFeed('https://example.com/articles', 'faraday', 'token');
     });
 
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     await waitFor(() => {
       expect(result.current.result?.preview.items).toEqual([]);
