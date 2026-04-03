@@ -9,7 +9,7 @@
 }
 
 .page-main {
-  width: min(100%, var(--page-max-width));
+  width: min(100%, var(--layout-page-max-width));
   margin: 0 auto;
   padding: clamp(0.85rem, 3vh, 2rem) clamp(var(--space-3), 3vw, var(--space-4)) var(--space-5);
 }
@@ -29,7 +29,7 @@
 }
 
 .workspace-shell {
-  width: min(100%, var(--content-max-width));
+  width: min(100%, var(--layout-rail-shell));
   margin: 0 auto;
   gap: var(--section-gap);
 }
@@ -42,7 +42,7 @@
 }
 
 .workspace-hero {
-  gap: 0.35rem;
+  gap: var(--space-1);
   text-align: center;
 }
 
@@ -83,12 +83,12 @@
 }
 
 .result-shell .dominant-field {
-  --input-lg-min-height: 4rem;
-  --input-lg-padding-inline: 1.25rem 5rem;
-  --input-lg-font-size: clamp(1rem, 1.8vw, 1.22rem);
-  --input-lg-letter-spacing: -0.01em;
-  --dominant-field-action-top: 0.5rem;
-  --dominant-field-action-right: 0.5rem;
+  --control-input-lg-min-height: 4rem;
+  --control-input-lg-padding-inline: 1.25rem 5rem;
+  --control-input-lg-font-size: clamp(1rem, 1.8vw, 1.22rem);
+  --control-input-lg-letter-spacing: -0.01em;
+  --dominant-field-action-top: var(--space-2);
+  --dominant-field-action-right: var(--space-2);
   --dominant-field-action-text-min-width: 4rem;
   --dominant-field-action-text-padding-inline: var(--space-3);
   --dominant-field-action-soft-bg: var(--surface-base);
@@ -157,7 +157,7 @@
   width: 100%;
   padding: var(--space-4);
   border: var(--border-width) solid var(--border-muted);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface-elevated);
   color: var(--text-strong);
   transition:
@@ -183,10 +183,10 @@ a:focus-visible {
 }
 
 .input--lg {
-  min-height: var(--input-lg-min-height, 4.5rem);
-  padding-inline: var(--input-lg-padding-inline, 1.25rem 5rem);
-  font-size: var(--input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
-  letter-spacing: var(--input-lg-letter-spacing, -0.03em);
+  min-height: var(--control-input-lg-min-height, 4.5rem);
+  padding-inline: var(--control-input-lg-padding-inline, 1.25rem 5rem);
+  font-size: var(--control-input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
+  letter-spacing: var(--control-input-lg-letter-spacing, -0.03em);
 }
 
 .input--minimal {
@@ -207,15 +207,15 @@ a:focus-visible {
 
 .dominant-field__action {
   position: absolute;
-  right: var(--dominant-field-action-right, 0.7rem);
-  top: var(--dominant-field-action-top, 0.7rem);
+  right: var(--dominant-field-action-right, var(--space-3));
+  top: var(--dominant-field-action-top, var(--space-3));
   width: var(--dominant-field-action-size, 3rem);
   height: var(--dominant-field-action-size, 3rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--dominant-field-action-bg, var(--surface-elevated));
   color: var(--text-strong);
   cursor: pointer;
@@ -251,7 +251,7 @@ a:focus-visible {
 }
 
 .dominant-field__action:hover:not(:disabled) {
-  transform: translateX(0.04rem);
+  transform: translateX(var(--motion-nudge));
   background: var(--border-subtle);
 }
 
@@ -263,7 +263,7 @@ a:focus-visible {
 .notice {
   display: grid;
   gap: var(--space-2);
-  width: min(100%, 38rem);
+  width: min(100%, var(--layout-field-max-width));
   margin: 0 auto;
   box-shadow: var(--shadow-elevated);
 }
@@ -312,7 +312,7 @@ a:focus-visible {
 .featured-feed-item__link:hover,
 .featured-feed-item__link:focus-visible {
   text-decoration: none;
-  transform: translateY(-0.04rem);
+  transform: translateY(calc(var(--motion-nudge) * -1));
 }
 
 .featured-feed-item__title {
@@ -342,7 +342,7 @@ a:focus-visible {
 }
 
 .token-gate {
-  width: min(100%, 38rem);
+  width: min(100%, var(--layout-field-max-width));
   margin: 0 auto;
   padding-top: var(--space-2);
   gap: var(--space-3);
@@ -365,7 +365,7 @@ a:focus-visible {
 }
 
 .token-gate__hint {
-  margin: 0.35rem 0 0;
+  margin: var(--space-1) 0 0;
   color: var(--text-muted);
   font-size: var(--font-size-0);
   line-height: 1.45;
@@ -384,7 +384,7 @@ a:focus-visible {
 }
 
 .token-gate__actions .btn {
-  min-height: 2.5rem;
+  min-height: calc(var(--space-6) + var(--space-2));
   padding-inline: var(--space-4);
   border-color: var(--border-subtle);
   background: var(--surface-base);
@@ -418,11 +418,11 @@ a:focus-visible {
 }
 
 .field-block--stretch.field-block--compact {
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .field-block--stretch .input {
-  min-height: 3.5rem;
+  min-height: calc(var(--space-7) + var(--space-2));
   padding-inline: var(--space-4);
   border-color: var(--border-muted);
   background: var(--surface-elevated);
@@ -542,7 +542,7 @@ a:focus-visible {
   height: 1rem;
   border: var(--border-width) solid var(--border-muted);
   border-top-color: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   animation: spin 0.9s linear infinite;
 }
 
@@ -600,7 +600,7 @@ a:focus-visible {
 
   .input--lg {
     min-height: 4rem;
-    padding-right: 4.2rem;
+    padding-right: calc(var(--space-7) + var(--space-4));
   }
 
   .result-hero,
@@ -630,15 +630,15 @@ a:focus-visible {
   }
 
   .dominant-field__action {
-    top: 0.5rem;
-    right: 0.5rem;
+    top: var(--space-2);
+    right: var(--space-2);
     width: 3rem;
     height: 3rem;
   }
 
   .dominant-field__action--text {
     min-width: 4rem;
-    padding-inline: 0.7rem;
+    padding-inline: var(--space-3);
   }
 }
 
