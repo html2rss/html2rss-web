@@ -1,13 +1,14 @@
 /* Shared design-system primitives for both the app UI and RSS/XSL surfaces. See docs/design-system.md before changing this file. */
 :root {
   color-scheme: dark;
+
   --font-family-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-display: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-family-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  --font-size-00: 0.8125rem;
-  --font-size-0: 0.9375rem;
+  --font-family-mono: "SFMono-Regular", consolas, "Liberation Mono", monospace;
+  --font-size-00: 13px;
+  --font-size-0: 15px;
   --font-size-1: 1rem;
-  --font-size-2: 1.125rem;
+  --font-size-2: 18px;
   --line-height-tight: 1.1;
   --line-height-base: 1.5;
   --space-1: 0.25rem;
@@ -34,27 +35,37 @@
   --brand-lockup-wordmark-size: 0.96rem;
   --bg-page: #050505;
   --bg-page-muted: #090909;
-  --bg-input: #111111;
+  --bg-input: #111;
   --bg-input-strong: #151515;
-  --bg-success: rgba(110, 231, 183, 0.08);
-  --bg-danger: rgba(248, 113, 113, 0.1);
-  --surface-base: rgba(255, 255, 255, 0.02);
-  --surface-elevated: rgba(255, 255, 255, 0.04);
-  --border-muted: rgba(255, 255, 255, 0.12);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.24);
+  --bg-success: rgb(110 231 183 / 8%);
+  --bg-danger: rgb(248 113 113 / 10%);
+  --border-success: rgb(110 231 183 / 20%);
+  --border-danger: rgb(248 113 113 / 20%);
+  --surface-reader: rgb(255 147 0 / 10%);
+  --border-reader: rgb(255 147 0 / 20%);
+  --overlay-top-light: rgb(255 255 255 / 4%);
+  --overlay-card-top: rgb(255 255 255 / 4%);
+  --overlay-hero-accent: rgb(255 147 0 / 12%);
+  --overlay-hero-top: rgb(255 255 255 / 4%);
+  --overlay-icon-top: rgb(255 255 255 / 8%);
+  --overlay-icon-base: rgb(255 255 255 / 3%);
+  --surface-base: rgb(255 255 255 / 2%);
+  --surface-elevated: rgb(255 255 255 / 4%);
+  --border-muted: rgb(255 255 255 / 12%);
+  --border-subtle: rgb(255 255 255 / 8%);
+  --border-strong: rgb(255 255 255 / 24%);
   --text-strong: #f3f3ef;
-  --text-body: rgba(243, 243, 239, 0.9);
-  --text-muted: rgba(243, 243, 239, 0.58);
-  --text-faint: rgba(243, 243, 239, 0.28);
-  --eyebrow-color: rgba(255, 255, 255, 0.72);
+  --text-body: rgb(243 243 239 / 90%);
+  --text-muted: rgb(243 243 239 / 58%);
+  --text-faint: rgb(243 243 239 / 28%);
+  --eyebrow-color: rgb(255 255 255 / 72%);
   --text-inverse: #050505;
   --accent: #f3f3ef;
-  --accent-strong: #ffffff;
+  --accent-strong: #fff;
   --danger: #fca5a5;
   --success: #9ae6b4;
-  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.16);
-  --shadow-elevated: 0 24px 60px rgba(0, 0, 0, 0.32);
+  --focus-ring: 0 0 0 3px rgb(255 255 255 / 16%);
+  --shadow-elevated: 0 24px 60px rgb(0 0 0 / 32%);
   --page-max-width: 60rem;
   --rail-shell: 58rem;
   --rail-reading: 44rem;
@@ -79,7 +90,7 @@ body {
 
 html {
   background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 32%),
+    radial-gradient(circle at top, var(--overlay-top-light), transparent 32%),
     linear-gradient(180deg, #080808 0%, #040404 100%);
 }
 
@@ -92,7 +103,7 @@ body {
   line-height: var(--line-height-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  text-rendering: optimizelegibility;
   background: transparent;
 }
 
@@ -149,7 +160,7 @@ textarea {
   border: var(--border-default);
   border-radius: var(--radius-lg);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    linear-gradient(180deg, var(--overlay-card-top), transparent),
     var(--surface-base);
 }
 
@@ -179,8 +190,8 @@ textarea {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(135deg, rgba(255, 147, 0, 0.12), transparent 46%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 32%);
+    linear-gradient(135deg, var(--overlay-hero-accent), transparent 46%),
+    linear-gradient(180deg, var(--overlay-hero-top), transparent 32%);
 }
 
 .ui-hero > * {
@@ -202,12 +213,12 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border-muted);
   border-radius: 1.15rem;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    linear-gradient(180deg, var(--overlay-icon-top), var(--surface-base)),
+    var(--overlay-icon-base);
+  box-shadow: inset 0 1px 0 var(--border-subtle);
 }
 
 .ui-hero__icon {
@@ -268,11 +279,6 @@ textarea {
     opacity var(--transition-fast);
 }
 
-.btn:hover:not(:disabled) {
-  transform: translateY(-0.04rem);
-  text-decoration: none;
-}
-
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -282,6 +288,11 @@ textarea {
   outline: none;
   box-shadow: var(--focus-ring);
   border-color: var(--border-strong);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-0.04rem);
+  text-decoration: none;
 }
 
 .btn--primary {
@@ -300,7 +311,7 @@ textarea {
 
 .btn--ghost:hover:not(:disabled) {
   border-color: var(--border-strong);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-subtle);
 }
 
 .btn--quiet,
@@ -365,7 +376,7 @@ textarea {
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 47.9375rem) {
+@media (width < 48rem) {
   .ui-hero__masthead {
     grid-template-columns: 1fr;
   }
