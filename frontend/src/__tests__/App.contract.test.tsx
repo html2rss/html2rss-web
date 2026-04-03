@@ -161,6 +161,6 @@ describe('App contract', () => {
 
     expect(screen.getByText('Add access token')).toBeInTheDocument();
     expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
-    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeUndefined();
+    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

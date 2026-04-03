@@ -27,7 +27,7 @@ describe('useAccessToken', () => {
     expect(result.current.isLoading).toBe(false);
     expect(result.current.token).toBe('legacy-token');
     expect(globalThis.localStorage.getItem('html2rss_access_token')).toBe('legacy-token');
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeUndefined();
+    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 
   it('saves new tokens to the persistent storage path', async () => {
@@ -40,7 +40,7 @@ describe('useAccessToken', () => {
     expect(result.current.token).toBe('new-token');
     expect(result.current.hasToken).toBe(true);
     expect(globalThis.localStorage.getItem('html2rss_access_token')).toBe('new-token');
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeUndefined();
+    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 
   it('clears both persistent and legacy token copies', async () => {
@@ -55,7 +55,7 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBeUndefined();
     expect(result.current.hasToken).toBe(false);
-    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeUndefined();
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeUndefined();
+    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

@@ -29,7 +29,8 @@ const createStorageMock = () => {
       get length() {
         return store.size;
       },
-      getItem: vi.fn((key: string) => (store.has(key) ? store.get(key)! : undefined)),
+      // eslint-disable-next-line unicorn/no-null -- Web Storage returns null for missing keys.
+      getItem: vi.fn((key: string) => (store.has(key) ? store.get(key)! : null)),
       setItem: vi.fn((key: string, value: string) => {
         store.set(key, value);
       }),
@@ -39,7 +40,8 @@ const createStorageMock = () => {
       clear: vi.fn(() => {
         store.clear();
       }),
-      key: vi.fn((index: number) => [...store.keys()][index] ?? undefined),
+      // eslint-disable-next-line unicorn/no-null -- Web Storage key() returns null for out-of-range indexes.
+      key: vi.fn((index: number) => [...store.keys()][index] ?? null),
     },
   };
 };
@@ -49,10 +51,14 @@ const session = createStorageMock();
 
 Object.defineProperty(globalThis, 'localStorage', {
   value: local.api,
+  configurable: true,
+  writable: true,
 });
 
 Object.defineProperty(globalThis, 'sessionStorage', {
   value: session.api,
+  configurable: true,
+  writable: true,
 });
 
 beforeEach(() => {
