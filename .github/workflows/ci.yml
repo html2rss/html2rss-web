@@ -92,6 +92,9 @@ jobs:
       - name: Typecheck frontend
         run: npm run typecheck
 
+      - name: Lint CSS with Stylelint
+        run: pnpm dlx stylelint "**/*.css" || npx stylelint "**/*.css"
+
       - name: Check formatting
         run: npm run format:check
 

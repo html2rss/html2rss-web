@@ -316,7 +316,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More' }));
 
     const utilityItems = [
-      screen
+      ...screen
         .getByLabelText('Utilities')
         .querySelectorAll('.utility-strip__items > a, .utility-strip__items > button'),
     ].map((element) => element.textContent);
