@@ -5,10 +5,10 @@ ARG NODE_BASE_IMAGE=node:22-alpine@sha256:8094c002d08262dba12645a3b4a15cd6cd627d
 FROM ${NODE_BASE_IMAGE} AS frontend-builder
 
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
-RUN npm run build
+RUN pnpm run build
 
 # Stage 2: Ruby Build
 FROM ${RUBY_BASE_IMAGE} AS builder
