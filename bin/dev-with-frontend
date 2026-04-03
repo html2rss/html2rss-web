@@ -49,7 +49,7 @@ echo "Starting frontend dev server with API proxy..."
 cd frontend
 
 # Start frontend dev server (it will proxy API calls to Ruby server)
-npm run dev &
+pnpm run dev &
 FRONTEND_PID=$!
 
 # Wait a moment for the frontend server to start

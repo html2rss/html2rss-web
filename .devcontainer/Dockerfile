@@ -16,6 +16,10 @@ RUN apk add --no-cache \
     yaml-dev \
     tzdata
 
+RUN if ! command -v corepack >/dev/null 2>&1; then npm install -g corepack; fi \
+  && corepack enable \
+  && corepack prepare "pnpm@latest" --activate
+
 ARG USER=vscode
 ARG UID=1000
 ARG GID=1000

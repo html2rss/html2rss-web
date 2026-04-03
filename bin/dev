@@ -28,7 +28,7 @@ cleanup() {
 
   # Kill frontend dev server and its children
   if [ ! -z "$FRONTEND_PID" ]; then
-    # Kill the npm process and its children
+    # Kill the frontend package-manager process and its children
     pkill -P $FRONTEND_PID 2>/dev/null || true
     kill $FRONTEND_PID 2>/dev/null || true
     wait $FRONTEND_PID 2>/dev/null || true
@@ -79,7 +79,7 @@ fi
 
 # Start frontend dev server
 cd frontend
-npm run dev &
+pnpm run dev &
 FRONTEND_PID=$!
 
 # Verify frontend server started

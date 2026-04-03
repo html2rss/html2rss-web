@@ -47,15 +47,15 @@ Running the app directly on the host is not supported.
 | `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
 | `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.       |
 
-### Frontend npm Scripts
+### Frontend pnpm Scripts
 
 | Command                 | Purpose                                      |
 | ----------------------- | -------------------------------------------- |
-| `npm run dev`           | Vite dev server with hot reload (port 4001). |
-| `npm run build`         | Build static assets into `frontend/dist/`.   |
-| `npm run lint`          | Run ESLint across the frontend workspace.    |
-| `npm run test:run`      | Unit tests (Vitest).                         |
-| `npm run test:contract` | Contract tests with MSW.                     |
+| `pnpm run dev`          | Vite dev server with hot reload (port 4001). |
+| `pnpm run build`        | Build static assets into `frontend/dist/`.   |
+| `pnpm run lint`         | Run ESLint across the frontend workspace.    |
+| `pnpm run test:run`     | Unit tests (Vitest).                         |
+| `pnpm run test:contract`| Contract tests with MSW.                     |
 
 ---
 

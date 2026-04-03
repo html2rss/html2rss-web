@@ -1,6 +1,7 @@
 {
   "name": "html2rss-frontend",
   "type": "module",
+  "packageManager": "pnpm@10.33.0",
   "engines": {
     "node": ">=22.0.0"
   },
@@ -19,7 +20,7 @@
     "test:run": "vitest run",
     "test:unit": "vitest run --reporter=verbose --config vitest.unit.config.ts",
     "test:contract": "vitest run --reporter=verbose --config vitest.contract.config.ts",
-    "test:ci": "npm run test:unit && npm run test:contract",
+    "test:ci": "pnpm run test:unit && pnpm run test:contract",
     "test:e2e": "playwright test"
   },
   "dependencies": {

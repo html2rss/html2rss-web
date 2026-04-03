@@ -53,3 +53,4 @@
 
 .yardoc
 frontend/.astro
+.pnpm-store
