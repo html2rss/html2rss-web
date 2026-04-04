@@ -565,4 +565,34 @@ describe('App', () => {
       'https://hub.docker.com/r/html2rss/web'
     );
   });
+
+  it('keeps OpenAPI link on the frontend origin during local development', () => {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'http://127.0.0.1:4000/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: true,
+            access_token_required: true,
+          },
+          featured_feeds: [],
+        },
+      },
+      isLoading: false,
+      error: undefined,
+    });
+
+    globalThis.history.replaceState({}, '', 'http://localhost:3000/');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+      'href',
+      'http://localhost:3000/openapi.yaml'
+    );
+  });
 });

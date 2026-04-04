@@ -282,6 +282,7 @@ export function UtilityStrip({
   onClearToken,
 }: UtilityStripProperties) {
   const [isOpen, setIsOpen] = useState(false);
+  const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
     if (globalThis.window === undefined) return directoryUrl.toString();
@@ -310,7 +311,12 @@ export function UtilityStrip({
           </a>
           <Bookmarklet />
           {openapiUrl && (
-            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
+            <a
+              href={normalizedOpenapiUrl ?? openapiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="utility-link"
+            >
               OpenAPI spec
             </a>
           )}
@@ -339,4 +345,22 @@ export function UtilityStrip({
       )}
     </section>
   );
+}
+
+function normalizeLocalOriginUrl(value?: string): string | undefined {
+  if (!value || globalThis.window === undefined) return value;
+
+  try {
+    const target = new URL(value, globalThis.location.origin);
+    const current = new URL(globalThis.location.origin);
+    const isLocalHost = (host: string) => host === 'localhost' || host === '127.0.0.1';
+
+    if (isLocalHost(current.hostname) && isLocalHost(target.hostname) && target.port !== current.port) {
+      return `${current.origin}${target.pathname}${target.search}${target.hash}`;
+    }
+
+    return target.toString();
+  } catch {
+    return value;
+  }
 }
