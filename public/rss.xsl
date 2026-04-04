@@ -70,8 +70,8 @@
           }
 
           .feed-hero__action--primary {
-            border-color: rgba(255, 147, 0, 0.24);
-            background: rgba(255, 147, 0, 0.12);
+            border-color: var(--border-reader-strong);
+            background: var(--surface-reader-strong);
           }
 
           .feed-hero__stamp {
@@ -175,7 +175,7 @@
           }
 
           .feed-card__actions a {
-            color: rgba(255, 255, 255, 0.76);
+            color: var(--text-soft);
             font-size: var(--font-size-00);
             font-weight: 600;
             letter-spacing: 0.06em;
@@ -205,8 +205,8 @@
             gap: 0.38rem;
             padding: 0.34rem 0.58rem;
             border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid var(--border-chip);
+            background: var(--surface-chip);
             color: var(--text-muted);
             font-size: 0.72rem;
             letter-spacing: 0.07em;

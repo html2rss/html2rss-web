@@ -2,6 +2,16 @@ import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } fro
 import { renderHook, act, waitFor } from '@testing-library/preact';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 
+const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
+const SHORT_SETTLE_MS = 50;
+const FULL_SETTLE_MS = 100;
+
+const sumDelays = (delays: readonly number[]) => delays.reduce((total, delay) => total + delay, 0);
+
+const advanceAfterRetries = async (delays: readonly number[], settleMs: number) => {
+  await vi.advanceTimersByTimeAsync(sumDelays(delays) + settleMs);
+};
+
 describe('useFeedConversion', () => {
   let fetchMock: SpyInstance;
 
@@ -153,53 +163,53 @@ describe('useFeedConversion', () => {
   it('preserves the created feed when preview loading fails after feed creation', async () => {
     vi.useFakeTimers();
     try {
-    const createdFeed = {
-      id: 'test-id',
-      name: 'Test Feed',
-      url: 'https://example.com',
-      strategy: 'faraday',
-      feed_token: 'test-token',
-      public_url: 'https://example.com/feed',
-      json_public_url: 'https://example.com/feed.json',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    };
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            feed: createdFeed,
-          },
-        }),
-        {
-          status: 201,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-    );
-    fetchMock.mockResolvedValue(new Response('nope', { status: 502 }));
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              feed: createdFeed,
+            },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      );
+      fetchMock.mockResolvedValue(new Response('nope', { status: 502 }));
 
-    const { result } = renderHook(() => useFeedConversion());
-    let conversionResult: Awaited<ReturnType<typeof result.current.convertFeed>> | undefined;
+      const { result } = renderHook(() => useFeedConversion());
+      let conversionResult: Awaited<ReturnType<typeof result.current.convertFeed>> | undefined;
 
       await act(async () => {
         conversionResult = await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
-        await vi.advanceTimersByTimeAsync(260 + 620 + 1180 + 1800 + 100);
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS, FULL_SETTLE_MS);
       });
 
-    expect(result.current.isConverting).toBe(false);
-    expect(conversionResult).toEqual({
-      feed: createdFeed,
-      preview: {
-        items: [],
-        error: undefined,
-        isLoading: true,
-      },
-      readinessPhase: 'link_created',
-      retry: undefined,
-    });
+      expect(result.current.isConverting).toBe(false);
+      expect(conversionResult).toEqual({
+        feed: createdFeed,
+        preview: {
+          items: [],
+          error: undefined,
+          isLoading: true,
+        },
+        readinessPhase: 'link_created',
+        retry: undefined,
+      });
       await waitFor(() => {
         expect(result.current.result).toEqual({
           feed: createdFeed,
@@ -359,7 +369,7 @@ describe('useFeedConversion', () => {
 
       await act(async () => {
         await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
-        await vi.advanceTimersByTimeAsync(260 + 620 + 50);
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS.slice(0, 2), SHORT_SETTLE_MS);
       });
 
       await waitFor(() => {
@@ -406,7 +416,7 @@ describe('useFeedConversion', () => {
 
       await act(async () => {
         await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
-        await vi.advanceTimersByTimeAsync(260 + 620 + 1180 + 1800 + 100);
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS, FULL_SETTLE_MS);
       });
 
       await waitFor(() => {
