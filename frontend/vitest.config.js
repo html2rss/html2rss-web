@@ -5,8 +5,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
     globals: true,
-    testTimeout: 10000,
-    hookTimeout: 10000,
+    testTimeout: 10_000,
+    hookTimeout: 10_000,
     exclude: [...configDefaults.exclude, 'tests/**', 'e2e/**'],
   },
   esbuild: {

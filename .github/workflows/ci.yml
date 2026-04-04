@@ -54,15 +54,20 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
       - name: Setup Node.js for OpenAPI lint tooling
         uses: actions/setup-node@v6
         with:
           node-version-file: ".tool-versions"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies for OpenAPI client verification
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Verify generated OpenAPI spec and client are up to date
@@ -79,33 +84,41 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version-file: ".tool-versions"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck frontend
-        run: npm run typecheck
+        run: pnpm run typecheck
+
+      - name: Lint CSS with Stylelint
+        run: pnpm exec stylelint "**/*.css"
 
       - name: Check formatting
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: Audit dependencies
-        run: npm audit --audit-level=moderate
+        run: pnpm audit --audit-level=moderate
 
       - name: Run frontend tests
-        run: npm run test:ci
+        run: pnpm run test:ci
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run frontend smoke test
-        run: npm run test:e2e
+        run: pnpm run test:e2e
 
   docker-build-smoke-image:
     needs:
@@ -175,19 +188,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
       - name: Setup Node.js for Docker build
         uses: actions/setup-node@v6
         with:
           node-version-file: ".tool-versions"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Build frontend static assets
-        run: npm run build
+        run: pnpm run build
         working-directory: frontend
 
       - name: Set up QEMU

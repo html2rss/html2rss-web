@@ -1,5 +1,5 @@
 # Frontend package files
-package-lock.json
+pnpm-lock.yaml
 yarn.lock
 
 # Generated and transient frontend output

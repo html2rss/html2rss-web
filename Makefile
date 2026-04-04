@@ -18,7 +18,7 @@ setup: ## Full development setup
 	fi
 	@mkdir -p tmp/rack-cache-body tmp/rack-cache-meta
 	@echo "Setting up frontend..."
-	@cd frontend && npm install
+	@cd frontend && CI=1 pnpm install --frozen-lockfile
 	@echo "Setup complete!"
 
 dev: ## Start development server with live reload
@@ -29,26 +29,26 @@ dev-ruby: ## Start Ruby server only
 	@bin/dev-ruby
 
 dev-frontend: ## Start frontend dev server only
-	@cd frontend && npm run dev
+	@cd frontend && pnpm run dev
 
 test: ## Run all tests (Ruby + Frontend)
 	bundle exec rspec
-	@cd frontend && npm run test:ci
+	@cd frontend && pnpm run test:ci
 
 test-ruby: ## Run Ruby tests only
 	bundle exec rspec
 
 test-frontend: ## Run frontend tests only
-	@cd frontend && npm run test:ci
+	@cd frontend && pnpm run test:ci
 
 test-frontend-unit: ## Run frontend unit tests only
-	@cd frontend && npm run test:unit
+	@cd frontend && pnpm run test:unit
 
 test-frontend-contract: ## Run frontend contract tests only
-	@cd frontend && npm run test:contract
+	@cd frontend && pnpm run test:contract
 
 test-frontend-e2e: ## Run frontend Playwright smoke tests
-	@cd frontend && npm run test:e2e
+	@cd frontend && pnpm run test:e2e
 
 check-frontend: ## Run frontend typecheck, format, and test checks
 	$(MAKE) lint-js
@@ -67,11 +67,15 @@ lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	bundle exec rake yard:verify_public_docs
 	@echo "Ruby linting complete!"
 
-lint-js: ## Run JavaScript/Frontend linter (Prettier) - errors when issues found
+lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Stylelint + Prettier) - errors when issues found
 	@echo "Running TypeScript typecheck..."
-	@cd frontend && npm run typecheck
+	@cd frontend && pnpm run typecheck
+	@echo "Running ESLint..."
+	@cd frontend && pnpm run lint
+	@echo "Running Stylelint..."
+	@cd frontend && pnpm exec stylelint "../public/shared-ui.css" "**/*.css"
 	@echo "Running Prettier format check..."
-	@cd frontend && npm run format:check
+	@cd frontend && pnpm run format:check
 	@echo "JavaScript linting complete!"
 
 lintfix: lintfix-ruby lintfix-js ## Auto-fix all linting issues (Ruby + Frontend)
@@ -83,8 +87,10 @@ lintfix-ruby: ## Auto-fix Ruby linting issues
 	@echo "Ruby lintfix complete!"
 
 lintfix-js: ## Auto-fix JavaScript/Frontend linting issues
+	@echo "Running ESLint auto-fix..."
+	@cd frontend && pnpm run lint:fix
 	@echo "Running Prettier formatting..."
-	@cd frontend && npm run format
+	@cd frontend && pnpm run format
 	@echo "JavaScript lintfix complete!"
 
 quick-check: ## Fast local checks (Ruby lint/docs + frontend format/typecheck)
@@ -110,10 +116,10 @@ openapi-verify: ## Regenerate OpenAPI and fail if public/openapi.yaml or fronten
 	$(MAKE) openapi-client-verify
 
 openapi-client: ## Generate frontend OpenAPI client/types from public/openapi.yaml
-	@cd frontend && npm run openapi:generate
+	@cd frontend && pnpm run openapi:generate
 
 openapi-client-verify: ## Generate frontend OpenAPI client and fail if generated files are stale
-	@cd frontend && npm run openapi:verify
+	@cd frontend && pnpm run openapi:verify
 
 openapi-lint: openapi-lint-redocly openapi-lint-spectral ## Lint public/openapi.yaml with Redocly and Spectral
 
@@ -132,5 +138,5 @@ clean: ## Clean temporary files
 
 frontend-setup: ## Setup frontend dependencies
 	@echo "Setting up frontend dependencies..."
-	@cd frontend && npm install
+	@cd frontend && CI=1 pnpm install --frozen-lockfile
 	@echo "Frontend setup complete!"

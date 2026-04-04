@@ -8,11 +8,16 @@
     "vscode": {
       "extensions": [
         "rebornix.ruby",
-        "esbenp.prettier-vscode"
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
       ],
       "settings": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
         "prettier.configPath": "./frontend/prettier.config.js",
         "ruby.format": "rubocop",
         "ruby.lint": { "rubocop": true },
