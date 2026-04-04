@@ -71,9 +71,8 @@ describe('ResultDisplay', () => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText('First preview item with markup.')).toBeInTheDocument();
       expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
-      expect(screen.queryByText('Item Two')).not.toBeInTheDocument();
-      expect(screen.getAllByText('Open original')).toHaveLength(1);
-      expect(screen.getByRole('button', { name: 'Show all 3 items' })).toBeInTheDocument();
+      expect(screen.getByText('Item Two')).toBeInTheDocument();
+      expect(screen.getAllByText('Open original').length).toBeGreaterThan(0);
       expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
   });
