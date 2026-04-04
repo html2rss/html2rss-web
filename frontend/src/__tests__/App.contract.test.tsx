@@ -159,8 +159,8 @@ describe('App contract', () => {
 
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
 
-    expect(screen.getByText('Add access token')).toBeInTheDocument();
-    expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
+    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.queryByText('Could not create feed link')).not.toBeInTheDocument();
     expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

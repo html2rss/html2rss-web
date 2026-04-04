@@ -34,6 +34,7 @@ describe('App', () => {
   const mockConvertFeed = vi.fn();
   const mockClearConversionError = vi.fn();
   const mockClearResult = vi.fn();
+  const mockRetryReadinessCheck = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -74,6 +75,7 @@ describe('App', () => {
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
+      retryReadinessCheck: mockRetryReadinessCheck,
     });
 
     mockUseStrategies.mockReturnValue({
@@ -166,12 +168,12 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    expect(screen.getByText('Add access token')).toBeInTheDocument();
+    expect(screen.getByText('Enter access token')).toBeInTheDocument();
     expect(screen.getByLabelText('Page URL')).toBeDisabled();
     expect(screen.getByRole('combobox')).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
-    expect(screen.getByText('This instance needs an access token.')).toBeInTheDocument();
+    expect(screen.getByText('Required by this instance.')).toBeInTheDocument();
     expect(screen.queryByText('Paste an access token to keep going.')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(document.activeElement).toBe(document.querySelector('#access-token'));
@@ -212,7 +214,7 @@ describe('App', () => {
       'href',
       '/microsoft.com/azure-products.rss'
     );
-    expect(screen.getByText('Custom feed generation is disabled for this instance.')).toBeInTheDocument();
+    expect(screen.getByText('Feed creation is disabled on this instance.')).toBeInTheDocument();
   });
 
   it('renders the result panel when a feed is available', async () => {
@@ -233,12 +235,14 @@ describe('App', () => {
           error: 'Preview unavailable right now.',
           isLoading: false,
         },
+        readinessPhase: 'preview_unavailable',
         retry: undefined,
       },
       error: undefined,
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
+      retryReadinessCheck: mockRetryReadinessCheck,
     });
 
     render(<App />);
@@ -257,11 +261,12 @@ describe('App', () => {
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
+      retryReadinessCheck: mockRetryReadinessCheck,
     });
 
     render(<App />);
 
-    expect(screen.getByText('Feed generation failed')).toBeInTheDocument();
+    expect(screen.getByText('Could not create feed link')).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
@@ -273,14 +278,13 @@ describe('App', () => {
       convertFeed: mockConvertFeed,
       clearError: mockClearConversionError,
       clearResult: mockClearResult,
+      retryReadinessCheck: mockRetryReadinessCheck,
     });
 
     render(<App />);
 
-    expect(screen.getByText('Preparing feed')).toBeInTheDocument();
-    expect(
-      screen.getByText('Creating the feed now. The result appears first, then preview loading continues.')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Creating feed link')).toBeInTheDocument();
+    expect(screen.getByText('Checking readiness now.')).toBeInTheDocument();
   });
 
   it('clears stored token from instance info', () => {
@@ -367,7 +371,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Add access token')).toBeInTheDocument();
+      expect(screen.getByText('Enter access token')).toBeInTheDocument();
       expect(
         screen.getByText('Access token was rejected. Paste a valid token to continue.')
       ).toBeInTheDocument();
@@ -397,7 +401,7 @@ describe('App', () => {
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
-    expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
+    expect(screen.queryByText('Could not create feed link')).not.toBeInTheDocument();
     expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
   });
 
@@ -433,7 +437,7 @@ describe('App', () => {
 
     render(<App />);
 
-    await screen.findByText('Add access token');
+    await screen.findByText('Enter access token');
     expect(screen.getByLabelText('Page URL')).toHaveValue('https://example.com/articles');
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
@@ -462,8 +466,8 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    await screen.findByRole('button', { name: 'Try browserless instead' });
-    fireEvent.click(screen.getByRole('button', { name: 'Try browserless instead' }));
+    await screen.findByRole('button', { name: 'Retry with browserless' });
+    fireEvent.click(screen.getByRole('button', { name: 'Retry with browserless' }));
 
     await waitFor(() => {
       expect(mockConvertFeed).toHaveBeenLastCalledWith(
@@ -497,7 +501,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await screen.findByText('Tried faraday first, then browserless. Browserless failed.');
-    expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
   });
 
   it('does not treat non-token forbidden failures as token rejection or strategy-recovery UX', async () => {
@@ -524,11 +528,11 @@ describe('App', () => {
 
     await screen.findByText('URL not allowed for this account');
     expect(mockClearToken).not.toHaveBeenCalled();
-    expect(screen.queryByText('Add access token')).not.toBeInTheDocument();
+    expect(screen.queryByText('Enter access token')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Access token was rejected. Paste a valid token to continue.')
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Try .* instead/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
   });
 
   it('shows the utility links in a user-focused order', () => {

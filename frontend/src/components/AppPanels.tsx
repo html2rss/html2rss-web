@@ -115,7 +115,7 @@ export function CreateFeedPanel({
           spellcheck={false}
           autoFocus
           inputRef={urlInputReference}
-          actionLabel={isConverting ? 'Preparing feed' : 'Generate feed URL'}
+          actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
@@ -149,7 +149,7 @@ export function CreateFeedPanel({
 
         {!feedCreationEnabled && (
           <>
-            <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+            <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
             {featuredFeeds.length > 0 && (
               <div
                 class="ui-card ui-card--notice ui-card--padded notice"
@@ -187,8 +187,8 @@ export function CreateFeedPanel({
       {showTokenPrompt && (
         <div class="token-gate" role="group" aria-label="Access token">
           <div class="token-gate__copy">
-            <h2>Add access token</h2>
-            <p class="token-gate__hint">This instance needs an access token.</p>
+            <h2>Enter access token</h2>
+            <p class="token-gate__hint">Required by this instance.</p>
           </div>
           <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
             <span class="field-label field-label--ghost">Access token</span>
@@ -240,15 +240,15 @@ export function CreateFeedPanel({
 
       {conversionError && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
-          <div class="notice__title">Feed generation failed</div>
+          <div class="notice__title">Could not create feed link</div>
           <p>{conversionError}</p>
         </div>
       )}
 
       {isConverting && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
-          <div class="notice__title">Preparing feed</div>
-          <p>Creating the feed now. The result appears first, then preview loading continues.</p>
+          <div class="notice__title">Creating feed link</div>
+          <p>Checking readiness now.</p>
         </div>
       )}
 
@@ -258,7 +258,7 @@ export function CreateFeedPanel({
           {manualRetryStrategy && (
             <div class="notice__actions">
               <button type="button" class="btn btn--ghost" onClick={onRetryWithStrategy}>
-                Try {manualRetryStrategy} instead
+                Retry with {manualRetryStrategy}
               </button>
             </div>
           )}

@@ -13,8 +13,8 @@ const preferredStrategy = (strategies: { id: string }[]) =>
   strategies.find((strategy) => strategy.id === 'faraday')?.id ?? strategies[0]?.id;
 
 function strategyHint(strategy: Strategy) {
-  if (strategy.id === 'faraday') return 'Start here for most pages.';
-  if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
+  if (strategy.id === 'faraday') return 'Best for most pages.';
+  if (strategy.id === 'browserless') return 'Use when the page needs JavaScript to load content.';
   return strategy.name;
 }
 
@@ -87,6 +87,7 @@ export function App() {
     convertFeed,
     clearError,
     clearResult,
+    retryReadinessCheck,
   } = useFeedConversion();
   const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies();
 
@@ -152,7 +153,7 @@ export function App() {
     if (!feedCreation.enabled) {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
-        form: 'Custom feed generation is disabled for this instance.',
+        form: 'Feed creation is disabled on this instance.',
       });
       return false;
     }
@@ -287,7 +288,11 @@ export function App() {
       )}
 
       {result ? (
-        <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
+        <ResultDisplay
+          result={result}
+          onCreateAnother={handleCreateAnother}
+          onRetryReadiness={retryReadinessCheck}
+        />
       ) : (
         <>
           <CreateFeedPanel
