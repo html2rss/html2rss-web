@@ -80,6 +80,7 @@
   border-radius: var(--state-frame-radius);
   background: var(--state-frame-bg);
   box-shadow: var(--state-frame-shadow);
+  gap: var(--section-gap);
 }
 
 .form-shell--minimal,
@@ -103,10 +104,6 @@
   width: 100%;
   max-width: 52rem;
   margin: 0 auto;
-}
-
-.result-shell {
-  gap: var(--section-gap);
 }
 
 .result-shell .dominant-field {

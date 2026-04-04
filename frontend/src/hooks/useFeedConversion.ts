@@ -1,12 +1,7 @@
 import { useRef, useState } from 'preact/hooks';
 import { createFeed } from '../api/generated';
 import { apiClient } from '../api/client';
-import type {
-  CreatedFeedResult,
-  FeedPreviewItem,
-  FeedReadinessPhase,
-  FeedRecord,
-} from '../api/contracts';
+import type { CreatedFeedResult, FeedPreviewItem, FeedReadinessPhase, FeedRecord } from '../api/contracts';
 import { normalizeUserUrl } from '../utils/url';
 
 interface JsonFeedItem {
@@ -121,13 +116,7 @@ export function useFeedConversion() {
       error: undefined,
       result: resetResult,
     }));
-    void hydratePreview(
-      currentResult.feed,
-      requestId,
-      currentResult.retry,
-      setState,
-      requestIdReference
-    );
+    void hydratePreview(currentResult.feed, requestId, currentResult.retry, setState, requestIdReference);
   };
 
   return {
@@ -247,7 +236,15 @@ async function hydratePreview(
 
     const exhausted = index === delays.length - 1;
     if (!attempt.shouldRetry || exhausted) {
-      setPreviewResult(feed, attempt.preview, attempt.readinessPhase, retry, requestId, setState, requestIdReference);
+      setPreviewResult(
+        feed,
+        attempt.preview,
+        attempt.readinessPhase,
+        retry,
+        requestId,
+        setState,
+        requestIdReference
+      );
       return;
     }
   }

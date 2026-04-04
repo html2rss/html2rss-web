@@ -52,7 +52,9 @@ describe('useFeedConversion contract', () => {
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
     expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
+    expect(result.current.result?.readinessPhase).toBe('link_created');
     await waitFor(() => {
+      expect(result.current.result?.readinessPhase).toBe('feed_ready');
       expect(result.current.result?.preview.error).toBeUndefined();
       expect(result.current.result?.preview.isLoading).toBe(false);
       expect(result.current.result?.preview.items).toHaveLength(1);
@@ -103,7 +105,7 @@ describe('useFeedConversion contract', () => {
     expect(result.current.error).toBe('Invalid response format from feed creation API');
   });
 
-  it('preserves the created feed when preview loading fails', async () => {
+  it('marks the feed as not-ready-yet when preview endpoint keeps returning 5xx', async () => {
     server.use(
       http.post('/api/v1/feeds', async () =>
         HttpResponse.json(
@@ -127,8 +129,11 @@ describe('useFeedConversion contract', () => {
     expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
     await waitFor(() => {
+      expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
       expect(result.current.result?.preview.items).toEqual([]);
-      expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
+      expect(result.current.result?.preview.error).toBe(
+        'Feed is still preparing. Try again in a few seconds.'
+      );
       expect(result.current.result?.preview.isLoading).toBe(false);
     });
   });
