@@ -1,6 +1,6 @@
-const SCHEME_PATTERN = /^[a-z][a-z0-9+.-]*:\/\//i;
+const SCHEME_PATTERN = /^[a-z][\d+.a-z-]*:\/\//i;
 const HOST_LIKE_PATTERN =
-  /^(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)(?:[/?#].*)?$/i;
+  /^(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[\da-z-]+\.)+[a-z]{2,}(?::\d+)?)(?:[#/?].*)?$/i;
 
 export function normalizeUserUrl(rawValue: string): string {
   const value = rawValue.trim();

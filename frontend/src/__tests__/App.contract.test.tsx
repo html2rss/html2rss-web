@@ -8,7 +8,7 @@ describe('App contract', () => {
   const token = 'contract-token';
 
   const authenticate = () => {
-    window.localStorage.setItem('html2rss_access_token', token);
+    globalThis.localStorage.setItem('html2rss_access_token', token);
   };
 
   it('shows feed result when API responds with success', async () => {
@@ -64,7 +64,7 @@ describe('App contract', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Your feed is ready')).toBeInTheDocument();
+      expect(screen.getByText('Feed ready')).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
@@ -159,8 +159,8 @@ describe('App contract', () => {
 
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
 
-    expect(screen.getByText('Add access token')).toBeInTheDocument();
-    expect(screen.queryByText('Feed generation failed')).not.toBeInTheDocument();
-    expect(window.localStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.queryByText('Could not create feed link')).not.toBeInTheDocument();
+    expect(globalThis.localStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

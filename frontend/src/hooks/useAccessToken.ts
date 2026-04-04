@@ -3,9 +3,9 @@ import { useEffect, useState } from 'preact/hooks';
 const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 
 interface AccessTokenState {
-  token: string | null;
+  token?: string;
   isLoading: boolean;
-  error: string | null;
+  error?: string;
 }
 
 const memoryStorage = (() => {
@@ -16,8 +16,8 @@ const memoryStorage = (() => {
       return store.size;
     },
     clear: () => store.clear(),
-    getItem: (key: string) => (store.has(key) ? store.get(key)! : null),
-    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    getItem: (key: string) => store.get(key),
+    key: (index: number) => [...store.keys()][index],
     removeItem: (key: string) => {
       store.delete(key);
     },
@@ -28,13 +28,13 @@ const memoryStorage = (() => {
 })();
 
 const resolveStorage = (): Storage => {
-  if (typeof window === 'undefined') return memoryStorage;
+  if (globalThis.window === undefined) return memoryStorage;
 
   try {
-    return window.localStorage ?? window.sessionStorage ?? memoryStorage;
+    return globalThis.localStorage ?? globalThis.sessionStorage ?? memoryStorage;
   } catch {
     try {
-      return window.sessionStorage ?? memoryStorage;
+      return globalThis.sessionStorage ?? memoryStorage;
     } catch {
       return memoryStorage;
     }
@@ -42,10 +42,10 @@ const resolveStorage = (): Storage => {
 };
 
 const clearLegacySessionToken = () => {
-  if (typeof window === 'undefined') return;
+  if (globalThis.window === undefined) return;
 
   try {
-    window.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+    globalThis.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
   } catch {
     // Ignore restricted sessionStorage access (privacy mode, sandboxed contexts).
   }
@@ -53,9 +53,7 @@ const clearLegacySessionToken = () => {
 
 export function useAccessToken() {
   const [state, setState] = useState<AccessTokenState>({
-    token: null,
     isLoading: true,
-    error: null,
   });
 
   useEffect(() => {
@@ -64,9 +62,9 @@ export function useAccessToken() {
     try {
       const token = storage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
       let legacyToken = '';
-      if (!token && typeof window !== 'undefined') {
+      if (!token && globalThis.window !== undefined) {
         try {
-          legacyToken = window.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
+          legacyToken = globalThis.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
         } catch {
           // Treat restricted sessionStorage access as no legacy token.
           legacyToken = '';
@@ -79,13 +77,11 @@ export function useAccessToken() {
       }
 
       setState({
-        token: token || legacyToken || null,
+        token: token || legacyToken || undefined,
         isLoading: false,
-        error: null,
       });
     } catch {
       setState({
-        token: null,
         isLoading: false,
         error: 'Failed to load access token state',
       });
@@ -103,7 +99,6 @@ export function useAccessToken() {
     setState({
       token: normalized,
       isLoading: false,
-      error: null,
     });
   };
 
@@ -113,9 +108,7 @@ export function useAccessToken() {
     clearLegacySessionToken();
 
     setState({
-      token: null,
       isLoading: false,
-      error: null,
     });
   };
 

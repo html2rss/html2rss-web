@@ -5,12 +5,12 @@ import { cleanup } from '@testing-library/preact';
 let server: typeof import('./mocks/server').server;
 
 // Mock window and document for tests
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
-    onchange: null,
+    onchange: undefined,
     addListener: vi.fn(), // deprecated
     removeListener: vi.fn(), // deprecated
     addEventListener: vi.fn(),
@@ -29,6 +29,7 @@ const createStorageMock = () => {
       get length() {
         return store.size;
       },
+      // eslint-disable-next-line unicorn/no-null -- Web Storage returns null for missing keys.
       getItem: vi.fn((key: string) => (store.has(key) ? store.get(key)! : null)),
       setItem: vi.fn((key: string, value: string) => {
         store.set(key, value);
@@ -39,7 +40,8 @@ const createStorageMock = () => {
       clear: vi.fn(() => {
         store.clear();
       }),
-      key: vi.fn((index: number) => Array.from(store.keys())[index] ?? null),
+      // eslint-disable-next-line unicorn/no-null -- Web Storage key() returns null for out-of-range indexes.
+      key: vi.fn((index: number) => [...store.keys()][index] ?? null),
     },
   };
 };
@@ -47,18 +49,16 @@ const createStorageMock = () => {
 const local = createStorageMock();
 const session = createStorageMock();
 
-Object.defineProperty(window, 'localStorage', {
-  value: local.api,
-});
 Object.defineProperty(globalThis, 'localStorage', {
   value: local.api,
+  configurable: true,
+  writable: true,
 });
 
-Object.defineProperty(window, 'sessionStorage', {
-  value: session.api,
-});
 Object.defineProperty(globalThis, 'sessionStorage', {
   value: session.api,
+  configurable: true,
+  writable: true,
 });
 
 beforeEach(() => {

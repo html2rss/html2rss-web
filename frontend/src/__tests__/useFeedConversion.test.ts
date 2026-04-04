@@ -2,12 +2,22 @@ import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } fro
 import { renderHook, act, waitFor } from '@testing-library/preact';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 
+const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
+const SHORT_SETTLE_MS = 50;
+const FULL_SETTLE_MS = 100;
+
+const sumDelays = (delays: readonly number[]) => delays.reduce((total, delay) => total + delay, 0);
+
+const advanceAfterRetries = async (delays: readonly number[], settleMs: number) => {
+  await vi.advanceTimersByTimeAsync(sumDelays(delays) + settleMs);
+};
+
 describe('useFeedConversion', () => {
   let fetchMock: SpyInstance;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchMock = vi.spyOn(global, 'fetch');
+    fetchMock = vi.spyOn(globalThis, 'fetch');
   });
 
   afterEach(() => {
@@ -18,8 +28,8 @@ describe('useFeedConversion', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
-    expect(result.current.error).toBeNull();
+    expect(result.current.result).toBeUndefined();
+    expect(result.current.error).toBeUndefined();
   });
 
   it('should handle successful conversion', async () => {
@@ -78,10 +88,11 @@ describe('useFeedConversion', () => {
       feed: mockFeed,
       preview: {
         items: [],
-        error: null,
+        error: undefined,
         isLoading: true,
       },
-      retry: null,
+      readinessPhase: 'link_created',
+      retry: undefined,
     });
     await waitFor(() => {
       expect(result.current.result).toEqual({
@@ -95,13 +106,14 @@ describe('useFeedConversion', () => {
               url: 'https://example.com/item',
             },
           ],
-          error: null,
+          error: undefined,
           isLoading: false,
         },
-        retry: null,
+        readinessPhase: 'feed_ready',
+        retry: undefined,
       });
     });
-    expect(result.current.error).toBeNull();
+    expect(result.current.error).toBeUndefined();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -128,7 +140,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toContain('Bad Request');
   });
 
@@ -144,71 +156,79 @@ describe('useFeedConversion', () => {
     });
 
     expect(result.current.isConverting).toBe(false);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Network error');
   });
 
   it('preserves the created feed when preview loading fails after feed creation', async () => {
-    const createdFeed = {
-      id: 'test-id',
-      name: 'Test Feed',
-      url: 'https://example.com',
-      strategy: 'faraday',
-      feed_token: 'test-token',
-      public_url: 'https://example.com/feed',
-      json_public_url: 'https://example.com/feed.json',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
-    };
+    vi.useFakeTimers();
+    try {
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
 
-    fetchMock.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          success: true,
-          data: {
-            feed: createdFeed,
-          },
-        }),
-        {
-          status: 201,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      )
-    );
-    fetchMock.mockResolvedValueOnce(new Response('nope', { status: 502 }));
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              feed: createdFeed,
+            },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      );
+      fetchMock.mockResolvedValue(new Response('nope', { status: 502 }));
 
-    const { result } = renderHook(() => useFeedConversion());
-    let conversionResult: Awaited<ReturnType<typeof result.current.convertFeed>> | undefined;
+      const { result } = renderHook(() => useFeedConversion());
+      let conversionResult: Awaited<ReturnType<typeof result.current.convertFeed>> | undefined;
 
-    await act(async () => {
-      conversionResult = await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
-    });
+      await act(async () => {
+        conversionResult = await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS, FULL_SETTLE_MS);
+      });
 
-    expect(result.current.isConverting).toBe(false);
-    expect(conversionResult).toEqual({
-      feed: createdFeed,
-      preview: {
-        items: [],
-        error: null,
-        isLoading: true,
-      },
-      retry: null,
-    });
-    await waitFor(() => {
-      expect(result.current.result).toEqual({
+      expect(result.current.isConverting).toBe(false);
+      expect(conversionResult).toEqual({
         feed: createdFeed,
         preview: {
           items: [],
-          error: 'Preview unavailable right now.',
-          isLoading: false,
+          error: undefined,
+          isLoading: true,
         },
-        retry: null,
+        readinessPhase: 'link_created',
+        retry: undefined,
       });
-    });
-    expect(result.current.error).toBeNull();
+      await waitFor(() => {
+        expect(result.current.result).toEqual({
+          feed: createdFeed,
+          preview: {
+            items: [],
+            error: 'Feed is still preparing. Try again in a few seconds.',
+            isLoading: false,
+          },
+          readinessPhase: 'feed_not_ready_yet',
+          retry: undefined,
+        });
+      });
+      expect(result.current.error).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('publishes the result before preview loading finishes', async () => {
+  it('publishes link_created before readiness is confirmed', async () => {
     const createdFeed = {
       id: 'test-id',
       name: 'Test Feed',
@@ -221,7 +241,7 @@ describe('useFeedConversion', () => {
       updated_at: '2024-01-01T00:00:00Z',
     };
 
-    let resolvePreviewResponse: ((value: Response) => void) | null = null;
+    let resolvePreviewResponse: ((value: Response) => void) | undefined;
     const previewResponse = new Promise<Response>((resolve) => {
       resolvePreviewResponse = resolve;
     });
@@ -251,10 +271,11 @@ describe('useFeedConversion', () => {
       feed: createdFeed,
       preview: {
         items: [],
-        error: null,
+        error: undefined,
         isLoading: true,
       },
-      retry: null,
+      readinessPhase: 'link_created',
+      retry: undefined,
     });
     expect(result.current.isConverting).toBe(false);
     expect(result.current.result).toEqual(conversionResult);
@@ -288,9 +309,165 @@ describe('useFeedConversion', () => {
             url: 'https://example.com/item',
           },
         ],
-        error: null,
+        error: undefined,
         isLoading: false,
       });
+      expect(result.current.result?.readinessPhase).toBe('feed_ready');
+    });
+  });
+
+  it('retries readiness checks after transient preview failures and eventually becomes ready', async () => {
+    vi.useFakeTimers();
+    try {
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              success: true,
+              data: { feed: createdFeed },
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        )
+        .mockResolvedValueOnce(new Response('temporary-failure', { status: 500 }))
+        .mockResolvedValueOnce(new Response('still-warming-up', { status: 503 }))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              items: [
+                {
+                  title: 'Recovered item',
+                  content_text: 'Recovered preview excerpt',
+                  url: 'https://example.com/item',
+                  date_published: '2024-01-02T00:00:00Z',
+                },
+              ],
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/feed+json' },
+            }
+          )
+        );
+
+      const { result } = renderHook(() => useFeedConversion());
+
+      await act(async () => {
+        await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS.slice(0, 2), SHORT_SETTLE_MS);
+      });
+
+      await waitFor(() => {
+        expect(result.current.result?.readinessPhase).toBe('feed_ready');
+        expect(result.current.result?.preview.items[0]?.title).toBe('Recovered item');
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops readiness retries after the configured limit and marks feed_not_ready_yet', async () => {
+    vi.useFakeTimers();
+    try {
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              success: true,
+              data: { feed: createdFeed },
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        )
+        .mockResolvedValue(new Response('temporary-failure', { status: 500 }));
+
+      const { result } = renderHook(() => useFeedConversion());
+
+      await act(async () => {
+        await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await advanceAfterRetries(PREVIEW_RETRY_DELAYS_MS, FULL_SETTLE_MS);
+      });
+
+      await waitFor(() => {
+        expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
+        expect(result.current.result?.preview.error).toBe(
+          'Feed is still preparing. Try again in a few seconds.'
+        );
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(6);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('marks preview_unavailable for non-retryable preview responses', async () => {
+    const createdFeed = {
+      id: 'test-id',
+      name: 'Test Feed',
+      url: 'https://example.com',
+      strategy: 'faraday',
+      feed_token: 'test-token',
+      public_url: 'https://example.com/feed',
+      json_public_url: 'https://example.com/feed.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { feed: createdFeed },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+    });
+
+    await waitFor(() => {
+      expect(result.current.result?.readinessPhase).toBe('preview_unavailable');
+      expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
     });
   });
 
@@ -435,7 +612,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Unauthorized');
   });
 
@@ -462,7 +639,7 @@ describe('useFeedConversion', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe('Input rejected');
   });
 
@@ -576,7 +753,7 @@ describe('useFeedConversion', () => {
       'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
     );
     expect(thrownError?.manualRetryStrategy).toBeUndefined();
-    expect(result.current.result).toBeNull();
+    expect(result.current.result).toBeUndefined();
     expect(result.current.error).toBe(
       'Tried faraday first, then browserless. First attempt failed with: Upstream timeout. Second attempt failed with: Browserless also failed'
     );
@@ -606,11 +783,11 @@ describe('useFeedConversion', () => {
       updated_at: '2024-01-01T00:00:00Z',
     };
 
-    let resolvePreviewA: ((value: Response) => void) | null = null;
+    let resolvePreviewA: ((value: Response) => void) | undefined;
     const previewAPromise = new Promise<Response>((resolve) => {
       resolvePreviewA = resolve;
     });
-    let resolvePreviewB: ((value: Response) => void) | null = null;
+    let resolvePreviewB: ((value: Response) => void) | undefined;
     const previewBPromise = new Promise<Response>((resolve) => {
       resolvePreviewB = resolve;
     });

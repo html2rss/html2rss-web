@@ -12,6 +12,47 @@ const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
 const preferredStrategy = (strategies: { id: string }[]) =>
   strategies.find((strategy) => strategy.id === 'faraday')?.id ?? strategies[0]?.id;
 
+function strategyHint(strategy: Strategy) {
+  if (strategy.id === 'faraday') return 'Best for most pages.';
+  if (strategy.id === 'browserless') return 'Use when the page needs JavaScript to load content.';
+  return strategy.name;
+}
+
+function isAccessTokenError(message: string) {
+  const normalized = message.toLowerCase();
+  const mentionsAuthToken =
+    normalized.includes('access token') ||
+    normalized.includes('token') ||
+    normalized.includes('authentication') ||
+    normalized.includes('bearer');
+
+  return (
+    normalized.includes('unauthorized') ||
+    normalized.includes('invalid token') ||
+    normalized.includes('token rejected') ||
+    normalized.includes('authentication') ||
+    (normalized.includes('forbidden') && mentionsAuthToken)
+  );
+}
+
+function isActionableStrategySwitch(message: string, currentStrategy: string, retryStrategy: string) {
+  if (currentStrategy !== 'faraday' || retryStrategy !== 'browserless') return false;
+
+  const normalized = message.toLowerCase();
+  return !(
+    normalized.includes('unauthorized') ||
+    normalized.includes('forbidden') ||
+    normalized.includes('not allowed') ||
+    normalized.includes('disabled') ||
+    normalized.includes('access token') ||
+    normalized.includes('token') ||
+    normalized.includes('authentication') ||
+    normalized.includes('bad request') ||
+    normalized.includes('url') ||
+    normalized.includes('unsupported strategy')
+  );
+}
+
 interface ConversionErrorWithMeta extends Error {
   manualRetryStrategy?: string;
 }
@@ -46,6 +87,7 @@ export function App() {
     convertFeed,
     clearError,
     clearResult,
+    retryReadinessCheck,
   } = useFeedConversion();
   const { strategies, isLoading: strategiesLoading, error: strategiesError } = useStrategies();
 
@@ -56,19 +98,19 @@ export function App() {
   const [tokenError, setTokenError] = useState('');
   const [manualRetryStrategy, setManualRetryStrategy] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
-  const autoSubmitUrlRef = useRef<string | null>(null);
-  const hasAutoSubmittedRef = useRef(false);
+  const autoSubmitUrlReference = useRef<string | undefined>(undefined);
+  const hasAutoSubmittedReference = useRef(false);
   const selectedStrategy = feedFormData.strategy || preferredStrategy(strategies) || '';
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (globalThis.window === undefined) return;
 
-    const urlParam = new URLSearchParams(window.location.search).get('url');
-    if (!urlParam) return;
-    autoSubmitUrlRef.current = urlParam;
+    const urlParameter = new URLSearchParams(globalThis.location.search).get('url');
+    if (!urlParameter) return;
+    autoSubmitUrlReference.current = urlParameter;
     if (feedFormData.url) return;
 
-    setFeedFormData((prev) => ({ ...prev, url: urlParam }));
+    setFeedFormData((previous) => ({ ...previous, url: urlParameter }));
   }, [feedFormData.url]);
 
   useEffect(() => {
@@ -76,7 +118,7 @@ export function App() {
     if (!nextStrategy) return;
 
     const hasCurrentStrategy = strategies.some((strategy) => strategy.id === feedFormData.strategy);
-    if (!hasCurrentStrategy) setFeedFormData((prev) => ({ ...prev, strategy: nextStrategy }));
+    if (!hasCurrentStrategy) setFeedFormData((previous) => ({ ...previous, strategy: nextStrategy }));
   }, [strategies, feedFormData.strategy]);
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
@@ -84,55 +126,14 @@ export function App() {
   const submitDisabled = isConverting || strategiesLoading || !feedCreation.enabled || showTokenPrompt;
 
   const setFeedField = (key: 'url' | 'strategy', value: string) => {
-    setFeedFormData((prev) => ({ ...prev, [key]: value }));
-    setFeedFieldErrors((prev) => ({
-      ...prev,
-      url: key === 'url' ? '' : prev.url,
+    setFeedFormData((previous) => ({ ...previous, [key]: value }));
+    setFeedFieldErrors((previous) => ({
+      ...previous,
+      url: key === 'url' ? '' : previous.url,
       form: '',
     }));
     setManualRetryStrategy('');
     clearError();
-  };
-
-  const strategyHint = (strategy: Strategy) => {
-    if (strategy.id === 'faraday') return 'Start here for most pages.';
-    if (strategy.id === 'browserless') return 'Use this if the page loads content with JavaScript.';
-    return strategy.name;
-  };
-
-  const isAccessTokenError = (message: string) => {
-    const normalized = message.toLowerCase();
-    const mentionsAuthToken =
-      normalized.includes('access token') ||
-      normalized.includes('token') ||
-      normalized.includes('authentication') ||
-      normalized.includes('bearer');
-
-    return (
-      normalized.includes('unauthorized') ||
-      normalized.includes('invalid token') ||
-      normalized.includes('token rejected') ||
-      normalized.includes('authentication') ||
-      (normalized.includes('forbidden') && mentionsAuthToken)
-    );
-  };
-
-  const isActionableStrategySwitch = (message: string, currentStrategy: string, retryStrategy: string) => {
-    if (currentStrategy !== 'faraday' || retryStrategy !== 'browserless') return false;
-
-    const normalized = message.toLowerCase();
-    return !(
-      normalized.includes('unauthorized') ||
-      normalized.includes('forbidden') ||
-      normalized.includes('not allowed') ||
-      normalized.includes('disabled') ||
-      normalized.includes('access token') ||
-      normalized.includes('token') ||
-      normalized.includes('authentication') ||
-      normalized.includes('bad request') ||
-      normalized.includes('url') ||
-      normalized.includes('unsupported strategy')
-    );
   };
 
   const attemptFeedCreation = async (accessToken: string, strategyOverride?: string) => {
@@ -152,13 +153,13 @@ export function App() {
     if (!feedCreation.enabled) {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
-        form: 'Custom feed generation is disabled for this instance.',
+        form: 'Feed creation is disabled on this instance.',
       });
       return false;
     }
 
     if (feedCreation.access_token_required && !accessToken) {
-      setFeedFormData((prev) => ({ ...prev, url: normalizedUrl }));
+      setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
       clearError();
       setShowTokenPrompt(true);
       setTokenError('');
@@ -166,7 +167,7 @@ export function App() {
     }
 
     try {
-      setFeedFormData((prev) => ({ ...prev, url: normalizedUrl }));
+      setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
       await convertFeed(normalizedUrl, strategy, accessToken);
       setShowTokenPrompt(false);
       setTokenError('');
@@ -225,27 +226,27 @@ export function App() {
   const handleRetryWithStrategy = () => {
     if (!manualRetryStrategy) return;
 
-    setFeedFormData((prev) => ({ ...prev, strategy: manualRetryStrategy }));
+    setFeedFormData((previous) => ({ ...previous, strategy: manualRetryStrategy }));
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     clearError();
     void attemptFeedCreation(token ?? '', manualRetryStrategy);
   };
 
   useEffect(() => {
-    const autoSubmitUrl = autoSubmitUrlRef.current;
-    if (!autoSubmitUrl || hasAutoSubmittedRef.current) return;
+    const autoSubmitUrl = autoSubmitUrlReference.current;
+    if (!autoSubmitUrl || hasAutoSubmittedReference.current) return;
     if (strategiesLoading || metadataLoading || tokenLoading) return;
     if (feedFormData.url !== autoSubmitUrl || !selectedStrategy) return;
 
     if (feedCreation.access_token_required && !token) {
-      hasAutoSubmittedRef.current = true;
-      setFeedFormData((prev) => ({ ...prev, url: normalizeUserUrl(autoSubmitUrl) }));
+      hasAutoSubmittedReference.current = true;
+      setFeedFormData((previous) => ({ ...previous, url: normalizeUserUrl(autoSubmitUrl) }));
       setShowTokenPrompt(true);
       setTokenError('');
       return;
     }
 
-    hasAutoSubmittedRef.current = true;
+    hasAutoSubmittedReference.current = true;
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     void attemptFeedCreation(token ?? '');
   }, [
@@ -287,7 +288,11 @@ export function App() {
       )}
 
       {result ? (
-        <ResultDisplay result={result} onCreateAnother={handleCreateAnother} />
+        <ResultDisplay
+          result={result}
+          onCreateAnother={handleCreateAnother}
+          onRetryReadiness={retryReadinessCheck}
+        />
       ) : (
         <>
           <CreateFeedPanel
@@ -302,8 +307,6 @@ export function App() {
             strategiesError={strategiesError}
             feedCreationEnabled={feedCreation.enabled}
             featuredFeeds={featuredFeeds}
-            accessTokenRequired={feedCreation.access_token_required}
-            hasAccessToken={hasToken}
             tokenDraft={tokenDraft}
             tokenError={tokenError}
             showTokenPrompt={showTokenPrompt}
@@ -327,7 +330,7 @@ export function App() {
           <UtilityStrip
             hidden={showTokenPrompt}
             hasAccessToken={hasToken}
-            openapiUrl={metadata?.api.openapi_url ?? null}
+            openapiUrl={metadata?.api.openapi_url}
             onClearToken={() => {
               clearToken();
               setShowTokenPrompt(false);

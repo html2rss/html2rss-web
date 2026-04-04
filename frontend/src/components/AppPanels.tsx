@@ -18,20 +18,18 @@ export interface FeedFieldErrors {
   form: string;
 }
 
-interface CreateFeedPanelProps {
+interface CreateFeedPanelProperties {
   focusComposerKey: number;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
-  conversionError: string | null;
+  conversionError?: string;
   isConverting: boolean;
   submitDisabled: boolean;
   strategies: Strategy[];
   strategiesLoading: boolean;
-  strategiesError: string | null;
+  strategiesError?: string;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
-  accessTokenRequired: boolean;
-  hasAccessToken: boolean;
   tokenDraft: string;
   tokenError: string;
   showTokenPrompt: boolean;
@@ -43,6 +41,12 @@ interface CreateFeedPanelProps {
   onCancelTokenPrompt: () => void;
   onRetryWithStrategy: () => void;
   strategyHint: (strategy: Strategy) => string;
+}
+
+function strategyOptionLabel(strategy: Strategy) {
+  if (strategy.id === 'faraday') return 'Default';
+  if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
+  return strategy.display_name;
 }
 
 export function CreateFeedPanel({
@@ -57,8 +61,6 @@ export function CreateFeedPanel({
   strategiesError,
   feedCreationEnabled,
   featuredFeeds,
-  accessTokenRequired,
-  hasAccessToken,
   tokenDraft,
   tokenError,
   showTokenPrompt,
@@ -70,38 +72,33 @@ export function CreateFeedPanel({
   onCancelTokenPrompt,
   onRetryWithStrategy,
   strategyHint,
-}: CreateFeedPanelProps) {
+}: CreateFeedPanelProperties) {
   const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
-  const urlInputRef = useRef<HTMLInputElement | null>(null);
-  const tokenInputRef = useRef<HTMLInputElement | null>(null);
-  const strategyOptionLabel = (strategy: Strategy) => {
-    if (strategy.id === 'faraday') return 'Default';
-    if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
-    return strategy.display_name;
-  };
+  const urlInputReference = useRef<HTMLInputElement>(undefined as never);
+  const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
 
   useLayoutEffect(() => {
-    if (!urlInputRef.current || typeof window === 'undefined') return;
+    if (!urlInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = window.requestAnimationFrame(() => {
-      const input = urlInputRef.current;
+    const focusHandle = globalThis.requestAnimationFrame(() => {
+      const input = urlInputReference.current;
       if (!input) return;
 
       input.focus();
       input.select();
     });
 
-    return () => window.cancelAnimationFrame(focusHandle);
+    return () => globalThis.cancelAnimationFrame(focusHandle);
   }, [focusComposerKey]);
 
   useLayoutEffect(() => {
-    if (!showTokenPrompt || !tokenInputRef.current || typeof window === 'undefined') return;
+    if (!showTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = window.requestAnimationFrame(() => {
-      tokenInputRef.current?.focus();
+    const focusHandle = globalThis.requestAnimationFrame(() => {
+      tokenInputReference.current?.focus();
     });
 
-    return () => window.cancelAnimationFrame(focusHandle);
+    return () => globalThis.cancelAnimationFrame(focusHandle);
   }, [showTokenPrompt]);
 
   return (
@@ -117,8 +114,8 @@ export function CreateFeedPanel({
           autoCapitalize="off"
           spellcheck={false}
           autoFocus
-          inputRef={urlInputRef}
-          actionLabel={isConverting ? 'Preparing feed' : 'Generate feed URL'}
+          inputRef={urlInputReference}
+          actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
           actionText={isConverting ? '...' : '>'}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
@@ -152,7 +149,7 @@ export function CreateFeedPanel({
 
         {!feedCreationEnabled && (
           <>
-            <p class="field-help field-help--alert">Custom feed generation is disabled for this instance.</p>
+            <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
             {featuredFeeds.length > 0 && (
               <div
                 class="ui-card ui-card--notice ui-card--padded notice"
@@ -190,8 +187,8 @@ export function CreateFeedPanel({
       {showTokenPrompt && (
         <div class="token-gate" role="group" aria-label="Access token">
           <div class="token-gate__copy">
-            <h2>Add access token</h2>
-            <p class="token-gate__hint">This instance needs an access token.</p>
+            <h2>Enter access token</h2>
+            <p class="token-gate__hint">Required by this instance.</p>
           </div>
           <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
             <span class="field-label field-label--ghost">Access token</span>
@@ -208,7 +205,7 @@ export function CreateFeedPanel({
               spellcheck={false}
               data-1p-ignore="true"
               data-lpignore="true"
-              ref={tokenInputRef}
+              ref={tokenInputReference}
               value={tokenDraft}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter') return;
@@ -229,7 +226,7 @@ export function CreateFeedPanel({
             Set up your own instance with Docker.
           </a>
           <div class="token-gate__actions">
-            <button type="button" class="btn btn--ghost" onClick={onSaveToken}>
+            <button type="button" class="btn btn--primary" onClick={onSaveToken}>
               Save and continue
             </button>
           </div>
@@ -243,15 +240,15 @@ export function CreateFeedPanel({
 
       {conversionError && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
-          <div class="notice__title">Feed generation failed</div>
+          <div class="notice__title">Could not create feed link</div>
           <p>{conversionError}</p>
         </div>
       )}
 
       {isConverting && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
-          <div class="notice__title">Preparing feed</div>
-          <p>Creating the feed now. The result appears first, then preview loading continues.</p>
+          <div class="notice__title">Creating feed link</div>
+          <p>Checking readiness now.</p>
         </div>
       )}
 
@@ -261,7 +258,7 @@ export function CreateFeedPanel({
           {manualRetryStrategy && (
             <div class="notice__actions">
               <button type="button" class="btn btn--ghost" onClick={onRetryWithStrategy}>
-                Try {manualRetryStrategy} instead
+                Retry with {manualRetryStrategy}
               </button>
             </div>
           )}
@@ -271,10 +268,10 @@ export function CreateFeedPanel({
   );
 }
 
-interface UtilityStripProps {
+interface UtilityStripProperties {
   hidden?: boolean;
   hasAccessToken: boolean;
-  openapiUrl: string | null;
+  openapiUrl?: string;
   onClearToken: () => void;
 }
 
@@ -283,18 +280,19 @@ export function UtilityStrip({
   hasAccessToken,
   openapiUrl,
   onClearToken,
-}: UtilityStripProps) {
+}: UtilityStripProperties) {
   const [isOpen, setIsOpen] = useState(false);
+  const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
-    if (typeof window === 'undefined') return directoryUrl.toString();
+    if (globalThis.window === undefined) return directoryUrl.toString();
 
-    const instanceUrl = new URL('/', window.location.origin);
+    const instanceUrl = new URL('/', globalThis.location.origin);
     directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.toString())}`;
     return directoryUrl.toString();
   })();
 
-  if (hidden) return null;
+  if (hidden) return;
 
   return (
     <section class="utility-strip" aria-label="Utilities">
@@ -313,7 +311,12 @@ export function UtilityStrip({
           </a>
           <Bookmarklet />
           {openapiUrl && (
-            <a href={openapiUrl} target="_blank" rel="noopener noreferrer" class="utility-link">
+            <a
+              href={normalizedOpenapiUrl ?? openapiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="utility-link"
+            >
               OpenAPI spec
             </a>
           )}
@@ -342,4 +345,22 @@ export function UtilityStrip({
       )}
     </section>
   );
+}
+
+function normalizeLocalOriginUrl(value?: string): string | undefined {
+  if (!value || globalThis.window === undefined) return value;
+
+  try {
+    const target = new URL(value, globalThis.location.origin);
+    const current = new URL(globalThis.location.origin);
+    const isLocalHost = (host: string) => host === 'localhost' || host === '127.0.0.1';
+
+    if (isLocalHost(current.hostname) && isLocalHost(target.hostname) && target.port !== current.port) {
+      return `${current.origin}${target.pathname}${target.search}${target.hash}`;
+    }
+
+    return target.toString();
+  } catch {
+    return value;
+  }
 }

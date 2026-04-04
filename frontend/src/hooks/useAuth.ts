@@ -5,15 +5,13 @@ const TOKEN_KEY = 'html2rss_token';
 
 interface AuthState {
   isAuthenticated: boolean;
-  username: string | null;
-  token: string | null;
+  username?: string;
+  token?: string;
   isLoading: boolean;
-  error: string | null;
+  error?: string;
 }
 
-interface MemoryStorage extends Storage {}
-
-const memoryStorage: MemoryStorage = (() => {
+const memoryStorage: Storage = (() => {
   const store = new Map<string, string>();
 
   return {
@@ -21,8 +19,8 @@ const memoryStorage: MemoryStorage = (() => {
       return store.size;
     },
     clear: () => store.clear(),
-    getItem: (key: string) => (store.has(key) ? store.get(key)! : null),
-    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    getItem: (key: string) => store.get(key),
+    key: (index: number) => [...store.keys()][index],
     removeItem: (key: string) => {
       store.delete(key);
     },
@@ -33,15 +31,15 @@ const memoryStorage: MemoryStorage = (() => {
 })();
 
 const resolveStorage = (): Storage => {
-  if (typeof window === 'undefined') {
+  if (globalThis.window === undefined) {
     return memoryStorage;
   }
 
   try {
-    return window.localStorage ?? window.sessionStorage ?? memoryStorage;
-  } catch (error) {
+    return globalThis.localStorage ?? globalThis.sessionStorage ?? memoryStorage;
+  } catch {
     try {
-      return window.sessionStorage ?? memoryStorage;
+      return globalThis.sessionStorage ?? memoryStorage;
     } catch {
       return memoryStorage;
     }
@@ -51,10 +49,7 @@ const resolveStorage = (): Storage => {
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     isAuthenticated: false,
-    username: null,
-    token: null,
     isLoading: true,
-    error: null,
   });
 
   useEffect(() => {
@@ -70,14 +65,13 @@ export function useAuth() {
           username: username.trim(),
           token: token.trim(),
           isLoading: false,
-          error: null,
         });
       } else {
-        setAuthState((prev) => ({ ...prev, isLoading: false }));
+        setAuthState((previous) => ({ ...previous, isLoading: false }));
       }
-    } catch (error) {
-      setAuthState((prev) => ({
-        ...prev,
+    } catch {
+      setAuthState((previous) => ({
+        ...previous,
         isLoading: false,
         error: 'Failed to load authentication state',
       }));
@@ -103,9 +97,8 @@ export function useAuth() {
         username: username.trim(),
         token: token.trim(),
         isLoading: false,
-        error: null,
       });
-    } catch (error) {
+    } catch {
       throw new Error('Failed to save authentication data');
     }
   };
@@ -119,14 +112,11 @@ export function useAuth() {
 
       setAuthState({
         isAuthenticated: false,
-        username: null,
-        token: null,
         isLoading: false,
-        error: null,
       });
-    } catch (error) {
-      setAuthState((prev) => ({
-        ...prev,
+    } catch {
+      setAuthState((previous) => ({
+        ...previous,
         error: 'Failed to clear authentication data',
       }));
     }
