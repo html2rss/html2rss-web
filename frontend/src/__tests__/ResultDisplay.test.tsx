@@ -4,6 +4,7 @@ import { ResultDisplay } from '../components/ResultDisplay';
 
 describe('ResultDisplay', () => {
   const mockOnCreateAnother = vi.fn();
+  const mockOnRetryReadiness = vi.fn();
   const mockResult = {
     feed: {
       id: 'test-id',
@@ -37,6 +38,7 @@ describe('ResultDisplay', () => {
       error: undefined,
       isLoading: false,
     },
+    readinessPhase: 'feed_ready' as const,
     retry: undefined,
   };
 
@@ -45,59 +47,77 @@ describe('ResultDisplay', () => {
   });
 
   it('renders the success state actions and richer preview cards', async () => {
-    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
+    render(
+      <ResultDisplay
+        result={mockResult}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
+      />
+    );
 
     expect(screen.getByText('Feed ready')).toBeInTheDocument();
     expect(screen.getByText('Test Feed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open in feed reader' })).toHaveAttribute(
-      'href',
-      'feed:https://example.com/feed.xml'
-    );
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Open JSON Feed' })).toHaveAttribute(
       'href',
       'https://example.com/feed.json'
     );
+    expect(screen.getByRole('link', { name: 'Open in feed reader' })).toHaveAttribute(
+      'href',
+      'feed:https://example.com/feed.xml'
+    );
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText('First preview item with markup.')).toBeInTheDocument();
-      expect(screen.getAllByText('Open original')).toHaveLength(2);
       expect(screen.getByText(/points by canpan/i)).toBeInTheDocument();
-      expect(screen.getByText('Item Two')).toBeInTheDocument();
+      expect(screen.queryByText('Item Two')).not.toBeInTheDocument();
+      expect(screen.getAllByText('Open original')).toHaveLength(1);
+      expect(screen.getByRole('button', { name: 'Show all 3 items' })).toBeInTheDocument();
       expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
   });
 
-  it('surfaces preview failures as a result-state message', async () => {
+  it('surfaces feed-not-ready state with a readiness retry action', async () => {
     render(
       <ResultDisplay
         result={{
           ...mockResult,
+          readinessPhase: 'feed_not_ready_yet',
           preview: { items: [], error: 'Preview unavailable right now.', isLoading: false },
         }}
         onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
       />
     );
 
     await waitFor(() => {
+      expect(screen.getByText('Feed still warming up')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Try readiness check again' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Open feed' })).not.toBeInTheDocument();
       expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
       expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
     });
   });
 
-  it('keeps the result state visible while preview is still loading', async () => {
+  it('keeps result shell visible while readiness check is in progress', async () => {
     render(
       <ResultDisplay
-        result={{ ...mockResult, preview: { items: [], error: undefined, isLoading: true } }}
+        result={{
+          ...mockResult,
+          readinessPhase: 'link_created',
+          preview: { items: [], error: undefined, isLoading: true },
+        }}
         onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
       />
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Feed ready')).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
-      expect(screen.getByText('Loading preview…')).toBeInTheDocument();
+      expect(screen.getByText('Feed created')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Try readiness check again' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Open feed' })).not.toBeInTheDocument();
+      expect(screen.getByText('Verifying feed readiness…')).toBeInTheDocument();
     });
   });
 
@@ -109,6 +129,7 @@ describe('ResultDisplay', () => {
           retry: { automatic: true, from: 'faraday', to: 'browserless' },
         }}
         onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
       />
     );
 
@@ -120,15 +141,40 @@ describe('ResultDisplay', () => {
   });
 
   it('calls onCreateAnother when the reset button is clicked', () => {
-    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
+    render(
+      <ResultDisplay
+        result={mockResult}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
 
     expect(mockOnCreateAnother).toHaveBeenCalled();
   });
 
+  it('calls onRetryReadiness when the readiness action is clicked', () => {
+    render(
+      <ResultDisplay
+        result={{ ...mockResult, readinessPhase: 'feed_not_ready_yet' }}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try readiness check again' }));
+    expect(mockOnRetryReadiness).toHaveBeenCalled();
+  });
+
   it('copies feed URL to clipboard when copy button is clicked', async () => {
-    render(<ResultDisplay result={mockResult} onCreateAnother={mockOnCreateAnother} />);
+    render(
+      <ResultDisplay
+        result={mockResult}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryReadiness={mockOnRetryReadiness}
+      />
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy feed URL' }));
 

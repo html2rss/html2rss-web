@@ -5,12 +5,14 @@ import { DominantField } from './DominantField';
 interface ResultDisplayProperties {
   result: CreatedFeedResult;
   onCreateAnother: () => void;
+  onRetryReadiness: () => void;
 }
 
-export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperties) {
+export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: ResultDisplayProperties) {
   const [copyNotice, setCopyNotice] = useState('');
+  const [showAllPreviewItems, setShowAllPreviewItems] = useState(false);
   const copyResetReference = useRef<number | undefined>(undefined);
-  const { feed, preview } = result;
+  const { feed, preview, readinessPhase } = result;
 
   const fullUrl = feed.public_url.startsWith('http')
     ? feed.public_url
@@ -19,12 +21,32 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperti
     ? feed.json_public_url
     : `${globalThis.location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
+  const isFeedReady = readinessPhase === 'feed_ready';
+  const canManuallyRetryReadiness = readinessPhase === 'feed_not_ready_yet' || readinessPhase === 'preview_unavailable';
+  const previewItems = showAllPreviewItems ? preview.items : preview.items.slice(0, 3);
+  const hasMorePreviewItems = preview.items.length > 3;
+  const statusTitle = {
+    link_created: 'Feed created',
+    feed_ready: 'Feed ready',
+    feed_not_ready_yet: 'Feed still warming up',
+    preview_unavailable: 'Readiness check unavailable',
+  }[readinessPhase];
+  const statusMessage = {
+    link_created: 'Checking readiness now.',
+    feed_ready: 'This feed has been verified and is ready to use.',
+    feed_not_ready_yet: 'The feed endpoint is still warming up. Try checking again in a few seconds.',
+    preview_unavailable: 'We could not verify readiness right now. Try checking again.',
+  }[readinessPhase];
 
   useEffect(() => {
     return () => {
       if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
     };
   }, []);
+
+  useEffect(() => {
+    setShowAllPreviewItems(false);
+  }, [feed.feed_token]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -48,19 +70,17 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperti
             <img class="result-hero__icon ui-hero__icon" src="/feed.svg" alt="" />
           </div>
           <div class="layout-stack layout-stack--tight">
-            <h1 class="result-title ui-display-title">Feed ready</h1>
+            <h1 class="result-title ui-display-title">{statusTitle}</h1>
             <p class="result-meta layout-rail-copy">{feed.name}</p>
+            <p class="field-help">{statusMessage}</p>
           </div>
         </div>
         <div class="result-hero__actions ui-hero__actions">
-          {subscribeUrl && (
-            <a href={subscribeUrl} class="btn btn--ghost result-hero__reader">
-              Open in feed reader
-            </a>
+          {canManuallyRetryReadiness && (
+            <button type="button" class="btn btn--ghost" onClick={onRetryReadiness}>
+              Try readiness check again
+            </button>
           )}
-          <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
-            Open feed
-          </a>
         </div>
         {result.retry && (
           <p class="field-help">
@@ -82,9 +102,21 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperti
       />
 
       <div class="result-actions result-actions--quiet layout-rail-reading">
-        <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
-          Open JSON Feed
-        </a>
+        {isFeedReady && (
+          <>
+            <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+              Open feed
+            </a>
+            <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+              Open JSON Feed
+            </a>
+            {subscribeUrl && (
+              <a href={subscribeUrl} class="btn btn--ghost result-hero__reader">
+                Open in feed reader
+              </a>
+            )}
+          </>
+        )}
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
           Create another feed
         </button>
@@ -96,18 +128,18 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperti
             <p class="result-preview__label ui-eyebrow">Preview</p>
             <p class="result-preview__intro">Latest items from this feed</p>
           </div>
-          <p class="field-help">Loading preview…</p>
+          <p class="field-help">Verifying feed readiness…</p>
         </section>
       )}
 
-      {preview.items.length > 0 && (
+      {isFeedReady && preview.items.length > 0 && (
         <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview">
           <div class="result-preview__header layout-stack layout-stack--tight">
             <p class="result-preview__label ui-eyebrow">Preview</p>
             <p class="result-preview__intro">Latest items from this feed</p>
           </div>
           <ul class="result-preview__list" role="list">
-            {preview.items.map((item) => (
+            {previewItems.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`}>
                 <article class="preview-card ui-card layout-stack layout-stack--tight">
                   <h2 class="preview-card__title">{item.title}</h2>
@@ -124,6 +156,25 @@ export function ResultDisplay({ result, onCreateAnother }: ResultDisplayProperti
               </li>
             ))}
           </ul>
+          {hasMorePreviewItems && (
+            <button
+              type="button"
+              class="btn btn--quiet btn--linkish"
+              onClick={() => setShowAllPreviewItems((current) => !current)}
+            >
+              {showAllPreviewItems ? 'Show fewer items' : `Show all ${preview.items.length} items`}
+            </button>
+          )}
+        </section>
+      )}
+
+      {isFeedReady && !preview.isLoading && preview.items.length === 0 && !preview.error && (
+        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
+          <div class="result-preview__header layout-stack layout-stack--tight">
+            <p class="result-preview__label ui-eyebrow">Preview</p>
+            <p class="result-preview__intro">Latest items from this feed</p>
+          </div>
+          <p class="field-help">Feed is ready. Preview items will appear once the source publishes entries.</p>
         </section>
       )}
 
