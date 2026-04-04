@@ -5,10 +5,10 @@
   --font-family-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-display: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-family-mono: "SFMono-Regular", consolas, "Liberation Mono", monospace;
-  --font-size-00: 13px;
-  --font-size-0: 15px;
+  --font-size-00: 0.8125rem;
+  --font-size-0: 0.9375rem;
   --font-size-1: 1rem;
-  --font-size-2: 18px;
+  --font-size-2: 1.125rem;
   --line-height-tight: 1.1;
   --line-height-base: 1.5;
   --space-1: 0.25rem;
