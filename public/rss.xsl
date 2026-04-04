@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:atom="http://www.w3.org/2005/Atom">
   <xsl:output method="html" />
 
   <xsl:template match="/">
@@ -10,6 +10,7 @@
         <title><xsl:value-of select="rss/channel/title" /> (Feed)</title>
         <link href="/shared-ui.css" rel="stylesheet" />
         <link href="/feed.svg" rel="icon" />
+        <script src="/feed-reader-link.js"></script>
         <style>
           .feed-page {
             min-height: 100vh;
@@ -27,16 +28,58 @@
 
           .feed-hero {
             --stack-gap: var(--space-3);
-            box-shadow: var(--shadow-elevated);
+          }
+
+          .feed-hero__body {
+            display: grid;
+            gap: var(--space-3);
+          }
+
+          .feed-hero__masthead {
+            width: auto;
+            display: flex;
+            align-items: baseline;
+            gap: var(--space-3);
+          }
+
+          .feed-hero__icon-wrap {
+            width: clamp(1.8rem, 4vw, 2.5rem);
+            height: clamp(1.8rem, 4vw, 2.5rem);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            transform: translateY(0.08em);
+          }
+
+          .feed-hero__icon {
+            width: 100%;
+            height: 100%;
+            opacity: 0.92;
           }
 
           .feed-title {
+            flex: 1 1 auto;
+          }
+
+          .feed-hero__lede {
             margin: 0;
-            color: var(--text-strong);
-            font-family: var(--font-family-display);
-            font-size: clamp(1.8rem, 4.1vw, 2.7rem);
-            line-height: 0.96;
-            letter-spacing: -0.03em;
+            color: var(--text-muted);
+            font-size: var(--font-size-1);
+            max-width: 32rem;
+          }
+
+          .feed-hero__action--primary {
+            border-color: var(--border-reader-strong);
+            background: var(--surface-reader-strong);
+          }
+
+          .feed-hero__stamp {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: var(--font-size-00);
+            letter-spacing: var(--eyebrow-letter-spacing);
+            text-transform: uppercase;
           }
 
           .feed-description {
@@ -132,11 +175,51 @@
           }
 
           .feed-card__actions a {
-            color: rgba(255, 255, 255, 0.76);
+            color: var(--text-soft);
             font-size: var(--font-size-00);
             font-weight: 600;
             letter-spacing: 0.06em;
             text-transform: uppercase;
+          }
+
+          .feed-card__footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            align-items: center;
+            justify-content: space-between;
+          }
+
+          .feed-card__signals {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            align-items: center;
+            justify-content: flex-end;
+            margin-left: auto;
+          }
+
+          .feed-signal {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.38rem;
+            padding: 0.34rem 0.58rem;
+            border-radius: 999px;
+            border: 1px solid var(--border-chip);
+            background: var(--surface-chip);
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            white-space: nowrap;
+          }
+
+          .feed-signal__glyph {
+            width: 0.42rem;
+            height: 0.42rem;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: 0.76;
           }
 
           .feed-empty {
@@ -151,6 +234,16 @@
             .feed-meta__row {
               display: grid;
               gap: var(--space-1);
+            }
+
+            .feed-card__footer {
+              align-items: start;
+            }
+
+            .feed-card__signals {
+              width: 100%;
+              justify-content: flex-start;
+              margin-left: 0;
             }
           }
         </style>
@@ -168,25 +261,68 @@
             </div>
           </div>
 
-          <section class="feed-hero ui-card ui-card--notice ui-card--roomy layout-rail-reading layout-stack">
-            <h1 class="feed-title">
-              <xsl:call-template name="clean-text">
-                <xsl:with-param name="text" select="string(rss/channel/title)" />
-              </xsl:call-template>
-            </h1>
+          <section class="feed-hero ui-card ui-card--notice ui-card--roomy ui-hero layout-rail-reading layout-stack">
+            <div class="feed-hero__body">
+              <div class="feed-hero__masthead ui-hero__masthead">
+                <div class="feed-hero__icon-wrap ui-hero__icon-wrap" aria-hidden="true">
+                  <img class="feed-hero__icon ui-hero__icon" src="/feed.svg" alt="" />
+                </div>
+                <h1 class="feed-title ui-display-title">
+                  <xsl:call-template name="clean-text">
+                    <xsl:with-param name="text" select="string(rss/channel/title)" />
+                  </xsl:call-template>
+                </h1>
+              </div>
 
-            <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
-              <p class="feed-description layout-rail-copy">
-                <xsl:call-template name="truncate-text">
-                  <xsl:with-param name="text">
-                    <xsl:call-template name="clean-text">
-                      <xsl:with-param name="text" select="string(rss/channel/description)" />
-                    </xsl:call-template>
-                  </xsl:with-param>
-                  <xsl:with-param name="limit" select="260" />
-                </xsl:call-template>
-              </p>
-            </xsl:if>
+              <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
+                <p class="feed-description layout-rail-copy">
+                  <xsl:call-template name="truncate-text">
+                    <xsl:with-param name="text">
+                      <xsl:call-template name="clean-text">
+                        <xsl:with-param name="text" select="string(rss/channel/description)" />
+                      </xsl:call-template>
+                    </xsl:with-param>
+                    <xsl:with-param name="limit" select="260" />
+                  </xsl:call-template>
+                </p>
+              </xsl:if>
+
+              <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != '' or normalize-space(string(rss/channel/pubDate)) != '' or normalize-space(string(rss/channel/item[1]/pubDate)) != ''">
+                <p class="feed-hero__stamp">
+                  <xsl:choose>
+                    <xsl:when test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
+                      <span>Updated </span>
+                      <xsl:value-of select="rss/channel/lastBuildDate" />
+                    </xsl:when>
+                    <xsl:when test="normalize-space(string(rss/channel/pubDate)) != ''">
+                      <span>Published </span>
+                      <xsl:value-of select="rss/channel/pubDate" />
+                    </xsl:when>
+                    <xsl:otherwise>
+                      <span>Latest item </span>
+                      <xsl:value-of select="rss/channel/item[1]/pubDate" />
+                    </xsl:otherwise>
+                  </xsl:choose>
+                </p>
+              </xsl:if>
+              <div class="feed-hero__actions ui-hero__actions">
+                <a class="feed-hero__action btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true">
+                  <xsl:attribute name="href">
+                    <xsl:choose>
+                      <xsl:when test="normalize-space(string(rss/channel/atom:link[@rel='self']/@href)) != ''">
+                        <xsl:text>feed:</xsl:text>
+                        <xsl:value-of select="rss/channel/atom:link[@rel='self']/@href" />
+                      </xsl:when>
+                      <xsl:otherwise>#</xsl:otherwise>
+                    </xsl:choose>
+                  </xsl:attribute>
+                  Open in feed reader
+                </a>
+                <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
+                  <a class="feed-hero__action btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
+                </xsl:if>
+              </div>
+            </div>
 
             <div class="feed-meta layout-stack">
               <div class="feed-meta__row">
@@ -273,6 +409,10 @@
                             <xsl:otherwise>Untitled item</xsl:otherwise>
                           </xsl:choose>
                         </xsl:variable>
+                        <xsl:variable name="hasSummary" select="normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
+                        <xsl:variable name="hasImage" select="enclosure[contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='thumbnail'] or *[local-name()='content'][contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='group']/*[local-name()='content'][contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='image'][normalize-space(string(.)) != '']" />
+                        <xsl:variable name="hasCategories" select="category[normalize-space(string(.)) != '']" />
+                        <xsl:variable name="hasAuthor" select="normalize-space(string(author)) != '' or *[local-name()='creator'][normalize-space(string(.)) != '']" />
 
                         <h2 class="feed-card__title">
                           <xsl:value-of select="$displayTitle" />
@@ -282,7 +422,7 @@
                           <p class="feed-card__meta"><xsl:value-of select="pubDate" /></p>
                         </xsl:if>
 
-                        <xsl:if test="normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))">
+                        <xsl:if test="$hasSummary">
                           <p class="feed-card__excerpt">
                             <xsl:call-template name="truncate-text">
                               <xsl:with-param name="text" select="string($cleanDescription)" />
@@ -291,10 +431,31 @@
                           </p>
                         </xsl:if>
 
-                        <xsl:if test="normalize-space(string(link)) != ''">
-                          <p class="feed-card__actions">
-                            <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
-                          </p>
+                        <xsl:if test="normalize-space(string(link)) != '' or $hasSummary or $hasImage or $hasCategories or $hasAuthor">
+                          <div class="feed-card__footer">
+                            <xsl:if test="normalize-space(string(link)) != ''">
+                              <p class="feed-card__actions">
+                                <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
+                              </p>
+                            </xsl:if>
+
+                            <xsl:if test="$hasSummary or $hasImage or $hasCategories or $hasAuthor">
+                              <div class="feed-card__signals" aria-label="Item quality indicators">
+                                <xsl:if test="$hasSummary">
+                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Summary</span></span>
+                                </xsl:if>
+                                <xsl:if test="$hasImage">
+                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Image</span></span>
+                                </xsl:if>
+                                <xsl:if test="$hasCategories">
+                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Tags</span></span>
+                                </xsl:if>
+                                <xsl:if test="$hasAuthor">
+                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Byline</span></span>
+                                </xsl:if>
+                              </div>
+                            </xsl:if>
+                          </div>
                         </xsl:if>
                       </article>
                     </li>
@@ -342,19 +503,49 @@
       </xsl:call-template>
     </xsl:variable>
 
-    <xsl:value-of select="normalize-space(string($withoutTags))" />
+    <xsl:variable name="decodedLt">
+      <xsl:call-template name="replace-string">
+        <xsl:with-param name="text" select="string($withoutTags)" />
+        <xsl:with-param name="search" select="'&amp;lt;'" />
+        <xsl:with-param name="replace" select="'&lt;'" />
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:variable name="decodedText">
+      <xsl:call-template name="replace-string">
+        <xsl:with-param name="text" select="string($decodedLt)" />
+        <xsl:with-param name="search" select="'&amp;gt;'" />
+        <xsl:with-param name="replace" select="'&gt;'" />
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:value-of select="normalize-space(string($decodedText))" />
   </xsl:template>
 
   <xsl:template name="strip-tags">
     <xsl:param name="text" />
 
+    <xsl:variable name="beforeLt" select="substring-before($text, '&lt;')" />
+    <xsl:variable name="afterLt" select="substring-after($text, '&lt;')" />
+    <xsl:variable name="tagLead" select="substring($afterLt, 1, 1)" />
+
     <xsl:choose>
-      <xsl:when test="contains($text, '&lt;') and contains(substring-after($text, '&lt;'), '&gt;')">
-        <xsl:value-of select="substring-before($text, '&lt;')" />
-        <xsl:text> </xsl:text>
-        <xsl:call-template name="strip-tags">
-          <xsl:with-param name="text" select="substring-after($text, '&gt;')" />
-        </xsl:call-template>
+      <xsl:when test="contains($text, '&lt;')">
+        <xsl:value-of select="$beforeLt" />
+        <xsl:choose>
+          <xsl:when test="contains($afterLt, '&gt;') and contains('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/!?', $tagLead)">
+            <xsl:text> </xsl:text>
+            <xsl:call-template name="strip-tags">
+              <xsl:with-param name="text" select="substring-after($afterLt, '&gt;')" />
+            </xsl:call-template>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:text>&lt;</xsl:text>
+            <xsl:call-template name="strip-tags">
+              <xsl:with-param name="text" select="$afterLt" />
+            </xsl:call-template>
+          </xsl:otherwise>
+        </xsl:choose>
       </xsl:when>
       <xsl:otherwise>
         <xsl:value-of select="$text" />

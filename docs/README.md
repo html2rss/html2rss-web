@@ -41,20 +41,23 @@ Running the app directly on the host is not supported.
 | ------------------------------ | ---------------------------------------------------------- |
 | `make setup`                   | Install Ruby and Node dependencies.                        |
 | `make dev`                     | Run Ruby (port 4000) and frontend (port 4001) dev servers. |
-| `make ready`                   | Full pre-flight check (Lint + Test + OpenAPI + Zeitwerk).  |
+| `make ready`                   | Pre-commit gate: `make quick-check` + `bundle exec rspec`. |
 | `make test`                    | Run Ruby and frontend test suites.                         |
 | `make lint`                    | Run all linters.                                           |
 | `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
 | `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.       |
+| `make openapi-verify`          | Verify generated OpenAPI and frontend client artifacts are current. |
+| `make openapi-lint`            | Lint OpenAPI with Redocly + Spectral.                      |
 
-### Frontend npm Scripts
+### Frontend pnpm Scripts
 
 | Command                 | Purpose                                      |
 | ----------------------- | -------------------------------------------- |
-| `npm run dev`           | Vite dev server with hot reload (port 4001). |
-| `npm run build`         | Build static assets into `frontend/dist/`.   |
-| `npm run test:run`      | Unit tests (Vitest).                         |
-| `npm run test:contract` | Contract tests with MSW.                     |
+| `pnpm run dev`          | Vite dev server with hot reload (port 4001). |
+| `pnpm run build`        | Build static assets into `frontend/dist/`.   |
+| `pnpm run lint`         | Run ESLint across the frontend workspace.    |
+| `pnpm run test:run`     | Unit tests (Vitest).                         |
+| `pnpm run test:contract`| Contract tests with MSW.                     |
 
 ---
 

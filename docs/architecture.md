@@ -21,15 +21,21 @@ flowchart TD
 
 Requests enter via `app.rb` and are dispatched to `app/web/routes/`.
 
-- **API v1**: Authenticated via `app/web/security/auth.rb`.
-- **Public Feeds**: Validated via HMAC tokens in `app/web/security/feed_token.rb`.
+- **Static feed pages (`/<feed_name>`)**: Routed by `app/web/routes/feed_pages.rb` and resolved as `target_kind: :static`.
+  - Source: static config in `config/feeds.yml` (via `LocalConfig.find`).
+  - Auth boundary: no feed token required on this route.
+  - Failure mode: unknown feed names fail at static config lookup.
+- **Token-backed feed reads (`/api/v1/feeds/:token`)**: Routed by `app/web/routes/api_v1/feed_routes.rb` and resolved as `target_kind: :token`.
+  - Token scope: `FeedAccess.authorize_feed_token!` validates signature/expiry and re-checks account URL access.
+  - Constraint: disabled when AutoSource is off (`ForbiddenError` from `SourceResolver.ensure_auto_source_enabled!`).
+- **Feed creation (`POST /api/v1/feeds`)**: Authenticated via bearer token in `app/web/security/auth.rb`; this endpoint mints feed tokens for subsequent token-backed reads.
 
 ### 2. Resolution
 
-The `Html2rss::Web::Feeds::SourceResolver` determines where the feed configuration comes from:
+The `Html2rss::Web::Feeds::SourceResolver` determines where feed configuration comes from based on route target:
 
-- **Static**: Pre-defined in `config/feeds.yml`.
-- **Dynamic**: Generated on-the-fly via the `/api/v1/feeds` endpoint (AutoSource).
+- **Static (`target_kind: :static`)**: Pre-defined in `config/feeds.yml`.
+- **Token (`target_kind: :token`)**: Generated from validated feed token payload + AutoSource globals.
 
 ### 3. Fetching & Rendering
 

@@ -16,7 +16,6 @@ gem 'parallel'
 gem 'rack-cache'
 gem 'rack-timeout'
 gem 'roda'
-gem 'ssrf_filter'
 gem 'zeitwerk'
 
 gem 'puma', require: false

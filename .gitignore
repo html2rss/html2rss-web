@@ -35,7 +35,6 @@
 # Ignore rack cache
 /tmp/rack-cache-*
 
-
 # Ignore frontend build output and tooling caches
 /frontend/dist/
 /frontend/node_modules/
@@ -54,3 +53,4 @@
 
 .yardoc
 frontend/.astro
+.pnpm-store
