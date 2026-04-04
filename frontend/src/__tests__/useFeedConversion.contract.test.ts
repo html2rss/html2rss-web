@@ -137,7 +137,7 @@ describe('useFeedConversion contract', () => {
         );
         expect(result.current.result?.preview.isLoading).toBe(false);
       },
-      { timeout: 6_000 }
+      { timeout: 6000 }
     );
   });
 });
