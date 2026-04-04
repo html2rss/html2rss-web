@@ -226,7 +226,7 @@ export function CreateFeedPanel({
             Set up your own instance with Docker.
           </a>
           <div class="token-gate__actions">
-            <button type="button" class="btn btn--ghost" onClick={onSaveToken}>
+            <button type="button" class="btn btn--primary" onClick={onSaveToken}>
               Save and continue
             </button>
           </div>

@@ -22,7 +22,8 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
     : `${globalThis.location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
   const isFeedReady = readinessPhase === 'feed_ready';
-  const canManuallyRetryReadiness = readinessPhase === 'feed_not_ready_yet' || readinessPhase === 'preview_unavailable';
+  const canManuallyRetryReadiness =
+    readinessPhase === 'feed_not_ready_yet' || readinessPhase === 'preview_unavailable';
   const previewItems = showAllPreviewItems ? preview.items : preview.items.slice(0, 3);
   const hasMorePreviewItems = preview.items.length > 3;
   const statusTitle = {
@@ -77,7 +78,7 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
         </div>
         <div class="result-hero__actions ui-hero__actions">
           {canManuallyRetryReadiness && (
-            <button type="button" class="btn btn--ghost" onClick={onRetryReadiness}>
+            <button type="button" class="btn btn--primary" onClick={onRetryReadiness}>
               Try readiness check again
             </button>
           )}
@@ -174,7 +175,9 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
             <p class="result-preview__label ui-eyebrow">Preview</p>
             <p class="result-preview__intro">Latest items from this feed</p>
           </div>
-          <p class="field-help">Feed is ready. Preview items will appear once the source publishes entries.</p>
+          <p class="field-help">
+            Feed is ready. Preview items will appear once the source publishes entries.
+          </p>
         </section>
       )}
 
