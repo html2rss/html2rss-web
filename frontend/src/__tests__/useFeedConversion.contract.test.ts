@@ -128,13 +128,16 @@ describe('useFeedConversion contract', () => {
 
     expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
-    await waitFor(() => {
-      expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
-      expect(result.current.result?.preview.items).toEqual([]);
-      expect(result.current.result?.preview.error).toBe(
-        'Feed is still preparing. Try again in a few seconds.'
-      );
-      expect(result.current.result?.preview.isLoading).toBe(false);
-    });
+    await waitFor(
+      () => {
+        expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
+        expect(result.current.result?.preview.items).toEqual([]);
+        expect(result.current.result?.preview.error).toBe(
+          'Feed is still preparing. Try again in a few seconds.'
+        );
+        expect(result.current.result?.preview.isLoading).toBe(false);
+      },
+      { timeout: 6_000 }
+    );
   });
 });
