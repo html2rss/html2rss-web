@@ -115,7 +115,7 @@ describe('ResultDisplay', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Feed created')).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Try readiness check again' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Checking readiness…' })).toBeDisabled();
       expect(screen.queryByRole('link', { name: 'Open feed' })).not.toBeInTheDocument();
       expect(screen.getByText('Verifying feed readiness…')).toBeInTheDocument();
     });

@@ -1,7 +1,12 @@
 import { useRef, useState } from 'preact/hooks';
 import { createFeed } from '../api/generated';
 import { apiClient } from '../api/client';
-import type { CreatedFeedResult, FeedPreviewItem, FeedRecord } from '../api/contracts';
+import type {
+  CreatedFeedResult,
+  FeedPreviewItem,
+  FeedReadinessPhase,
+  FeedRecord,
+} from '../api/contracts';
 import { normalizeUserUrl } from '../utils/url';
 
 interface JsonFeedItem {
@@ -28,7 +33,9 @@ interface ConversionError extends Error {
 }
 
 const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
+const FEED_NOT_READY_MESSAGE = 'Feed is still preparing. Try again in a few seconds.';
 const NON_RETRYABLE_ERROR_CODES = new Set(['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN']);
+const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
 
 export function useFeedConversion() {
   const requestIdReference = useRef(0);
@@ -95,6 +102,34 @@ export function useFeedConversion() {
     setState((previous) => ({ ...previous, error: undefined }));
   };
 
+  const retryReadinessCheck = () => {
+    const currentResult = state.result;
+    if (!currentResult) return;
+
+    const requestId = requestIdReference.current + 1;
+    requestIdReference.current = requestId;
+
+    const resetResult: CreatedFeedResult = {
+      ...currentResult,
+      readinessPhase: 'link_created',
+      preview: buildLoadingPreviewState(),
+    };
+
+    setState((previous) => ({
+      ...previous,
+      isConverting: false,
+      error: undefined,
+      result: resetResult,
+    }));
+    void hydratePreview(
+      currentResult.feed,
+      requestId,
+      currentResult.retry,
+      setState,
+      requestIdReference
+    );
+  };
+
   return {
     isConverting: state.isConverting,
     result: state.result,
@@ -102,28 +137,86 @@ export function useFeedConversion() {
     convertFeed,
     clearError,
     clearResult,
+    retryReadinessCheck,
   };
 }
 
-async function loadPreview(feed: FeedRecord): Promise<CreatedFeedResult['preview']> {
-  const response = await globalThis.fetch(feed.json_public_url, {
-    headers: { Accept: 'application/feed+json' },
-  });
+interface PreviewLoadResult {
+  preview: CreatedFeedResult['preview'];
+  readinessPhase: FeedReadinessPhase;
+  shouldRetry: boolean;
+}
 
-  if (!response.ok) throw new Error(PREVIEW_UNAVAILABLE_MESSAGE);
+async function loadPreview(feed: FeedRecord): Promise<PreviewLoadResult> {
+  let response: Response;
+  try {
+    response = await globalThis.fetch(feed.json_public_url, {
+      headers: { Accept: 'application/feed+json' },
+    });
+  } catch {
+    return {
+      preview: {
+        items: [],
+        error: FEED_NOT_READY_MESSAGE,
+        isLoading: false,
+      },
+      readinessPhase: 'feed_not_ready_yet',
+      shouldRetry: true,
+    };
+  }
 
-  const payload = (await response.json()) as JsonFeedResponse;
-  const items =
-    payload.items
-      ?.map((item) => normalizePreviewItem(item))
-      .filter((item): item is FeedPreviewItem => item !== undefined)
-      .slice(0, 5) || [];
+  if (!response.ok) {
+    if (isTransientReadinessStatus(response.status)) {
+      return {
+        preview: {
+          items: [],
+          error: FEED_NOT_READY_MESSAGE,
+          isLoading: false,
+        },
+        readinessPhase: 'feed_not_ready_yet',
+        shouldRetry: true,
+      };
+    }
 
-  return {
-    items,
-    error: items.length > 0 ? undefined : PREVIEW_UNAVAILABLE_MESSAGE,
-    isLoading: false,
-  };
+    return {
+      preview: {
+        items: [],
+        error: PREVIEW_UNAVAILABLE_MESSAGE,
+        isLoading: false,
+      },
+      readinessPhase: 'preview_unavailable',
+      shouldRetry: false,
+    };
+  }
+
+  try {
+    const payload = (await response.json()) as JsonFeedResponse;
+    const items =
+      payload.items
+        ?.map((item) => normalizePreviewItem(item))
+        .filter((item): item is FeedPreviewItem => item !== undefined)
+        .slice(0, 5) || [];
+
+    return {
+      preview: {
+        items,
+        error: undefined,
+        isLoading: false,
+      },
+      readinessPhase: 'feed_ready',
+      shouldRetry: false,
+    };
+  } catch {
+    return {
+      preview: {
+        items: [],
+        error: PREVIEW_UNAVAILABLE_MESSAGE,
+        isLoading: false,
+      },
+      readinessPhase: 'preview_unavailable',
+      shouldRetry: false,
+    };
+  }
 }
 
 function buildLoadingPreviewState(): CreatedFeedResult['preview'] {
@@ -141,32 +234,39 @@ async function hydratePreview(
   setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
   requestIdReference: { current: number }
 ) {
-  const preview = await loadPreview(feed).catch((error: unknown) => ({
-    items: [],
-    error: toPreviewErrorMessage(error),
-    isLoading: false,
-  }));
+  const delays = [0, ...PREVIEW_RETRY_DELAYS_MS];
+  let lastAttempt: PreviewLoadResult | undefined;
 
-  if (requestIdReference.current !== requestId) return;
+  for (const [index, delayMs] of delays.entries()) {
+    if (delayMs > 0) await wait(delayMs);
+    if (requestIdReference.current !== requestId) return;
 
-  setState((previous) => {
-    if (
-      requestIdReference.current !== requestId ||
-      !previous.result ||
-      previous.result.feed.feed_token !== feed.feed_token
-    ) {
-      return previous;
+    const attempt = await loadPreview(feed);
+    lastAttempt = attempt;
+    if (requestIdReference.current !== requestId) return;
+
+    const exhausted = index === delays.length - 1;
+    if (!attempt.shouldRetry || exhausted) {
+      setPreviewResult(feed, attempt.preview, attempt.readinessPhase, retry, requestId, setState, requestIdReference);
+      return;
     }
+  }
 
-    return {
-      ...previous,
-      result: {
-        feed,
-        preview,
-        retry,
+  if (!lastAttempt) {
+    setPreviewResult(
+      feed,
+      {
+        items: [],
+        error: FEED_NOT_READY_MESSAGE,
+        isLoading: false,
       },
-    };
-  });
+      'feed_not_ready_yet',
+      retry,
+      requestId,
+      setState,
+      requestIdReference
+    );
+  }
 }
 
 async function requestFeedCreation(url: string, strategy: string, token: string): Promise<FeedRecord> {
@@ -256,11 +356,35 @@ const toErrorMessage = (error: unknown): string => {
   return 'An unexpected error occurred';
 };
 
-const toPreviewErrorMessage = (error: unknown): string => {
-  if (error instanceof SyntaxError) return PREVIEW_UNAVAILABLE_MESSAGE;
-  if (error instanceof Error && error.message.trim()) return error.message;
-  return PREVIEW_UNAVAILABLE_MESSAGE;
-};
+function setPreviewResult(
+  feed: FeedRecord,
+  preview: CreatedFeedResult['preview'],
+  readinessPhase: FeedReadinessPhase,
+  retry: CreatedFeedResult['retry'],
+  requestId: number,
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  requestIdReference: { current: number }
+) {
+  setState((previous) => {
+    if (
+      requestIdReference.current !== requestId ||
+      !previous.result ||
+      previous.result.feed.feed_token !== feed.feed_token
+    ) {
+      return previous;
+    }
+
+    return {
+      ...previous,
+      result: {
+        feed,
+        preview,
+        readinessPhase,
+        retry,
+      },
+    };
+  });
+}
 
 function markConversionStarted(
   setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void
@@ -278,6 +402,7 @@ function publishCreatedFeed(
   const result: CreatedFeedResult = {
     feed,
     preview: buildLoadingPreviewState(),
+    readinessPhase: 'link_created',
     retry,
   };
 
@@ -318,6 +443,14 @@ const extractErrorDetails = (
   const status = normalizeStatus(candidate.error?.status ?? candidate.status);
   return { message, code, status };
 };
+
+function isTransientReadinessStatus(status: number): boolean {
+  return status === 408 || status === 425 || status === 429 || status >= 500;
+}
+
+async function wait(durationMs: number): Promise<void> {
+  await new Promise((resolve) => globalThis.setTimeout(resolve, durationMs));
+}
 
 function retryableForFallback(error: unknown): boolean {
   const details = extractErrorDetails(error);

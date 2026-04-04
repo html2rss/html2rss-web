@@ -81,6 +81,7 @@ describe('useFeedConversion', () => {
         error: undefined,
         isLoading: true,
       },
+      readinessPhase: 'link_created',
       retry: undefined,
     });
     await waitFor(() => {
@@ -98,6 +99,7 @@ describe('useFeedConversion', () => {
           error: undefined,
           isLoading: false,
         },
+        readinessPhase: 'feed_ready',
         retry: undefined,
       });
     });
@@ -149,6 +151,8 @@ describe('useFeedConversion', () => {
   });
 
   it('preserves the created feed when preview loading fails after feed creation', async () => {
+    vi.useFakeTimers();
+    try {
     const createdFeed = {
       id: 'test-id',
       name: 'Test Feed',
@@ -175,14 +179,15 @@ describe('useFeedConversion', () => {
         }
       )
     );
-    fetchMock.mockResolvedValueOnce(new Response('nope', { status: 502 }));
+    fetchMock.mockResolvedValue(new Response('nope', { status: 502 }));
 
     const { result } = renderHook(() => useFeedConversion());
     let conversionResult: Awaited<ReturnType<typeof result.current.convertFeed>> | undefined;
 
-    await act(async () => {
-      conversionResult = await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
-    });
+      await act(async () => {
+        conversionResult = await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await vi.advanceTimersByTimeAsync(260 + 620 + 1180 + 1800 + 100);
+      });
 
     expect(result.current.isConverting).toBe(false);
     expect(conversionResult).toEqual({
@@ -192,23 +197,28 @@ describe('useFeedConversion', () => {
         error: undefined,
         isLoading: true,
       },
+      readinessPhase: 'link_created',
       retry: undefined,
     });
-    await waitFor(() => {
-      expect(result.current.result).toEqual({
-        feed: createdFeed,
-        preview: {
-          items: [],
-          error: 'Preview unavailable right now.',
-          isLoading: false,
-        },
-        retry: undefined,
+      await waitFor(() => {
+        expect(result.current.result).toEqual({
+          feed: createdFeed,
+          preview: {
+            items: [],
+            error: 'Feed is still preparing. Try again in a few seconds.',
+            isLoading: false,
+          },
+          readinessPhase: 'feed_not_ready_yet',
+          retry: undefined,
+        });
       });
-    });
-    expect(result.current.error).toBeUndefined();
+      expect(result.current.error).toBeUndefined();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('publishes the result before preview loading finishes', async () => {
+  it('publishes link_created before readiness is confirmed', async () => {
     const createdFeed = {
       id: 'test-id',
       name: 'Test Feed',
@@ -254,6 +264,7 @@ describe('useFeedConversion', () => {
         error: undefined,
         isLoading: true,
       },
+      readinessPhase: 'link_created',
       retry: undefined,
     });
     expect(result.current.isConverting).toBe(false);
@@ -291,6 +302,162 @@ describe('useFeedConversion', () => {
         error: undefined,
         isLoading: false,
       });
+      expect(result.current.result?.readinessPhase).toBe('feed_ready');
+    });
+  });
+
+  it('retries readiness checks after transient preview failures and eventually becomes ready', async () => {
+    vi.useFakeTimers();
+    try {
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              success: true,
+              data: { feed: createdFeed },
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        )
+        .mockResolvedValueOnce(new Response('temporary-failure', { status: 500 }))
+        .mockResolvedValueOnce(new Response('still-warming-up', { status: 503 }))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              items: [
+                {
+                  title: 'Recovered item',
+                  content_text: 'Recovered preview excerpt',
+                  url: 'https://example.com/item',
+                  date_published: '2024-01-02T00:00:00Z',
+                },
+              ],
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/feed+json' },
+            }
+          )
+        );
+
+      const { result } = renderHook(() => useFeedConversion());
+
+      await act(async () => {
+        await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await vi.advanceTimersByTimeAsync(260 + 620 + 50);
+      });
+
+      await waitFor(() => {
+        expect(result.current.result?.readinessPhase).toBe('feed_ready');
+        expect(result.current.result?.preview.items[0]?.title).toBe('Recovered item');
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('stops readiness retries after the configured limit and marks feed_not_ready_yet', async () => {
+    vi.useFakeTimers();
+    try {
+      const createdFeed = {
+        id: 'test-id',
+        name: 'Test Feed',
+        url: 'https://example.com',
+        strategy: 'faraday',
+        feed_token: 'test-token',
+        public_url: 'https://example.com/feed',
+        json_public_url: 'https://example.com/feed.json',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+
+      fetchMock
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              success: true,
+              data: { feed: createdFeed },
+            }),
+            {
+              status: 201,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        )
+        .mockResolvedValue(new Response('temporary-failure', { status: 500 }));
+
+      const { result } = renderHook(() => useFeedConversion());
+
+      await act(async () => {
+        await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+        await vi.advanceTimersByTimeAsync(260 + 620 + 1180 + 1800 + 100);
+      });
+
+      await waitFor(() => {
+        expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
+        expect(result.current.result?.preview.error).toBe(
+          'Feed is still preparing. Try again in a few seconds.'
+        );
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(6);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('marks preview_unavailable for non-retryable preview responses', async () => {
+    const createdFeed = {
+      id: 'test-id',
+      name: 'Test Feed',
+      url: 'https://example.com',
+      strategy: 'faraday',
+      feed_token: 'test-token',
+      public_url: 'https://example.com/feed',
+      json_public_url: 'https://example.com/feed.json',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: true,
+            data: { feed: createdFeed },
+          }),
+          {
+            status: 201,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      )
+      .mockResolvedValueOnce(new Response('forbidden', { status: 403 }));
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await result.current.convertFeed('https://example.com', 'faraday', 'testtoken');
+    });
+
+    await waitFor(() => {
+      expect(result.current.result?.readinessPhase).toBe('preview_unavailable');
+      expect(result.current.result?.preview.error).toBe('Preview unavailable right now.');
     });
   });
 

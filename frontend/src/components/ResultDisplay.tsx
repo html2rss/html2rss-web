@@ -24,6 +24,8 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
   const isFeedReady = readinessPhase === 'feed_ready';
   const canManuallyRetryReadiness =
     readinessPhase === 'feed_not_ready_yet' || readinessPhase === 'preview_unavailable';
+  const isReadinessCheckInProgress = readinessPhase === 'link_created' && preview.isLoading;
+  const showReadinessAction = canManuallyRetryReadiness || isReadinessCheckInProgress;
   const previewItems = showAllPreviewItems ? preview.items : preview.items.slice(0, 3);
   const hasMorePreviewItems = preview.items.length > 3;
   const statusTitle = {
@@ -77,9 +79,15 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
           </div>
         </div>
         <div class="result-hero__actions ui-hero__actions">
-          {canManuallyRetryReadiness && (
-            <button type="button" class="btn btn--primary" onClick={onRetryReadiness}>
-              Try readiness check again
+          {showReadinessAction && (
+            <button
+              type="button"
+              class="btn btn--primary"
+              onClick={onRetryReadiness}
+              disabled={isReadinessCheckInProgress}
+              aria-busy={isReadinessCheckInProgress}
+            >
+              {isReadinessCheckInProgress ? 'Checking readiness…' : 'Try readiness check again'}
             </button>
           )}
         </div>

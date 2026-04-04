@@ -65,11 +65,21 @@
 .result-shell {
   width: 100%;
   margin: 0 auto;
+  padding: clamp(var(--space-4), 4vw, var(--space-5));
+}
+
+.form-shell--minimal {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.result-shell {
   border: var(--border-width) solid var(--state-frame-border);
   border-radius: var(--state-frame-radius);
   background: var(--state-frame-bg);
   box-shadow: var(--state-frame-shadow);
-  padding: clamp(var(--space-4), 4vw, var(--space-5));
 }
 
 .form-shell--minimal,
