@@ -5,6 +5,11 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "pnpm": {
+    "overrides": {
+      "postcss@<8.5.10": ">=8.5.10"
+    }
+  },
   "scripts": {
     "dev": "vite --port 4001 --host",
     "build": "vite build",
