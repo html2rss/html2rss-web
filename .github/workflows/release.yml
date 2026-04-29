@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -32,6 +33,22 @@ jobs:
           config-file: .github/release-please-config.json
           manifest-file: .github/.release-please-manifest.json
 
+      - name: Summarize release outcome
+        env:
+          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |
+          {
+            echo "## Release outcome"
+            echo
+            echo "- Release created: ${RELEASE_CREATED:-false}"
+            if [ -n "${RELEASE_TAG}" ]; then
+              echo "- Release tag: ${RELEASE_TAG}"
+            else
+              echo "- Release tag: none"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
   docker-publish:
     if: needs.release.outputs.release_created == 'true'
     needs:
@@ -46,19 +63,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
       - name: Setup Node.js for Docker build
         uses: actions/setup-node@v6
         with:
           node-version-file: ".tool-versions"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       - name: Build frontend static assets
-        run: npm run build
+        run: pnpm run build
         working-directory: frontend
 
       - name: Set up QEMU
@@ -129,3 +151,13 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Summarize published image tags
+        run: |
+          {
+            echo "## Docker publish"
+            echo
+            echo "- Release tag: ${RELEASE_TAG}"
+            echo "- Docker tags pushed:"
+            echo "${{ steps.tags.outputs.tags }}" | sed 's/^/  - /'
+          } >> "$GITHUB_STEP_SUMMARY"
