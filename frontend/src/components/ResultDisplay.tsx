@@ -11,7 +11,7 @@ interface ResultDisplayProperties {
 export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: ResultDisplayProperties) {
   const [copyNotice, setCopyNotice] = useState('');
   const [showAllPreviewItems, setShowAllPreviewItems] = useState(false);
-  const copyResetReference = useRef<number | undefined>(undefined);
+  const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
   const { feed, preview, readinessPhase } = result;
 
   const fullUrl = feed.public_url.startsWith('http')
