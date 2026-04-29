@@ -58,7 +58,7 @@ jobs:
         run: git diff --exit-code -- public/openapi.yaml frontend/src/api/generated
 
   refresh-generated-artifacts:
-    if: github.event_name == 'push' && github.repository == 'html2rss/html2rss-web' && github.ref == 'refs/heads/release-please--branches--main'
+    if: github.event_name == 'push' && github.repository == 'html2rss/html2rss-web' && github.ref == 'refs/heads/release-please--branches--main' && github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
