@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -17,6 +16,9 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -90,7 +92,9 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Get Git commit timestamp
-        run: echo "TIMESTAMP=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
+        run: |
+          echo "TIMESTAMP_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
+          echo "TIMESTAMP_ISO=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
 
       - name: Compute Docker tags
         id: tags
@@ -124,7 +128,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         env:
-          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP }}
+          SOURCE_DATE_EPOCH: ${{ env.TIMESTAMP_EPOCH }}
         with:
           context: .
           push: true
@@ -138,7 +142,7 @@ jobs:
           provenance: true
           sbom: true
           labels: |
-            org.opencontainers.image.created=${{ env.TIMESTAMP }}
+            org.opencontainers.image.created=${{ env.TIMESTAMP_ISO }}
             org.opencontainers.image.description=Generates RSS feeds of any website & serves to the web!
             org.opencontainers.image.ref.name=${{ env.RELEASE_TAG }}
             org.opencontainers.image.revision=${{ github.sha }}

@@ -1,31 +1,72 @@
 name: refresh release artifacts
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - reopened
       - synchronize
     branches:
       - main
+  push:
+    branches:
+      - release-please--branches--main
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
-  group: release-artifacts-${{ github.event.pull_request.number }}
+  group: release-artifacts-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  refresh-generated-artifacts:
-    if: github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
+  verify-generated-artifacts:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'release-please--branches--')
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: ".tool-versions"
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Refresh OpenAPI artifacts
+        run: |
+          make openapi
+          make openapi-client
+
+      - name: Assert generated artifacts are current
+        run: git diff --exit-code -- public/openapi.yaml frontend/src/api/generated
+
+  refresh-generated-artifacts:
+    if: github.event_name == 'push' && github.repository == 'html2rss/html2rss-web' && github.ref == 'refs/heads/release-please--branches--main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - uses: ruby/setup-ruby@v1
