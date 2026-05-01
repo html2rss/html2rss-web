@@ -165,7 +165,6 @@ jobs:
           load: true
           tags: html2rss/web
           cache-from: type=gha
-          # No cache-to here; we only want to read the image built in the previous job
 
       - name: Run Docker smoke test
         env:
