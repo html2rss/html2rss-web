@@ -158,14 +158,14 @@ jobs:
 
       - uses: docker/setup-buildx-action@v4
 
-      - name: Build Docker smoke image
+      - name: Load Docker smoke image from cache
         uses: docker/build-push-action@v7
         with:
           context: .
           load: true
           tags: html2rss/web
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # No cache-to here; we only want to read the image built in the previous job
 
       - name: Run Docker smoke test
         env:
