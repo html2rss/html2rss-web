@@ -13,13 +13,15 @@ module Html2rss
             def call(router)
               router.on 'feeds' do
                 router.get String do |token|
-                  RequestTarget.mark!(router, RequestTarget::FEED)
+                  router.env[RequestTarget::ENV_KEY] = RequestTarget::FEED
                   Feeds::Responder.call(request: router, target_kind: :token, identifier: token)
                 end
 
                 router.post do
                   JSON.generate(Api::V1::CreateFeed.call(router))
                 end
+
+                raise NotFoundError
               end
             end
           end

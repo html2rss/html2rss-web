@@ -7,29 +7,33 @@ module Html2rss
     ##
     # Boot helpers for code loading and runtime setup.
     module Boot
+      @mutex = Mutex.new
+      @setup = false
+      @loader = nil
+
       class << self
         # @param reloadable [Boolean]
         # @return [Zeitwerk::Loader]
         def setup!(reloadable: false)
-          return loader if setup?
+          @mutex.synchronize do
+            return @loader if @setup
 
-          loader.enable_reloading if reloadable
-          loader.setup
-          @setup = true # rubocop:disable ThreadSafety/ClassInstanceVariable
-          loader
+            @loader ||= build_loader
+            @loader.enable_reloading if reloadable
+            @loader.setup
+            @setup = true
+            @loader
+          end
         end
 
         # @return [Zeitwerk::Loader]
         def loader
-          @loader ||= build_loader # rubocop:disable ThreadSafety/ClassInstanceVariable
+          @mutex.synchronize { @loader ||= build_loader }
         end
 
         # @return [Boolean]
         def setup?
-          # Loader setup happens once during process boot.
-          # rubocop:disable ThreadSafety/ClassInstanceVariable
-          @setup == true
-          # rubocop:enable ThreadSafety/ClassInstanceVariable
+          @mutex.synchronize { @setup == true }
         end
 
         # @return [void]

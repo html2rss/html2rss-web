@@ -13,7 +13,8 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
-      error_message: nil
+      error_message: nil,
+      error_kind: nil
     )
   end
   let(:static_config) do
@@ -81,7 +82,8 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         message: 'Internal Server Error',
         ttl_seconds: 600,
         cache_key: 'feed_result:error',
-        error_message: 'timeout'
+        error_message: 'timeout',
+        error_kind: :network
       )
     end
 
@@ -99,6 +101,58 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       expect(response['Cache-Control']).to include('no-store')
       expect(response['Vary']).to eq('Accept')
+    end
+  end
+
+  context 'with an empty extraction result' do
+    subject(:write_response) do
+      described_class.call(
+        request: request_for(path: '/example.json', accept: 'application/feed+json'),
+        target_kind: :static,
+        identifier: 'example.json'
+      )
+    end
+
+    let(:result) do
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(
+        status: :empty,
+        payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
+          feed: nil,
+          site_title: 'https://example.com',
+          url: 'https://example.com',
+          strategy: 'faraday'
+        ),
+        message: nil,
+        ttl_seconds: 600,
+        cache_key: 'feed_result:empty',
+        error_message: nil,
+        error_kind: :extraction_empty
+      )
+    end
+
+    before do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+      allow(Html2rss::Web::Feeds::JsonRenderer)
+        .to receive(:call)
+        .with(result)
+        .and_return('{"title":"Content Extraction Issue"}')
+    end
+
+    it 'returns 422 while preserving warning feed payload' do
+      expect(response_tuple(write_response)).to eq(
+        [422, 'application/feed+json', '{"title":"Content Extraction Issue"}']
+      )
+    end
+
+    it 'emits empty extraction as a failure outcome' do
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'failure',
+        details: include(strategy: :faraday, url: 'https://example.com', reason: 'content_extraction_empty'),
+        level: :warn
+      )
     end
   end
 

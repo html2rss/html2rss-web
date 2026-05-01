@@ -34,7 +34,6 @@ module Html2rss
                 name: attributes[:name],
                 url: attributes[:url],
                 username: attributes[:username],
-                strategy: attributes[:strategy],
                 feed_token: attributes[:feed_token],
                 public_url: public_url(attributes[:feed_token]),
                 json_public_url: json_public_url(attributes[:feed_token])
@@ -64,16 +63,16 @@ module Html2rss
 
           ##
           # Feed create parameters contract.
-          CreateParams = Data.define(:url, :name, :strategy) do
+          CreateParams = Data.define(:url, :name) do
             # @return [Hash{Symbol=>Object}]
             def to_h
-              { url: url, name: name, strategy: strategy }
+              { url: url, name: name }
             end
           end
 
           ##
           # Feed metadata contract used between creation services and API responses.
-          Metadata = Data.define(:id, :name, :url, :username, :strategy, :feed_token, :public_url, :json_public_url) do
+          Metadata = Data.define(:id, :name, :url, :username, :feed_token, :public_url, :json_public_url) do
             # @return [Hash{Symbol=>Object}]
             def to_h
               {
@@ -81,7 +80,6 @@ module Html2rss
                 name: name,
                 url: url,
                 username: username,
-                strategy: strategy,
                 feed_token: feed_token,
                 public_url: public_url,
                 json_public_url: json_public_url

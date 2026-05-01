@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 require 'digest'
+require_relative '../telemetry/log_event'
+require_relative '../security/log_sanitizer'
+require_relative '../telemetry/app_logger'
+
 module Html2rss
   module Web
     ##

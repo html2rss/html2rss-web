@@ -16,6 +16,9 @@ module Html2rss
     # Keeping lookup/defaulting here gives the rest of the app one predictable
     # config shape instead of repeating file parsing and fallback logic.
     module LocalConfig
+      @mutex = Mutex.new
+      @snapshot = nil
+
       ##
       # raised when the local config wasn't found
       class NotFound < RuntimeError; end
@@ -63,9 +66,7 @@ module Html2rss
         ##
         # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
         def snapshot
-          return @snapshot if @snapshot # rubocop:disable ThreadSafety/ClassInstanceVariable
-
-          @snapshot = ConfigSnapshot.load(yaml) # rubocop:disable ThreadSafety/ClassInstanceVariable
+          @mutex.synchronize { @snapshot ||= ConfigSnapshot.load(yaml) }
         rescue KeyError, TypeError, ArgumentError => error
           raise InvalidConfig, "Invalid local config: #{error.message}"
         end
@@ -74,7 +75,7 @@ module Html2rss
         # @param reason [String]
         # @return [nil]
         def reload!(reason: 'manual')
-          @snapshot = nil # rubocop:disable ThreadSafety/ClassInstanceVariable
+          @mutex.synchronize { @snapshot = nil }
           SecurityLogger.log_cache_lifecycle('local_config', 'reload', reason: reason)
           nil
         end

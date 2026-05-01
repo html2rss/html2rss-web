@@ -19,10 +19,11 @@ module Html2rss
         # @param name [String, nil]
         # @param url [String]
         # @param token_data [Hash{Symbol=>Object}] authenticated account data.
-        # @param strategy [String]
+        # @param strategy [String, nil]
         # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata, nil]
-        def create_stable_feed(name, url, token_data, strategy = Html2rss::RequestService.default_strategy_name.to_s)
-          return nil unless token_data && FeedAccess.url_allowed_for_username?(token_data[:username], url)
+        def create_stable_feed(name, url, token_data, strategy = nil)
+          account = AccountManager.get_account_by_username(token_data&.dig(:username))
+          return nil unless account && UrlValidator.url_allowed?(account, url)
 
           feed_token = Auth.generate_feed_token(token_data[:username], url, strategy: strategy)
           return nil unless feed_token
@@ -35,7 +36,7 @@ module Html2rss
         # @param name [String, nil]
         # @param url [String]
         # @param token_data [Hash{Symbol=>Object}]
-        # @param strategy [String]
+        # @param strategy [String, nil]
         # @param feed_token [String]
         # @return [Hash{Symbol=>Object}]
         def metadata_attributes(name, url, token_data, strategy, feed_token)

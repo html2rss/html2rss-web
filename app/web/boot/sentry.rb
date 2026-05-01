@@ -28,6 +28,7 @@ module Html2rss
             ::Sentry.init do |config|
               apply_settings(config)
             end
+            apply_scope_tags!
           end
 
           # @param config [Object]
@@ -43,6 +44,20 @@ module Html2rss
           # @return [String]
           def release_name
             "#{RuntimeEnv.build_tag}+#{RuntimeEnv.git_sha}"
+          end
+
+          # @return [void]
+          def apply_scope_tags!
+            return unless defined?(::Sentry) && ::Sentry.respond_to?(:configure_scope)
+
+            ::Sentry.configure_scope do |scope|
+              scope.set_tags(
+                release: release_name,
+                environment: RuntimeEnv.rack_env
+              )
+            end
+          rescue StandardError
+            nil
           end
 
           # @return [Boolean]

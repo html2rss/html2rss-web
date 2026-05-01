@@ -21,7 +21,8 @@ RSpec.describe Html2rss::Web::Feeds::JsonRenderer do
       message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
-      error_message: nil
+      error_message: nil,
+      error_kind: nil
     )
   end
 

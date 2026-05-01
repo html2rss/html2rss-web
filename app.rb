@@ -13,6 +13,21 @@ Html2rss::Web::Boot::Setup.call!
 
 module Html2rss
   module Web
+    DEFAULT_HEADERS = {
+      'X-Content-Type-Options' => 'nosniff',
+      'X-XSS-Protection' => '1; mode=block',
+      'X-Frame-Options' => 'SAMEORIGIN',
+      'X-Permitted-Cross-Domain-Policies' => 'none',
+      'Referrer-Policy' => 'strict-origin-when-cross-origin',
+      'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
+      'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
+      'Cross-Origin-Embedder-Policy' => 'require-corp',
+      'Cross-Origin-Opener-Policy' => 'same-origin',
+      'Cross-Origin-Resource-Policy' => 'same-origin',
+      'X-DNS-Prefetch-Control' => 'off',
+      'X-Download-Options' => 'noopen'
+    }.freeze
+
     ##
     # Roda app serving RSS feeds via html2rss
     class App < Roda
@@ -32,7 +47,8 @@ module Html2rss
         </html>
       HTML
       FRONTEND_DIST_PATH = 'frontend/dist'
-      FRONTEND_INDEX_PATH = File.join(FRONTEND_DIST_PATH, 'index.html')
+      FRONTEND_DIST_INDEX_PATH = File.join(FRONTEND_DIST_PATH, 'index.html')
+      FRONTEND_SOURCE_INDEX_PATH = 'frontend/index.html'
       def self.development? = EnvironmentValidator.development?
 
       def development? = self.class.development?
@@ -43,7 +59,7 @@ module Html2rss
 
       plugin :content_security_policy do |csp|
         csp.default_src :none
-        csp.style_src :self, "'unsafe-inline'"
+        csp.style_src :self
         csp.script_src :self
         csp.connect_src :self
         csp.img_src :self
@@ -65,21 +81,7 @@ module Html2rss
         csp.block_all_mixed_content
         csp.upgrade_insecure_requests
       end
-
-      plugin :default_headers, {
-        'X-Content-Type-Options' => 'nosniff',
-        'X-XSS-Protection' => '1; mode=block',
-        'X-Frame-Options' => 'SAMEORIGIN',
-        'X-Permitted-Cross-Domain-Policies' => 'none',
-        'Referrer-Policy' => 'strict-origin-when-cross-origin',
-        'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
-        'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
-        'Cross-Origin-Embedder-Policy' => 'require-corp',
-        'Cross-Origin-Opener-Policy' => 'same-origin',
-        'Cross-Origin-Resource-Policy' => 'same-origin',
-        'X-DNS-Prefetch-Control' => 'off',
-        'X-Download-Options' => 'noopen'
-      }
+      plugin :default_headers, DEFAULT_HEADERS
 
       plugin :json_parser
       plugin :static,
@@ -91,7 +93,7 @@ module Html2rss
       plugin :not_allowed
       plugin :exception_page
       plugin :error_handler do |error|
-        next exception_page(error) if development?
+        next exception_page(error) if development? && !error.is_a?(HttpError)
 
         ErrorResponder.respond(request: request, response: response, error: error)
       end
@@ -107,7 +109,16 @@ module Html2rss
 
       def render_index_page(router)
         router.response['Content-Type'] = 'text/html'
-        File.exist?(FRONTEND_INDEX_PATH) ? File.read(FRONTEND_INDEX_PATH) : FALLBACK_HTML
+        index_path = index_page_path
+        return File.read(index_path) if index_path
+
+        FALLBACK_HTML
+      end
+
+      def index_page_path
+        return FRONTEND_DIST_INDEX_PATH if File.exist?(FRONTEND_DIST_INDEX_PATH)
+
+        FRONTEND_SOURCE_INDEX_PATH if development? && File.exist?(FRONTEND_SOURCE_INDEX_PATH)
       end
     end
   end

@@ -29,10 +29,10 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
       before do
         allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
-        allow(Html2rss::RequestService).to receive(:default_strategy_name).and_return(:browserless)
       end
 
-      it 'normalizes the static source into shared generator input', :aggregate_failures do
+      it 'normalizes the static source into shared generator input without forcing a default strategy',
+         :aggregate_failures do
         resolved = described_class.call(feed_request)
 
         expect(resolved_tuple(resolved)).to match(
@@ -40,9 +40,10 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
             :static,
             start_with('static:legacy:'),
             900,
-            include(params: { 'existing' => '1', 'page' => '3' }, strategy: :browserless)
+            include(params: { 'existing' => '1', 'page' => '3' })
           ]
         )
+        expect(resolved.generator_input).not_to have_key(:strategy)
       end
 
       it 'does not mutate the source config hash' do
@@ -102,6 +103,55 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           [:token, start_with('token:'), 300,
            include(strategy: :faraday, channel: { url: 'https://example.com/private' }, auto_source: {})]
         )
+      end
+
+      it 'defaults blank token strategy to auto', :aggregate_failures do
+        allow(feed_token).to receive(:strategy).and_return(nil)
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.generator_input).to include(channel: { url: 'https://example.com/private' }, auto_source: {})
+        expect(resolved.generator_input[:strategy]).to eq(:auto)
+      end
+
+      it 'defaults blank configured strategy to auto at the generator boundary', :aggregate_failures do
+        allow(feed_token).to receive(:strategy).and_return(nil)
+        allow(Html2rss::Config).to receive(:default_strategy_name).and_return(nil)
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.generator_input[:strategy]).to eq(:auto)
+      end
+
+      it 'accepts explicit auto strategy tokens', :aggregate_failures do
+        allow(feed_token).to receive(:strategy).and_return('auto')
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.generator_input[:strategy]).to eq(:auto)
+      end
+
+      it 'rejects unknown explicit token strategies' do
+        allow(feed_token).to receive(:strategy).and_return('unknown')
+
+        expect { described_class.call(feed_request) }
+          .to raise_error(Html2rss::Web::BadRequestError, 'Unsupported strategy')
+      end
+
+      it 'rejects tokens whose account no longer exists' do
+        allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username)
+          .with('admin').and_return(nil)
+
+        expect { described_class.call(feed_request) }
+          .to raise_error(Html2rss::Web::UnauthorizedError, 'Account not found')
+      end
+
+      it 'rejects tokens whose URL is no longer allowed' do
+        allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?)
+          .with({ username: 'admin' }, 'https://example.com/private').and_return(false)
+
+        expect { described_class.call(feed_request) }
+          .to raise_error(Html2rss::Web::ForbiddenError, 'Access Denied')
       end
     end
   end

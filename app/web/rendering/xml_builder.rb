@@ -53,7 +53,7 @@ module Html2rss
           build_single_item_feed(
             title: FeedNoticeText.empty_feed_title(site_title),
             description: FeedNoticeText.empty_feed_description(url: url, strategy: strategy),
-            item: { title: 'Content Extraction Failed', description: FeedNoticeText.empty_feed_item(url: url),
+            item: { title: 'Preview unavailable for this source', description: FeedNoticeText.empty_feed_item(url: url),
                     link: url },
             link: url
           )

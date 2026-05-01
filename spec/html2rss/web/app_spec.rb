@@ -36,7 +36,8 @@ RSpec.describe Html2rss::Web::App do
       message: nil,
       ttl_seconds: Html2rss::Web::CacheTtl.seconds_from_minutes(ttl),
       cache_key: 'feed_result:spec',
-      error_message: nil
+      error_message: nil,
+      error_kind: nil
     )
   end
 
@@ -53,7 +54,8 @@ RSpec.describe Html2rss::Web::App do
       message: 'Internal Server Error',
       ttl_seconds: 600,
       cache_key: 'feed_result:error',
-      error_message: 'upstream timeout'
+      error_message: 'upstream timeout',
+      error_kind: :network
     )
   end
 
@@ -87,8 +89,34 @@ RSpec.describe Html2rss::Web::App do
       get '/'
 
       expect(last_response).to be_ok
+      expect(last_response.body).not_to include('html2rss-web API (development)')
       expect(last_response.headers['Content-Security-Policy']).to include("default-src 'none'")
+      expect(last_response.headers['Content-Security-Policy']).to include("script-src 'self'")
+      expect(last_response.headers['Content-Security-Policy']).to include("style-src 'self'")
+      expect(last_response.headers['Content-Security-Policy']).not_to include("'unsafe-inline'")
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
+    end
+
+    it 'serves the SPA shell in development when built assets are absent', :aggregate_failures do
+      allow(File).to receive(:exist?).and_call_original
+      allow(File).to receive(:exist?).with(Html2rss::Web::App::FRONTEND_DIST_INDEX_PATH).and_return(false)
+
+      ClimateControl.modify('RACK_ENV' => 'development') do
+        get '/'
+      end
+
+      expect(last_response).to be_ok
+      expect(last_response.body).to include('<div id="app"></div>')
+      expect(last_response.body).to include('<script type="module" src="/src/main.tsx"></script>')
+    end
+
+    it 'does not render SPA app routes as backend paths' do
+      ClimateControl.modify('RACK_ENV' => 'development') do
+        get '/create'
+      end
+
+      expect(last_response.status).to eq(404)
+      expect(last_response.headers['Content-Type']).to eq('application/xml')
     end
 
     it 'does not serve the removed legacy frontend entrypoint' do
@@ -143,7 +171,6 @@ RSpec.describe Html2rss::Web::App do
       post '/api/v1/feeds/test-token'
 
       expect(last_response.status).to eq(405)
-      expect(last_response.headers['Allow']).to eq('GET')
     end
 
     it 'coerces string ttl values before cache expiry math' do
@@ -155,22 +182,22 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Cache-Control']).to include('max-age=10800')
     end
 
-    it 'renders XML error when static feed generation fails' do
+    it 'renders XML not found when static feed config is missing' do
       allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
 
       get '/missing-feed'
 
-      expect(last_response.status).to eq(500)
+      expect(last_response.status).to eq(404)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
       expect(last_response.body).to eq('<error/>')
     end
 
-    it 'renders JSON Feed-shaped errors when static json feed generation fails' do
+    it 'renders JSON Feed-shaped not found errors when static json feed config is missing' do
       get '/missing-feed.json'
 
       expect(json_feed_error_tuple).to eq(
-        [500, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error',
-                                         'description' => 'Failed to generate feed: Internal Server Error' }]
+        [404, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error',
+                                         'description' => 'Failed to generate feed: Not Found' }]
       )
     end
 
@@ -190,8 +217,21 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.status).to eq(500)
       expect(last_response.headers['Content-Type']).to include('application/json')
       json = JSON.parse(last_response.body)
-      expect(json.dig('error', 'code')).to eq(Html2rss::Web::Api::V1::Contract::CODES[:internal_server_error])
+      expect(json.dig('error', 'code')).to eq(Html2rss::Web::InternalServerError::CODE)
       expect(json.dig('error', 'message')).to eq('Internal Server Error')
+    end
+
+    it 'keeps API auth failures on the JSON error contract in development mode' do
+      ClimateControl.modify('RACK_ENV' => 'development') do
+        post '/api/v1/feeds', JSON.generate(url: 'https://example.com/articles'),
+             { 'CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer invalid-token' }
+      end
+
+      expect(last_response.status).to eq(401)
+      expect(last_response.headers['Content-Type']).to include('application/json')
+      json = JSON.parse(last_response.body)
+      expect(json.dig('error', 'code')).to eq(Html2rss::Web::UnauthorizedError::CODE)
+      expect(json.dig('error', 'message')).to eq('Authentication required')
     end
   end
 

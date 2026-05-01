@@ -36,13 +36,15 @@ module Html2rss
               generator_input: generator_input,
               ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
+          rescue Html2rss::Web::LocalConfig::NotFound
+            raise Html2rss::Web::NotFoundError
           end
 
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_token(feed_request)
             ensure_auto_source_enabled!
-            feed_token = FeedAccess.authorize_feed_token!(feed_request.token)
+            feed_token = authorize_feed_token!(feed_request.token)
             strategy = resolved_strategy(feed_token)
             generator_input = token_generator_input(feed_token.url, strategy)
 
@@ -69,7 +71,6 @@ module Html2rss
           def static_generator_input(config, params)
             generator_input = config.dup
             generator_input[:params] = merged_static_params(config, params)
-            generator_input[:strategy] ||= Html2rss::RequestService.default_strategy_name.to_sym
             generator_input
           end
 
@@ -92,14 +93,29 @@ module Html2rss
           def ensure_auto_source_enabled!
             return if AutoSource.enabled?
 
-            raise Html2rss::Web::ForbiddenError, Api::V1::Contract::MESSAGES[:auto_source_disabled]
+            raise Html2rss::Web::AutoSourceDisabledError
+          end
+
+          # @param token [String]
+          # @return [Html2rss::Web::FeedToken]
+          def authorize_feed_token!(token)
+            feed_token = Auth.validate_and_decode_feed_token(token)
+            raise Html2rss::Web::UnauthorizedError, 'Invalid token' unless feed_token
+
+            account = AccountManager.get_account_by_username(feed_token.username)
+            raise Html2rss::Web::UnauthorizedError, 'Account not found' unless account
+            return feed_token if UrlValidator.url_allowed?(account, feed_token.url)
+
+            raise Html2rss::Web::ForbiddenError, 'Access Denied'
           end
 
           # @param feed_token [Html2rss::Web::FeedToken]
           # @return [String]
           def resolved_strategy(feed_token)
             strategy = feed_token.strategy.to_s.strip
-            strategy = Html2rss::RequestService.default_strategy_name.to_s if strategy.empty?
+            return default_strategy_name if strategy.empty?
+            return strategy if strategy == default_strategy_name
+
             supported = Html2rss::RequestService.strategy_names.map(&:to_s)
             raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless supported.include?(strategy)
 
@@ -110,13 +126,19 @@ module Html2rss
           # @param strategy [String]
           # @return [Hash{Symbol=>Object}]
           def token_generator_input(url, strategy)
-            LocalConfig.global
-                       .slice(:stylesheets, :headers)
-                       .merge(
-                         strategy: strategy.to_sym,
-                         channel: { url: url },
-                         auto_source: {}
-                       )
+            global_config = LocalConfig.global
+            base_input = global_config.slice(:stylesheets, :headers)
+            base_input.merge(channel: { url: url }, auto_source: {}, strategy: strategy.to_sym)
+          end
+
+          # @return [String]
+          def default_strategy_name
+            if Html2rss::Config.respond_to?(:default_strategy_name)
+              configured = Html2rss::Config.default_strategy_name.to_s
+            end
+            return configured unless configured.to_s.strip.empty?
+
+            'auto'
           end
         end
       end

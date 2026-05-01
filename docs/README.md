@@ -18,7 +18,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 `html2rss-web` converts arbitrary websites into RSS 2.0 feeds.
 
 - **Backend**: Ruby + Roda under the `Html2rss::Web` namespace.
-- **Frontend**: Preact + Vite, built into `frontend/dist` and served at `/`.
+- **Frontend**: Preact + Vite, built into `frontend/dist` and served at `/` in production.
 - **Feed extraction**: Delegated to the `html2rss` gem.
 - **Distribution**: Docker Compose / Dev Container first.
 
@@ -42,6 +42,7 @@ Running the app directly on the host is not supported.
 | `make setup`                   | Install Ruby and Node dependencies.                        |
 | `make dev`                     | Run Ruby (port 4000) and frontend (port 4001) dev servers. |
 | `make ready`                   | Pre-commit gate: `make quick-check` + `bundle exec rspec`. |
+| `make ci-ready`                | CI parity gate: `make ready` + `make openapi-verify` + frontend e2e smoke. |
 | `make test`                    | Run Ruby and frontend test suites.                         |
 | `make lint`                    | Run all linters.                                           |
 | `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
@@ -59,6 +60,12 @@ Running the app directly on the host is not supported.
 | `pnpm run test:run`     | Unit tests (Vitest).                         |
 | `pnpm run test:contract`| Contract tests with MSW.                     |
 
+Development routing defaults:
+
+- `http://127.0.0.1:4000` is API-only in development (`/api/v1` metadata and API endpoints).
+- `http://127.0.0.1:4001` is the canonical frontend SPA entrypoint in development.
+- Vite keeps proxying `/api` and `/rss.xsl` to `:4000` so frontend code can use same-origin-style paths.
+
 ---
 
 ## Contract-Driven Development Loop
@@ -68,7 +75,7 @@ To change or add API endpoints, follow this sequence:
 1. **Ruby Request Spec**: Define the new behavior or endpoint in `spec/html2rss/web/app_integration_spec.rb` or a dedicated request spec.
 2. **OpenAPI Generation**: Run `make openapi` inside the Dev Container to regenerate `public/openapi.yaml` from the spec metadata.
 3. **Verify Contract**: Run `make openapi-verify` and `make openapi-lint` to ensure the generated file matches the specs and is valid.
-4. **Frontend Client**: The frontend generated client in `frontend/src/api/generated` is updated by the build process.
+4. **Frontend Client**: Keep generated client artifacts in `frontend/src/api/generated` aligned with `public/openapi.yaml`.
 
 Always verify the contract before committing API changes.
 
@@ -82,6 +89,12 @@ Always run this before pushing or committing:
 
 ```bash
 make ready
+```
+
+For frontend changes and API contract/OpenAPI changes, run the CI-parity gate:
+
+```bash
+make ci-ready
 ```
 
 ### Testing Layers
@@ -199,6 +212,17 @@ Rules:
 Canonical event fields: `event_name`, `schema_version`, `request_id`, `route_group`, `actor`, `outcome`.
 
 Critical-path event families: auth, feed create, feed render, request errors.
+
+## Sentry Runbook
+
+When `SENTRY_DSN` is present, Sentry is enabled. `BUILD_TAG` and `GIT_SHA` become the release identifier, and
+`RACK_ENV` becomes the environment tag.
+
+Triage starts with the newest `feed.create`, `feed.render`, and `request.error` events. Confirm the release tag,
+route group, strategy, and outcome before deciding whether the failure is retryable, terminal, or user-facing.
+
+Alert on sustained production `request.error` spikes or repeated `feed.render` failures, then tune thresholds from
+real incidents.
 
 ---
 

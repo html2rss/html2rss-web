@@ -30,6 +30,8 @@ module Html2rss
             feed = Html2rss.feed(resolved_source.generator_input)
             success_result(feed, resolved_source, cache_key)
           rescue StandardError => error
+            return empty_result(error, resolved_source, cache_key) if extraction_empty_error?(error)
+
             error_result(error, resolved_source, cache_key)
           end
 
@@ -44,7 +46,8 @@ module Html2rss
               message: nil,
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key: cache_key,
-              error_message: nil
+              error_message: nil,
+              error_kind: nil
             )
           end
 
@@ -68,7 +71,7 @@ module Html2rss
               feed: feed,
               site_title: site_title_for(feed, resolved_source.generator_input.dig(:channel, :url)),
               url: resolved_source.generator_input.dig(:channel, :url),
-              strategy: resolved_source.generator_input[:strategy].to_s
+              strategy: resolved_source.generator_input[:strategy]&.to_s
             )
           end
 
@@ -93,7 +96,59 @@ module Html2rss
               message: Html2rss::Web::HttpError::DEFAULT_MESSAGE,
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key: cache_key,
-              error_message: error.message
+              error_message: error.message,
+              error_kind: nil
+            )
+          end
+
+          # @param error [Html2rss::NoFeedItemsExtracted]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param cache_key [String]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def empty_result(error, resolved_source, cache_key)
+            Contracts::RenderResult.new(
+              status: :empty,
+              payload: payload_for_empty_result(resolved_source),
+              message: nil,
+              ttl_seconds: resolved_source.ttl_seconds,
+              cache_key: cache_key,
+              error_message: error.message,
+              error_kind: :extraction_empty
+            )
+          end
+
+          # @param error [StandardError]
+          # @return [Boolean]
+          def extraction_empty_error?(error)
+            return false unless defined?(::Html2rss::NoFeedItemsExtracted)
+
+            error_chain(error).any?(::Html2rss::NoFeedItemsExtracted)
+          end
+
+          # @param error [StandardError, nil]
+          # @return [Array<StandardError>]
+          def error_chain(error)
+            errors = []
+            seen = {}.compare_by_identity
+            current = error
+
+            while current && !seen[current]
+              errors << current
+              seen[current] = true
+              current = current.respond_to?(:cause) ? current.cause : nil
+            end
+
+            errors
+          end
+
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderPayload]
+          def payload_for_empty_result(resolved_source)
+            Contracts::RenderPayload.new(
+              feed: nil,
+              site_title: resolved_source.generator_input.dig(:channel, :url).to_s,
+              url: resolved_source.generator_input.dig(:channel, :url),
+              strategy: resolved_source.generator_input[:strategy]&.to_s
             )
           end
         end
