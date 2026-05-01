@@ -155,7 +155,6 @@ jobs:
       - ruby
       - openapi
       - frontend
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -172,7 +171,6 @@ jobs:
   docker-test:
     needs:
       - docker-build-smoke-image
-    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
