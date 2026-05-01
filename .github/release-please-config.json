@@ -4,7 +4,19 @@
       "release-type": "ruby",
       "package-name": "html2rss-web",
       "version-file": "config/version.rb",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "frontend/package.json",
+          "jsonpath": "$.version"
+        },
+        "public/openapi.yaml",
+        "frontend/src/api/generated/client.gen.ts",
+        "frontend/src/api/generated/sdk.gen.ts",
+        "frontend/src/api/generated/types.gen.ts",
+        "frontend/src/api/generated/index.ts"
+      ]
     }
   }
 }
