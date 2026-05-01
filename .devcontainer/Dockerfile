@@ -5,14 +5,18 @@ SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 RUN apk add --no-cache \
     bash \
     build-base \
+    chromium \
     curl \
     git \
+    harfbuzz \
     libxml2-dev \
     libxslt-dev \
     nodejs \
+    nss \
     npm \
     openssl-dev \
     python3 \
+    ttf-freefont \
     yaml-dev \
     tzdata
 

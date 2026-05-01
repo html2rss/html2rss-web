@@ -15,6 +15,7 @@ This document defines execution constraints for AI agents. For general contribut
 ## Agent-Specific Verification Rules
 
 - Always run Dev Container smoke + `make ready` for changes.
+- For frontend changes or API contract/spec changes, run `make ci-ready` to mirror CI parity checks.
 - For frontend changes, also verify in `chrome-devtools` MCP at `http://127.0.0.1:4001/` while the Dev Container is running.
 - Capture a quick state check for all affected UI states (e.g., guest/member/result) to enforce state parity and avoid duplicate actions.
 

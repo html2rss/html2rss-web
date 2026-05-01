@@ -102,12 +102,6 @@ body {
   margin: 0;
   min-width: 20rem;
   color: var(--text-body);
-  font-family: var(--font-family-ui);
-  font-size: var(--font-size-0);
-  line-height: var(--line-height-base);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizelegibility;
   background: transparent;
 }
 
@@ -116,7 +110,12 @@ button,
 input,
 select,
 textarea {
-  font: inherit;
+  font-family: var(--font-family-ui);
+  font-size: var(--font-size-0);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizelegibility;
 }
 
 a {

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e
+
+RUBOCOP_FLAGS ?= --cache false
 
 # Default target
 help: ## Show this help message
@@ -60,7 +62,7 @@ lint: lint-ruby lint-js ## Run all linters (Ruby + Frontend) - errors when issue
 
 lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	@echo "Running RuboCop linting..."
-	bundle exec rubocop
+	bundle exec rubocop $(RUBOCOP_FLAGS)
 	@echo "Running Zeitwerk eager-load check..."
 	bundle exec rake zeitwerk:verify
 	@echo "Running YARD public-method docs check..."
@@ -104,6 +106,13 @@ ready: ## Pre-commit gate (quick checks + RSpec)
 	$(MAKE) quick-check
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
+
+ci-ready: ## CI parity gate (ready + OpenAPI verify + frontend e2e smoke)
+	@echo "Running CI parity checks..."
+	$(MAKE) ready
+	$(MAKE) openapi-verify
+	$(MAKE) test-frontend-e2e
+	@echo "CI parity checks complete!"
 
 yard-verify-public-docs: ## Verify essential YARD docs for all public methods in app/
 	bundle exec rake yard:verify_public_docs
