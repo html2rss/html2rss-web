@@ -47,10 +47,14 @@ jobs:
 
   openapi:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          ref: ${{ (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--')) && github.head_ref || github.sha }}
+          fetch-depth: 0
 
       - uses: ruby/setup-ruby@v1
         with:
@@ -87,11 +91,16 @@ jobs:
           make openapi-client
           
           git add public/openapi.yaml frontend/src/api/generated/
-          git commit -m "chore: regenerate openapi spec and client for version bump"
-          git push
           
-          echo "## OpenAPI artifacts regenerated" >> "$GITHUB_STEP_SUMMARY"
-          echo "Version bump detected; OpenAPI spec and frontend client have been regenerated and committed." >> "$GITHUB_STEP_SUMMARY"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: regenerate openapi spec and client for version bump"
+            git push origin ${{ github.head_ref }}
+            
+            echo "## OpenAPI artifacts regenerated" >> "$GITHUB_STEP_SUMMARY"
+            echo "Version bump detected; OpenAPI spec and frontend client have been regenerated and committed." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Lint OpenAPI contract
         run: make openapi-lint

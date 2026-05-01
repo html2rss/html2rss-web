@@ -11,11 +11,7 @@
           "path": "frontend/package.json",
           "jsonpath": "$.version"
         },
-        "public/openapi.yaml",
-        "frontend/src/api/generated/client.gen.ts",
-        "frontend/src/api/generated/sdk.gen.ts",
-        "frontend/src/api/generated/types.gen.ts",
-        "frontend/src/api/generated/index.ts"
+        "public/openapi.yaml"
       ]
     }
   }
