@@ -1,7 +1,13 @@
 name: release
 
 on:
-  push:
+  # Release only after the CI workflow succeeds on main so Docker publishes
+  # are tied to a CI-validated commit instead of any direct branch push.
+  workflow_run:
+    workflows:
+      - ci
+    types:
+      - completed
     branches:
       - main
   workflow_dispatch:
@@ -10,11 +16,59 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      target_sha: ${{ steps.resolve.outputs.target_sha }}
+      target_ref: ${{ steps.resolve.outputs.target_ref }}
+    steps:
+      - name: Validate release trigger and resolve target
+        id: resolve
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          GITHUB_REF_VALUE: ${{ github.ref }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            if [ "$WORKFLOW_CONCLUSION" != "success" ]; then
+              echo "Release requires successful CI on main; got conclusion=$WORKFLOW_CONCLUSION" >&2
+              exit 1
+            fi
+
+            if [ -z "$WORKFLOW_HEAD_SHA" ] || [ -z "$WORKFLOW_HEAD_BRANCH" ]; then
+              echo "workflow_run payload missing head SHA or branch" >&2
+              exit 1
+            fi
+
+            echo "target_sha=$WORKFLOW_HEAD_SHA" >> "$GITHUB_OUTPUT"
+            echo "target_ref=refs/heads/$WORKFLOW_HEAD_BRANCH" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF_VALUE" != "refs/heads/main" ]; then
+              echo "Manual release is restricted to refs/heads/main; got $GITHUB_REF_VALUE" >&2
+              exit 1
+            fi
+
+            echo "target_sha=$GITHUB_SHA_VALUE" >> "$GITHUB_OUTPUT"
+            echo "target_ref=$GITHUB_REF_VALUE" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Unsupported event: $EVENT_NAME" >&2
+          exit 1
+
   release:
+    needs:
+      - guard
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,6 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ needs.guard.outputs.target_sha }}
           fetch-depth: 0
 
       - name: Run release-please
@@ -54,15 +109,17 @@ jobs:
   docker-publish:
     if: needs.release.outputs.release_created == 'true'
     needs:
+      - guard
       - release
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: html2rss/web
-      TAG_SHA: ${{ github.sha }}
+      TAG_SHA: ${{ needs.guard.outputs.target_sha }}
       RELEASE_TAG: ${{ needs.release.outputs.tag_name }}
     steps:
       - uses: actions/checkout@v6
         with:
+          ref: ${{ needs.guard.outputs.target_sha }}
           fetch-depth: 0
 
       - name: Setup pnpm
@@ -135,7 +192,7 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
             BUILD_TAG=${{ env.RELEASE_VERSION }}
-            GIT_SHA=${{ github.sha }}
+            GIT_SHA=${{ needs.guard.outputs.target_sha }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -145,7 +202,7 @@ jobs:
             org.opencontainers.image.created=${{ env.TIMESTAMP_ISO }}
             org.opencontainers.image.description=Generates RSS feeds of any website & serves to the web!
             org.opencontainers.image.ref.name=${{ env.RELEASE_TAG }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ needs.guard.outputs.target_sha }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.title=html2rss-web
             org.opencontainers.image.url=https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
