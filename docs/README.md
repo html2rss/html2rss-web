@@ -95,6 +95,15 @@ make ready
 
 ---
 
+## Release Automation
+
+- Official releases run only after the `ci` GitHub Actions workflow completes successfully for a commit on `main`.
+- Manual `release` workflow dispatch is an emergency/manual replay path and is restricted to `main`.
+- Docker publish uses the exact CI-validated commit SHA for release metadata, OCI labels, and `BUILD_TAG` / `GIT_SHA` wiring.
+- Branch protection on `main` must continue to require the `ci` workflow even though the release workflow also gates on successful CI.
+
+---
+
 ## Backend Structure Rules
 
 - `app/` is the Zeitwerk root for `Html2rss`.
