@@ -45,8 +45,8 @@ LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
-ARG BUILD_TAG=unknown
-ARG GIT_SHA=unknown
+ARG BUILD_TAG
+ARG GIT_SHA
 
 ENV PORT=4000 \
   RACK_ENV=production \
