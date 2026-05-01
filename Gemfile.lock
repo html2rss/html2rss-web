@@ -1,29 +1,4 @@
 GIT
-  remote: https://github.com/html2rss/html2rss
-  revision: 54f6f53482352932b69621f1df989f83cd285c72
-  branch: codex-pr-auto-fallback-pipeline
-  specs:
-    html2rss (0.18.0)
-      addressable (~> 2.7)
-      brotli
-      dry-validation
-      faraday (> 2.0.1, < 3.0)
-      faraday-follow_redirects
-      faraday-gzip (~> 3)
-      kramdown
-      mime-types (> 3.0)
-      nokogiri (>= 1.10, < 2.0)
-      parallel
-      puppeteer-ruby
-      regexp_parser
-      reverse_markdown (~> 3.0)
-      rss
-      sanitize
-      thor
-      tzinfo
-      zeitwerk
-
-GIT
   remote: https://github.com/html2rss/html2rss-configs
   revision: 71981aff28d88e4553c206d78bf54d5633bcdd19
   specs:
@@ -161,12 +136,31 @@ GEM
       fiber-storage
     fiber-storage (1.0.1)
     hashdiff (1.2.1)
+    html2rss (0.19.0)
+      addressable (~> 2.7)
+      brotli
+      dry-validation
+      faraday (> 2.0.1, < 3.0)
+      faraday-follow_redirects
+      faraday-gzip (~> 3)
+      kramdown
+      mime-types (> 3.0)
+      nokogiri (>= 1.10, < 2.0)
+      parallel
+      puppeteer-ruby
+      regexp_parser
+      reverse_markdown (~> 3.0)
+      rss
+      sanitize
+      thor
+      tzinfo
+      zeitwerk
     i18n (1.14.8)
       concurrent-ruby (~> 1.0)
     io-console (0.8.2)
     io-endpoint (0.17.2)
     io-event (1.15.1)
-    io-stream (0.12.0)
+    io-stream (0.13.0)
     irb (1.18.0)
       pp (>= 0.6.0)
       prism (>= 1.3.0)
@@ -186,7 +180,7 @@ GEM
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
     mime-types-data (3.2026.0414)
-    minitest (6.0.5)
+    minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
     net-http (0.9.1)
@@ -236,7 +230,7 @@ GEM
     public_suffix (7.0.5)
     puma (8.0.1)
       nio4r (~> 2.0)
-    puppeteer-ruby (0.52.0)
+    puppeteer-ruby (0.52.1)
       async (>= 2.35.1, < 3.0)
       async-http (>= 0.60, < 1.0)
       async-websocket (>= 0.27, < 1.0)
@@ -377,7 +371,7 @@ PLATFORMS
 DEPENDENCIES
   climate_control
   concurrent-ruby
-  html2rss!
+  html2rss (~> 0.19)
   html2rss-configs!
   irb
   parallel
@@ -445,13 +439,13 @@ CHECKSUMS
   fiber-local (1.1.0) sha256=c885f94f210fb9b05737de65d511136ea602e00c5105953748aa0f8793489f06
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.18.0)
+  html2rss (0.19.0) sha256=6561cb278e9a47de751471cba612be75c48cc46ee369364d1419533040d1b7a9
   html2rss-configs (0.2.0)
   i18n (1.14.8) sha256=285778639134865c5e0f6269e0b818256017e8cde89993fdfcbfb64d088824a5
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
   io-endpoint (0.17.2) sha256=3feaf766c116b35839c11fac68b6aaadc47887bb488902a57bf8e1d288fb3338
   io-event (1.15.1) sha256=c644cdcf48254015d63f558bf4492f35471f5bb204a42180ea49752be59b30cc
-  io-stream (0.12.0) sha256=176fa28ad566d13e70bbf5791c4da74e6723c66ce9732237654deda1551476ac
+  io-stream (0.13.0) sha256=ce24bccb302bdf3ecedef05e8669a687b461621a498d83622fdcab549c9c1636
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
   json (2.19.4) sha256=670a7d333fb3b18ca5b29cb255eb7bef099e40d88c02c80bd42a3f30fe5239ac
   kramdown (2.5.2) sha256=1ba542204c66b6f9111ff00dcc26075b95b220b07f2905d8261740c82f7f02fa
@@ -462,7 +456,7 @@ CHECKSUMS
   metrics (0.15.0) sha256=61ded5bac95118e995b1bc9ed4a5f19bc9814928a312a85b200abbdac9039072
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0414) sha256=461c4c655373a44bd6c5fe54bcf5b7776026ea96e808144b1ec465c4b99148cc
-  minitest (6.0.5) sha256=f007d7246bf4feea549502842cd7c6aba8851cdc9c90ba06de9c476c0d01155c
+  minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
   net-http (0.9.1) sha256=25ba0b67c63e89df626ed8fac771d0ad24ad151a858af2cc8e6a716ca4336996
   nio4r (2.7.5) sha256=6c90168e48fb5f8e768419c93abb94ba2b892a1d0602cb06eef16d8b7df1dca1
   nokogiri (1.19.3-aarch64-linux-gnu) sha256=46b89e5d7b9e844c2ee360794240c6ea2a4e6fa0c5892a4ed487db621224b639
@@ -488,7 +482,7 @@ CHECKSUMS
   psych (5.3.1) sha256=eb7a57cef10c9d70173ff74e739d843ac3b2c019a003de48447b2963d81b1974
   public_suffix (7.0.5) sha256=1a8bb08f1bbea19228d3bed6e5ed908d1cb4f7c2726d18bd9cadf60bc676f623
   puma (8.0.1) sha256=7b94e50c07655718c1fb8ae41a11fc06c7d61293208b3aa608ff71a46d3ad37c
-  puppeteer-ruby (0.52.0) sha256=ebb79823cb84d0e118209778c5687154fb019e5409e51324f5e56c551cf23b16
+  puppeteer-ruby (0.52.1) sha256=69852e4172bc0cdfcc615125421d5a959e0d8b882155ebe9ff515c7c3920e204
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rack (3.2.6) sha256=5ed78e1f73b2e25679bec7d45ee2d4483cc4146eb1be0264fc4d94cb5ef212c2
   rack-cache (1.17.0) sha256=49592f3ef2173b0f5524df98bb801fb411e839869e7ce84ac428dc492bf0eb90
