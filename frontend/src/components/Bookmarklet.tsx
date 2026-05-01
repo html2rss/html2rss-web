@@ -2,7 +2,7 @@ export function Bookmarklet() {
   const bookmarkletHref = (() => {
     if (globalThis.window === undefined) return '#';
 
-    const targetPrefix = `${new URL('/', globalThis.location.href).toString()}?url=`;
+    const targetPrefix = new URL('/#/create?url=', globalThis.location.href).toString();
 
     return `javascript:window.location.assign(${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href));`;
   })();

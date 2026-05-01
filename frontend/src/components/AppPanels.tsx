@@ -1,16 +1,10 @@
-import { useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { useLayoutEffect, useRef } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
-
-export interface Strategy {
-  id: string;
-  name: string;
-  display_name: string;
-}
+import type { FeedCreationError } from '../api/contracts';
 
 export interface FeedFormData {
   url: string;
-  strategy: string;
 }
 
 export interface FeedFieldErrors {
@@ -18,64 +12,59 @@ export interface FeedFieldErrors {
   form: string;
 }
 
+export type WorkflowState = 'create' | 'submitting' | 'token_prompt' | 'result' | 'error';
+
+export type WorkflowErrorKind = FeedCreationError['kind'];
+
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
+  workflowState: WorkflowState;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
-  conversionError?: string;
+  conversionError?: FeedCreationError;
+  errorKind?: WorkflowErrorKind;
   isConverting: boolean;
   submitDisabled: boolean;
-  strategies: Strategy[];
-  strategiesLoading: boolean;
-  strategiesError?: string;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
   tokenDraft: string;
   tokenError: string;
   showTokenPrompt: boolean;
-  manualRetryStrategy: string;
   onFeedSubmit: (event: Event) => void;
-  onFeedFieldChange: (key: 'url' | 'strategy', value: string) => void;
+  onFeedFieldChange: (key: 'url', value: string) => void;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
-  onRetryWithStrategy: () => void;
-  strategyHint: (strategy: Strategy) => string;
-}
-
-function strategyOptionLabel(strategy: Strategy) {
-  if (strategy.id === 'faraday') return 'Default';
-  if (strategy.id === 'browserless') return 'JavaScript pages (recommended)';
-  return strategy.display_name;
+  onRetryCreate: () => void;
 }
 
 export function CreateFeedPanel({
   focusComposerKey,
+  workflowState,
   feedFormData,
   feedFieldErrors,
   conversionError,
+  errorKind,
   isConverting,
   submitDisabled,
-  strategies,
-  strategiesLoading,
-  strategiesError,
   feedCreationEnabled,
   featuredFeeds,
   tokenDraft,
   tokenError,
   showTokenPrompt,
-  manualRetryStrategy,
   onFeedSubmit,
   onFeedFieldChange,
   onTokenDraftChange,
   onSaveToken,
   onCancelTokenPrompt,
-  onRetryWithStrategy,
-  strategyHint,
+  onRetryCreate,
 }: CreateFeedPanelProperties) {
-  const selectedStrategy = strategies.find((strategy) => strategy.id === feedFormData.strategy);
   const urlInputReference = useRef<HTMLInputElement>(undefined as never);
   const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
+  const failureMessage = conversionError?.message || feedFieldErrors.form;
+  const showRetryButton = Boolean(
+    conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
+  );
 
   useLayoutEffect(() => {
     if (!urlInputReference.current || globalThis.window === undefined) return;
@@ -102,7 +91,12 @@ export function CreateFeedPanel({
   }, [showTokenPrompt]);
 
   return (
-    <form class="form-shell form-shell--minimal" onSubmit={onFeedSubmit}>
+    <form
+      class="form-shell form-shell--minimal"
+      onSubmit={onFeedSubmit}
+      data-state={workflowState}
+      data-error-kind={errorKind}
+    >
       <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
         <DominantField
           id="url"
@@ -121,31 +115,6 @@ export function CreateFeedPanel({
           error={feedFieldErrors.url}
           onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
         />
-
-        <label class="field-block field-block--centered field-block--compact" htmlFor="strategy">
-          <select
-            id="strategy"
-            name="strategy"
-            class="input input--minimal"
-            value={feedFormData.strategy}
-            disabled={strategiesLoading || showTokenPrompt}
-            onChange={(event) => onFeedFieldChange('strategy', (event.target as HTMLSelectElement).value)}
-          >
-            {strategiesLoading ? (
-              <option value="">Loading…</option>
-            ) : (
-              strategies.map((strategy) => (
-                <option key={strategy.id} value={strategy.id}>
-                  {strategyOptionLabel(strategy)}
-                </option>
-              ))
-            )}
-          </select>
-        </label>
-        {strategiesError && <p class="field-help">{strategiesError}</p>}
-        {!strategiesError && selectedStrategy?.id === 'browserless' && (
-          <p class="field-help">{strategyHint(selectedStrategy)}</p>
-        )}
 
         {!feedCreationEnabled && (
           <>
@@ -238,30 +207,29 @@ export function CreateFeedPanel({
         </div>
       )}
 
-      {conversionError && (
-        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
-          <div class="notice__title">Could not create feed link</div>
-          <p>{conversionError}</p>
+      {failureMessage && (
+        <div
+          class="ui-card ui-card--notice ui-card--padded notice"
+          data-tone="error"
+          data-error-kind={errorKind}
+          role="alert"
+        >
+          <div class="notice__title">Couldn't create feed yet</div>
+          <p>{failureMessage}</p>
+          {showRetryButton && (
+            <div class="notice__actions">
+              <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
+                Try again
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {isConverting && (
         <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
           <div class="notice__title">Creating feed link</div>
-          <p>Checking readiness now.</p>
-        </div>
-      )}
-
-      {feedFieldErrors.form && (
-        <div class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
-          <p>{feedFieldErrors.form}</p>
-          {manualRetryStrategy && (
-            <div class="notice__actions">
-              <button type="button" class="btn btn--ghost" onClick={onRetryWithStrategy}>
-                Retry with {manualRetryStrategy}
-              </button>
-            </div>
-          )}
+          <p>Preparing preview.</p>
         </div>
       )}
     </form>
@@ -269,19 +237,12 @@ export function CreateFeedPanel({
 }
 
 interface UtilityStripProperties {
-  hidden?: boolean;
   hasAccessToken: boolean;
   openapiUrl?: string;
   onClearToken: () => void;
 }
 
-export function UtilityStrip({
-  hidden = false,
-  hasAccessToken,
-  openapiUrl,
-  onClearToken,
-}: UtilityStripProperties) {
-  const [isOpen, setIsOpen] = useState(false);
+export function UtilityStrip({ hasAccessToken, openapiUrl, onClearToken }: UtilityStripProperties) {
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
@@ -292,57 +253,45 @@ export function UtilityStrip({
     return directoryUrl.toString();
   })();
 
-  if (hidden) return;
-
   return (
     <section class="utility-strip" aria-label="Utilities">
-      <button
-        type="button"
-        class="utility-button utility-button--toggle"
-        aria-expanded={isOpen ? 'true' : 'false'}
-        onClick={() => setIsOpen((current) => !current)}
-      >
-        More
-      </button>
-      {isOpen && (
-        <div class="utility-strip__items">
-          <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
-            Try included feeds
-          </a>
-          <Bookmarklet />
-          {openapiUrl && (
-            <a
-              href={normalizedOpenapiUrl ?? openapiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="utility-link"
-            >
-              OpenAPI spec
-            </a>
-          )}
+      <div class="utility-strip__items">
+        <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
+          Try included feeds
+        </a>
+        <Bookmarklet />
+        {hasAccessToken && (
+          <button type="button" class="utility-button" onClick={onClearToken}>
+            Logout
+          </button>
+        )}
+        <a
+          href="https://hub.docker.com/r/html2rss/web"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="utility-link"
+        >
+          Install from Docker Hub
+        </a>
+        {openapiUrl && (
           <a
-            href="https://github.com/html2rss/html2rss-web"
+            href={normalizedOpenapiUrl ?? openapiUrl}
             target="_blank"
             rel="noopener noreferrer"
             class="utility-link"
           >
-            Source code
+            OpenAPI spec
           </a>
-          <a
-            href="https://hub.docker.com/r/html2rss/web"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="utility-link"
-          >
-            Install from Docker Hub
-          </a>
-          {hasAccessToken && (
-            <button type="button" class="utility-button" onClick={onClearToken}>
-              Clear saved token
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        <a
+          href="https://github.com/html2rss/html2rss-web"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="utility-link"
+        >
+          Source code
+        </a>
+      </div>
     </section>
   );
 }
