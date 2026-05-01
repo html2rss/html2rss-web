@@ -8,19 +8,21 @@ module Html2rss
     # Keeps config reads cheap by materializing one immutable snapshot and
     # exposing narrow lookup helpers for auth and authorization flows.
     module AccountManager
+      @mutex = Mutex.new
+      @snapshot = nil
+
       class << self
         # Forces account snapshot refresh on next access.
-        # Used by tests and can be used by runtime reload hooks.
         #
         # @param reason [String]
         # @return [nil]
         def reload!(reason: 'manual')
-          @snapshot = nil # rubocop:disable ThreadSafety/ClassInstanceVariable
+          @mutex.synchronize { @snapshot = nil }
           SecurityLogger.log_cache_lifecycle('account_manager', 'reload', reason: reason)
           nil
         end
 
-        # @param token [String]
+        # @param token [String, nil]
         # @return [Hash{Symbol=>Object}, nil]
         def get_account(token)
           return nil unless token
@@ -33,7 +35,7 @@ module Html2rss
           snapshot[:accounts]
         end
 
-        # @param username [String]
+        # @param username [String, nil]
         # @return [Hash{Symbol=>Object}, nil]
         def get_account_by_username(username)
           return nil unless username
@@ -43,31 +45,10 @@ module Html2rss
 
         private
 
-        # Lazily initializes and memoizes an immutable account snapshot.
-        #
-        # @return [Hash{Symbol=>Object}]
-        # @option return [Array<Hash{Symbol=>Object}>] :accounts frozen account list.
-        # @option return [Hash{String=>Hash{Symbol=>Object}}] :token_index token lookup table.
-        # @option return [Hash{String=>Hash{Symbol=>Object}}] :username_index username lookup table.
         def snapshot
-          return @snapshot if @snapshot # rubocop:disable ThreadSafety/ClassInstanceVariable
-
-          mutex.synchronize do
-            @snapshot ||= build_snapshot
-          end
+          @mutex.synchronize { @snapshot ||= build_snapshot }
         end
 
-        # @return [Mutex] synchronization primitive for snapshot rebuilds.
-        def mutex
-          @mutex ||= Mutex.new # rubocop:disable ThreadSafety/ClassInstanceVariable
-        end
-
-        # Builds the immutable account snapshot from local configuration.
-        #
-        # @return [Hash{Symbol=>Object}]
-        # @option return [Array<Hash{Symbol=>Object}>] :accounts frozen account list.
-        # @option return [Hash{String=>Hash{Symbol=>Object}}] :token_index token lookup table.
-        # @option return [Hash{String=>Hash{Symbol=>Object}}] :username_index username lookup table.
         def build_snapshot
           raw_accounts = LocalConfig.global.dig(:auth, :accounts)
           accounts = normalized_accounts(raw_accounts)

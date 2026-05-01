@@ -20,7 +20,7 @@ module Html2rss
 
         ##
         # Shared feed-serving result wrapper.
-        RenderResult = Data.define(:status, :payload, :message, :ttl_seconds, :cache_key, :error_message)
+        RenderResult = Data.define(:status, :payload, :message, :ttl_seconds, :cache_key, :error_message, :error_kind)
       end
     end
   end

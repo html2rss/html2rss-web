@@ -16,7 +16,7 @@ module Html2rss
           # @return [void]
           def call(router)
             router.on 'api', 'v1' do
-              RequestTarget.mark!(router, RequestTarget::API)
+              router.env[RequestTarget::ENV_KEY] = RequestTarget::API
               router.response['Content-Type'] = 'application/json'
 
               HealthRoutes.call(router)

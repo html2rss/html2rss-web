@@ -103,13 +103,10 @@ paths:
           application/json:
             schema:
               properties:
-                strategy:
-                  type: string
                 url:
                   type: string
               required:
               - url
-              - strategy
               type: object
       responses:
         '201':
@@ -133,8 +130,6 @@ paths:
                             type: string
                           public_url:
                             type: string
-                          strategy:
-                            type: string
                           updated_at:
                             type: string
                           url:
@@ -143,7 +138,6 @@ paths:
                         - id
                         - name
                         - url
-                        - strategy
                         - feed_token
                         - public_url
                         - json_public_url
@@ -177,11 +171,23 @@ paths:
                     properties:
                       code:
                         type: string
+                      kind:
+                        type: string
                       message:
                         type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
                     required:
                     - message
                     - code
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
                     type: object
                   success:
                     type: boolean
@@ -199,11 +205,23 @@ paths:
                     properties:
                       code:
                         type: string
+                      kind:
+                        type: string
                       message:
                         type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
                     required:
                     - message
                     - code
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
                     type: object
                   success:
                     type: boolean
@@ -339,11 +357,23 @@ paths:
                     properties:
                       code:
                         type: string
+                      kind:
+                        type: string
                       message:
                         type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
                     required:
                     - message
                     - code
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
                     type: object
                   success:
                     type: boolean
@@ -361,11 +391,23 @@ paths:
                     properties:
                       code:
                         type: string
+                      kind:
+                        type: string
                       message:
                         type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
                     required:
                     - message
                     - code
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
                     type: object
                   success:
                     type: boolean

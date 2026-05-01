@@ -18,7 +18,8 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       message: nil,
       ttl_seconds: 60,
       cache_key: 'feed_result:test',
-      error_message: nil
+      error_message: nil,
+      error_kind: nil
     )
   end
 

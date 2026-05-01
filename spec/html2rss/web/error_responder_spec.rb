@@ -36,6 +36,17 @@ RSpec.describe Html2rss::Web::ErrorResponder do
     [response.status, response['Content-Type'], JSON.parse(body)]
   end
 
+  def extraction_empty_api_error_response
+    no_feed_items_extracted = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
+    response, body = respond_with(
+      error: no_feed_items_extracted.new('No feed items extracted after auto fallback'),
+      path: '/api/v1/feeds',
+      target: Html2rss::Web::RequestTarget::API
+    )
+
+    [response.status, response['Content-Type'], JSON.parse(body)]
+  end
+
   def legacy_error_response
     allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
     response, body = respond_with(
@@ -67,13 +78,17 @@ RSpec.describe Html2rss::Web::ErrorResponder do
     [response['Content-Type'], body.include?('Invalid token')]
   end
 
-  def expected_api_error_response
+  def expected_api_error_response # rubocop:disable Metrics/MethodLength
     [500, 'application/json',
      {
        'success' => false,
        'error' => {
-         'code' => Html2rss::Web::Api::V1::Contract::CODES[:internal_server_error],
-         'message' => 'Internal Server Error'
+         'code' => Html2rss::Web::InternalServerError::CODE,
+         'message' => 'Internal Server Error',
+         'kind' => 'server',
+         'retryable' => true,
+         'next_action' => 'retry',
+         'retry_action' => 'primary'
        }
      }]
   end
@@ -81,6 +96,12 @@ RSpec.describe Html2rss::Web::ErrorResponder do
   describe '.respond' do
     it 'returns json error payload for unexpected api errors' do
       expect(api_error_response).to eq(expected_api_error_response)
+    end
+
+    it 'maps extraction-empty api errors to corrective 422 payloads' do
+      expect(extraction_empty_api_error_response).to eq(
+        [422, 'application/json', extraction_empty_api_payload]
+      )
     end
 
     it 'returns xml error payload for non-api routes' do
@@ -98,5 +119,25 @@ RSpec.describe Html2rss::Web::ErrorResponder do
     it 'keeps the xml error representation when xml outranks json' do
       expect(xml_preferred_feed_error_response).to eq(['application/xml', true])
     end
+  end
+
+  # @return [Hash{String=>Object}]
+  def extraction_empty_api_payload
+    {
+      'success' => false,
+      'error' => extraction_empty_error_fields
+    }
+  end
+
+  # @return [Hash{String=>Object}]
+  def extraction_empty_error_fields
+    {
+      'code' => Html2rss::Web::ErrorResponder::EXTRACTION_EMPTY_CODE,
+      'message' => Html2rss::Web::ErrorResponder::EXTRACTION_EMPTY_MESSAGE,
+      'kind' => 'input',
+      'retryable' => false,
+      'next_action' => 'correct_input',
+      'retry_action' => 'none'
+    }
   end
 end

@@ -158,20 +158,22 @@ if ENV['OPENAPI']
 
         normalized_paths[normalized][verb]['description'] ||= normalized_paths[normalized][verb]['summary']
 
-        next unless normalized == '/feeds/{token}'
+        if normalized.start_with?('/feeds/{token}')
+          normalized_paths[normalized][verb]['parameters'] ||= []
+          has_token_param = normalized_paths[normalized][verb]['parameters'].any? do |parameter|
+            parameter['name'] == 'token' && parameter['in'] == 'path'
+          end
+          unless has_token_param
+            normalized_paths[normalized][verb]['parameters'] << {
+              'name' => 'token',
+              'in' => 'path',
+              'required' => true,
+              'schema' => { 'type' => 'string' }
+            }
+          end
+        end
 
-        normalized_paths[normalized][verb]['parameters'] ||= []
-        has_token_param = normalized_paths[normalized][verb]['parameters'].any? do |parameter|
-          parameter['name'] == 'token' && parameter['in'] == 'path'
-        end
-        unless has_token_param
-          normalized_paths[normalized][verb]['parameters'] << {
-            'name' => 'token',
-            'in' => 'path',
-            'required' => true,
-            'schema' => { 'type' => 'string' }
-          }
-        end
+        next unless normalized == '/feeds/{token}'
 
         token_feed_error_statuses.each do |status|
           response = normalized_paths[normalized][verb].dig('responses', status)

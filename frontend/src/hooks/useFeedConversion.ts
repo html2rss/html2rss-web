@@ -274,7 +274,6 @@ async function requestFeedCreation(url: string, strategy: string, token: string)
     },
     body: {
       url,
-      strategy,
     },
     throwOnError: true,
   });

@@ -3,11 +3,8 @@
 require 'json'
 require 'logger'
 require 'time'
-
 module Html2rss
   module Web
-    ##
-    # Shared structured logger for application and middleware runtime events.
     module AppLogger
       class << self
         # @return [Logger]
@@ -103,6 +100,7 @@ module Html2rss
         def emit_to_sentry(payload)
           return unless sentry_payload?(payload)
 
+          SentryLogs.record_breadcrumb(payload)
           SentryLogs.emit(payload)
         rescue StandardError
           nil

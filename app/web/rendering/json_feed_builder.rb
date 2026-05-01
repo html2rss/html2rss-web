@@ -75,7 +75,7 @@ module Html2rss
         # @return [Hash{Symbol=>String}]
         def empty_feed_item(url)
           {
-            title: 'Content Extraction Failed',
+            title: 'Preview unavailable for this source',
             content_text: FeedNoticeText.empty_feed_item(url: url),
             url: url
           }

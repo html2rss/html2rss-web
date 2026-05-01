@@ -3,6 +3,7 @@
 require 'spec_helper'
 
 require_relative '../../../app/web/config/runtime_env'
+require_relative '../../../app/web/telemetry/app_logger'
 require_relative '../../../app/web/telemetry/sentry_logs'
 
 RSpec.describe Html2rss::Web::SentryLogs do
@@ -23,6 +24,7 @@ RSpec.describe Html2rss::Web::SentryLogs do
   let(:fake_sentry) do
     Module.new.tap do |mod|
       mod.define_singleton_method(:logger) { sentry_logger }
+      mod.define_singleton_method(:add_breadcrumb) { |**| nil }
     end
   end
   let(:raw_payload) do
@@ -65,6 +67,22 @@ RSpec.describe Html2rss::Web::SentryLogs do
     expect(captured_call).to eq({})
   end
 
+  it 'adds breadcrumbs for request-critical structured logs even when sentry logs are disabled', :aggregate_failures do
+    stub_const('Sentry', fake_sentry)
+    allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: true, sentry_logs_enabled?: false)
+    allow(Sentry).to receive(:add_breadcrumb)
+
+    Html2rss::Web::AppLogger.send(
+      :format_entry,
+      'INFO',
+      Time.now.utc,
+      nil,
+      breadcrumb_payload.to_json
+    )
+
+    expect(Sentry).to have_received(:add_breadcrumb).with(expected_breadcrumb)
+  end
+
   it 'falls back to info when an unsupported level is requested', :aggregate_failures do
     stub_const('Sentry', fake_sentry)
     allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: true, sentry_logs_enabled?: true)
@@ -78,6 +96,44 @@ RSpec.describe Html2rss::Web::SentryLogs do
 
   def build_sentry_logger
     logger_class.new(captured_call)
+  end
+
+  def breadcrumb_payload
+    {
+      event_name: 'feed.create',
+      outcome: 'failure',
+      request_id: 'req-123',
+      route_group: 'api_v1',
+      strategy: 'faraday',
+      details: { url: 'https://example.com/articles', fallback: 'browserless' }
+    }
+  end
+
+  def expected_breadcrumb
+    include(
+      category: 'feed.create',
+      message: 'feed.create',
+      level: 'info',
+      data: breadcrumb_data_matcher
+    )
+  end
+
+  def breadcrumb_data_matcher
+    include(
+      event_name: 'feed.create',
+      outcome: 'failure',
+      request_id: 'req-123',
+      route_group: 'api_v1',
+      strategy: 'faraday',
+      details: breadcrumb_details_matcher
+    )
+  end
+
+  def breadcrumb_details_matcher
+    include(
+      url: include(host: 'example.com', scheme: 'https'),
+      fallback: 'browserless'
+    )
   end
 
   def expect_forwarded_payload

@@ -517,7 +517,6 @@ describe('useFeedConversion', () => {
     );
     expect(await firstRequest.clone().json()).toEqual({
       url: 'https://example.com/articles',
-      strategy: 'faraday',
     });
   });
 
@@ -577,7 +576,6 @@ describe('useFeedConversion', () => {
     const retryRequest = fetchMock.mock.calls[1]?.[0] as Request;
     expect(await retryRequest.clone().json()).toEqual({
       url: 'https://example.com/articles',
-      strategy: 'browserless',
     });
     expect(result.current.result?.retry).toEqual({
       automatic: true,
@@ -702,7 +700,6 @@ describe('useFeedConversion', () => {
     const retryRequest = fetchMock.mock.calls[1]?.[0] as Request;
     expect(await retryRequest.clone().json()).toEqual({
       url: 'https://example.com/articles',
-      strategy: 'browserless',
     });
     expect(result.current.result?.retry).toEqual({
       automatic: true,

@@ -10,10 +10,10 @@ describe('useFeedConversion contract', () => {
 
     server.use(
       http.post('/api/v1/feeds', async ({ request }) => {
-        const body = (await request.json()) as { url: string; strategy: string };
+        const body = (await request.json()) as { url: string };
         receivedAuthorization = request.headers.get('authorization');
 
-        expect(body).toEqual({ url: 'https://example.com/articles', strategy: 'faraday' });
+        expect(body).toEqual({ url: 'https://example.com/articles' });
 
         return HttpResponse.json(
           buildFeedResponse({

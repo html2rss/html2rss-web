@@ -361,7 +361,7 @@
             </div>
           </section>
 
-          <xsl:if test="rss/channel/title = 'Error' or rss/channel/item[1]/title = 'Content Extraction Failed'">
+          <xsl:if test="rss/channel/title = 'Error' or contains(rss/channel/title, 'Content Extraction Issue') or rss/channel/item[1]/title = 'Content Extraction Failed' or rss/channel/item[1]/title = 'Preview unavailable for this source'">
             <section class="feed-notice ui-card ui-card--notice ui-card--padded layout-rail-reading" aria-label="Feed status">
               <p>
                 <xsl:call-template name="clean-text">

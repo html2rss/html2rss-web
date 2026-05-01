@@ -11,7 +11,6 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       source_kind: :static,
       cache_identity: 'example-feed:abc123',
       generator_input: {
-        strategy: :faraday,
         channel: { url: 'https://example.com/articles' },
         auto_source: {}
       },
@@ -109,7 +108,49 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       feed: feed,
       site_title: 'Example Feed',
       url: 'https://example.com/articles',
-      strategy: 'faraday'
+      strategy: nil
     )
+  end
+
+  context 'when auto fallback exhausts without feed items' do
+    let(:no_feed_items_extracted_class) do
+      stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
+        def initialize(attempts:)
+          @attempts = attempts
+          super('No feed items extracted after auto fallback')
+        end
+
+        attr_reader :attempts
+      end)
+    end
+
+    before do
+      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_raise(
+        no_feed_items_extracted_class.new(
+          attempts: [
+            { strategy: :faraday, items_count: 0, error_class: nil },
+            { strategy: :botasaurus, items_count: 0, error_class: nil }
+          ]
+        )
+      )
+    end
+
+    it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do
+      expect(result.status).to eq(:empty)
+      expect(result.error_kind).to eq(:extraction_empty)
+      expect(result.error_message).to include('No feed items extracted after auto fallback')
+      expect(result.payload).to have_attributes(
+        url: 'https://example.com/articles',
+        site_title: 'https://example.com/articles',
+        strategy: nil
+      )
+    end
+
+    it 'caches the empty result' do
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss).to have_received(:feed).once
+    end
   end
 end

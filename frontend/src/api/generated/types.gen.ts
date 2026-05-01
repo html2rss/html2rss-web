@@ -42,7 +42,6 @@ export type GetApiMetadataResponse = GetApiMetadataResponses[keyof GetApiMetadat
 
 export type CreateFeedData = {
     body?: {
-        strategy: string;
         url: string;
     };
     headers: {
@@ -60,7 +59,11 @@ export type CreateFeedErrors = {
     401: {
         error: {
             code: string;
+            kind: string;
             message: string;
+            next_action: string;
+            retry_action: string;
+            retryable: boolean;
         };
         success: boolean;
     };
@@ -70,7 +73,11 @@ export type CreateFeedErrors = {
     403: {
         error: {
             code: string;
+            kind: string;
             message: string;
+            next_action: string;
+            retry_action: string;
+            retryable: boolean;
         };
         success: boolean;
     };
@@ -91,7 +98,6 @@ export type CreateFeedResponses = {
                 json_public_url: string;
                 name: string;
                 public_url: string;
-                strategy: string;
                 updated_at: string;
                 url: string;
             };
@@ -157,7 +163,11 @@ export type GetHealthStatusErrors = {
     401: {
         error: {
             code: string;
+            kind: string;
             message: string;
+            next_action: string;
+            retry_action: string;
+            retryable: boolean;
         };
         success: boolean;
     };
@@ -167,7 +177,11 @@ export type GetHealthStatusErrors = {
     500: {
         error: {
             code: string;
+            kind: string;
             message: string;
+            next_action: string;
+            retry_action: string;
+            retryable: boolean;
         };
         success: boolean;
     };

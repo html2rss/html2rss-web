@@ -20,7 +20,7 @@ module Html2rss
               next if feed_name.empty?
               next if feed_name.include?('.') && !feed_name.end_with?('.json', '.xml', '.rss')
 
-              RequestTarget.mark!(router, RequestTarget::FEED)
+              router.env[RequestTarget::ENV_KEY] = RequestTarget::FEED
               Feeds::Responder.call(request: router, target_kind: :static, identifier: feed_name)
             end
           end
