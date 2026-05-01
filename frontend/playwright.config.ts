@@ -1,6 +1,18 @@
+import { existsSync } from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
-const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+const chromiumExecutablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || resolveChromiumExecutablePath();
+
+function resolveChromiumExecutablePath(): string | undefined {
+  const candidates = [
+    '/usr/bin/chromium-browser',
+    '/usr/bin/chromium',
+    '/home/vscode/.cache/ms-playwright/chromium-1217/chrome-linux/chrome',
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate));
+}
 
 export default defineConfig({
   testDir: './e2e',
