@@ -1,7 +1,20 @@
-import type { CreateFeedResponses, GetApiMetadataResponses, ListStrategiesResponses } from './generated';
+import type { GetApiMetadataResponses } from './generated';
 
-export type FeedRecord = CreateFeedResponses[201]['data']['feed'];
-export type StrategyRecord = ListStrategiesResponses[200]['data']['strategies'][number];
+export interface FeedRecord {
+  id: string;
+  name: string;
+  url: string;
+  feed_token: string;
+  public_url: string;
+  json_public_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FeedWorkflowState = 'created' | 'preview_loading' | 'preview_ready' | 'preview_failed';
+export type FeedRetryAction = 'alternate' | 'primary' | 'none';
+export type FeedNextAction = 'enter_token' | 'correct_input' | 'retry' | 'wait' | 'none';
+
 export interface FeedPreviewItem {
   title: string;
   excerpt: string;
@@ -9,25 +22,33 @@ export interface FeedPreviewItem {
   url?: string;
 }
 
-export interface FeedPreviewState {
-  items: FeedPreviewItem[];
-  error?: string;
-  isLoading: boolean;
+export interface FeedPreviewWarning {
+  code: string;
+  message: string;
+  retryable: boolean;
+  nextAction: FeedNextAction;
 }
 
-export type FeedReadinessPhase = 'link_created' | 'feed_ready' | 'feed_not_ready_yet' | 'preview_unavailable';
-
-export interface FeedRetryState {
-  automatic: boolean;
-  from: string;
-  to: string;
+export interface FeedPreviewState {
+  items: FeedPreviewItem[];
+  isLoading: boolean;
 }
 
 export interface CreatedFeedResult {
   feed: FeedRecord;
   preview: FeedPreviewState;
-  readinessPhase: FeedReadinessPhase;
-  retry?: FeedRetryState;
+  workflowState: FeedWorkflowState;
+  warnings: FeedPreviewWarning[];
+}
+
+export interface FeedCreationError {
+  kind: 'auth' | 'input' | 'network' | 'server';
+  code: string;
+  retryable: boolean;
+  nextAction: FeedNextAction;
+  retryAction: FeedRetryAction;
+  message: string;
+  status?: number;
 }
 
 export interface ApiMetadataRecord {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 
 const ACCESS_TOKEN_KEY = 'html2rss_access_token';
+let inMemoryToken = '';
 
 interface AccessTokenState {
   token?: string;
@@ -8,46 +9,28 @@ interface AccessTokenState {
   error?: string;
 }
 
-const memoryStorage = (() => {
-  const store = new Map<string, string>();
-
-  return {
-    get length() {
-      return store.size;
-    },
-    clear: () => store.clear(),
-    getItem: (key: string) => store.get(key),
-    key: (index: number) => [...store.keys()][index],
-    removeItem: (key: string) => {
-      store.delete(key);
-    },
-    setItem: (key: string, value: string) => {
-      store.set(key, value);
-    },
-  } as Storage;
-})();
-
-const resolveStorage = (): Storage => {
-  if (globalThis.window === undefined) return memoryStorage;
+const readSessionToken = (): string => {
+  if (globalThis.window === undefined) return inMemoryToken;
 
   try {
-    return globalThis.localStorage ?? globalThis.sessionStorage ?? memoryStorage;
+    return globalThis.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
   } catch {
-    try {
-      return globalThis.sessionStorage ?? memoryStorage;
-    } catch {
-      return memoryStorage;
-    }
+    return inMemoryToken;
   }
 };
 
-const clearLegacySessionToken = () => {
+const writeSessionToken = (token: string) => {
+  inMemoryToken = token;
   if (globalThis.window === undefined) return;
 
   try {
-    globalThis.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+    if (token) {
+      globalThis.sessionStorage?.setItem(ACCESS_TOKEN_KEY, token);
+    } else {
+      globalThis.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+    }
   } catch {
-    // Ignore restricted sessionStorage access (privacy mode, sandboxed contexts).
+    // Keep in-memory fallback only when sessionStorage is unavailable.
   }
 };
 
@@ -57,27 +40,11 @@ export function useAccessToken() {
   });
 
   useEffect(() => {
-    const storage = resolveStorage();
-
     try {
-      const token = storage.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
-      let legacyToken = '';
-      if (!token && globalThis.window !== undefined) {
-        try {
-          legacyToken = globalThis.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
-        } catch {
-          // Treat restricted sessionStorage access as no legacy token.
-          legacyToken = '';
-        }
-      }
-
-      if (!token && legacyToken) {
-        storage.setItem(ACCESS_TOKEN_KEY, legacyToken);
-        clearLegacySessionToken();
-      }
+      const token = readSessionToken();
 
       setState({
-        token: token || legacyToken || undefined,
+        token: token || undefined,
         isLoading: false,
       });
     } catch {
@@ -92,9 +59,7 @@ export function useAccessToken() {
     const normalized = token.trim();
     if (!normalized) throw new Error('Access token is required');
 
-    const storage = resolveStorage();
-    storage.setItem(ACCESS_TOKEN_KEY, normalized);
-    clearLegacySessionToken();
+    writeSessionToken(normalized);
 
     setState({
       token: normalized,
@@ -103,9 +68,7 @@ export function useAccessToken() {
   };
 
   const clearToken = () => {
-    const storage = resolveStorage();
-    storage.removeItem(ACCESS_TOKEN_KEY);
-    clearLegacySessionToken();
+    writeSessionToken('');
 
     setState({
       isLoading: false,

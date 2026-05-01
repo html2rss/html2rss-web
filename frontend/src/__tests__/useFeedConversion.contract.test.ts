@@ -1,12 +1,25 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
-import { server, buildFeedResponse } from './mocks/server';
+import { server, buildFeedResponse, buildStructuredErrorResponse } from './mocks/server';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 
 describe('useFeedConversion contract', () => {
-  it('sends feed creation request with bearer token', async () => {
+  it('sends feed creation requests with bearer auth and hydrates preview from json_public_url', async () => {
     let receivedAuthorization: string | undefined;
+    const nativeFetch = globalThis.fetch;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
+        return Promise.resolve(
+          new Response(JSON.stringify({ items: [{ title: 'Preview', content_text: 'Text' }] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/feed+json' },
+          })
+        );
+      }
+
+      return nativeFetch(input, init);
+    });
 
     server.use(
       http.post('/api/v1/feeds', async ({ request }) => {
@@ -25,48 +38,43 @@ describe('useFeedConversion contract', () => {
           { status: 201 }
         );
       }),
-      http.get('/api/v1/feeds/generated-token.json', ({ request }) => {
-        expect(request.headers.get('accept')).toBe('application/feed+json');
-
-        return HttpResponse.json({
-          items: [
-            {
-              title: 'Generated item',
-              content_text: 'Contract preview',
-              url: 'https://example.com/items/generated',
-              date_published: '2024-01-02T00:00:00Z',
-            },
-          ],
-        });
-      })
+      http.get('http://localhost:3000/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.json({ items: [{ title: 'Preview', content_text: 'Text' }] })
+      ),
+      http.get('http://localhost/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.json({ items: [{ title: 'Preview', content_text: 'Text' }] })
+      ),
+      http.get('/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.json({ items: [{ title: 'Preview', content_text: 'Text' }] })
+      )
     );
 
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'faraday', 'test-token-123');
+      await result.current.convertFeed('https://example.com/articles', 'test-token-123');
     });
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
     expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
-    expect(result.current.result?.feed.public_url).toBe('/api/v1/feeds/generated-token');
-    expect(result.current.result?.feed.json_public_url).toBe('/api/v1/feeds/generated-token.json');
-    expect(result.current.result?.readinessPhase).toBe('link_created');
-    await waitFor(() => {
-      expect(result.current.result?.readinessPhase).toBe('feed_ready');
-      expect(result.current.result?.preview.error).toBeUndefined();
-      expect(result.current.result?.preview.isLoading).toBe(false);
-      expect(result.current.result?.preview.items).toHaveLength(1);
-    });
+    await waitFor(() => expect(result.current.result?.workflowState).toBe('preview_ready'));
+    fetchSpy.mockRestore();
   });
 
-  it('propagates API validation errors', async () => {
+  it('propagates structured auth failures without parsing the message text', async () => {
     server.use(
       http.post('/api/v1/feeds', async () =>
         HttpResponse.json(
-          { success: false, error: { message: 'URL parameter is required' } },
-          { status: 400 }
+          buildStructuredErrorResponse({
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+            kind: 'auth',
+            retryable: false,
+            next_action: 'enter_token',
+            retry_action: 'none',
+          }),
+          { status: 401 }
         )
       )
     );
@@ -74,70 +82,136 @@ describe('useFeedConversion contract', () => {
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await expect(
-        result.current.convertFeed('https://example.com/articles', 'faraday', 'token')
-      ).rejects.toThrow('URL parameter is required');
+      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
+        {
+          message: 'Authentication required',
+        }
+      );
     });
 
     expect(result.current.result).toBeUndefined();
-    expect(result.current.error).toBe('URL parameter is required');
+    expect(result.current.error).toMatchObject({
+      kind: 'auth',
+      code: 'UNAUTHORIZED',
+      nextAction: 'enter_token',
+      retryAction: 'none',
+      retryable: false,
+      message: 'Authentication required',
+    });
   });
 
-  it('normalizes malformed successful responses', async () => {
+  it('treats extraction-empty failures as corrective input errors without strategy metadata', async () => {
     server.use(
       http.post('/api/v1/feeds', async () =>
-        HttpResponse.text('not-json', {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
+        HttpResponse.json(
+          buildStructuredErrorResponse({
+            code: 'NO_FEED_ITEMS_EXTRACTED',
+            message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
+            kind: 'input',
+            retryable: false,
+            next_action: 'correct_input',
+            retry_action: 'none',
+          }),
+          { status: 422 }
+        )
       )
     );
 
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await expect(
-        result.current.convertFeed('https://example.com/articles', 'faraday', 'token')
-      ).rejects.toThrow('Invalid response format from feed creation API');
+      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
+        {
+          kind: 'input',
+          code: 'NO_FEED_ITEMS_EXTRACTED',
+          nextAction: 'correct_input',
+          retryAction: 'none',
+          retryable: false,
+          message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
+        }
+      );
     });
-
-    expect(result.current.result).toBeUndefined();
-    expect(result.current.error).toBe('Invalid response format from feed creation API');
   });
 
-  it('marks the feed as not-ready-yet when preview endpoint keeps returning 5xx', async () => {
+  it('marks preview failure from the feed json response without status polling', async () => {
+    const nativeFetch = globalThis.fetch;
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
+      if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
+        return Promise.resolve(new Response('No feed items', { status: 422 }));
+      }
+
+      return nativeFetch(input, init);
+    });
+
     server.use(
-      http.post('/api/v1/feeds', async () =>
-        HttpResponse.json(
+      http.post('/api/v1/feeds', async ({ request }) => {
+        const body = (await request.json()) as { url: string };
+
+        return HttpResponse.json(
           buildFeedResponse({
+            url: body.url,
             feed_token: 'generated-token',
             public_url: '/api/v1/feeds/generated-token',
             json_public_url: '/api/v1/feeds/generated-token.json',
           }),
           { status: 201 }
-        )
+        );
+      }),
+      http.get('http://localhost:3000/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.text('No feed items', { status: 422 })
       ),
-      http.get('/api/v1/feeds/generated-token.json', async () => new HttpResponse(undefined, { status: 502 }))
+      http.get('http://localhost/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.text('No feed items', { status: 422 })
+      ),
+      http.get('/api/v1/feeds/generated-token.json', () =>
+        HttpResponse.text('No feed items', { status: 422 })
+      )
     );
 
     const { result } = renderHook(() => useFeedConversion());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'faraday', 'token');
+      await result.current.convertFeed('https://example.com/articles', 'token');
     });
 
-    expect(result.current.error).toBeUndefined();
-    expect(result.current.result?.feed.feed_token).toBe('generated-token');
-    await waitFor(
-      () => {
-        expect(result.current.result?.readinessPhase).toBe('feed_not_ready_yet');
-        expect(result.current.result?.preview.items).toEqual([]);
-        expect(result.current.result?.preview.error).toBe(
-          'Feed is still preparing. Try again in a few seconds.'
-        );
-        expect(result.current.result?.preview.isLoading).toBe(false);
-      },
-      { timeout: 6000 }
+    await waitFor(() => {
+      expect(result.current.result?.workflowState).toBe('preview_failed');
+      expect(result.current.result?.warnings[0]?.code).toBe('PREVIEW_HTTP_422');
+    });
+    fetchSpy.mockRestore();
+  });
+
+  it('rejects camelCase-only create payloads to enforce canonical snake_case contract', async () => {
+    server.use(
+      http.post('/api/v1/feeds', async () =>
+        HttpResponse.json(
+          {
+            success: true,
+            data: {
+              feed: {
+                id: 'feed-1',
+                name: 'Example Feed',
+                url: 'https://example.com/articles',
+                feedToken: 'generated-token',
+                publicUrl: '/api/v1/feeds/generated-token',
+                jsonPublicUrl: '/api/v1/feeds/generated-token.json',
+              },
+            },
+          },
+          { status: 201 }
+        )
+      )
     );
+
+    const { result } = renderHook(() => useFeedConversion());
+
+    await act(async () => {
+      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
+        {
+          kind: 'server',
+          code: 'INVALID_RESPONSE',
+        }
+      );
+    });
   });
 });

@@ -1,18 +1,44 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult } from '../api/contracts';
+import type { WorkflowState } from './AppPanels';
 import { DominantField } from './DominantField';
+import { ResultHero } from './ResultHero';
 
 interface ResultDisplayProperties {
   result: CreatedFeedResult;
+  workflowState: WorkflowState;
   onCreateAnother: () => void;
-  onRetryReadiness: () => void;
+  onRetryPreview: () => void;
 }
 
-export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: ResultDisplayProperties) {
+interface PreviewSectionProperties {
+  ariaLabel: string;
+  intro?: string;
+  children: ComponentChildren;
+}
+
+function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties) {
+  return (
+    <section class="result-preview layout-rail-reading layout-stack" aria-label={ariaLabel}>
+      <div class="result-preview__header layout-stack layout-stack--tight">
+        <p class="result-preview__label ui-eyebrow">Preview</p>
+        {intro && <p class="result-preview__intro">{intro}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function ResultDisplay({
+  result,
+  workflowState,
+  onCreateAnother,
+  onRetryPreview,
+}: ResultDisplayProperties) {
   const [copyNotice, setCopyNotice] = useState('');
-  const [showAllPreviewItems, setShowAllPreviewItems] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
-  const { feed, preview, readinessPhase } = result;
+  const { feed, preview, workflowState: previewWorkflowState, warnings } = result;
 
   const fullUrl = feed.public_url.startsWith('http')
     ? feed.public_url
@@ -21,35 +47,38 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
     ? feed.json_public_url
     : `${globalThis.location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
-  const isFeedReady = readinessPhase === 'feed_ready';
-  const canManuallyRetryReadiness =
-    readinessPhase === 'feed_not_ready_yet' || readinessPhase === 'preview_unavailable';
-  const isReadinessCheckInProgress = readinessPhase === 'link_created' && preview.isLoading;
-  const showReadinessAction = canManuallyRetryReadiness || isReadinessCheckInProgress;
-  const previewItems = showAllPreviewItems ? preview.items : preview.items.slice(0, 3);
-  const hasMorePreviewItems = preview.items.length > 3;
+  const canUseFeed = previewWorkflowState !== 'preview_loading';
+  const canManuallyRetryPreview =
+    previewWorkflowState === 'preview_failed' && warnings.some((warning) => warning.retryable);
+  const isPreviewCheckInProgress = preview.isLoading;
   const statusTitle = {
-    link_created: 'Feed created',
-    feed_ready: 'Feed ready',
-    feed_not_ready_yet: 'Feed still warming up',
-    preview_unavailable: 'Readiness check unavailable',
-  }[readinessPhase];
+    created: 'Feed created',
+    preview_loading: 'Checking preview',
+    preview_ready: 'Feed ready',
+    preview_failed: 'Feed link created',
+  }[previewWorkflowState];
   const statusMessage = {
-    link_created: 'Checking readiness now.',
-    feed_ready: 'This feed has been verified and is ready to use.',
-    feed_not_ready_yet: 'The feed endpoint is still warming up. Try checking again in a few seconds.',
-    preview_unavailable: 'We could not verify readiness right now. Try checking again.',
-  }[readinessPhase];
+    created: 'Preparing preview.',
+    preview_loading: 'Checking preview...',
+    preview_ready: '',
+    preview_failed: '',
+  }[previewWorkflowState];
+  const previewMessage = warnings[0]?.message ?? '';
+  const hasPreviewItems = preview.items.length > 0;
+  const showResultStatusNote =
+    previewWorkflowState === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
+  const showPreviewStatusOnly =
+    !showResultStatusNote &&
+    !preview.isLoading &&
+    !hasPreviewItems &&
+    !!previewMessage &&
+    previewWorkflowState === 'preview_failed';
 
   useEffect(() => {
     return () => {
       if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
     };
   }, []);
-
-  useEffect(() => {
-    setShowAllPreviewItems(false);
-  }, [feed.feed_token]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -63,40 +92,32 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
   };
 
   return (
-    <section class="result-shell layout-stack" aria-live="polite">
-      <header
-        class="result-hero ui-card ui-card--roomy ui-hero layout-rail-reading layout-stack"
-        style={{ '--stack-gap': 'var(--space-3)' }}
-      >
-        <div class="result-hero__masthead ui-hero__masthead">
-          <div class="result-hero__icon-wrap ui-hero__icon-wrap" aria-hidden="true">
-            <img class="result-hero__icon ui-hero__icon" src="/feed.svg" alt="" />
-          </div>
-          <div class="layout-stack layout-stack--tight">
-            <h1 class="result-title ui-display-title">{statusTitle}</h1>
+    <section class="result-shell layout-stack" aria-live="polite" data-state={workflowState}>
+      <ResultHero
+        title={statusTitle}
+        body={
+          <>
             <p class="result-meta layout-rail-copy">{feed.name}</p>
-            <p class="field-help">{statusMessage}</p>
-          </div>
-        </div>
-        <div class="result-hero__actions ui-hero__actions">
-          {showReadinessAction && (
+            {statusMessage && <p class="field-help">{statusMessage}</p>}
+            {showResultStatusNote && (
+              <p class="result-status-note field-help field-help--warning">{previewMessage}</p>
+            )}
+          </>
+        }
+        actions={
+          canManuallyRetryPreview && (
             <button
               type="button"
               class="btn btn--primary"
-              onClick={onRetryReadiness}
-              disabled={isReadinessCheckInProgress}
-              aria-busy={isReadinessCheckInProgress}
+              onClick={onRetryPreview}
+              disabled={isPreviewCheckInProgress}
+              aria-busy={isPreviewCheckInProgress}
             >
-              {isReadinessCheckInProgress ? 'Checking readiness…' : 'Try readiness check again'}
+              {isPreviewCheckInProgress ? 'Checking...' : 'Check preview again'}
             </button>
-          )}
-        </div>
-        {result.retry && (
-          <p class="field-help">
-            {`Retried automatically with ${result.retry.to} after ${result.retry.from} could not finish the page.`}
-          </p>
-        )}
-      </header>
+          )
+        }
+      />
 
       <DominantField
         className="layout-rail-reading"
@@ -111,9 +132,9 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
       />
 
       <div class="result-actions result-actions--quiet layout-rail-reading">
-        {isFeedReady && (
+        {canUseFeed && (
           <>
-            <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+            <a href={fullUrl} class="btn btn--primary" target="_blank" rel="noopener noreferrer">
               Open feed
             </a>
             <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
@@ -132,23 +153,15 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
       </div>
 
       {preview.isLoading && (
-        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
-          <div class="result-preview__header layout-stack layout-stack--tight">
-            <p class="result-preview__label ui-eyebrow">Preview</p>
-            <p class="result-preview__intro">Latest items from this feed</p>
-          </div>
-          <p class="field-help">Verifying feed readiness…</p>
-        </section>
+        <PreviewSection ariaLabel="Feed preview status">
+          <p class="field-help">{previewMessage}</p>
+        </PreviewSection>
       )}
 
-      {isFeedReady && preview.items.length > 0 && (
-        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview">
-          <div class="result-preview__header layout-stack layout-stack--tight">
-            <p class="result-preview__label ui-eyebrow">Preview</p>
-            <p class="result-preview__intro">Latest items from this feed</p>
-          </div>
+      {!preview.isLoading && hasPreviewItems && (
+        <PreviewSection ariaLabel="Feed preview" intro="Latest items from this feed">
           <ul class="result-preview__list" role="list">
-            {previewItems.map((item) => (
+            {preview.items.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`}>
                 <article class="preview-card ui-card layout-stack layout-stack--tight">
                   <h2 class="preview-card__title">{item.title}</h2>
@@ -165,38 +178,13 @@ export function ResultDisplay({ result, onCreateAnother, onRetryReadiness }: Res
               </li>
             ))}
           </ul>
-          {hasMorePreviewItems && (
-            <button
-              type="button"
-              class="btn btn--quiet btn--linkish"
-              onClick={() => setShowAllPreviewItems((current) => !current)}
-            >
-              {showAllPreviewItems ? 'Show fewer items' : `Show all ${preview.items.length} items`}
-            </button>
-          )}
-        </section>
+        </PreviewSection>
       )}
 
-      {isFeedReady && !preview.isLoading && preview.items.length === 0 && !preview.error && (
-        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
-          <div class="result-preview__header layout-stack layout-stack--tight">
-            <p class="result-preview__label ui-eyebrow">Preview</p>
-            <p class="result-preview__intro">Latest items from this feed</p>
-          </div>
-          <p class="field-help">
-            Feed is ready. Preview items will appear once the source publishes entries.
-          </p>
-        </section>
-      )}
-
-      {!preview.isLoading && preview.error && (
-        <section class="result-preview layout-rail-reading layout-stack" aria-label="Feed preview status">
-          <div class="result-preview__header layout-stack layout-stack--tight">
-            <p class="result-preview__label ui-eyebrow">Preview</p>
-            <p class="result-preview__intro">Latest items from this feed</p>
-          </div>
-          <p class="field-help">{preview.error}</p>
-        </section>
+      {showPreviewStatusOnly && (
+        <PreviewSection ariaLabel="Feed preview status">
+          <p class="field-help field-help--warning">{previewMessage}</p>
+        </PreviewSection>
       )}
 
       {copyNotice && (

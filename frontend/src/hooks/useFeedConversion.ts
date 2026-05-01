@@ -1,122 +1,135 @@
-import { useRef, useState } from 'preact/hooks';
-import { createFeed } from '../api/generated';
-import { apiClient } from '../api/client';
-import type { CreatedFeedResult, FeedPreviewItem, FeedReadinessPhase, FeedRecord } from '../api/contracts';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import type {
+  CreatedFeedResult,
+  FeedCreationError,
+  FeedNextAction,
+  FeedPreviewItem,
+  FeedPreviewWarning,
+  FeedRecord,
+  FeedRetryAction,
+  FeedWorkflowState,
+} from '../api/contracts';
 import { normalizeUserUrl } from '../utils/url';
-
-interface JsonFeedItem {
-  title?: string;
-  content_text?: string;
-  content_html?: string;
-  url?: string;
-  external_url?: string;
-  date_published?: string;
-}
-
-interface JsonFeedResponse {
-  items?: JsonFeedItem[];
-}
 
 interface ConversionState {
   isConverting: boolean;
   result?: CreatedFeedResult;
-  error?: string;
+  error?: FeedCreationError;
 }
 
-interface ConversionError extends Error {
-  manualRetryStrategy?: string;
+interface RawFeedRecord {
+  id?: unknown;
+  name?: unknown;
+  url?: unknown;
+  feed_token?: unknown;
+  public_url?: unknown;
+  json_public_url?: unknown;
+  created_at?: unknown;
+  updated_at?: unknown;
 }
 
-const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
-const FEED_NOT_READY_MESSAGE = 'Feed is still preparing. Try again in a few seconds.';
-const NON_RETRYABLE_ERROR_CODES = new Set(['BAD_REQUEST', 'UNAUTHORIZED', 'FORBIDDEN']);
+interface RawFeedPayload {
+  feed?: RawFeedRecord;
+}
+
+interface RawApiResponse {
+  success?: unknown;
+  data?: RawFeedPayload;
+  error?: unknown;
+}
+
+interface RawErrorEnvelope {
+  kind?: unknown;
+  code?: unknown;
+  retryable?: unknown;
+  next_action?: unknown;
+  retry_action?: unknown;
+  message?: unknown;
+}
+
+interface JsonFeedResponse {
+  items?: unknown[];
+}
+
+interface PreviewLoadResult {
+  items: FeedPreviewItem[];
+  warnings: FeedPreviewWarning[];
+  workflowState: Extract<FeedWorkflowState, 'preview_ready' | 'preview_failed'>;
+}
+
 const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
+const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
+const PREVIEW_DEGRADED_MESSAGE = 'Preview content is partially degraded right now.';
 
 export function useFeedConversion() {
   const requestIdReference = useRef(0);
-  const [state, setState] = useState<ConversionState>({
-    isConverting: false,
-  });
+  const previewAbortControllerReference = useRef<AbortController | undefined>(undefined);
+  const [state, setState] = useState<ConversionState>({ isConverting: false });
 
-  const convertFeed = async (url: string, strategy: string, token: string) => {
+  const cancelPreview = () => {
+    previewAbortControllerReference.current?.abort();
+    previewAbortControllerReference.current = undefined;
+  };
+
+  useEffect(
+    () => () => {
+      requestIdReference.current += 1;
+      cancelPreview();
+    },
+    []
+  );
+
+  async function convertFeed(url: string, token: string) {
     const normalizedUrl = normalizeUserUrl(url);
-    const requestedStrategy = strategy.trim();
-    const fallbackStrategy = requestedStrategy === 'faraday' ? 'browserless' : undefined;
 
-    if (!normalizedUrl) throw new Error('URL is required');
-    if (!requestedStrategy) throw new Error('Strategy is required');
-
-    if (!isValidHttpUrl(normalizedUrl)) {
-      throw new Error('Invalid URL format');
-    }
+    if (!normalizedUrl) throw buildLocalError('Source URL is required.', 'input', 'correct_input');
+    if (!isValidHttpUrl(normalizedUrl))
+      throw buildLocalError('Invalid URL format.', 'input', 'correct_input');
 
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
-    markConversionStarted(setState);
+    cancelPreview();
+    setState((previous) => ({ ...previous, isConverting: true, error: undefined }));
 
     try {
-      const feed = await requestFeedCreation(normalizedUrl, requestedStrategy, token);
-      return publishCreatedFeed(feed, undefined, requestId, setState, requestIdReference);
-    } catch (firstError) {
-      if (shouldAutoRetry(requestedStrategy, fallbackStrategy, firstError)) {
-        try {
-          const feed = await requestFeedCreation(normalizedUrl, fallbackStrategy, token);
-          return publishCreatedFeed(
-            feed,
-            { automatic: true, from: requestedStrategy, to: fallbackStrategy },
-            requestId,
-            setState,
-            requestIdReference
-          );
-        } catch (secondError) {
-          const message = buildRetryFailureMessage(
-            firstError,
-            secondError,
-            requestedStrategy,
-            fallbackStrategy
-          );
-          failConversion(setState, message, { manualRetryStrategy: undefined });
-        }
-      }
-
-      const message = toErrorMessage(firstError);
-      failConversion(setState, message, { manualRetryStrategy: alternateStrategy(requestedStrategy) });
+      const feed = await requestFeedCreation(normalizedUrl, token);
+      const result = buildCreatedFeedResult(feed);
+      publishResult(result, requestId, setState, requestIdReference);
+      void hydrateFeedPreview(feed, requestId, setState, requestIdReference, previewAbortControllerReference);
+      return result;
+    } catch (error) {
+      const structuredError = normalizeFeedCreationError(error);
+      failConversion(setState, structuredError);
+      throw structuredError;
     }
-  };
+  }
 
   const clearResult = () => {
-    globalThis.document.body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    globalThis.document?.body?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     requestIdReference.current += 1;
-
-    setState({
-      isConverting: false,
-    });
+    cancelPreview();
+    setState({ isConverting: false });
   };
 
   const clearError = () => {
     setState((previous) => ({ ...previous, error: undefined }));
   };
 
-  const retryReadinessCheck = () => {
+  const retryPreviewFetch = () => {
     const currentResult = state.result;
     if (!currentResult) return;
 
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
+    cancelPreview();
 
-    const resetResult: CreatedFeedResult = {
-      ...currentResult,
-      readinessPhase: 'link_created',
-      preview: buildLoadingPreviewState(),
-    };
-
-    setState((previous) => ({
-      ...previous,
-      isConverting: false,
-      error: undefined,
-      result: resetResult,
-    }));
-    void hydratePreview(currentResult.feed, requestId, currentResult.retry, setState, requestIdReference);
+    void hydrateFeedPreview(
+      currentResult.feed,
+      requestId,
+      setState,
+      requestIdReference,
+      previewAbortControllerReference
+    );
   };
 
   return {
@@ -126,423 +139,603 @@ export function useFeedConversion() {
     convertFeed,
     clearError,
     clearResult,
-    retryReadinessCheck,
+    retryPreviewFetch,
   };
 }
 
-interface PreviewLoadResult {
-  preview: CreatedFeedResult['preview'];
-  readinessPhase: FeedReadinessPhase;
-  shouldRetry: boolean;
+async function requestFeedCreation(url: string, token: string): Promise<FeedRecord> {
+  const response = await globalThis.fetch(resolveApiUrl('feeds'), {
+    method: 'POST',
+    headers: buildCreateHeaders(token),
+    body: JSON.stringify({ url }),
+  });
+
+  const payload = await readJsonResponse<RawApiResponse>(response);
+
+  if (!response.ok) {
+    throw normalizeFeedCreationErrorFromResponse(response.status, payload?.error, payload);
+  }
+
+  const feed = normalizeFeedRecord(payload?.data?.feed);
+  if (!feed) {
+    throw buildStructuredError(
+      'server',
+      'INVALID_RESPONSE',
+      true,
+      'retry',
+      'primary',
+      'Unable to start feed generation.',
+      response.status
+    );
+  }
+
+  return feed;
 }
 
-async function loadPreview(feed: FeedRecord): Promise<PreviewLoadResult> {
-  let response: Response;
+async function hydrateFeedPreview(
+  feed: FeedRecord,
+  requestId: number,
+  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  requestIdReference: { current: number },
+  previewAbortControllerReference: { current: AbortController | undefined }
+) {
+  previewAbortControllerReference.current?.abort();
+  const controller = new AbortController();
+  previewAbortControllerReference.current = controller;
+
+  commitResult(buildPreviewLoadingResult(feed), requestId, setState, requestIdReference);
+
   try {
-    response = await globalThis.fetch(feed.json_public_url, {
-      headers: { Accept: 'application/feed+json' },
-    });
-  } catch {
-    return {
-      preview: {
-        items: [],
-        error: FEED_NOT_READY_MESSAGE,
-        isLoading: false,
+    const previewResult = await loadPreviewItemsWithRetry(feed.json_public_url, controller.signal);
+    if (requestIdReference.current !== requestId) return;
+
+    commitResult(
+      {
+        feed,
+        preview: {
+          items: previewResult.items,
+          isLoading: false,
+        },
+        workflowState: previewResult.workflowState,
+        warnings: previewResult.warnings,
       },
-      readinessPhase: 'feed_not_ready_yet',
-      shouldRetry: true,
+      requestId,
+      setState,
+      requestIdReference
+    );
+  } catch (error) {
+    if (isAbortError(error)) return;
+
+    commitResult(
+      {
+        feed,
+        preview: {
+          items: [],
+          isLoading: false,
+        },
+        workflowState: 'preview_failed',
+        warnings: [buildPreviewWarning('PREVIEW_FAILED', PREVIEW_UNAVAILABLE_MESSAGE, true, 'retry')],
+      },
+      requestId,
+      setState,
+      requestIdReference
+    );
+  } finally {
+    if (previewAbortControllerReference.current === controller) {
+      previewAbortControllerReference.current = undefined;
+    }
+  }
+}
+
+async function loadPreviewItemsWithRetry(
+  previewUrl: string,
+  signal?: AbortSignal
+): Promise<PreviewLoadResult> {
+  const delays = [0, ...PREVIEW_RETRY_DELAYS_MS];
+  let latestRetryableFailure: PreviewLoadResult | undefined;
+
+  for (const [index, delayMs] of delays.entries()) {
+    if (delayMs > 0) await wait(delayMs, signal);
+
+    const result = await loadPreviewItems(previewUrl, signal);
+    if (result.workflowState === 'preview_ready') return result;
+    if (!result.warnings.some((warning) => warning.retryable)) return result;
+
+    latestRetryableFailure = result;
+    if (index === delays.length - 1) return result;
+  }
+
+  return (
+    latestRetryableFailure ?? {
+      items: [],
+      warnings: [buildPreviewWarning('PREVIEW_FAILED', PREVIEW_UNAVAILABLE_MESSAGE, true, 'retry')],
+      workflowState: 'preview_failed',
+    }
+  );
+}
+
+async function loadPreviewItems(previewUrl: string, signal?: AbortSignal): Promise<PreviewLoadResult> {
+  let response: Response;
+
+  try {
+    response = await globalThis.fetch(resolveFetchUrl(previewUrl), {
+      headers: { Accept: 'application/feed+json' },
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+
+    return {
+      items: [],
+      warnings: [buildPreviewWarning('PREVIEW_NETWORK_ERROR', PREVIEW_UNAVAILABLE_MESSAGE, true, 'retry')],
+      workflowState: 'preview_failed',
     };
   }
 
   if (!response.ok) {
-    if (isTransientReadinessStatus(response.status)) {
-      return {
-        preview: {
-          items: [],
-          error: FEED_NOT_READY_MESSAGE,
-          isLoading: false,
-        },
-        readinessPhase: 'feed_not_ready_yet',
-        shouldRetry: true,
-      };
-    }
-
     return {
-      preview: {
-        items: [],
-        error: PREVIEW_UNAVAILABLE_MESSAGE,
-        isLoading: false,
-      },
-      readinessPhase: 'preview_unavailable',
-      shouldRetry: false,
+      items: [],
+      warnings: [
+        buildPreviewWarning(
+          `PREVIEW_HTTP_${response.status}`,
+          isTransientHttpStatus(response.status) ? PREVIEW_DEGRADED_MESSAGE : PREVIEW_UNAVAILABLE_MESSAGE,
+          isTransientHttpStatus(response.status),
+          isTransientHttpStatus(response.status) ? 'retry' : 'wait'
+        ),
+      ],
+      workflowState: 'preview_failed',
     };
   }
 
   try {
     const payload = (await response.json()) as JsonFeedResponse;
-    const items =
-      payload.items
-        ?.map((item) => normalizePreviewItem(item))
-        .filter((item): item is FeedPreviewItem => item !== undefined)
-        .slice(0, 5) || [];
-
     return {
-      preview: {
-        items,
-        error: undefined,
-        isLoading: false,
-      },
-      readinessPhase: 'feed_ready',
-      shouldRetry: false,
+      items: normalizePreviewItems(payload.items),
+      warnings: [],
+      workflowState: 'preview_ready',
     };
   } catch {
     return {
-      preview: {
-        items: [],
-        error: PREVIEW_UNAVAILABLE_MESSAGE,
-        isLoading: false,
-      },
-      readinessPhase: 'preview_unavailable',
-      shouldRetry: false,
+      items: [],
+      warnings: [buildPreviewWarning('PREVIEW_INVALID_JSON', PREVIEW_UNAVAILABLE_MESSAGE, false, 'wait')],
+      workflowState: 'preview_failed',
     };
   }
 }
 
-function buildLoadingPreviewState(): CreatedFeedResult['preview'] {
+function buildCreatedFeedResult(feed: FeedRecord): CreatedFeedResult {
   return {
-    items: [],
-    error: undefined,
-    isLoading: true,
+    feed,
+    preview: {
+      items: [],
+      isLoading: false,
+    },
+    workflowState: 'created',
+    warnings: [],
   };
 }
 
-async function hydratePreview(
-  feed: FeedRecord,
-  requestId: number,
-  retry: CreatedFeedResult['retry'],
-  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
-  requestIdReference: { current: number }
-) {
-  const delays = [0, ...PREVIEW_RETRY_DELAYS_MS];
-  let lastAttempt: PreviewLoadResult | undefined;
-
-  for (const [index, delayMs] of delays.entries()) {
-    if (delayMs > 0) await wait(delayMs);
-    if (requestIdReference.current !== requestId) return;
-
-    const attempt = await loadPreview(feed);
-    lastAttempt = attempt;
-    if (requestIdReference.current !== requestId) return;
-
-    const exhausted = index === delays.length - 1;
-    if (!attempt.shouldRetry || exhausted) {
-      setPreviewResult(
-        feed,
-        attempt.preview,
-        attempt.readinessPhase,
-        retry,
-        requestId,
-        setState,
-        requestIdReference
-      );
-      return;
-    }
-  }
-
-  if (!lastAttempt) {
-    setPreviewResult(
-      feed,
-      {
-        items: [],
-        error: FEED_NOT_READY_MESSAGE,
-        isLoading: false,
-      },
-      'feed_not_ready_yet',
-      retry,
-      requestId,
-      setState,
-      requestIdReference
-    );
-  }
-}
-
-async function requestFeedCreation(url: string, strategy: string, token: string): Promise<FeedRecord> {
-  const response = await createFeed({
-    client: apiClient,
-    headers: {
-      Authorization: `Bearer ${token}`,
+function buildPreviewLoadingResult(feed: FeedRecord): CreatedFeedResult {
+  return {
+    feed,
+    preview: {
+      items: [],
+      isLoading: true,
     },
-    body: {
-      url,
-    },
-    throwOnError: true,
-  });
-
-  if (!response.data?.success || !response.data.data?.feed) {
-    throw new Error('Invalid response format');
-  }
-
-  return response.data.data.feed;
+    workflowState: 'preview_loading',
+    warnings: [],
+  };
 }
 
-function isValidHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-function alternateStrategy(strategy: string): string | undefined {
-  if (strategy === 'faraday') return 'browserless';
-  if (strategy === 'browserless') return 'faraday';
-  return undefined;
-}
-
-function shouldAutoRetry(
-  strategy: string,
-  fallbackStrategy: string | undefined,
-  error: unknown
-): fallbackStrategy is string {
-  if (strategy !== 'faraday' || !fallbackStrategy) return false;
-  return retryableForFallback(error);
-}
-
-function buildRetryFailureMessage(
-  firstError: unknown,
-  secondError: unknown,
-  requestedStrategy: string,
-  fallbackStrategy: string
-): string {
-  const secondMessage = toErrorMessage(secondError);
-  const firstMessage = toErrorMessage(firstError);
-
-  if (firstMessage === secondMessage) {
-    return `Tried ${requestedStrategy} first, then ${fallbackStrategy}. ${secondMessage}`;
-  }
-
-  return `Tried ${requestedStrategy} first, then ${fallbackStrategy}. First attempt failed with: ${firstMessage}. Second attempt failed with: ${secondMessage}`;
-}
-
-function buildConversionError(message: string, metadata: Partial<ConversionError>): ConversionError {
-  return Object.assign(new Error(message), metadata);
-}
-
-const toErrorMessage = (error: unknown): string => {
-  const details = extractErrorDetails(error);
-  const detailsMessage = details?.message?.toLowerCase();
-  if (
-    detailsMessage &&
-    (detailsMessage.includes('not valid json') || detailsMessage.includes('unexpected token'))
-  ) {
-    return 'Invalid response format from feed creation API';
-  }
-  if (details?.message) return details.message;
-  if (error instanceof SyntaxError) return 'Invalid response format from feed creation API';
-  if (error instanceof Error) {
-    const normalizedMessage = error.message.toLowerCase();
-    if (normalizedMessage.includes('not valid json') || normalizedMessage.includes('unexpected token')) {
-      return 'Invalid response format from feed creation API';
-    }
-
-    return error.message;
-  }
-  if (typeof error === 'string' && error.trim()) return error;
-  return 'An unexpected error occurred';
-};
-
-function setPreviewResult(
-  feed: FeedRecord,
-  preview: CreatedFeedResult['preview'],
-  readinessPhase: FeedReadinessPhase,
-  retry: CreatedFeedResult['retry'],
+function commitResult(
+  result: CreatedFeedResult,
   requestId: number,
   setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
   requestIdReference: { current: number }
 ) {
   setState((previous) => {
-    if (
-      requestIdReference.current !== requestId ||
-      !previous.result ||
-      previous.result.feed.feed_token !== feed.feed_token
-    ) {
+    if (requestIdReference.current !== requestId) {
       return previous;
     }
 
     return {
       ...previous,
-      result: {
-        feed,
-        preview,
-        readinessPhase,
-        retry,
-      },
+      isConverting: false,
+      error: undefined,
+      result,
     };
   });
 }
 
-function markConversionStarted(
-  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void
-) {
-  setState((previous) => ({ ...previous, isConverting: true, error: undefined }));
-}
-
-function publishCreatedFeed(
-  feed: FeedRecord,
-  retry: CreatedFeedResult['retry'],
+function publishResult(
+  result: CreatedFeedResult,
   requestId: number,
   setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
   requestIdReference: { current: number }
-): CreatedFeedResult {
-  const result: CreatedFeedResult = {
-    feed,
-    preview: buildLoadingPreviewState(),
-    readinessPhase: 'link_created',
-    retry,
-  };
-
-  setState((previous) => ({ ...previous, isConverting: false, result, error: undefined }));
-  void hydratePreview(feed, requestId, retry, setState, requestIdReference);
-  return result;
+) {
+  commitResult(result, requestId, setState, requestIdReference);
 }
 
 function failConversion(
   setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
-  message: string,
-  metadata: Partial<ConversionError>
-): never {
+  error: FeedCreationError
+) {
   setState((previous) => ({
     ...previous,
     isConverting: false,
-    error: message,
-    result: undefined,
+    error,
   }));
-
-  throw buildConversionError(message, metadata);
 }
 
-const extractErrorDetails = (
-  error: unknown
-): { message?: string; code?: string; status?: number } | undefined => {
-  if (!error || typeof error !== 'object') return undefined;
+function normalizeFeedCreationError(error: unknown): FeedCreationError {
+  if (isFeedCreationError(error)) return error;
 
-  const candidate = error as {
-    error?: { message?: unknown; code?: unknown; status?: unknown };
-    message?: unknown;
-    code?: unknown;
-    status?: unknown;
+  if (error instanceof Error) {
+    return buildStructuredError(
+      'network',
+      'NETWORK_ERROR',
+      true,
+      'retry',
+      'primary',
+      error.message || 'Unable to reach the server.'
+    );
+  }
+
+  return buildStructuredError(
+    'server',
+    'UNKNOWN_ERROR',
+    true,
+    'retry',
+    'primary',
+    'Unable to complete feed creation.'
+  );
+}
+
+function normalizeFeedCreationErrorFromResponse(
+  status: number,
+  errorPayload: unknown,
+  payload?: RawApiResponse
+): FeedCreationError {
+  const envelope = resolveErrorEnvelope(errorPayload, payload);
+
+  const kind = normalizeErrorKind(envelope?.kind, status);
+  const retryable = normalizeBoolean(envelope?.retryable, defaultRetryableFromStatus(status, kind));
+  const nextAction = normalizeNextAction(envelope?.next_action, kind, retryable);
+  const retryAction = normalizeRetryAction(envelope?.retry_action, nextAction, retryable);
+  const code = normalizeString(envelope?.code) || fallbackErrorCode(status, kind);
+  const message = normalizeString(envelope?.message) || fallbackErrorMessage(status, kind, nextAction);
+
+  return buildStructuredError(kind, code, retryable, nextAction, retryAction, message, status);
+}
+
+function resolveErrorEnvelope(errorPayload: unknown, payload?: RawApiResponse): RawErrorEnvelope | undefined {
+  if (isErrorEnvelope(errorPayload)) return errorPayload;
+  if (isErrorEnvelope(payload?.error)) return payload.error;
+  if (isErrorEnvelope(payload)) return payload;
+  return undefined;
+}
+
+function buildStructuredError(
+  kind: FeedCreationError['kind'],
+  code: string,
+  retryable: boolean,
+  nextAction: FeedNextAction,
+  retryAction: FeedRetryAction,
+  message: string,
+  status?: number
+): FeedCreationError {
+  return {
+    kind,
+    code,
+    retryable,
+    nextAction,
+    retryAction,
+    message,
+    ...(typeof status === 'number' ? { status } : {}),
   };
-
-  const message = normalizeString(candidate.error?.message ?? candidate.message);
-  const code = normalizeString(candidate.error?.code ?? candidate.code);
-  const status = normalizeStatus(candidate.error?.status ?? candidate.status);
-  return { message, code, status };
-};
-
-function isTransientReadinessStatus(status: number): boolean {
-  return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
-async function wait(durationMs: number): Promise<void> {
-  await new Promise((resolve) => globalThis.setTimeout(resolve, durationMs));
+function buildLocalError(
+  message: string,
+  kind: FeedCreationError['kind'],
+  nextAction: FeedNextAction
+): FeedCreationError {
+  const retryable = nextAction === 'retry';
+  return buildStructuredError(
+    kind,
+    localErrorCode(kind, nextAction),
+    retryable,
+    nextAction,
+    retryable ? 'primary' : 'none',
+    message
+  );
 }
 
-function retryableForFallback(error: unknown): boolean {
-  const details = extractErrorDetails(error);
-  const errorCode = details?.code?.toUpperCase();
-  const status = details?.status;
-  if (errorCode && NON_RETRYABLE_ERROR_CODES.has(errorCode)) return false;
-  if (status && status < 500) return false;
+function buildPreviewWarning(
+  code: string,
+  message: string,
+  retryable: boolean,
+  nextAction: FeedNextAction
+): FeedPreviewWarning {
+  return { code, message, retryable, nextAction };
+}
 
-  const message = (details?.message ?? toErrorMessage(error)).toLowerCase();
-  if (!details?.code && (message.includes('unauthorized') || message.includes('forbidden'))) return false;
-  if (!details?.code && message.includes('bad request')) return false;
-  if (message.includes('access token') || message.includes('authentication')) return false;
-  if (message.includes('unsupported strategy')) return false;
-  if (message.includes('invalid response format')) return false;
-  if (message.includes('not valid json') || message.includes('unexpected token')) return false;
-  if (message === 'network error') return false;
-  if (error instanceof SyntaxError) return false;
+function normalizeFeedRecord(raw?: RawFeedRecord): FeedRecord | undefined {
+  if (!raw) return undefined;
 
-  if (status && status >= 500) return true;
-  if (message.includes('failed to fetch http')) return true;
-  return message.includes('internal server error') || message.includes('upstream timeout');
+  const feedToken = normalizeString(raw.feed_token);
+  const publicUrl = normalizeString(raw.public_url);
+  const jsonPublicUrl = normalizeString(raw.json_public_url);
+  const url = normalizeString(raw.url);
+
+  if (!feedToken || !publicUrl || !jsonPublicUrl || !url) return undefined;
+
+  return {
+    id: normalizeString(raw.id) || feedToken,
+    name: normalizeString(raw.name) || url,
+    url,
+    feed_token: feedToken,
+    public_url: publicUrl,
+    json_public_url: jsonPublicUrl,
+    created_at: normalizeString(raw.created_at) || new Date().toISOString(),
+    updated_at: normalizeString(raw.updated_at) || new Date().toISOString(),
+  };
+}
+
+function normalizeNextAction(
+  value: unknown,
+  kind: FeedCreationError['kind'],
+  retryable: boolean
+): FeedNextAction {
+  if (
+    value === 'enter_token' ||
+    value === 'correct_input' ||
+    value === 'retry' ||
+    value === 'wait' ||
+    value === 'none'
+  ) {
+    return value;
+  }
+
+  if (kind === 'auth') return 'enter_token';
+  if (kind === 'input') return 'correct_input';
+  if (retryable) return 'retry';
+  return 'none';
+}
+
+function normalizeRetryAction(
+  value: unknown,
+  nextAction: FeedNextAction,
+  retryable: boolean
+): FeedRetryAction {
+  if (value === 'alternate' || value === 'primary' || value === 'none') {
+    return value;
+  }
+
+  if (!retryable || nextAction !== 'retry') return 'none';
+  return 'primary';
+}
+
+function normalizeErrorKind(value: unknown, status: number): FeedCreationError['kind'] {
+  if (value === 'auth' || value === 'input' || value === 'network' || value === 'server') return value;
+
+  if (status === 401 || status === 403) return 'auth';
+  if (status === 400 || status === 404 || status === 422) return 'input';
+  if (isTransientHttpStatus(status)) return 'network';
+  return 'server';
+}
+
+function defaultRetryableFromStatus(status: number, kind: FeedCreationError['kind']): boolean {
+  if (kind === 'auth' || kind === 'input') return false;
+  if (kind === 'network') return true;
+  return isTransientHttpStatus(status) || status >= 500;
+}
+
+function fallbackErrorCode(status: number, kind: FeedCreationError['kind']): string {
+  if (status === 401) return 'AUTH_REQUIRED';
+  if (status === 403) return 'AUTH_FORBIDDEN';
+  if (status === 400) return 'INVALID_INPUT';
+  if (status === 404) return 'NOT_FOUND';
+  if (status === 422) return 'UNPROCESSABLE_INPUT';
+  if (isTransientHttpStatus(status)) return 'TRANSIENT_ERROR';
+  if (status >= 500) return 'SERVER_ERROR';
+  return `${kind.toUpperCase()}_ERROR`;
+}
+
+function fallbackErrorMessage(
+  status: number,
+  kind: FeedCreationError['kind'],
+  nextAction: FeedNextAction
+): string {
+  if (kind === 'auth') return 'Access token is required.';
+  if (kind === 'input') return 'Check the URL and try again.';
+  if (nextAction === 'wait') return 'The server is still processing the request.';
+  if (isTransientHttpStatus(status) || kind === 'network') return 'Unable to reach the server. Try again.';
+  return 'Unable to complete feed creation.';
+}
+
+function localErrorCode(kind: FeedCreationError['kind'], nextAction: FeedNextAction): string {
+  if (kind === 'auth') return 'AUTH_REQUIRED';
+  if (kind === 'input' && nextAction === 'correct_input') return 'INVALID_INPUT';
+  return 'LOCAL_VALIDATION_ERROR';
+}
+
+function isFeedCreationError(value: unknown): value is FeedCreationError {
+  if (!value || typeof value !== 'object') return false;
+
+  const candidate = value as Partial<FeedCreationError>;
+  return (
+    (candidate.kind === 'auth' ||
+      candidate.kind === 'input' ||
+      candidate.kind === 'network' ||
+      candidate.kind === 'server') &&
+    typeof candidate.code === 'string' &&
+    typeof candidate.retryable === 'boolean' &&
+    typeof candidate.nextAction === 'string' &&
+    typeof candidate.retryAction === 'string' &&
+    typeof candidate.message === 'string'
+  );
+}
+
+function isErrorEnvelope(value: unknown): value is RawErrorEnvelope {
+  if (!value || typeof value !== 'object') return false;
+
+  const candidate = value as RawErrorEnvelope;
+  return (
+    candidate.kind !== undefined ||
+    candidate.code !== undefined ||
+    candidate.retryable !== undefined ||
+    candidate.next_action !== undefined ||
+    candidate.retry_action !== undefined ||
+    candidate.message !== undefined
+  );
+}
+
+function normalizeBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
 }
 
 function normalizeString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value : undefined;
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
 }
 
-function normalizeStatus(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+async function readJsonResponse<T>(response: Response): Promise<T | undefined> {
+  const bodyText = await response.text();
+  if (!bodyText.trim()) return undefined;
+
+  try {
+    return JSON.parse(bodyText) as T;
+  } catch {
+    return undefined;
+  }
 }
 
-function normalizePreviewText(value?: string): string | undefined {
-  if (!value) return undefined;
-
-  const normalized = decodeHtmlEntities(value)
-    .replaceAll(/<[^>]*>/g, ' ')
-    .replaceAll(/\s+/g, ' ')
-    .replaceAll(/\s+([!,.:;?])/g, '$1')
-    .replace(/^\d+\.\s+/, '')
-    .replace(/\s+\([^)]*\)\s*$/, '')
-    .trim();
-
-  return normalized || undefined;
+function resolveApiUrl(path: string): string {
+  return `/api/v1/${path.replace(/^\/+/, '')}`;
 }
 
-function normalizePreviewItem(item: JsonFeedItem): FeedPreviewItem | undefined {
-  const excerptSource = item.content_text || item.content_html;
-  const title = normalizePreviewText(item.title) || normalizePreviewText(excerptSource) || 'Untitled item';
-  const excerpt = normalizePreviewExcerpt(excerptSource, title);
+function resolveFetchUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  const origin = globalThis.location?.origin ?? 'http://localhost';
+  return new URL(url, origin).toString();
+}
+
+function buildCreateHeaders(token: string): HeadersInit {
+  const normalizedToken = token.trim();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+
+  if (normalizedToken) {
+    headers.Authorization = `Bearer ${normalizedToken}`;
+  }
+
+  return headers;
+}
+
+function isTransientHttpStatus(status: number): boolean {
+  return (
+    status === 408 ||
+    status === 409 ||
+    status === 425 ||
+    status === 429 ||
+    status === 500 ||
+    status === 502 ||
+    status === 503 ||
+    status === 504
+  );
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (error instanceof Error && error.name === 'AbortError')
+  );
+}
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const parsedUrl = new URL(value);
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+async function wait(delayMs: number, signal?: AbortSignal): Promise<void> {
+  if (delayMs <= 0) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const timeoutHandle = globalThis.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, delayMs);
+
+    const onAbort = () => {
+      globalThis.clearTimeout(timeoutHandle);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+
+    if (signal) {
+      if (signal.aborted) {
+        globalThis.clearTimeout(timeoutHandle);
+        reject(new DOMException('Aborted', 'AbortError'));
+        return;
+      }
+
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
+  });
+}
+
+function normalizePreviewItems(items: unknown[] | undefined): FeedPreviewItem[] {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => normalizePreviewItem(item))
+    .filter((item): item is FeedPreviewItem => item !== undefined)
+    .slice(0, 5);
+}
+
+function normalizePreviewItem(value: unknown): FeedPreviewItem | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+
+  const candidate = value as {
+    title?: unknown;
+    excerpt?: unknown;
+    description?: unknown;
+    content_text?: unknown;
+    contentText?: unknown;
+    published_label?: unknown;
+    publishedLabel?: unknown;
+    date_published?: unknown;
+    datePublished?: unknown;
+    date_modified?: unknown;
+    dateModified?: unknown;
+    url?: unknown;
+  };
+
+  const title = normalizeString(candidate.title);
+  if (!title) return undefined;
+
+  const url = normalizeString(candidate.url);
 
   return {
     title,
-    excerpt,
-    publishedLabel: formatPublishedDate(item.date_published),
-    url: normalizePreviewUrl(item.url || item.external_url),
+    excerpt:
+      normalizeString(
+        candidate.excerpt ?? candidate.description ?? candidate.content_text ?? candidate.contentText
+      ) || '',
+    publishedLabel:
+      normalizeString(
+        candidate.published_label ??
+          candidate.publishedLabel ??
+          candidate.date_published ??
+          candidate.datePublished ??
+          candidate.date_modified ??
+          candidate.dateModified
+      ) || '',
+    ...(url ? { url } : {}),
   };
-}
-
-function normalizePreviewExcerpt(value: string | undefined, title: string): string {
-  const excerpt = normalizePreviewText(value);
-  if (!excerpt || excerpt === title) return '';
-  return truncateText(excerpt, 220);
-}
-
-function normalizePreviewUrl(value?: string): string | undefined {
-  if (!value) return undefined;
-  if (!/^https?:\/\//i.test(value)) return undefined;
-  return value;
-}
-
-function formatPublishedDate(value?: string): string {
-  if (!value) return '';
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return '';
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(parsed);
-}
-
-function truncateText(value: string, maxLength: number): string {
-  if (value.length <= maxLength) return value;
-
-  const clipped = value.slice(0, maxLength).trimEnd();
-  const safeBoundary = clipped.lastIndexOf(' ');
-
-  return `${(safeBoundary > maxLength * 0.6 ? clipped.slice(0, safeBoundary) : clipped).trimEnd()}...`;
-}
-
-function decodeHtmlEntities(value: string): string {
-  if (typeof document === 'undefined') return value;
-
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = value;
-  return textarea.value;
 }
