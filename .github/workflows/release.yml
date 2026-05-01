@@ -136,7 +136,11 @@ jobs:
       - name: Compute Docker tags
         id: tags
         run: |
-          release_version="${RELEASE_TAG#v}"
+          # Extract the version part (e.g., html2rss-web/v1.1.0 -> v1.1.0, or v1.1.0 -> v1.1.0)
+          clean_tag="${RELEASE_TAG##*/}"
+          # Remove leading 'v' if present (e.g., v1.1.0 -> 1.1.0)
+          release_version="${clean_tag#v}"
+
           echo "RELEASE_VERSION=${release_version}" >> "$GITHUB_ENV"
           major="${release_version%%.*}"
           {

@@ -3,6 +3,7 @@
     ".": {
       "release-type": "ruby",
       "package-name": "html2rss-web",
+      "include-component-in-tag": false,
       "version-file": "config/version.rb",
       "changelog-path": "CHANGELOG.md",
       "extra-files": [
