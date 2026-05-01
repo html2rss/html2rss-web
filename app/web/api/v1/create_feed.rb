@@ -9,7 +9,7 @@ module Html2rss
       module V1
         ##
         # Creates stable feed records from authenticated API requests.
-        module CreateFeed # rubocop:disable Metrics/ModuleLength
+        module CreateFeed
           FEED_ATTRIBUTE_KEYS =
             %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
           FEED_METADATA_KEYS =
@@ -41,6 +41,8 @@ module Html2rss
 
             private
 
+            # @param request [Rack::Request]
+            # @return [Hash]
             def require_account(request)
               account = Auth.authenticate(request)
               raise Html2rss::Web::UnauthorizedError, 'Authentication required' unless account
@@ -48,17 +50,24 @@ module Html2rss
               account
             end
 
+            # @param request [Rack::Request]
+            # @param account [Hash]
+            # @return [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
             def build_create_params(request, account)
               url = validated_url(request_params(request)['url'], account)
               FeedMetadata::CreateParams.new(url:, name: FeedMetadata.site_title_for(url))
             end
 
+            # @param request [Rack::Request]
+            # @return [Hash]
             def request_params(request)
               return request.params unless json_request?(request)
 
               request.GET.merge(parsed_json_body(request))
             end
 
+            # @param request [Rack::Request]
+            # @return [Hash]
             def parsed_json_body(request)
               raw_body = request.body.read
               request.body.rewind
@@ -72,6 +81,8 @@ module Html2rss
               raise Html2rss::Web::BadRequestError, 'Invalid JSON payload'
             end
 
+            # @param request [Rack::Request]
+            # @return [Boolean]
             def json_request?(request)
               request.env['CONTENT_TYPE'].to_s.include?('application/json')
             end

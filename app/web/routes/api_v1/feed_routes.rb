@@ -20,8 +20,6 @@ module Html2rss
                 router.post do
                   JSON.generate(Api::V1::CreateFeed.call(router))
                 end
-
-                raise NotFoundError
               end
             end
           end
