@@ -126,26 +126,24 @@ jobs:
       - ruby
       - openapi
       - frontend
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-
+      - uses: docker/setup-buildx-action@v4
       - name: Build Docker smoke image
-        run: docker build -t html2rss/web -f Dockerfile .
-
-      - name: Export Docker smoke image
-        run: docker save html2rss/web -o /tmp/html2rss-web-smoke-image.tar
-
-      - name: Upload Docker smoke image
-        uses: actions/upload-artifact@v7
+        uses: docker/build-push-action@v7
         with:
-          name: docker-smoke-image
-          path: /tmp/html2rss-web-smoke-image.tar
-          retention-days: 1
+          context: .
+          load: true
+          tags: html2rss/web
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   docker-test:
     needs:
       - docker-build-smoke-image
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -158,14 +156,16 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Download Docker smoke image
-        uses: actions/download-artifact@v8
-        with:
-          name: docker-smoke-image
-          path: /tmp
+      - uses: docker/setup-buildx-action@v4
 
-      - name: Load Docker smoke image
-        run: docker load -i /tmp/html2rss-web-smoke-image.tar
+      - name: Build Docker smoke image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: html2rss/web
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run Docker smoke test
         env:
