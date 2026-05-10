@@ -102,6 +102,31 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
       expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
         .with('account_tokens', 'Invalid token configuration for users: admin')
     end
+
+    it 'fails boot when the health-check account keeps the placeholder token in production' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'health-check', token: 'CHANGE_ME_HEALTH_CHECK_TOKEN', allowed_urls: [] }]
+      )
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
+      end
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
+        .with('health_check_token', 'Placeholder health-check token is not allowed in production')
+    end
+
+    it 'allows production boot when the health-check account uses a non-placeholder token' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'health-check', token: 'strong-health-token-012345', allowed_urls: [] }]
+      )
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.not_to raise_error
+      end
+    end
   end
 
   describe '.auto_source_enabled?' do

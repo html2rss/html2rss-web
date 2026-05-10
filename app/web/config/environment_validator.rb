@@ -96,6 +96,7 @@ module Html2rss
         def validate_account_configuration!
           accounts = AccountManager.accounts
           validate_account_token_shapes!(accounts)
+          validate_health_check_token!(accounts)
           validate_create_feed_token!(accounts)
           weak_tokens = accounts.select { |acc| acc[:token].length < 16 }
           return unless weak_tokens.any?
@@ -129,6 +130,22 @@ module Html2rss
         end
 
         # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [void]
+        def validate_health_check_token!(accounts)
+          return unless placeholder_health_check_token?(accounts)
+
+          SecurityLogger.log_config_validation_failure(
+            'health_check_token',
+            'Placeholder health-check token is not allowed in production'
+          )
+          warn_lines(
+            'CRITICAL: Placeholder health-check token detected in production!',
+            'Set a real token for the health-check account or remove the account from production config.'
+          )
+          exit 1
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
         # @return [Boolean]
         def invalid_placeholder_create_feed_token?(accounts)
           auto_source_enabled? && placeholder_create_feed_token?(accounts)
@@ -138,6 +155,15 @@ module Html2rss
         # @return [Boolean]
         def placeholder_create_feed_token?(accounts)
           accounts.any? { |account| account[:token] == RuntimeEnv::ADMIN_ACCESS_TOKEN_PLACEHOLDER }
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [Boolean]
+        def placeholder_health_check_token?(accounts)
+          accounts.any? do |account|
+            account[:username] == 'health-check' &&
+              account[:token] == RuntimeEnv::HEALTH_CHECK_TOKEN_PLACEHOLDER
+          end
         end
 
         # @param lines [Array<String>]
