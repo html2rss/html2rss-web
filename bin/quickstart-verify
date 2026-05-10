@@ -1,0 +1,64 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'json'
+require 'open3'
+
+COMPOSE_FILE = 'docker-compose.quickstart.yml'
+EXPECTED_WEB_IMAGE = 'html2rss/web:1'
+EXPECTED_RACK_ENV = 'development'
+EXPECTED_ACCESS_TOKEN = 'CHANGE_ME_ADMIN_TOKEN'
+EXPECTED_SCRAPER_URL = 'http://botasaurus:4010'
+EXPECTED_HOST_IP = '127.0.0.1'
+EXPECTED_PUBLISHED_PORT = '4000'
+EXPECTED_TARGET_PORT = 4000
+
+def compose_config
+  output, status = Open3.capture2e('docker', 'compose', '-f', COMPOSE_FILE, 'config', '--format', 'json')
+  abort("quickstart verify failed: docker compose config exited #{status.exitstatus}\n#{output}") unless status.success?
+
+  JSON.parse(output)
+rescue JSON::ParserError => error
+  abort("quickstart verify failed: invalid compose json output: #{error.message}")
+end
+
+def fetch_service!(services, name)
+  service = services[name]
+  abort("quickstart verify failed: missing service #{name.inspect}") unless service
+
+  service
+end
+
+def assert_equal!(actual, expected, label)
+  return if actual == expected
+
+  abort("quickstart verify failed: #{label} expected #{expected.inspect}, got #{actual.inspect}")
+end
+
+def assert_port_mapping!(ports)
+  match = Array(ports).any? do |port|
+    port['host_ip'] == EXPECTED_HOST_IP &&
+      port['published'] == EXPECTED_PUBLISHED_PORT &&
+      port['target'] == EXPECTED_TARGET_PORT
+  end
+  return if match
+
+  abort(
+    'quickstart verify failed: html2rss-web ports must include ' \
+    "#{EXPECTED_HOST_IP}:#{EXPECTED_PUBLISHED_PORT}:#{EXPECTED_TARGET_PORT}"
+  )
+end
+
+config = compose_config
+services = config.fetch('services') { abort('quickstart verify failed: missing top-level services map') }
+web = fetch_service!(services, 'html2rss-web')
+fetch_service!(services, 'botasaurus')
+
+assert_equal!(web['image'], EXPECTED_WEB_IMAGE, 'html2rss-web image')
+environment = web.fetch('environment') { abort('quickstart verify failed: html2rss-web missing environment map') }
+assert_equal!(environment['RACK_ENV'], EXPECTED_RACK_ENV, 'html2rss-web RACK_ENV')
+assert_equal!(environment['HTML2RSS_ACCESS_TOKEN'], EXPECTED_ACCESS_TOKEN, 'html2rss-web HTML2RSS_ACCESS_TOKEN')
+assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], EXPECTED_SCRAPER_URL, 'html2rss-web BOTASAURUS_SCRAPER_URL')
+assert_port_mapping!(web['ports'])
+
+puts 'quickstart verify passed'

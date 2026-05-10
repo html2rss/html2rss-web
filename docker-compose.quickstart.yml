@@ -1,6 +1,6 @@
 services:
   html2rss-web:
-    image: html2rss/web:1
+    image: ${HTML2RSS_WEB_IMAGE:-html2rss/web:1}
     ports:
       - "127.0.0.1:4000:4000"
     environment:
