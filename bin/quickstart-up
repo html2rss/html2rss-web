@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+set -euo pipefail
+
+IMAGE_TAG="${HTML2RSS_WEB_IMAGE:-html2rss/web:quickstart-local}"
+BUILD_TAG="${BUILD_TAG:-quickstart-local}"
+GIT_SHA_VALUE="${GIT_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo dev)}"
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-html2rss-quickstart}"
+
+docker build \
+  -t "$IMAGE_TAG" \
+  --build-arg "BUILD_TAG=$BUILD_TAG" \
+  --build-arg "GIT_SHA=$GIT_SHA_VALUE" \
+  .
+
+HTML2RSS_WEB_IMAGE="$IMAGE_TAG" \
+docker compose \
+  -p "$COMPOSE_PROJECT_NAME" \
+  -f docker-compose.quickstart.yml \
+  up -d
+
+echo "quickstart up: http://localhost:4000/"
+echo 'quickstart token: CHANGE_ME_ADMIN_TOKEN'

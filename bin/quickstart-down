@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+set -euo pipefail
+
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-html2rss-quickstart}"
+
+docker compose \
+  -p "$COMPOSE_PROJECT_NAME" \
+  -f docker-compose.quickstart.yml \
+  down
