@@ -4,23 +4,18 @@
 
 `html2rss-web` turns website sources into RSS/JSON feeds.
 
-## Quickstart Trial
+## Quickstart
 
-Run the published trial stack:
+Test drive the app with these steps:
 
-```bash
-docker compose -f docker-compose.quickstart.yml up -d
-```
+1. Download [docker-compose.quickstart.yml](./docker-compose.quickstart.yml) and
+2. `docker compose -f docker-compose.quickstart.yml up -d`
+3. Open [`http://localhost:4000/`](http://localhost:4000/) in your browser.
 
-Open `http://localhost:4000/`.
-When the UI asks for an access token, use `CHANGE_ME_ADMIN_TOKEN`.
-For secure hosting and full setup, use the getting-started docs:
-- https://html2rss.github.io/web-application/getting-started
+When prompted for a token, use `CHANGE_ME_ADMIN_TOKEN`.
 
-## Deployment Docs
-
-- Published Docker image and tags: https://hub.docker.com/r/html2rss/web
-- End-user deployment and operations docs: https://html2rss.github.io/web-application/getting-started
+> [!IMPORTANT]
+> Read the [Getting Started](https://html2rss.github.io/web-application/getting-started) guide to set up your instance.
 
 ## Development (Dev Container Only)
 
@@ -32,11 +27,9 @@ make dev
 make ready
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor workflows, verification gates, and architectural constraints.
+## Development and Contributing
 
-## Development / Contributing
-
-- Project guidelines: https://html2rss.github.io/get-involved/contributing
-- Repo contributor guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Contributing guidelines: https://html2rss.github.io/get-involved/contributing
+- Docker image: https://hub.docker.com/r/html2rss/web
 - Discussions: https://github.com/orgs/html2rss/discussions
 - Sponsor: https://github.com/sponsors/gildesmarais
