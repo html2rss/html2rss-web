@@ -46,6 +46,8 @@ desc 'Build and run docker image/container, and send requests to it'
 task :test do
   current_dir = ENV.fetch('GITHUB_WORKSPACE', __dir__)
   smoke_auto_source_enabled = ENV.fetch('SMOKE_AUTO_SOURCE_ENABLED', 'false')
+  default_smoke_health_token = 'docker-smoke-health-check-token-0123456789abcdef'
+  smoke_health_token = ENV.fetch('SMOKE_HEALTH_TOKEN', default_smoke_health_token)
   default_smoke_api_token =
     smoke_auto_source_enabled == 'true' ? 'docker-smoke-admin-token-0123456789abcdef' : 'CHANGE_ME_ADMIN_TOKEN'
   smoke_api_token = ENV.fetch('SMOKE_API_TOKEN', default_smoke_api_token)
@@ -67,7 +69,7 @@ task :test do
       '--env PUMA_LOG_CONFIG=1',
       "--env BUILD_TAG=#{smoke_build_tag}",
       "--env GIT_SHA=#{smoke_git_sha}",
-      '--env HEALTH_CHECK_TOKEN=CHANGE_ME_HEALTH_CHECK_TOKEN',
+      "--env HEALTH_CHECK_TOKEN=#{smoke_health_token}",
       '--env HTML2RSS_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       "--env HTML2RSS_ACCESS_TOKEN=#{smoke_api_token}",
       "--env AUTO_SOURCE_ENABLED=#{smoke_auto_source_enabled}",
@@ -83,7 +85,7 @@ task :test do
   Output.describe 'Running RSpec smoke suite against container'
   smoke_env = {
     'SMOKE_BASE_URL' => 'http://127.0.0.1:4000',
-    'SMOKE_HEALTH_TOKEN' => 'CHANGE_ME_HEALTH_CHECK_TOKEN',
+    'SMOKE_HEALTH_TOKEN' => smoke_health_token,
     'SMOKE_API_TOKEN' => smoke_api_token,
     'SMOKE_AUTO_SOURCE_ENABLED' => smoke_auto_source_enabled,
     'RUN_DOCKER_SPECS' => 'true'

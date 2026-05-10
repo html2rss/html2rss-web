@@ -33,7 +33,8 @@ module Html2rss
 
         # @return [String]
         def health_check_token
-          fetch('HEALTH_CHECK_TOKEN', '')
+          token = fetch('HEALTH_CHECK_TOKEN', '').to_s.strip
+          token.empty? ? HEALTH_CHECK_TOKEN_PLACEHOLDER : token
         end
 
         # @return [String]

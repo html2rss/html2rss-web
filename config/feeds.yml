@@ -11,7 +11,7 @@ auth:
         - "https://news.ycombinator.com"
         - "https://github.com/trending"
     - username: "health-check"
-      token: "CHANGE_ME_HEALTH_CHECK_TOKEN"
+      token: "<%= Html2rss::Web::RuntimeEnv.health_check_token %>"
       allowed_urls: [] # Health check doesn't need URL access
 
 stylesheets:
