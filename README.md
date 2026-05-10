@@ -8,14 +8,15 @@
 
 Test drive the app with these steps:
 
-1. Download [docker-compose.quickstart.yml](./docker-compose.quickstart.yml) and
+1. Download [docker-compose.quickstart.yml](./docker-compose.quickstart.yml)
 2. `docker compose -f docker-compose.quickstart.yml up -d`
-3. Open [`http://localhost:4000/`](http://localhost:4000/) in your browser.
-
-When prompted for a token, use `CHANGE_ME_ADMIN_TOKEN`.
+3. Open [`http://localhost:4000/`](http://localhost:4000/) in your browser
+4. When prompted for a token, use `CHANGE_ME_ADMIN_TOKEN`
 
 > [!IMPORTANT]
-> Read the [Getting Started](https://html2rss.github.io/web-application/getting-started) guide to set up your instance.
+> This is a first-run demo path, not a production-ready setup.
+
+Continue with the [Getting Started](https://html2rss.github.io/web-application/getting-started) and deployment guides for real setup.
 
 ## Development (Dev Container Only)
 
