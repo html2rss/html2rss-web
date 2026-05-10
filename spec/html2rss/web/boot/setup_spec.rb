@@ -47,13 +47,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
     end
 
     it 'captures and scrubs sensitive env vars after validation', :aggregate_failures do
-      allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_environment!).ordered do
-        expect(ENV.fetch('HTML2RSS_SECRET_KEY', nil)).to eq(boot_secret_key)
-        expect(ENV.fetch('HEALTH_CHECK_TOKEN', nil)).to eq('health-token')
-      end
-      allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_production_security!).ordered do
-        expect(ENV.fetch('SENTRY_DSN', nil)).to eq(sentry_dsn)
-      end
+      expect_sensitive_env_during_validation
 
       ClimateControl.modify(scrubbed_env) do
         described_class.call!
@@ -130,19 +124,37 @@ RSpec.describe Html2rss::Web::Boot::Setup do
 
   def scrubbed_env
     boot_env.merge(
+      'HTML2RSS_ACCESS_TOKEN' => 'access-token',
       'HEALTH_CHECK_TOKEN' => 'health-token',
       'SENTRY_DSN' => sentry_dsn
     )
   end
 
   def expect_runtime_env_to_match_boot_values
-    expect(Html2rss::Web::RuntimeEnv.secret_key).to eq(boot_secret_key)
-    expect(Html2rss::Web::RuntimeEnv.health_check_token).to eq('health-token')
-    expect(Html2rss::Web::RuntimeEnv.sentry_dsn).to eq(sentry_dsn)
+    {
+      secret_key: boot_secret_key,
+      access_token: 'access-token',
+      health_check_token: 'health-token',
+      sentry_dsn: sentry_dsn
+    }.each do |attribute, value|
+      expect(Html2rss::Web::RuntimeEnv.public_send(attribute)).to eq(value)
+    end
+  end
+
+  def expect_sensitive_env_during_validation # rubocop:disable Metrics/AbcSize
+    allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_environment!).ordered do
+      expect(ENV.fetch('HTML2RSS_SECRET_KEY', nil)).to eq(boot_secret_key)
+      expect(ENV.fetch('HTML2RSS_ACCESS_TOKEN', nil)).to eq('access-token')
+      expect(ENV.fetch('HEALTH_CHECK_TOKEN', nil)).to eq('health-token')
+    end
+    allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_production_security!).ordered do
+      expect(ENV.fetch('SENTRY_DSN', nil)).to eq(sentry_dsn)
+    end
   end
 
   def expect_sensitive_env_to_be_scrubbed
     expect(ENV.fetch('HTML2RSS_SECRET_KEY', nil)).to be_nil
+    expect(ENV.fetch('HTML2RSS_ACCESS_TOKEN', nil)).to be_nil
     expect(ENV.fetch('HEALTH_CHECK_TOKEN', nil)).to be_nil
     expect(ENV.fetch('SENTRY_DSN', nil)).to be_nil
   end

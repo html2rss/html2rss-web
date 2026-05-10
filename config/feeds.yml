@@ -1,7 +1,7 @@
 auth:
   accounts:
     - username: "admin"
-      token: "CHANGE_ME_ADMIN_TOKEN"
+      token: "<%= Html2rss::Web::RuntimeEnv.admin_access_token %>"
       allowed_urls:
         - "*" # Full access
     - username: "demo"
