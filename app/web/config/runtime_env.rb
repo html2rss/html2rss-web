@@ -6,7 +6,9 @@ module Html2rss
     # Captures boot-time environment configuration and scrubs selected secrets
     # from the process environment after validation.
     module RuntimeEnv
-      SENSITIVE_KEYS = %w[HTML2RSS_SECRET_KEY HEALTH_CHECK_TOKEN SENTRY_DSN].freeze
+      ADMIN_ACCESS_TOKEN_PLACEHOLDER = 'CHANGE_ME_ADMIN_TOKEN'
+      HEALTH_CHECK_TOKEN_PLACEHOLDER = 'CHANGE_ME_HEALTH_CHECK_TOKEN'
+      SENSITIVE_KEYS = %w[HTML2RSS_SECRET_KEY HTML2RSS_ACCESS_TOKEN HEALTH_CHECK_TOKEN SENTRY_DSN].freeze
       BOOT_METADATA_KEYS = %w[BUILD_TAG GIT_SHA RACK_ENV SENTRY_ENABLE_LOGS].freeze
       @mutex = Mutex.new
       @values = nil
@@ -31,7 +33,19 @@ module Html2rss
 
         # @return [String]
         def health_check_token
-          fetch('HEALTH_CHECK_TOKEN', '')
+          token = fetch('HEALTH_CHECK_TOKEN', '').to_s.strip
+          token.empty? ? HEALTH_CHECK_TOKEN_PLACEHOLDER : token
+        end
+
+        # @return [String]
+        def access_token
+          fetch('HTML2RSS_ACCESS_TOKEN', '')
+        end
+
+        # @return [String]
+        def admin_access_token
+          token = access_token.to_s.strip
+          token.empty? ? ADMIN_ACCESS_TOKEN_PLACEHOLDER : token
         end
 
         # @return [String, nil]

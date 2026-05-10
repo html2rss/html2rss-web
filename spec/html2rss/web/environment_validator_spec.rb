@@ -53,9 +53,7 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
 
       ClimateControl.modify(
         'RACK_ENV' => 'production',
-        'HTML2RSS_SECRET_KEY' => 'short-secret',
-        'BUILD_TAG' => '2026-03-27',
-        'GIT_SHA' => 'abc1234'
+        'HTML2RSS_SECRET_KEY' => 'short-secret'
       ) do
         expect { described_class.validate_production_security! }.to raise_error(SystemExit)
       end
@@ -64,21 +62,70 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
         .with('secret_key', 'Invalid or weak secret key')
     end
 
-    it 'logs missing build metadata as a warning' do
+    it 'fails boot when auto source is enabled with the placeholder create-feed token in production' do
       stub_validation_logging
-      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return([])
+      stub_placeholder_account_with_auto_source
 
-      ClimateControl.modify(
-        'RACK_ENV' => 'production',
-        'HTML2RSS_SECRET_KEY' => '0123456789abcdef0123456789abcdef',
-        'BUILD_TAG' => nil,
-        'GIT_SHA' => nil
-      ) do
-        expect { described_class.validate_production_security! }.not_to raise_error
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
       end
 
       expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
-        .with('build_metadata', 'Missing BUILD_TAG or GIT_SHA', severity: :warn)
+        .with('access_token', 'Placeholder create-feed token is not allowed when auto source is enabled')
+    end
+
+    it 'fails boot when a scoped account keeps the placeholder create-feed token in production' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'scoped-admin', token: 'CHANGE_ME_ADMIN_TOKEN', allowed_urls: ['https://example.com/*'] }]
+      )
+      allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
+      end
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
+        .with('access_token', 'Placeholder create-feed token is not allowed when auto source is enabled')
+    end
+
+    it 'fails boot with a clear validation error when an account token is malformed' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'admin', token: nil, allowed_urls: ['*'] }]
+      )
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
+      end
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
+        .with('account_tokens', 'Invalid token configuration for users: admin')
+    end
+
+    it 'fails boot when the health-check account keeps the placeholder token in production' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'health-check', token: 'CHANGE_ME_HEALTH_CHECK_TOKEN', allowed_urls: [] }]
+      )
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.to raise_error(SystemExit)
+      end
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_config_validation_failure)
+        .with('health_check_token', 'Placeholder health-check token is not allowed in production')
+    end
+
+    it 'allows production boot when the health-check account uses a non-placeholder token' do
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+        [{ username: 'health-check', token: 'strong-health-token-012345', allowed_urls: [] }]
+      )
+
+      ClimateControl.modify(production_env) do
+        expect { described_class.validate_production_security! }.not_to raise_error
+      end
     end
   end
 
@@ -110,5 +157,19 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
         end
       end
     end
+  end
+
+  def stub_placeholder_account_with_auto_source
+    allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(
+      [{ username: 'admin', token: 'CHANGE_ME_ADMIN_TOKEN', allowed_urls: ['*'] }]
+    )
+    allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
+  end
+
+  def production_env
+    {
+      'RACK_ENV' => 'production',
+      'HTML2RSS_SECRET_KEY' => '0123456789abcdef0123456789abcdef'
+    }
   end
 end

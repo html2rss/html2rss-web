@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'erb'
 require 'yaml'
+require_relative 'runtime_env'
 begin
   require 'html2rss/configs'
 rescue LoadError => error
@@ -56,17 +58,33 @@ module Html2rss
         end
 
         ##
+        # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
+        def snapshot
+          @mutex.synchronize { @snapshot ||= load_snapshot }
+        rescue KeyError, TypeError, ArgumentError => error
+          raise InvalidConfig, "Invalid local config: #{error.message}"
+        end
+
+        ##
+        # Reparses the current config file without touching memoized runtime
+        # state. Health checks use this path so config drift shows up without
+        # forcing live request handlers onto a reload path.
+        #
         # @return [Hash<Symbol, Any>]
-        def yaml
-          YAML.safe_load_file(CONFIG_FILE, symbolize_names: true).freeze
+        def load_yaml
+          template = File.read(CONFIG_FILE)
+          YAML.safe_load(ERB.new(template, trim_mode: '-').result, symbolize_names: true).freeze
         rescue Errno::ENOENT => error
           raise NotFound, "Configuration file not found: #{error.message}"
         end
 
         ##
+        # Reparses and normalizes the current config file without mutating the
+        # memoized runtime snapshot.
+        #
         # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
-        def snapshot
-          @mutex.synchronize { @snapshot ||= ConfigSnapshot.load(yaml) }
+        def load_snapshot
+          ConfigSnapshot.load(load_yaml)
         rescue KeyError, TypeError, ArgumentError => error
           raise InvalidConfig, "Invalid local config: #{error.message}"
         end

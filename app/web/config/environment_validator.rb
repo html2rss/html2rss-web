@@ -29,7 +29,6 @@ module Html2rss
 
           validate_secret_key!
           validate_account_configuration!
-          validate_build_metadata!
         end
 
         # @return [Boolean]
@@ -94,21 +93,77 @@ module Html2rss
           exit 1
         end
 
-        # @return [void]
-        def validate_build_metadata!
-          return unless missing_build_metadata?
-
-          log_missing_build_metadata!
-          warn_lines(*missing_build_metadata_warning_lines)
-          nil
-        end
-
         def validate_account_configuration!
           accounts = AccountManager.accounts
+          validate_account_token_shapes!(accounts)
+          validate_health_check_token!(accounts)
+          validate_create_feed_token!(accounts)
           weak_tokens = accounts.select { |acc| acc[:token].length < 16 }
           return unless weak_tokens.any?
 
           handle_weak_account_tokens!(weak_tokens)
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [void]
+        def validate_account_token_shapes!(accounts)
+          malformed_accounts = accounts.reject { |acc| acc[:token].is_a?(String) && !acc[:token].empty? }
+          return unless malformed_accounts.any?
+
+          handle_malformed_account_tokens!(malformed_accounts)
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [void]
+        def validate_create_feed_token!(accounts)
+          return unless invalid_placeholder_create_feed_token?(accounts)
+
+          SecurityLogger.log_config_validation_failure(
+            'access_token',
+            'Placeholder create-feed token is not allowed when auto source is enabled'
+          )
+          warn_lines(
+            'CRITICAL: Placeholder create-feed token detected in production!',
+            'Set HTML2RSS_ACCESS_TOKEN to a strong token before enabling automatic feed generation.'
+          )
+          exit 1
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [void]
+        def validate_health_check_token!(accounts)
+          return unless placeholder_health_check_token?(accounts)
+
+          SecurityLogger.log_config_validation_failure(
+            'health_check_token',
+            'Placeholder health-check token is not allowed in production'
+          )
+          warn_lines(
+            'CRITICAL: Placeholder health-check token detected in production!',
+            'Set a real token for the health-check account or remove the account from production config.'
+          )
+          exit 1
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [Boolean]
+        def invalid_placeholder_create_feed_token?(accounts)
+          auto_source_enabled? && placeholder_create_feed_token?(accounts)
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [Boolean]
+        def placeholder_create_feed_token?(accounts)
+          accounts.any? { |account| account[:token] == RuntimeEnv::ADMIN_ACCESS_TOKEN_PLACEHOLDER }
+        end
+
+        # @param accounts [Array<Hash{Symbol=>Object}>]
+        # @return [Boolean]
+        def placeholder_health_check_token?(accounts)
+          accounts.any? do |account|
+            account[:username] == 'health-check' &&
+              account[:token] == RuntimeEnv::HEALTH_CHECK_TOKEN_PLACEHOLDER
+          end
         end
 
         # @param lines [Array<String>]
@@ -140,31 +195,18 @@ module Html2rss
           exit 1
         end
 
-        # @return [Boolean]
-        def missing_build_metadata?
-          build_metadata_values.any?(&:empty?)
-        end
-
-        # @return [Array<String>]
-        def build_metadata_values
-          %w[BUILD_TAG GIT_SHA].map { |key| ENV.fetch(key, '').strip }
-        end
-
+        # @param malformed_accounts [Array<Hash{Symbol=>Object}>]
         # @return [void]
-        def log_missing_build_metadata!
-          SecurityLogger.log_config_validation_failure(
-            'build_metadata',
-            'Missing BUILD_TAG or GIT_SHA',
-            severity: :warn
+        def handle_malformed_account_tokens!(malformed_accounts)
+          malformed_usernames = malformed_accounts.map { |acc| acc[:username] || '(unknown)' }.join(', ')
+          SecurityLogger.log_config_validation_failure('account_tokens',
+                                                       "Invalid token configuration for users: #{malformed_usernames}")
+          warn_lines(
+            'CRITICAL: Invalid account token configuration detected in production!',
+            'Each account token must be a non-empty string.',
+            "Invalid token configuration found for users: #{malformed_usernames}"
           )
-        end
-
-        # @return [Array<String>]
-        def missing_build_metadata_warning_lines
-          [
-            'WARNING: Missing build metadata for production deployment.',
-            'Set BUILD_TAG and GIT_SHA to improve release traceability.'
-          ]
+          exit 1
         end
       end
       # rubocop:enable Metrics/ClassLength

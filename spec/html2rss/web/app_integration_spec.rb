@@ -34,6 +34,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       }
     }
   end
+  let(:config_snapshot) { Html2rss::Web::ConfigSnapshot.load(accounts_config) }
 
   let(:json_headers) { { 'CONTENT_TYPE' => 'application/json' } }
   let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
@@ -56,7 +57,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
   end
 
   before do
-    allow(Html2rss::Web::LocalConfig).to receive(:yaml).and_return(accounts_config)
+    allow(Html2rss::Web::LocalConfig).to receive_messages(global: config_snapshot.global, snapshot: config_snapshot)
     stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
     stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
     allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)

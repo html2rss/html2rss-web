@@ -19,6 +19,17 @@ jobs:
       - name: Lint Dockerfile
         run: docker run --rm -i hadolint/hadolint < Dockerfile
 
+  quickstart:
+    needs:
+      - hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Make quickstart verifier executable
+        run: chmod +x bin/quickstart-verify
+      - name: Verify quickstart compose contract
+        run: bin/quickstart-verify
+
   ruby:
     runs-on: ubuntu-latest
     steps:
@@ -86,12 +97,12 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          
+
           make openapi
           make openapi-client
-          
+
           git add public/openapi.yaml frontend/src/api/generated/
-          
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
