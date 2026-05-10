@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/html2rss/html2rss-web/compare/v1.2.0...v1.3.0) (2026-05-10)
+
+
+### Features
+
+* add and document quickstart trial path ([#976](https://github.com/html2rss/html2rss-web/issues/976)) ([8bfe0ba](https://github.com/html2rss/html2rss-web/commit/8bfe0bab23fcf114b90e661ee00683011b1d234a))
+
 ## [1.2.0](https://github.com/html2rss/html2rss-web/compare/v1.1.0...v1.2.0) (2026-05-01)
 
 
