@@ -120,7 +120,7 @@ GEM
       zeitwerk (~> 2.6)
     erb (6.0.4)
     erubi (1.13.1)
-    faraday (2.14.1)
+    faraday (2.14.2)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
@@ -166,7 +166,7 @@ GEM
       prism (>= 1.3.0)
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
-    json (2.19.4)
+    json (2.19.5)
     kramdown (2.5.2)
       rexml (>= 3.4.4)
     language_server-protocol (3.17.0.5)
@@ -432,7 +432,7 @@ CHECKSUMS
   dry-validation (1.11.1) sha256=70900bb5a2d911c8aab566d3e360c6bff389b8bf92ea8e04885ce51c41ff8085
   erb (6.0.4) sha256=38e3803694be357fe2bfe312487c74beaf9fb4e5beb3e22498952fe1645b95d9
   erubi (1.13.1) sha256=a082103b0885dbc5ecf1172fede897f9ebdb745a4b97a5e8dc63953db1ee4ad9
-  faraday (2.14.1) sha256=a43cceedc1e39d188f4d2cdd360a8aaa6a11da0c407052e426ba8d3fb42ef61c
+  faraday (2.14.2) sha256=73ccb9994a9e8648f010e32eca2ae82e41c57860aa10932cda29418b9e0223ad
   faraday-follow_redirects (0.5.0) sha256=5cde93c894b30943a5d2b93c2fe9284216a6b756f7af406a1e55f211d97d10ad
   faraday-gzip (3.1.0) sha256=320783690be169f9b7ddde11598b77156951343753f66a9ab98b1f6694433ff8
   faraday-net_http (3.4.2) sha256=f147758260d3526939bf57ecf911682f94926a3666502e24c69992765875906c
@@ -448,7 +448,7 @@ CHECKSUMS
   io-event (1.15.1) sha256=c644cdcf48254015d63f558bf4492f35471f5bb204a42180ea49752be59b30cc
   io-stream (0.13.0) sha256=ce24bccb302bdf3ecedef05e8669a687b461621a498d83622fdcab549c9c1636
   irb (1.18.0) sha256=de9454a0703a54704b9811a5ef31a60c86949fbf4013fcf244fabc7c775248e3
-  json (2.19.4) sha256=670a7d333fb3b18ca5b29cb255eb7bef099e40d88c02c80bd42a3f30fe5239ac
+  json (2.19.5) sha256=218a18553e4801d579ca7e0f5bc72bafd776d7397238a1fb4e74db5b0a812c59
   kramdown (2.5.2) sha256=1ba542204c66b6f9111ff00dcc26075b95b220b07f2905d8261740c82f7f02fa
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
