@@ -30,3 +30,12 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: monthly
+    groups:
+      frontend-deps:
+        patterns:
+          - "*"
