@@ -20,8 +20,8 @@ describe('App contract', () => {
       if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
         expect((init?.headers as Record<string, string> | undefined)?.Accept).toBe('application/feed+json');
         return Promise.resolve(
-          new Response(
-            JSON.stringify({
+          Response.json(
+            {
               items: [
                 {
                   title: 'Contract Item',
@@ -30,7 +30,7 @@ describe('App contract', () => {
                   date_published: '2024-01-01T00:00:00Z',
                 },
               ],
-            }),
+            },
             { status: 200, headers: { 'Content-Type': 'application/feed+json' } }
           )
         );
