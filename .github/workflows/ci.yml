@@ -116,6 +116,32 @@ jobs:
       - name: Lint OpenAPI contract
         run: make openapi-lint
 
+  frontend-audit:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".tool-versions"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=moderate
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
@@ -147,9 +173,6 @@ jobs:
 
       - name: Check formatting
         run: pnpm run format:check
-
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate
 
       - name: Run frontend tests
         run: pnpm run test:ci
