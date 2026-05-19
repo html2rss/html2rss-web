@@ -14,17 +14,20 @@ const mockFeed = {
 };
 
 function createResponse(status = 201) {
-  return new Response(JSON.stringify({ success: true, data: { feed: mockFeed } }), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return Response.json(
+    { success: true, data: { feed: mockFeed } },
+    {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 }
 
 function previewResponse(status = 200) {
-  return new Response(
-    JSON.stringify({
+  return Response.json(
+    {
       items: [{ title: 'Preview item', content_text: 'Preview excerpt', date_published: '2024-01-02' }],
-    }),
+    },
     { status, headers: { 'Content-Type': 'application/feed+json' } }
   );
 }

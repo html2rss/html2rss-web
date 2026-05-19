@@ -11,10 +11,13 @@ describe('useFeedConversion contract', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
         return Promise.resolve(
-          new Response(JSON.stringify({ items: [{ title: 'Preview', content_text: 'Text' }] }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/feed+json' },
-          })
+          Response.json(
+            { items: [{ title: 'Preview', content_text: 'Text' }] },
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/feed+json' },
+            }
+          )
         );
       }
 
