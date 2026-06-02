@@ -63,8 +63,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
-          ref: ${{ (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--')) && github.head_ref || github.sha }}
+          token: ${{ startsWith(github.head_ref, 'release-please--') && secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          ref: ${{ startsWith(github.head_ref, 'release-please--') && github.head_ref || github.sha }}
           fetch-depth: 0
 
       - uses: ruby/setup-ruby@v1
