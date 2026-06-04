@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   update_release_draft:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: write
       pull-requests: read

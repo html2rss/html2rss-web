@@ -32,6 +32,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Assert main branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "Error: This workflow must be run against the main branch (refs/heads/main); got ${{ github.ref }}" >&2
+            exit 1
+          fi
+
       - name: Resolve Version from Release Drafter
         id: release_drafter
         if: github.event.inputs.bump_type == 'auto'
