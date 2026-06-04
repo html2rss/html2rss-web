@@ -1,0 +1,17 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: Provides a separation of concerns interface for IO endpoints.
+metadata:
+  documentation_uri: https://socketry.github.io/io-endpoint
+  source_code_uri: https://github.com/socketry/io-endpoint.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to get started with `io-endpoint`, a library
+    that provides a separation of concerns interface for network I/O endpoints.
+- path: named-endpoints.md
+  title: Named Endpoints
+  description: This guide explains how to use `IO::Endpoint::NamedEndpoints` to manage
+    multiple endpoints by name, enabling scenarios like running the same application
+    on different protocols or ports.

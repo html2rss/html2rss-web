@@ -1,0 +1,551 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "strategy": {
+      "type": "string",
+      "not": {
+        "type": "null"
+      }
+    },
+    "channel": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "language": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ttl": {
+          "type": [
+            "null",
+            "integer"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "time_zone": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "url"
+      ]
+    },
+    "headers": {
+      "type": "object",
+      "description": "HTTP headers applied to every request.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "stylesheets": {
+      "type": "array",
+      "description": "Collection of stylesheets to attach to the RSS feed.",
+      "items": {
+        "$schema": "http://json-schema.org/draft-06/schema#",
+        "type": "object",
+        "properties": {
+          "href": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "text/css",
+              "text/xsl"
+            ]
+          },
+          "media": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "href",
+          "type"
+        ]
+      }
+    },
+    "auto_source": {
+      "$schema": "http://json-schema.org/draft-06/schema#",
+      "type": "object",
+      "properties": {
+        "scraper": {
+          "type": "object",
+          "properties": {
+            "wordpress_api": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              },
+              "required": []
+            },
+            "schema": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              },
+              "required": []
+            },
+            "microdata": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              },
+              "required": []
+            },
+            "json_state": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              },
+              "required": []
+            },
+            "semantic_html": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                }
+              },
+              "required": []
+            },
+            "html": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "not": {
+                    "type": "null"
+                  }
+                },
+                "minimum_selector_frequency": {
+                  "type": "integer",
+                  "not": {
+                    "type": "null"
+                  },
+                  "exclusiveMinimum": 0
+                },
+                "use_top_selectors": {
+                  "type": "integer",
+                  "not": {
+                    "type": "null"
+                  },
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": []
+            }
+          },
+          "required": []
+        },
+        "cleanup": {
+          "type": "object",
+          "properties": {
+            "keep_different_domain": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "min_words_title": {
+              "type": "integer",
+              "not": {
+                "type": "null"
+              },
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": []
+        }
+      },
+      "required": [],
+      "default": {
+        "scraper": {
+          "wordpress_api": {
+            "enabled": true
+          },
+          "schema": {
+            "enabled": true
+          },
+          "microdata": {
+            "enabled": true
+          },
+          "json_state": {
+            "enabled": true
+          },
+          "semantic_html": {
+            "enabled": true
+          },
+          "html": {
+            "enabled": true,
+            "minimum_selector_frequency": 2,
+            "use_top_selectors": 5
+          }
+        },
+        "cleanup": {
+          "keep_different_domain": false,
+          "min_words_title": 3
+        }
+      }
+    },
+    "selectors": {
+      "type": "object",
+      "description": "Selectors used to extract article attributes.",
+      "properties": {
+        "items": {
+          "$schema": "http://json-schema.org/draft-06/schema#",
+          "type": "object",
+          "properties": {
+            "selector": {
+              "type": "string",
+              "minLength": 1
+            },
+            "order": {
+              "enum": [
+                "reverse"
+              ],
+              "not": {
+                "type": "null"
+              }
+            },
+            "enhance": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "pagination": {
+              "type": "object",
+              "properties": {
+                "max_pages": {
+                  "type": "integer",
+                  "not": {
+                    "type": "null"
+                  },
+                  "exclusiveMinimum": 0
+                }
+              },
+              "required": [
+                "max_pages"
+              ]
+            }
+          },
+          "required": [
+            "selector"
+          ],
+          "description": "Defines the items selector and optional enhancement settings."
+        },
+        "enclosure": {
+          "$schema": "http://json-schema.org/draft-06/schema#",
+          "type": "object",
+          "properties": {
+            "extractor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "attribute": {
+              "type": "string",
+              "minLength": 1
+            },
+            "static": {
+              "type": "string",
+              "minLength": 1
+            },
+            "post_process": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "content_type": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [],
+          "description": "Describes enclosure extraction settings."
+        },
+        "guid": {
+          "type": "array",
+          "description": "List of selector keys used to build the GUID. Each entry must reference a sibling selector key; runtime validation enforces those references.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "description": "Selector key defined elsewhere in this object."
+          }
+        },
+        "categories": {
+          "type": "array",
+          "description": "List of selector keys whose values will be used as categories. Each entry must reference a sibling selector key; runtime validation enforces those references.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "description": "Selector key defined elsewhere in this object."
+          }
+        }
+      },
+      "patternProperties": {
+        "^(?!items$|enclosure$|guid$|categories$).+$": {
+          "$schema": "http://json-schema.org/draft-06/schema#",
+          "type": "object",
+          "properties": {
+            "extractor": {
+              "type": "string",
+              "minLength": 1
+            },
+            "attribute": {
+              "type": "string",
+              "minLength": 1
+            },
+            "static": {
+              "type": "string",
+              "minLength": 1
+            },
+            "post_process": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          },
+          "required": [],
+          "description": "Dynamic selector definition keyed by attribute name."
+        }
+      },
+      "additionalProperties": true
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "max_redirects": {
+          "type": "integer",
+          "not": {
+            "type": "null"
+          },
+          "minimum": 0
+        },
+        "max_requests": {
+          "type": "integer",
+          "not": {
+            "type": "null"
+          },
+          "exclusiveMinimum": 0
+        },
+        "browserless": {
+          "type": "object",
+          "properties": {
+            "preload": {
+              "type": "object",
+              "properties": {
+                "wait_after_ms": {
+                  "type": "integer",
+                  "not": {
+                    "type": "null"
+                  },
+                  "minimum": 0
+                },
+                "click_selectors": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "selector": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "max_clicks": {
+                        "type": "integer",
+                        "not": {
+                          "type": "null"
+                        },
+                        "exclusiveMinimum": 0
+                      },
+                      "wait_after_ms": {
+                        "type": "integer",
+                        "not": {
+                          "type": "null"
+                        },
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "selector"
+                    ]
+                  }
+                },
+                "scroll_down": {
+                  "type": "object",
+                  "properties": {
+                    "iterations": {
+                      "type": "integer",
+                      "not": {
+                        "type": "null"
+                      },
+                      "exclusiveMinimum": 0
+                    },
+                    "wait_after_ms": {
+                      "type": "integer",
+                      "not": {
+                        "type": "null"
+                      },
+                      "minimum": 0
+                    }
+                  },
+                  "required": []
+                }
+              },
+              "required": []
+            }
+          },
+          "required": []
+        },
+        "botasaurus": {
+          "type": "object",
+          "properties": {
+            "navigation_mode": {
+              "type": "string",
+              "minLength": 1,
+              "enum": [
+                "auto",
+                "get",
+                "google_get",
+                "google_get_bypass"
+              ]
+            },
+            "max_retries": {
+              "type": "integer",
+              "not": {
+                "type": "null"
+              },
+              "minimum": 0,
+              "maximum": 3
+            },
+            "wait_for_selector": {
+              "type": [
+                "null",
+                "string"
+              ]
+            },
+            "wait_timeout_seconds": {
+              "type": "integer",
+              "not": {
+                "type": "null"
+              },
+              "exclusiveMinimum": 0
+            },
+            "block_images": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "block_images_and_css": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "wait_for_complete_page_load": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "headless": {
+              "type": "boolean",
+              "not": {
+                "type": "null"
+              }
+            },
+            "proxy": {
+              "type": "string",
+              "minLength": 1
+            },
+            "user_agent": {
+              "type": "string",
+              "minLength": 1
+            },
+            "window_size": {
+              "type": "array",
+              "items": {
+                "minLength": 2,
+                "maxLength": 2,
+                "type": "integer",
+                "exclusiveMinimum": 0
+              }
+            },
+            "lang": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": []
+        }
+      },
+      "required": []
+    }
+  },
+  "required": [
+    "channel"
+  ],
+  "anyOf": [
+    {
+      "required": [
+        "selectors"
+      ]
+    },
+    {
+      "required": [
+        "auto_source"
+      ]
+    }
+  ]
+}

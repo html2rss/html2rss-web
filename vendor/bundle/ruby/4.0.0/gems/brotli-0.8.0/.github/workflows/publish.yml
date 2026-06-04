@@ -1,0 +1,24 @@
+name: Publish Gem
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    if: github.repository == 'miyucy/brotli'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ruby
+        bundler-cache: true
+    - uses: rubygems/release-gem@v1

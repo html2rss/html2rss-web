@@ -1,0 +1,70 @@
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/brotli-0.8.0/ext/brotli
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby extconf.rb
+checking for rb_gc_mark_movable()... yes
+checking for brotli/decode.h... no
+checking for brotli/encode.h... no
+checking for pkg-config for libbrotlicommon... not found
+checking for pkg-config for libbrotlidec... not found
+checking for pkg-config for libbrotlienc... not found
+checking for brotli/shared_dictionary.h... no
+checking for BrotliEncoderPrepareDictionary() in brotli/encode.h... no
+checking for BrotliEncoderAttachPreparedDictionary() in brotli/encode.h... no
+checking for BrotliDecoderAttachDictionary() in brotli/decode.h... no
+creating Makefile
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/brotli-0.8.0/ext/brotli
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-7fgyiq sitelibdir\=./.gem.20260429-2339-7fgyiq clean
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/brotli-0.8.0/ext/brotli
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-7fgyiq sitelibdir\=./.gem.20260429-2339-7fgyiq
+compiling brotli.c
+compiling buffer.c
+compiling common/constants.c
+compiling common/context.c
+compiling common/dictionary.c
+compiling common/platform.c
+compiling common/shared_dictionary.c
+brotli.c:446:1: warning: ‘brotli_copy_string_data’ defined but not used [-Wunused-function]
+  446 | brotli_copy_string_data(VALUE string, size_t* len)
+      | ^~~~~~~~~~~~~~~~~~~~~~~
+compiling common/transform.c
+compiling dec/bit_reader.c
+compiling dec/decode.c
+compiling dec/huffman.c
+compiling dec/prefix.c
+compiling dec/state.c
+compiling dec/static_init.c
+compiling enc/backward_references.c
+cc1: note: unrecognized command-line option ‘-Wno-self-assign’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-parentheses-equality’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-constant-logical-operand’ may have been intended to silence earlier diagnostics
+compiling enc/backward_references_hq.c
+compiling enc/bit_cost.c
+compiling enc/block_splitter.c
+compiling enc/brotli_bit_stream.c
+compiling enc/cluster.c
+compiling enc/command.c
+compiling enc/compound_dictionary.c
+compiling enc/compress_fragment.c
+compiling enc/compress_fragment_two_pass.c
+compiling enc/dictionary_hash.c
+compiling enc/encode.c
+compiling enc/encoder_dict.c
+compiling enc/entropy_encode.c
+compiling enc/fast_log.c
+compiling enc/histogram.c
+compiling enc/literal_cost.c
+compiling enc/memory.c
+compiling enc/metablock.c
+compiling enc/static_dict.c
+compiling enc/static_dict_lut.c
+compiling enc/static_init.c
+compiling enc/utf8_util.c
+linking shared-object brotli/brotli.so
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/brotli-0.8.0/ext/brotli
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-7fgyiq sitelibdir\=./.gem.20260429-2339-7fgyiq install
+/usr/bin/install -c -m 0755 brotli.so ./.gem.20260429-2339-7fgyiq/brotli
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/brotli-0.8.0/ext/brotli
+make DESTDIR\= sitearchdir\=./.gem.20260429-2339-7fgyiq sitelibdir\=./.gem.20260429-2339-7fgyiq clean

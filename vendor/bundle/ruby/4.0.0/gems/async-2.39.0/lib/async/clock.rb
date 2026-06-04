@@ -1,0 +1,95 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2018-2026, by Samuel Williams.
+# Copyright, 2026, by Shopify Inc.
+
+module Async
+	# A convenient wrapper around the internal monotonic clock.
+	# @public Since *Async v1*.
+	class Clock
+		# Get the current elapsed monotonic time.
+		def self.now
+			::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+		end
+		
+		# Measure the execution of a block of code.
+		# @yields {...} The block to execute.
+		# @returns [Numeric] The total execution time.
+		def self.measure
+			start_time = self.now
+			
+			yield
+			
+			return self.now - start_time
+		end
+		
+		# Start measuring elapsed time from now.
+		# @returns [Clock]
+		def self.start
+			self.new.tap(&:start!)
+		end
+		
+		# Create a new clock with the initial total time.
+		# @parameter total [Numeric] The initial clock duration.
+		def initialize(total = 0)
+			@total = total
+			@started = nil
+		end
+		
+		# @returns [Numeric | Nil] The time when the clock was started, or nil if not started.
+		attr :started
+		
+		# Start measuring a duration.
+		def start!
+			@started ||= Clock.now
+		end
+		
+		# Stop measuring a duration and append the duration to the current total.
+		def stop!
+			if @started
+				@total += (Clock.now - @started)
+				@started = nil
+			end
+			
+			return @total
+		end
+		
+		# The total elapsed time including any current duration.
+		def total
+			total = @total
+			
+			if @started
+				total += (Clock.now - @started)
+			end
+			
+			return total
+		end
+		
+		# Reset the total elapsed time. If the clock is currently running, reset the start time to now.
+		def reset!
+			@total = 0
+			
+			if @started
+				@started = Clock.now
+			end
+		end
+		
+		# Convert the clock to a JSON-compatible hash.
+		#
+		# @returns [Hash] The JSON-compatible hash.
+		def as_json(...)
+			{
+				started: self.started,
+				total: self.total,
+			}
+		end
+		
+		# Convert the clock to a JSON string.
+		#
+		# @returns [String] The JSON string.
+		def to_json(...)
+			self.as_json.to_json(...)
+		end
+	end
+end

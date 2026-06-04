@@ -1,0 +1,35 @@
+# Generated from lib/puppeteer/touch_screen.rb with RBS::Inline
+
+class Puppeteer::TouchScreen
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  # @rbs keyboard: Puppeteer::Keyboard -- Keyboard state for modifiers
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::CDPSession client, Puppeteer::Keyboard keyboard) -> void
+
+  # @rbs x: Numeric -- X coordinate
+  # @rbs y: Numeric -- Y coordinate
+  # @rbs return: void -- No return value
+  def tap: (Numeric x, Numeric y) -> void
+
+  # @rbs x: Numeric -- X coordinate
+  # @rbs y: Numeric -- Y coordinate
+  # @rbs return: Puppeteer::TouchHandle -- Touch handle
+  def touch_start: (Numeric x, Numeric y) -> Puppeteer::TouchHandle
+
+  # @rbs x: Numeric -- X coordinate
+  # @rbs y: Numeric -- Y coordinate
+  # @rbs return: void -- No return value
+  def touch_move: (Numeric x, Numeric y) -> void
+
+  # @rbs return: void -- No return value
+  def touch_end: () -> void
+
+  # @rbs touch: Puppeteer::TouchHandle -- Touch handle to remove
+  # @rbs return: void -- No return value
+  private def remove_handle: (Puppeteer::TouchHandle touch) -> void
+
+  # @rbs type: String -- Touch event type
+  # @rbs touch_points: Array[Hash[Symbol, Numeric]] -- Touch points payload
+  # @rbs return: void -- No return value
+  private def dispatch_touch_event: (String type, Array[Hash[Symbol, Numeric]] touch_points) -> void
+end

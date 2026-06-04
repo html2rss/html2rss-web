@@ -1,0 +1,91 @@
+# Generated from lib/puppeteer/execution_context.rb with RBS::Inline
+
+class Puppeteer::ExecutionContext
+  include Puppeteer::IfPresent
+
+  EVALUATION_SCRIPT_URL: ::String
+
+  SOURCE_URL_REGEX: ::Regexp
+
+  # @param client [Puppeteer::CDPSession]
+  # @param context_payload [Hash]
+  # @param world [Puppeteer::IsolaatedWorld?]
+  def initialize: (untyped client, untyped context_payload, untyped world) -> untyped
+
+  attr_reader client: untyped
+
+  attr_reader world: untyped
+
+  # only used in IsolaatedWorld
+  private def _context_id: () -> untyped
+
+  # only used in IsolaatedWorld::BindingFunction#add_binding_to_context
+  private def _context_name: () -> untyped
+
+  # @param page_function [String]
+  # @return [Object]
+  def evaluate: (untyped page_function, *untyped args) -> untyped
+
+  # @param page_function [String]
+  # @return [Puppeteer::JSHandle]
+  def evaluate_handle: (untyped page_function, *untyped args) -> untyped
+
+  class JavaScriptExpression
+    def initialize: (untyped execution_context, untyped expression, untyped return_by_value) -> untyped
+
+    # @param client [Puppeteer::CDPSession]
+    # @param context_id [String]
+    # @return [Object|JSHandle]
+    def evaluate_with: (client: untyped, context_id: untyped) -> untyped
+
+    private def suffix: () -> untyped
+
+    private def expression_with_source_url: () -> untyped
+  end
+
+  class JavaScriptFunction
+    include Puppeteer::IfPresent
+
+    def initialize: (untyped execution_context, untyped expression, untyped args, untyped return_by_value) -> untyped
+
+    # @param client [Puppeteer::CDPSession]
+    # @param context_id [String]
+    # @return [Object|JSHandle]
+    def evaluate_with: (client: untyped, context_id: untyped) -> untyped
+
+    private def converted_args: () -> untyped
+
+    # @rbs value: untyped -- Value to check for cycles
+    # @rbs stack: Hash[Integer, bool]? -- Current stack for cycle detection
+    # @rbs visited: Hash[Integer, bool]? -- Already visited objects
+    # @rbs return: bool -- Whether the value contains cycles
+    private def recursive_object?: (untyped value, ?Hash[Integer, bool]? stack, ?Hash[Integer, bool]? visited) -> bool
+
+    # @rbs return: String -- JavaScript function declaration
+    private def function_declaration: () -> String
+
+    # @rbs return: String -- Wrapped function with serialization
+    private def serialized_function_declaration: () -> String
+
+    # @rbs return: String -- JavaScript serialization helper source
+    private def serialized_value_source: () -> String
+
+    private def suffix: () -> untyped
+  end
+
+  class EvaluationError < Puppeteer::Error
+  end
+
+  # @param return_by_value [Boolean]
+  # @param page_function [String]
+  # @return [Object|Puppeteer::JSHandle]
+  private def evaluate_internal: (untyped return_by_value, untyped page_function, *untyped args) -> untyped
+
+  # @param error [Puppeteer::Connection::ProtocolError]
+  # @return [StandardError]
+  private def rewrite_evaluation_error: (untyped error) -> untyped
+
+  # @rbs page_function: String -- JavaScript code to check
+  # @rbs return: bool -- Whether the code represents a function
+  private def function_string?: (String page_function) -> bool
+end

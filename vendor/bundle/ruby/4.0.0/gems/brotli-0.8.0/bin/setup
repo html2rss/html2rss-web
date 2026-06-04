@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+bundle install
+
+# Ensure Brotli library dependencies are available
+git submodule update --init

@@ -1,0 +1,11 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: An event loop.
+metadata:
+  documentation_uri: https://socketry.github.io/io-event/
+  source_code_uri: https://github.com/socketry/io-event.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to use `io-event` for non-blocking IO.

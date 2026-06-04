@@ -1,0 +1,57 @@
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/io-event-1.15.1/ext
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby extconf.rb
+checking for whether -Wall is accepted as CFLAGS... yes
+checking for whether -Wno-unknown-pragmas is accepted as CFLAGS... yes
+checking for whether -std=c99 is accepted as CFLAGS... yes
+checking for rb_ext_ractor_safe()... yes
+checking for &rb_fiber_transfer()... yes
+checking for -luring... no
+checking for sys/epoll.h... yes
+checking for sys/event.h... no
+checking for sys/wait.h... yes
+checking for sys/eventfd.h... yes
+checking for rb_io_descriptor()... yes
+checking for &rb_process_status_wait()... yes
+checking for rb_fiber_current()... yes
+checking for &rb_fiber_raise()... yes
+checking for epoll_pwait2()... yes
+checking for ruby/io/buffer.h... yes
+checking for rb_fiber_scheduler_blocking_operation_extract()... yes
+checking for pthread.h... yes
+checking for whether -DHAVE_IO_EVENT_WORKER_POOL is accepted as CFLAGS... yes
+creating extconf.h
+creating Makefile
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/io-event-1.15.1/ext
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wz7o7o sitelibdir\=./.gem.20260429-2339-wz7o7o clean
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/io-event-1.15.1/ext
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wz7o7o sitelibdir\=./.gem.20260429-2339-wz7o7o
+compiling ./io/event/event.c
+compiling ./io/event/time.c
+compiling ./io/event/fiber.c
+compiling ./io/event/selector/selector.c
+compiling ./io/event/selector/epoll.c
+compiling ./io/event/interrupt.c
+compiling ./io/event/worker_pool.c
+compiling ./io/event/worker_pool_test.c
+./io/event/worker_pool_test.c: In function ‘busy_unblock_function’:
+./io/event/worker_pool_test.c:72:9: warning: ignoring return value of ‘write’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   72 |         write(busy_data->write_fd, &wake_byte, 1);
+      |         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+./io/event/worker_pool_test.c: In function ‘busy_blocking_operation’:
+./io/event/worker_pool_test.c:52:17: warning: ignoring return value of ‘read’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   52 |                 read(busy_data->read_fd, &buffer, 1);  // Consume the byte
+      |                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+At top level:
+cc1: note: unrecognized command-line option ‘-Wno-self-assign’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-parentheses-equality’ may have been intended to silence earlier diagnostics
+cc1: note: unrecognized command-line option ‘-Wno-constant-logical-operand’ may have been intended to silence earlier diagnostics
+linking shared-object IO_Event.so
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/io-event-1.15.1/ext
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wz7o7o sitelibdir\=./.gem.20260429-2339-wz7o7o install
+/usr/bin/install -c -m 0755 IO_Event.so ./.gem.20260429-2339-wz7o7o
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/io-event-1.15.1/ext
+make DESTDIR\= sitearchdir\=./.gem.20260429-2339-wz7o7o sitelibdir\=./.gem.20260429-2339-wz7o7o clean

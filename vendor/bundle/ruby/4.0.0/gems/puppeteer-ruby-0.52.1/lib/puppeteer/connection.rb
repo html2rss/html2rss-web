@@ -1,0 +1,398 @@
+require 'json'
+require 'async/queue'
+
+class Puppeteer::Connection
+  include Puppeteer::DebugPrint
+  include Puppeteer::EventCallbackable
+  using Puppeteer::DefineAsyncMethod
+
+  class ProtocolError < Puppeteer::Error
+    def initialize(method:, error_message:, error_data: nil)
+      msg = "Protocol error (#{method}): #{error_message}"
+      if error_data
+        super("#{msg} #{error_data}")
+      else
+        super(msg)
+      end
+    end
+  end
+
+  # callback object stored in @callbacks.
+  class MessageCallback
+    # @param method [String]
+    # @param promise [Async::Promise]
+    def initialize(method:, promise:)
+      @method = method
+      @promise = promise
+    end
+
+    def resolve(result)
+      @promise.resolve(result)
+    end
+
+    def reject(error)
+      @promise.reject(error)
+    end
+
+    attr_reader :method
+  end
+
+  def initialize(url, transport, delay = 0, protocol_timeout: nil)
+    @url = url
+    @last_id = 0
+    @callbacks = {}
+    @callbacks_mutex = Mutex.new
+    @delay = delay
+    @protocol_timeout = protocol_timeout
+
+    @network_message_queue = Async::Queue.new
+    @network_message_task = nil
+
+    @transport = transport
+    @transport.on_message do |data|
+      message = JSON.parse(data)
+      sleep_before_handling_message(message)
+      if network_event_message?(message)
+        enqueue_network_message(message)
+      elsif should_handle_synchronously?(message)
+        handle_message(message)
+      else
+        async_handle_message(message)
+      end
+    end
+    @transport.on_close do |reason, code|
+      handle_close
+    end
+
+    @sessions = {}
+    @sessions_mutex = Mutex.new
+    @closed = false
+    @manually_attached = Set.new
+  end
+
+  attr_reader :protocol_timeout
+
+  # used only in Browser#connected?
+  def closed?
+    @closed
+  end
+
+  private def sleep_before_handling_message(message)
+    # Keep network events ordered without extra delay.
+    return if message['method']&.start_with?('Network.')
+
+    # For some reasons, sleeping a bit reduces trivial errors...
+    # 4ms is an interval of internal shared timer of WebKit.
+    Puppeteer::AsyncUtils.sleep_seconds(0.004)
+  end
+
+  private def should_handle_synchronously?(message)
+    return true if message['id']
+
+    case message['method']
+    when nil
+      false
+    when /^Network\./
+      # Network events are queued for ordered async processing.
+      false
+    when /^Page\.frame/
+      # Page.frameAttached
+      # Page.frameNavigated
+      # Page.frameDetached
+      # Page.frameStoppedLoading
+      true
+    when 'Page.lifecycleEvent'
+      true
+    when /^Runtime\.executionContext/
+      # - Runtime.executionContextCreated
+      # - Runtime.executionContextDestroyed
+      # - Runtime.executionContextsCleared
+      # These events should be strictly ordered.
+      true
+    when 'Target.attachedToTarget', 'Target.detachedFromTarget'
+      true
+    when 'Target.targetCreated'
+      # type=page must be handled asynchronously for avoiding wait timeout...
+      message.dig('params', 'targetInfo', 'type') == 'browser'
+    else
+      false
+    end
+  end
+
+  private def network_event_message?(message)
+    message['method']&.start_with?('Network.')
+  end
+
+  private def ensure_network_message_task
+    return if @network_message_task&.alive?
+    return unless Async::Task.current?
+
+    @network_message_task = Async do
+      while (queued = @network_message_queue.dequeue)
+        handle_message(queued)
+      end
+    end
+  end
+
+  private def enqueue_network_message(message)
+    if Async::Task.current?
+      ensure_network_message_task
+      begin
+        @network_message_queue.enqueue(message)
+      rescue Async::Queue::ClosedError
+        # Connection is closing; ignore late network events.
+      end
+    else
+      handle_message(message)
+    end
+  end
+
+  def self.from_session(session)
+    session.connection
+  end
+
+  # @param {string} sessionId
+  # @return {?CDPSession}
+  def session(session_id)
+    @sessions_mutex.synchronize { @sessions[session_id] }
+  end
+
+  def url
+    @url
+  end
+
+  # @param {string} method
+  # @param {!Object=} params
+  def send_message(method, params = {})
+    if @protocol_timeout && @protocol_timeout > 0
+      begin
+        Puppeteer::AsyncUtils.async_timeout(@protocol_timeout, async_send_message(method, params)).wait
+      rescue Async::TimeoutError
+        raise ProtocolError.new(method: method, error_message: "Timeout #{@protocol_timeout}ms exceeded")
+      end
+    else
+      async_send_message(method, params).wait
+    end
+  end
+
+  def async_send_message(method, params = {})
+    promise = Async::Promise.new
+
+    generate_id do |id|
+      @callbacks_mutex.synchronize do
+        @callbacks[id] = MessageCallback.new(method: method, promise: promise)
+      end
+      raw_send(id: id, message: { method: method, params: params })
+    end
+
+    promise
+  end
+
+  # package private. not intended to use externally.
+  #
+  # ```usage
+  # connection.generate_id do |generated_id|
+  #   # play with generated_id
+  # end
+  # ````
+  #
+  def generate_id(&block)
+    block.call(@last_id += 1)
+  end
+
+  # package private. not intended to use externally.
+  def raw_send(id:, message:)
+    # In original puppeteer (JS) implementation,
+    # id is generated here using #generate_id and the id argument is not passed to #raw_send.
+    #
+    # However with concurrent-ruby, '#handle_message' is sometimes called
+    # just soon after @transport.send_text and **before returning the id.**
+    #
+    # So we have to know the message id in advance before send_text.
+    #
+    payload = JSON.generate(message.compact.merge(id: id))
+    @transport.send_text(payload)
+    request_debug_printer.handle_payload(payload)
+  end
+
+  # Just for effective debugging :)
+  class RequestDebugPrinter
+    include Puppeteer::DebugPrint
+
+    def handle_payload(payload)
+      debug_puts "SEND >> #{decorate(payload)}"
+    end
+
+    private def decorate(payload)
+      payload.gsub(/"method":"([^"]+)"/, "\"method\":\"\u001b[32m\\1\u001b[0m\"")
+    end
+  end
+
+  class ResponseDebugPrinter
+    include Puppeteer::DebugPrint
+
+    NON_DEBUG_PRINT_METHODS = [
+      'Network.dataReceived',
+      'Network.loadingFinished',
+      'Network.requestServedFromCache',
+      'Network.requestWillBeSent',
+      'Network.requestWillBeSentExtraInfo',
+      'Network.resourceChangedPriority',
+      'Network.responseReceived',
+      'Network.responseReceivedExtraInfo',
+      'Page.lifecycleEvent',
+    ]
+
+    def handle_message(message)
+      if skip_debug_print?(message['method'])
+        debug_print '.'
+        @prev_log_skipped = true
+      else
+        debug_print "\n" if @prev_log_skipped
+        @prev_log_skipped = nil
+        debug_puts "RECV << #{decorate(message)}"
+      end
+    end
+
+    private def skip_debug_print?(method)
+      method && NON_DEBUG_PRINT_METHODS.include?(method)
+    end
+
+    private def decorate(message)
+      # decorate RED for error.
+      if message['error']
+        return "\u001b[31m#{message}\u001b[0m"
+      end
+
+      # ignore method call response, or with no method.
+      return message if message['id'] || !message['method']
+
+      # decorate cyan for method name.
+      message.to_s.gsub(message['method'], "\u001b[36m#{message['method']}\u001b[0m")
+    end
+  end
+
+  private def request_debug_printer
+    @request_debug_printer ||= RequestDebugPrinter.new
+  end
+
+  private def response_debug_printer
+    @response_debug_printer ||= ResponseDebugPrinter.new
+  end
+
+  private def handle_message(message)
+    if @delay > 0
+      Puppeteer::AsyncUtils.sleep_seconds(@delay / 1000.0)
+    end
+
+    response_debug_printer.handle_message(message)
+
+    case message['method']
+    when 'Target.attachedToTarget'
+      session_id = message['params']['sessionId']
+      parent_session =
+        if message['sessionId']
+          @sessions_mutex.synchronize { @sessions[message['sessionId']] }
+        end
+      session = Puppeteer::CDPSession.new(
+        self,
+        message['params']['targetInfo']['type'],
+        session_id,
+        parent_session: parent_session,
+      )
+      @sessions_mutex.synchronize { @sessions[session_id] = session }
+      emit_event('sessionattached', session)
+      parent_session&.emit_event('sessionattached', session)
+    when 'Target.detachedFromTarget'
+      session_id = message['params']['sessionId']
+      session = @sessions_mutex.synchronize { @sessions[session_id] }
+      if session
+        session.handle_closed
+        @sessions_mutex.synchronize { @sessions.delete(session_id) }
+        emit_event('sessiondetached', session)
+        if message['sessionId']
+          parent_session = @sessions_mutex.synchronize { @sessions[message['sessionId']] }
+          parent_session&.emit_event('sessiondetached', session)
+        end
+      end
+    end
+
+    if message['sessionId']
+      session_id = message['sessionId']
+      @sessions_mutex.synchronize { @sessions[session_id] }&.handle_message(message)
+    elsif message['id']
+      # Callbacks could be all rejected if someone has called `.dispose()`.
+      if callback = @callbacks_mutex.synchronize { @callbacks.delete(message['id']) }
+        if message['error']
+          callback.reject(
+            ProtocolError.new(
+              method: callback.method,
+              error_message: message['error']['message'],
+              error_data: message['error']['data']))
+        else
+          callback.resolve(message['result'])
+        end
+      end
+    else
+      emit_event(message['method'], message['params'])
+    end
+  end
+
+  private define_async_method :async_handle_message
+
+  private def handle_close
+    return if @closed
+    @closed = true
+    @transport.on_message
+    @transport.on_close
+    @network_message_queue.close
+    begin
+      @network_message_task&.stop
+    rescue Async::Stop
+      # Task already stopping; ignore.
+    end
+    callbacks = @callbacks_mutex.synchronize do
+      @callbacks.values.tap { @callbacks.clear }
+    end
+    callbacks.each do |callback|
+      callback.reject(
+        ProtocolError.new(
+          method: callback.method,
+          error_message: 'Target Closed.'))
+    end
+    sessions = @sessions_mutex.synchronize do
+      @sessions.values.tap { @sessions.clear }
+    end
+    sessions.each(&:handle_closed)
+    emit_event(ConnectionEmittedEvents::Disconnected)
+  end
+
+  def on_close(&block)
+    @on_close = block
+  end
+
+  def on_message(&block)
+    @on_message = block
+  end
+
+  def dispose
+    handle_close
+    @transport.close
+  end
+
+  def auto_attached?(target_id)
+    !@manually_attached.include?(target_id)
+  end
+
+  # @param {Protocol.Target.TargetInfo} targetInfo
+  # @return [CDPSession]
+  def create_session(target_info, auto_attach_emulated: false)
+    unless auto_attach_emulated
+      @manually_attached << target_info.target_id
+    end
+    result = send_message('Target.attachToTarget', targetId: target_info.target_id, flatten: true)
+    session_id = result['sessionId']
+    @manually_attached.delete(target_info.target_id)
+    @sessions_mutex.synchronize { @sessions[session_id] }.tap { |session| session&.mark_ready }
+  end
+end

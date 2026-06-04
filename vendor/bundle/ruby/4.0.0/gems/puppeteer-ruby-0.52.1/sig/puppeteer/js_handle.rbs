@@ -1,0 +1,64 @@
+# Generated from lib/puppeteer/js_handle.rb with RBS::Inline
+
+class Puppeteer::JSHandle
+  include Puppeteer::IfPresent
+
+  # @param context [Puppeteer::ExecutionContext]
+  # @param remote_object [Puppeteer::RemoteObject]
+  def self.create: (context: untyped, remote_object: untyped) -> untyped
+
+  # @param context [Puppeteer::ExecutionContext]
+  # @param client [Puppeteer::CDPSession]
+  # @param remote_object [Puppeteer::RemoteObject]
+  def initialize: (context: untyped, client: untyped, remote_object: untyped) -> untyped
+
+  attr_reader context: untyped
+
+  attr_reader remote_object: untyped
+
+  def inspect: () -> untyped
+
+  # @return [Puppeteer::ExecutionContext]
+  def execution_context: () -> untyped
+
+  # @param page_function [String]
+  # @return [Object]
+  def evaluate: (untyped page_function, *untyped args) -> untyped
+
+  # @param page_function [String]
+  # @param args {Array<*>}
+  # @return [Puppeteer::JSHandle]
+  def evaluate_handle: (untyped page_function, *untyped args) -> untyped
+
+  # getProperty(propertyName) in JavaScript
+  # @param name [String]
+  # @return [Puppeteer::JSHandle]
+  def property: (untyped name) -> untyped
+
+  # @param name [String]
+  # @return [Puppeteer::JSHandle]
+  def []: (untyped name) -> untyped
+
+  # getProperties in JavaScript.
+  # @return [Hash<String, JSHandle>]
+  def properties: () -> untyped
+
+  def json_value: () -> untyped
+
+  def as_element: () -> untyped
+
+  def dispose: () -> untyped
+
+  def disposed?: () -> untyped
+
+  # @rbs return: void
+  def dispose_symbol: () -> void
+
+  # @rbs return: self
+  def move: () -> self
+
+  def to_s: () -> untyped
+
+  # @rbs return: String
+  private def stringify_remote_value: () -> String
+end

@@ -1,0 +1,89 @@
+# Generated from lib/puppeteer/http_response.rb with RBS::Inline
+
+class Puppeteer::HTTPResponse
+  include Puppeteer::IfPresent
+
+  class Redirected < Puppeteer::Error
+    def initialize: () -> untyped
+  end
+
+  # defines methods used only in NetworkManager
+  class InternalAccessor
+    def initialize: (untyped response) -> untyped
+
+    def body_loaded_promise: () -> untyped
+  end
+
+  class RemoteAddress
+    def initialize: (ip: untyped, port: untyped) -> untyped
+
+    attr_reader ip: untyped
+
+    attr_reader port: untyped
+  end
+
+  # @param client [Puppeteer::CDPSession]
+  # @param request [Puppeteer::HTTPRequest]
+  # @param response_payload [Hash]
+  # @param extra_info [Hash|nil]
+  def initialize: (untyped client, untyped request, untyped response_payload, untyped extra_info) -> untyped
+
+  attr_reader internal: untyped
+
+  attr_reader remote_address: untyped
+
+  attr_reader url: untyped
+
+  attr_reader status: untyped
+
+  attr_reader status_text: untyped
+
+  attr_reader headers: untyped
+
+  attr_reader security_details: untyped
+
+  attr_reader request: untyped
+
+  attr_reader timing: untyped
+
+  def inspect: () -> untyped
+
+  private def parse_status_text_from_extra_info: (untyped extra_info) -> untyped
+
+  # @return [Boolean]
+  def ok?: () -> untyped
+
+  # @rbs return: String -- Response body as binary string
+  def buffer: () -> String
+
+  # @param text [String]
+  # @rbs return: String -- Response body as text
+  def text: () -> String
+
+  # @param json [Hash]
+  # @rbs return: Hash[untyped, untyped] -- Parsed JSON
+  def json: () -> Hash[untyped, untyped]
+
+  # @rbs return: bool -- Whether response was served from cache
+  def from_cache?: () -> bool
+
+  # @rbs return: bool -- Whether response was served from service worker
+  def from_service_worker?: () -> bool
+
+  # @rbs return: Puppeteer::Frame -- Frame associated with the request
+  def frame: () -> Puppeteer::Frame
+
+  class SecurityDetails
+    def initialize: (untyped security_payload) -> untyped
+
+    attr_reader subject_name: untyped
+
+    attr_reader issuer: untyped
+
+    attr_reader valid_from: untyped
+
+    attr_reader valid_to: untyped
+
+    attr_reader protocol: untyped
+  end
+end

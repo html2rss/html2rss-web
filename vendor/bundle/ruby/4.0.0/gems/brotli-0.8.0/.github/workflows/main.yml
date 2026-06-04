@@ -1,0 +1,37 @@
+name: Ruby
+
+on: [pull_request]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: [3.1, 3.2, 3.3, 3.4]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    - name: Run the default task
+      run: |
+        bundle exec rake clobber
+        bundle exec rake compile -- --enable-vendor
+        bundle exec rake test
+        bundle exec rake build
+        gem install --no-document "$(ls pkg/brotli-*.gem)"
+        cat <<EOF | ruby
+        require "brotli"
+        if Brotli.inflate(Brotli.deflate(File.read("README.md"))) == File.read("README.md")
+          puts "OK"
+          exit 0
+        else
+          puts "NG"
+          exit 0
+        end
+        EOF

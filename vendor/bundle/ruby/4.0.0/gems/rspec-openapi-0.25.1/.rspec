@@ -1,0 +1,4 @@
+--exclude-pattern spec/requests/**/*_spec.rb
+--format documentation
+--require rspec/openapi
+--color

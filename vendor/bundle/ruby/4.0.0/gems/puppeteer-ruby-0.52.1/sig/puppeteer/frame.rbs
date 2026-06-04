@@ -1,0 +1,238 @@
+# Generated from lib/puppeteer/frame.rb with RBS::Inline
+
+class Puppeteer::Frame
+  # @rbs frame_manager: Puppeteer::FrameManager -- Owning frame manager
+  # @rbs parent_frame: Puppeteer::Frame? -- Parent frame
+  # @rbs frame_id: String -- Frame ID
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::FrameManager frame_manager, Puppeteer::Frame? parent_frame, String frame_id, Puppeteer::CDPSession client) -> void
+
+  # @rbs return: String -- Inspection string
+  def inspect: () -> String
+
+  # @rbs return: Puppeteer::CDPSession -- Current CDP session
+  def _client: () -> Puppeteer::CDPSession
+
+  private def update_client: (untyped client) -> untyped
+
+  # @rbs return: Puppeteer::Page -- Owning page
+  def page: () -> Puppeteer::Page
+
+  # @rbs return: Numeric -- Default timeout in milliseconds
+  def default_timeout: () -> Numeric
+
+  # @rbs selector_or_function: String -- Selector or JS function
+  # @rbs return: Puppeteer::Locator -- Locator for selector or function
+  def locator: (String selector_or_function) -> Puppeteer::Locator
+
+  # @rbs return: bool -- Whether this is an OOPIF frame
+  def oop_frame?: () -> bool
+
+  attr_accessor frame_manager: untyped
+
+  attr_accessor id: untyped
+
+  attr_accessor loader_id: untyped
+
+  attr_accessor lifecycle_events: untyped
+
+  attr_accessor main_world: untyped
+
+  attr_accessor puppeteer_world: untyped
+
+  attr_accessor extension_worlds: untyped
+
+  attr_reader client: untyped
+
+  # @rbs other: Object -- Other object to compare
+  # @rbs return: bool -- Equality result
+  def ==: (Object other) -> bool
+
+  # @rbs return: bool -- Whether loading has started
+  def has_started_loading?: () -> bool
+
+  # @rbs url: String -- URL to navigate
+  # @rbs referer: String? -- Referer header value
+  # @rbs referrer_policy: String? -- Referrer policy
+  # @rbs timeout: Numeric? -- Navigation timeout in milliseconds
+  # @rbs wait_until: String? -- Lifecycle event to wait for
+  # @rbs return: Puppeteer::HTTPResponse? -- Navigation response
+  def goto: (String url, ?referer: String?, ?referrer_policy: String?, ?timeout: Numeric?, ?wait_until: String?) -> Puppeteer::HTTPResponse?
+
+  # @rbs timeout: Numeric? -- Navigation timeout in milliseconds
+  # @rbs wait_until: String? -- Lifecycle event to wait for
+  # @rbs ignore_same_document_navigation: bool -- Ignore same-document navigation
+  # @rbs return: Puppeteer::HTTPResponse? -- Navigation response
+  def wait_for_navigation: (?timeout: Numeric?, ?wait_until: String?, ?ignore_same_document_navigation: bool) -> Puppeteer::HTTPResponse?
+
+  # @rbs return: Puppeteer::ExecutionContext -- Main world execution context
+  def execution_context: () -> Puppeteer::ExecutionContext
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: Puppeteer::JSHandle -- Handle to evaluation result
+  def evaluate_handle: (String page_function, *untyped args) -> Puppeteer::JSHandle
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def evaluate: (String page_function, *untyped args) -> untyped
+
+  # `$()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs return: Puppeteer::ElementHandle? -- Matching element or nil
+  def query_selector: (String selector) -> Puppeteer::ElementHandle?
+
+  # `$x()` in JavaScript. $ is not allowed to use as a method name in Ruby.
+  # @rbs expression: String -- XPath expression
+  # @rbs return: Array[Puppeteer::ElementHandle] -- Matching elements
+  def Sx: (String expression) -> Array[Puppeteer::ElementHandle]
+
+  # `$eval()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def eval_on_selector: (String selector, String page_function, *untyped args) -> untyped
+
+  # `$$eval()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def eval_on_selector_all: (String selector, String page_function, *untyped args) -> untyped
+
+  # `$$()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs isolate: bool? -- Use isolated world for queries
+  # @rbs return: Array[Puppeteer::ElementHandle] -- Matching elements
+  def query_selector_all: (String selector, ?isolate: bool?) -> Array[Puppeteer::ElementHandle]
+
+  # @rbs return: String -- Page HTML content
+  def content: () -> String
+
+  # @rbs html: String -- HTML content
+  # @rbs timeout: Numeric? -- Navigation timeout in milliseconds
+  # @rbs wait_until: String | Array[String] | nil -- Lifecycle events to wait for
+  # @rbs return: void -- No return value
+  def set_content: (String html, ?timeout: Numeric?, ?wait_until: String | Array[String] | nil) -> void
+
+  # @rbs return: String -- Frame name
+  def name: () -> String
+
+  # @rbs return: String? -- Frame URL
+  def url: () -> String?
+
+  # @rbs return: Array[untyped] -- Extension execution realms for this frame
+  def extension_realms: () -> Array[untyped]
+
+  # @rbs return: Puppeteer::Frame? -- Parent frame
+  def parent_frame: () -> Puppeteer::Frame?
+
+  # @rbs return: Puppeteer::ElementHandle? -- Frame element handle
+  def frame_element: () -> Puppeteer::ElementHandle?
+
+  def _child_frames: () -> untyped
+
+  # @rbs return: Array[Puppeteer::Frame] -- Child frames
+  def child_frames: () -> Array[Puppeteer::Frame]
+
+  # @rbs return: bool -- Whether the frame is detached
+  def detached?: () -> bool
+
+  # @rbs url: String? -- Script URL
+  # @rbs path: String? -- Path to script file
+  # @rbs content: String? -- Script contents
+  # @rbs type: String? -- Script type
+  # @rbs id: String? -- Script element ID
+  # @rbs return: Puppeteer::ElementHandle -- Script element handle
+  def add_script_tag: (?url: String?, ?path: String?, ?content: String?, ?type: String?, ?id: String?) -> Puppeteer::ElementHandle
+
+  # @rbs url: String? -- Stylesheet URL
+  # @rbs path: String? -- Path to stylesheet file
+  # @rbs content: String? -- Stylesheet contents
+  # @rbs return: Puppeteer::ElementHandle -- Style element handle
+  def add_style_tag: (?url: String?, ?path: String?, ?content: String?) -> Puppeteer::ElementHandle
+
+  # @rbs selector: String -- CSS selector
+  # @rbs delay: Numeric? -- Delay between down and up (ms)
+  # @rbs button: String? -- Mouse button
+  # @rbs click_count: Integer? -- Deprecated: use count (click_count only sets clickCount)
+  # @rbs count: Integer? -- Number of clicks to perform
+  # @rbs return: void -- No return value
+  def click: (String selector, ?delay: Numeric?, ?button: String?, ?click_count: Integer?, ?count: Integer?) -> void
+
+  # @rbs selector: String -- CSS selector
+  # @rbs return: void -- No return value
+  def focus: (String selector) -> void
+
+  # @rbs selector: String -- CSS selector
+  # @rbs return: void -- No return value
+  def hover: (String selector) -> void
+
+  # @rbs selector: String -- CSS selector
+  # @rbs values: Array[String] -- Option values to select
+  # @rbs return: Array[String] -- Selected values
+  def select: (String selector, *untyped values) -> Array[String]
+
+  # @rbs selector: String -- CSS selector
+  # @rbs return: void -- No return value
+  def tap: (String selector) -> void
+
+  # @rbs selector: String -- CSS selector
+  # @rbs text: String -- Text to type
+  # @rbs delay: Numeric? -- Delay between key presses (ms)
+  # @rbs return: void -- No return value
+  def type_text: (String selector, String text, ?delay: Numeric?) -> void
+
+  # @rbs selector: String -- CSS selector
+  # @rbs visible: bool? -- Wait for element to be visible
+  # @rbs hidden: bool? -- Wait for element to be hidden
+  # @rbs timeout: Numeric? -- Maximum wait time in milliseconds
+  # @rbs return: Puppeteer::ElementHandle? -- Matching element or nil
+  def wait_for_selector: (String selector, ?visible: bool?, ?hidden: bool?, ?timeout: Numeric?) -> Puppeteer::ElementHandle?
+
+  # @rbs milliseconds: Numeric -- Time to wait in milliseconds
+  # @rbs return: void -- No return value
+  def wait_for_timeout: (Numeric milliseconds) -> void
+
+  # @rbs xpath: String -- XPath expression
+  # @rbs visible: bool? -- Wait for element to be visible
+  # @rbs hidden: bool? -- Wait for element to be hidden
+  # @rbs timeout: Numeric? -- Maximum wait time in milliseconds
+  # @rbs return: Puppeteer::ElementHandle? -- Matching element or nil
+  def wait_for_xpath: (String xpath, ?visible: bool?, ?hidden: bool?, ?timeout: Numeric?) -> Puppeteer::ElementHandle?
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs polling: String | Numeric | nil -- Polling strategy
+  # @rbs timeout: Numeric? -- Maximum wait time in milliseconds
+  # @rbs return: Puppeteer::JSHandle -- Handle to evaluation result
+  def wait_for_function: (String page_function, ?args: Array[untyped], ?polling: String | Numeric | nil, ?timeout: Numeric?) -> Puppeteer::JSHandle
+
+  # @rbs return: String -- Frame title
+  def title: () -> String
+
+  # @rbs frame_payload: Hash[String, untyped] -- Frame payload
+  # @rbs return: void -- No return value
+  def navigated: (Hash[String, untyped] frame_payload) -> void
+
+  # @rbs url: String -- Updated URL
+  # @rbs return: void -- No return value
+  def navigated_within_document: (String url) -> void
+
+  # @rbs loader_id: String -- Loader ID
+  # @rbs name: String -- Lifecycle event name
+  # @rbs return: void -- No return value
+  def handle_lifecycle_event: (String loader_id, String name) -> void
+
+  # @rbs return: void -- No return value
+  def handle_loading_started: () -> void
+
+  # @rbs return: void -- No return value
+  def handle_loading_stopped: () -> void
+
+  # @rbs return: void -- No return value
+  def detach: () -> void
+end

@@ -1,0 +1,21 @@
+# Generated from lib/puppeteer/touch_handle.rb with RBS::Inline
+
+class Puppeteer::TouchHandle
+  # @rbs touchscreen: Puppeteer::TouchScreen -- Touchscreen instance
+  # @rbs touch_point: Hash[Symbol, Numeric] -- Touch point payload
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::TouchScreen touchscreen, Hash[Symbol, Numeric] touch_point) -> void
+
+  attr_reader touch_point: untyped
+
+  # @rbs return: void -- No return value
+  def start: () -> void
+
+  # @rbs x: Numeric -- New X coordinate
+  # @rbs y: Numeric -- New Y coordinate
+  # @rbs return: void -- No return value
+  def move: (Numeric x, Numeric y) -> void
+
+  # @rbs return: void -- No return value
+  def end: () -> void
+end

@@ -1,0 +1,16 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: Provides a generic stream wrapper for IO instances.
+metadata:
+  documentation_uri: https://socketry.github.io/io-stream/
+  source_code_uri: https://github.com/socketry/io-stream.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to use `io-stream` to add efficient buffering
+    to Ruby IO objects.
+- path: high-performance-io.md
+  title: High Performance IO
+  description: This guide explains how to achieve optimal performance when using `io-stream`
+    by understanding and controlling flush behavior.

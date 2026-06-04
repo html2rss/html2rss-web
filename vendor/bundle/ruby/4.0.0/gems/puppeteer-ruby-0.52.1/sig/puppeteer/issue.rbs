@@ -1,0 +1,13 @@
+# Generated from lib/puppeteer/issue.rb with RBS::Inline
+
+class Puppeteer::Issue
+  # @rbs issue: Hash[String, untyped] -- CDP issue payload
+  # @rbs return: void -- No return value
+  def initialize: (Hash[String, untyped] issue) -> void
+
+  # @rbs return: String -- Issue code
+  attr_reader code: untyped
+
+  # @rbs return: Hash[String, untyped] -- Issue details payload
+  attr_reader details: untyped
+end

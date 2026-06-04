@@ -1,0 +1,16 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: An implementation of the Rack protocol/specification.
+metadata:
+  documentation_uri: https://socketry.github.io/protocol-rack/
+  source_code_uri: https://github.com/socketry/protocol-rack.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to get started with `protocol-rack` and integrate
+    Rack applications with `Protocol::HTTP` servers.
+- path: request-response.md
+  title: Request and Response Handling
+  description: This guide explains how to work with requests and responses when bridging
+    between Rack and `Protocol::HTTP`, covering advanced use cases and edge cases.

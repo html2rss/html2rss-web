@@ -1,0 +1,31 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: Provides abstractions to handle HTTP protocols.
+metadata:
+  documentation_uri: https://socketry.github.io/protocol-http/
+  source_code_uri: https://github.com/socketry/protocol-http.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to use `protocol-http` for building abstract
+    HTTP interfaces.
+- path: message-body.md
+  title: Message Body
+  description: This guide explains how to work with HTTP request and response message
+    bodies using `Protocol::HTTP::Body` classes.
+- path: headers.md
+  title: Headers
+  description: This guide explains how to work with HTTP headers using `protocol-http`.
+- path: middleware.md
+  title: Middleware
+  description: This guide explains how to build and use HTTP middleware with `Protocol::HTTP::Middleware`.
+- path: streaming.md
+  title: Streaming
+  description: This guide gives an overview of how to implement streaming requests
+    and responses.
+- path: design-overview.md
+  title: Design Overview
+  description: This guide explains the high level design of `protocol-http` in the
+    context of wider design patterns that can be used to implement HTTP clients and
+    servers.

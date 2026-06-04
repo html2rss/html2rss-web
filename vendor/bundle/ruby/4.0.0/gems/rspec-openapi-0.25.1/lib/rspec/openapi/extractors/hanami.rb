@@ -1,0 +1,111 @@
+# frozen_string_literal: true
+
+require 'dry/inflector'
+require 'hanami'
+
+# https://github.com/hanami/router/blob/97f75b8529574bd4ff23165460e82a6587bc323c/lib/hanami/router/inspector.rb#L13
+class Inspector
+  attr_accessor :routes, :inflector
+
+  def initialize(routes: [])
+    @routes = routes
+    @inflector = Dry::Inflector.new
+  end
+
+  def add_route(route)
+    routes.push(route)
+  end
+
+  def call(verb, path)
+    route = routes.find { |r| r.http_method == verb && r.path == path }
+
+    if route.to.is_a?(Proc)
+      {
+        tags: [],
+        summary: "#{verb} #{path}",
+      }
+    else
+      data = route.to.split('.')
+
+      {
+        tags: [inflector.classify(data[0])],
+        summary: data[1],
+      }
+    end
+  end
+end
+
+InspectorAnalyzer = Inspector.new
+
+# Add default parameter to load inspector before test cases run
+Hanami::Slice::ClassMethods.prepend(Module.new do
+  def router(inspector: InspectorAnalyzer)
+    super
+  end
+end)
+
+# Extractor for hanami
+class << RSpec::OpenAPI::Extractors::Hanami = Object.new
+  # @param [ActionDispatch::Request] request
+  # @param [RSpec::Core::Example] example
+  # @return Array
+  def request_attributes(request, example)
+    route = Hanami.app.router.recognize(Rack::MockRequest.env_for(request.path, method: request.method))
+
+    return RSpec::OpenAPI::Extractors::Rack.request_attributes(request, example) unless route.routable?
+
+    summary, tags, formats, operation_id, required_request_params, security, description, deprecated, example_mode,
+      example_key, example_name, response_enum, request_enum = SharedExtractor.attributes(example)
+
+    path = request.path
+
+    raw_path_params = route.params
+
+    result = InspectorAnalyzer.call(request.method, replace_path_params(path, route, '/:%{key}'))
+
+    summary ||= result[:summary]
+    tags ||= result[:tags]
+    path = replace_path_params(path, route, '/{%{key}}')
+
+    raw_path_params = raw_path_params.slice(*(raw_path_params.keys - RSpec::OpenAPI.ignored_path_params))
+
+    [
+      path,
+      summary,
+      tags,
+      operation_id,
+      required_request_params,
+      raw_path_params,
+      description,
+      security,
+      deprecated,
+      formats,
+      example_mode,
+      example_key,
+      example_name,
+      response_enum,
+      request_enum,
+    ]
+  end
+
+  # @param [RSpec::ExampleGroups::*] context
+  def request_response(context)
+    request = ActionDispatch::Request.new(context.last_request.env)
+    request.body.rewind if request.body.respond_to?(:rewind)
+    response = ActionDispatch::TestResponse.new(*context.last_response.to_a)
+
+    [request, response]
+  end
+
+  private
+
+  def replace_path_params(path, route, format)
+    return path if route.params.empty?
+
+    route.params.each_pair do |key, value|
+      path = path.sub("/#{value}", format % { key: key })
+    end
+
+    path
+  end
+end

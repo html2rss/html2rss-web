@@ -1,0 +1,31 @@
+# Generated from lib/puppeteer/p_selector_parser.rb with RBS::Inline
+
+module Puppeteer
+  module PSelectorParser
+    class PseudoSelector
+      attr_reader name: untyped
+
+      attr_reader value: untyped
+
+      def initialize: (name: untyped, value: untyped) -> untyped
+    end
+
+    PSEUDO_PREFIX: ::String
+
+    # @rbs selector: String -- Selector to parse
+    # @rbs return: [Array[untyped], bool, bool, bool] -- Parsed selectors and flags
+    def self.parse: (String selector) -> [ Array[untyped], bool, bool, bool ]
+
+    def self.flush_storage: (untyped storage, untyped compound) -> untyped
+
+    def self.parse_name: (untyped selector, untyped index) -> untyped
+
+    def self.skip_spaces: (untyped selector, untyped index) -> untyped
+
+    def self.parse_argument: (untyped selector, untyped index) -> untyped
+
+    def self.starts_with_at?: (untyped selector, untyped index, untyped token) -> untyped
+
+    def self.unquote: (untyped text) -> untyped
+  end
+end

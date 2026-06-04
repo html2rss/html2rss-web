@@ -1,0 +1,37 @@
+# Generated from lib/puppeteer/extension.rb with RBS::Inline
+
+class Puppeteer::Extension
+  # @rbs id: String -- Extension id
+  # @rbs version: String -- Extension version
+  # @rbs name: String -- Extension name
+  # @rbs path: String -- Extension path
+  # @rbs enabled: bool -- Whether extension is enabled
+  # @rbs browser: Puppeteer::Browser -- Browser instance
+  # @rbs return: void -- No return value
+  def initialize: (id: String, version: String, name: String, path: String, enabled: bool, browser: Puppeteer::Browser) -> void
+
+  # @rbs return: String -- Extension id
+  attr_reader id: untyped
+
+  # @rbs return: String -- Extension version
+  attr_reader version: untyped
+
+  # @rbs return: String -- Extension name
+  attr_reader name: untyped
+
+  # @rbs return: String -- Extension path
+  attr_reader path: untyped
+
+  # @rbs return: bool -- Whether extension is enabled
+  attr_reader enabled: untyped
+
+  # @rbs return: Array[Puppeteer::CdpWebWorker] -- Extension workers
+  def workers: () -> Array[Puppeteer::CdpWebWorker]
+
+  # @rbs return: Array[Puppeteer::Page] -- Extension pages
+  def pages: () -> Array[Puppeteer::Page]
+
+  # @rbs page: Puppeteer::Page -- Target page
+  # @rbs return: void -- No return value
+  def trigger_action: (Puppeteer::Page page) -> void
+end

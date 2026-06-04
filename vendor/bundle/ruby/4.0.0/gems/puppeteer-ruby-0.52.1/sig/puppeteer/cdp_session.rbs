@@ -1,0 +1,64 @@
+# Generated from lib/puppeteer/cdp_session.rb with RBS::Inline
+
+class Puppeteer::CDPSession
+  include Puppeteer::DebugPrint
+
+  include Puppeteer::EventCallbackable
+
+  class Error < Puppeteer::Error
+  end
+
+  # @rbs connection: Puppeteer::Connection -- CDP connection
+  # @rbs target_type: String -- Target type
+  # @rbs session_id: String -- CDP session id
+  # @rbs parent_session: Puppeteer::CDPSession? -- Parent CDP session
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::Connection connection, String target_type, String session_id, ?parent_session: Puppeteer::CDPSession?) -> void
+
+  # @rbs return: String -- CDP session id
+  def id: () -> String
+
+  attr_reader connection: Puppeteer::Connection?
+
+  attr_reader parent_session: Puppeteer::CDPSession?
+
+  attr_accessor target: Puppeteer::Target?
+
+  # @rbs return: void -- Resolve session readiness
+  def mark_ready: () -> void
+
+  # @rbs return: bool -- True when session is ready
+  def wait_for_ready: () -> bool
+
+  # @rbs method: String -- CDP method name
+  # @rbs params: Hash[String, untyped] -- CDP parameters
+  # @rbs return: Hash[String, untyped] -- CDP response
+  def send_message: (String method, ?Hash[String, untyped] params) -> Hash[String, untyped]
+
+  # @rbs method: String -- CDP method name
+  # @rbs params: Hash[String, untyped] -- CDP parameters
+  # @rbs return: Async::Promise[Hash[String, untyped]] -- Async CDP response
+  def async_send_message: (String method, ?Hash[String, untyped] params) -> Async::Promise[Hash[String, untyped]]
+
+  # @rbs message: Hash[String, untyped] -- Raw CDP message
+  # @rbs return: void -- No return value
+  def handle_message: (Hash[String, untyped] message) -> void
+
+  private def callback_with_message: (untyped callback, untyped message) -> untyped
+
+  # @rbs return: void -- Detach the session
+  def detach: () -> void
+
+  # @rbs return: void -- Close the session and reject pending callbacks
+  def handle_closed: () -> void
+
+  # @rbs event_name: String -- CDP event name
+  # @rbs &block: ^(untyped) -> void -- Event handler
+  # @rbs return: String -- Listener id
+  def on: (String event_name) ?{ (?) -> untyped } -> String
+
+  # @rbs event_name: String -- CDP event name
+  # @rbs &block: ^(untyped) -> void -- Event handler
+  # @rbs return: String -- Listener id
+  def once: (String event_name) ?{ (?) -> untyped } -> String
+end

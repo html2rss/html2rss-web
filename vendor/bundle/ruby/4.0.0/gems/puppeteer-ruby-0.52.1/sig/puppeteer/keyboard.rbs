@@ -1,0 +1,40 @@
+# Generated from lib/puppeteer/keyboard.rb with RBS::Inline
+
+class Puppeteer::Keyboard
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::CDPSession client) -> void
+
+  attr_reader modifiers: untyped
+
+  # @rbs key: String -- Key name
+  # @rbs text: String? -- Text to input
+  # @rbs commands: Array[String]? -- Editing commands
+  # @rbs return: void -- No return value
+  def down: (String key, ?text: String?, ?commands: Array[String]?) -> void
+
+  private def modifier_bit: (untyped key) -> untyped
+
+  private def key_description_for_string: (untyped key_string) -> untyped
+
+  # @rbs key: String -- Key name
+  # @rbs return: void -- No return value
+  def up: (String key) -> void
+
+  # @rbs char: String -- Character to insert
+  # @rbs return: void -- No return value
+  def send_character: (String char) -> void
+
+  # @rbs text: String -- Text to type
+  # @rbs delay: Numeric? -- Delay between key presses (ms)
+  # @rbs return: void -- No return value
+  def type_text: (String text, ?delay: Numeric?) -> void
+
+  # @rbs key: String -- Key name
+  # @rbs delay: Numeric? -- Delay between key events (ms)
+  # @rbs text: String? -- Text to input
+  # @rbs commands: Array[String]? -- Editing commands
+  # @rbs block: Proc? -- Optional block for key combo usage
+  # @rbs return: void -- No return value
+  def press: (String key, ?delay: Numeric?, ?text: String?, ?commands: Array[String]?) ?{ (?) -> untyped } -> void
+end

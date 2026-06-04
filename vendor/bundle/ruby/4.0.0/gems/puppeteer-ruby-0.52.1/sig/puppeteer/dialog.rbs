@@ -1,0 +1,41 @@
+# Generated from lib/puppeteer/dialog.rb with RBS::Inline
+
+class Puppeteer::Dialog
+  # @rbs type: String -- Dialog type
+  # @rbs message: String -- Dialog message
+  # @rbs default_value: String? -- Default prompt value, if any
+  # @rbs return: void -- No return value
+  def initialize: (type: String, message: String, ?default_value: String?) -> void
+
+  attr_reader type: String
+
+  attr_reader message: String
+
+  attr_reader default_value: String
+
+  # @rbs prompt_text: String? -- Text entered into the prompt
+  # @rbs return: void -- No return value
+  def accept: (?String? prompt_text) -> void
+
+  # @rbs return: void -- No return value
+  def dismiss: () -> void
+
+  # @rbs accept: bool -- Whether to accept the dialog
+  # @rbs text: String? -- Text entered into the prompt
+  # @rbs return: void -- No return value
+  def handle: (accept: bool, ?text: String?) -> void
+end
+
+class Puppeteer::CdpDialog < Puppeteer::Dialog
+  # @rbs client: Puppeteer::CDPSession -- CDP session used to handle dialog
+  # @rbs type: String -- Dialog type
+  # @rbs message: String -- Dialog message
+  # @rbs default_value: String? -- Default prompt value, if any
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::CDPSession client, type: String, message: String, default_value: String?) -> void
+
+  # @rbs accept: bool -- Whether to accept the dialog
+  # @rbs text: String? -- Text entered into the prompt
+  # @rbs return: void -- No return value
+  def handle: (accept: bool, ?text: String?) -> void
+end

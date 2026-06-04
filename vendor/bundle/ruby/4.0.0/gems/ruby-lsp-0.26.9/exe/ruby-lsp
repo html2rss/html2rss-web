@@ -1,0 +1,157 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "optparse"
+
+options = {}
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: ruby-lsp [options]"
+
+  opts.on("--version", "Print ruby-lsp version") do
+    require "ruby-lsp"
+    puts RubyLsp::VERSION
+    exit(0)
+  end
+
+  opts.on("--debug", "Launch the Ruby LSP with a debugger attached") do
+    options[:debug] = true
+  end
+
+  opts.on("--time-index", "Measure the time it takes to index the project") do
+    options[:time_index] = true
+  end
+
+  opts.on("--doctor", "Run troubleshooting steps") do
+    options[:doctor] = true
+  end
+
+  opts.on("--use-launcher", "[EXPERIMENTAL] Use launcher mechanism to handle missing dependencies gracefully") do
+    options[:launcher] = true
+  end
+
+  opts.on("--beta", "Use pre-release server gems") do
+    options[:beta] = true
+  end
+
+  opts.on("-h", "--help", "Print this help") do
+    puts opts.help
+    puts
+    puts "See https://shopify.github.io/ruby-lsp/ for more information"
+    exit(0)
+  end
+end
+
+begin
+  parser.parse(ARGV)
+rescue OptionParser::InvalidOption => e
+  warn(e)
+  warn("")
+  warn(parser.help)
+  exit(1)
+end
+
+# When we're running without bundler, then we need to make sure the composed bundle is fully configured and re-execute
+# using `BUNDLE_GEMFILE=.ruby-lsp/Gemfile bundle exec ruby-lsp` so that we have access to the gems that are a part of
+# the application's bundle
+if ENV["BUNDLE_GEMFILE"].nil?
+  # Substitute the current process by the launcher. RubyGems activates all dependencies of a gem's executable eagerly,
+  # but we can't have that happen because we want to invoke Bundler.setup ourselves with the composed bundle and avoid
+  # duplicate spec activation errors. Replacing the process with the launcher executable will clear the activated specs,
+  # which gives us the opportunity to control which specs are activated and enter degraded mode if any gems failed to
+  # install rather than failing to boot the server completely
+  if options[:launcher]
+    flags = []
+    flags << "--debug" if options[:debug]
+    flags << "--beta" if options[:beta]
+    exit exec(Gem.ruby, File.expand_path("ruby-lsp-launcher", __dir__), *flags)
+  end
+
+  require_relative "../lib/ruby_lsp/setup_bundler"
+
+  begin
+    env = RubyLsp::SetupBundler.new(Dir.pwd, **options).setup!
+  rescue RubyLsp::SetupBundler::BundleNotLocked
+    warn("Project contains a Gemfile, but no Gemfile.lock. Run `bundle install` to lock gems and restart the server")
+    exit(78)
+  end
+
+  bundler_path = File.join(Gem.default_bindir, "bundle")
+  base_command = (!Gem.win_platform? && File.exist?(bundler_path) ? "#{Gem.ruby} #{bundler_path}" : "bundle").dup
+
+  if env["BUNDLER_VERSION"]
+    base_command << " _#{env["BUNDLER_VERSION"]}_"
+  end
+
+  exit exec(env, "#{base_command} exec ruby-lsp #{ARGV.join(" ")}".strip)
+end
+
+$stdin.sync = true
+$stdout.sync = true
+$stderr.sync = true
+$stdin.binmode
+$stdout.binmode
+$stderr.binmode
+
+$LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
+
+require "ruby_lsp/internal"
+
+if options[:debug]
+  if ["x64-mingw-ucrt", "x64-mingw32"].include?(RUBY_PLATFORM)
+    $stderr.puts "Debugging is not supported on Windows"
+    exit 1
+  end
+
+  begin
+    ENV.delete("RUBY_DEBUG_IRB_CONSOLE")
+    require "debug/open_nonstop"
+  rescue LoadError
+    $stderr.puts("You need to install the debug gem to use the --debug flag")
+  end
+end
+
+if options[:time_index]
+  index = RubyIndexer::Index.new
+
+  time_start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  index.index_all
+  elapsed_time = Process.clock_gettime(Process::CLOCK_MONOTONIC) - time_start
+
+  entries = index.instance_variable_get(:@entries)
+  entries_by_entry_type = entries.values.flatten.group_by(&:class)
+
+  puts <<~MSG
+    Ruby LSP v#{RubyLsp::VERSION}: Indexing took #{elapsed_time.round(5)} seconds and generated:
+    - #{entries_by_entry_type.sort_by { |k, _| k.to_s }.map { |k, v| "#{k.name.split("::").last}: #{v.size}" }.join("\n- ")}
+  MSG
+  return
+end
+
+if options[:doctor]
+  index = RubyIndexer::Index.new
+
+  if File.exist?(".index.yml")
+    begin
+      config = YAML.parse_file(".index.yml").to_ruby
+    rescue => e
+      abort("Error parsing config: #{e.message}")
+    end
+    index.configuration.apply_config(config)
+  end
+
+  puts "Globbing for indexable files"
+
+  index.configuration.indexable_uris.each do |uri|
+    puts "indexing: #{uri}"
+    index.index_file(uri)
+  end
+  return
+end
+
+server = RubyLsp::Server.new
+
+# Ensure all output goes out stderr by default to allow puts/p/pp to work
+# without specifying output device.
+$> = $stderr
+
+server.start

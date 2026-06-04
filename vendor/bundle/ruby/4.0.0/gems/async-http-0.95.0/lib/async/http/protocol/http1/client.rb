@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2018-2026, by Samuel Williams.
+
+require_relative "connection"
+
+module Async
+	module HTTP
+		module Protocol
+			module HTTP1
+				# An HTTP/1 client connection that sends requests and reads responses.
+				class Client < Connection
+					# Initialize the HTTP/1 client connection.
+					def initialize(...)
+						super
+						
+						@pool = nil
+					end
+					
+					attr_accessor :pool
+					
+					# Called when the connection is closed, releasing it back to the pool.
+					def closed(error = nil)
+						super
+						
+						if pool = @pool
+							@pool = nil
+							# If the connection is not reusable, this will retire it from the connection pool and invoke `#close`.
+							pool.release(self)
+						end
+					end
+					
+					# Used by the client to send requests to the remote server.
+					def call(request, task: Task.current)
+						# Mark the start of the trailers:
+						trailer = request.headers.trailer!
+						headers = request.headers.header
+						
+						# We carefully interpret https://tools.ietf.org/html/rfc7230#section-6.3.1 to implement this correctly.
+						target = request.path
+						authority = request.authority
+						
+						# If we are using a CONNECT request, we need to use the authority as the target:
+						if request.connect?
+							target = authority
+							authority = nil
+						end
+						
+						write_request(authority, request.method, target, @version, headers)
+						
+						if request.body?
+							body = request.body
+							
+							if protocol = request.protocol
+								# This is a very tricky apect of handling HTTP/1 upgrade connections. In theory, this approach is a bit inefficient, because we spin up a task just to handle writing to the underlying stream when we could be writing to the stream directly. But we need to maintain some level of compatibility with HTTP/2. Additionally, we don't know if the upgrade request will be accepted, so starting to write the body at this point needs to be handled with care.
+								task.async(annotation: "Upgrading request...") do
+									# If this fails, this connection will be closed.
+									write_upgrade_body(protocol, body)
+								rescue => error
+									self.close(error)
+								end
+							elsif request.connect?
+								task.async(annotation: "Tunnneling request...") do
+									write_tunnel_body(@version, body)
+								rescue => error
+									self.close(error)
+								end
+							else
+								task.async(annotation: "Streaming request...") do
+									# Once we start writing the body, we can't recover if the request fails. That's because the body might be generated dynamically, streaming, etc.
+									write_body(@version, body, false, trailer)
+								rescue => error
+									self.close(error)
+								end
+							end
+						elsif protocol = request.protocol
+							write_upgrade_body(protocol)
+						else
+							write_body(@version, request.body, false, trailer)
+						end
+						
+						return Response.read(self, request)
+					rescue => error
+						self.close(error)
+						raise
+					end
+				end
+			end
+		end
+	end
+end

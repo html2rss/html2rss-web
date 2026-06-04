@@ -1,0 +1,113 @@
+# Generated from lib/puppeteer/mouse.rb with RBS::Inline
+
+class Puppeteer::Mouse
+  module Button
+    NONE: ::String
+
+    LEFT: ::String
+
+    RIGHT: ::String
+
+    MIDDLE: ::String
+
+    BACK: ::String
+
+    FORWARD: ::String
+  end
+
+  module ButtonFlag
+    NONE: ::Integer
+
+    LEFT: ::Integer
+
+    RIGHT: untyped
+
+    MIDDLE: untyped
+
+    BACK: untyped
+
+    FORWARD: untyped
+  end
+
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  # @rbs keyboard: Puppeteer::Keyboard -- Keyboard instance
+  # @rbs return: void -- No return value
+  def initialize: (Puppeteer::CDPSession client, Puppeteer::Keyboard keyboard) -> void
+
+  # @rbs return: void -- No return value
+  def reset: () -> void
+
+  # @rbs x: Numeric -- X coordinate
+  # @rbs y: Numeric -- Y coordinate
+  # @rbs steps: Integer? -- Number of intermediate steps
+  # @rbs return: void -- No return value
+  def move: (Numeric x, Numeric y, ?steps: Integer?) -> void
+
+  # @rbs x: Numeric -- X coordinate
+  # @rbs y: Numeric -- Y coordinate
+  # @rbs delay: Numeric? -- Delay between down and up (ms)
+  # @rbs button: String? -- Mouse button
+  # @rbs click_count: Integer? -- Deprecated: use count (click_count only sets clickCount)
+  # @rbs count: Integer? -- Number of click repetitions
+  # @rbs return: void -- No return value
+  def click: (Numeric x, Numeric y, ?delay: Numeric?, ?button: String?, ?click_count: Integer?, ?count: Integer?) -> void
+
+  private def warn_deprecated_click_count: () -> untyped
+
+  attr_accessor deprecated_click_count_warned: untyped
+
+  # @rbs button: String? -- Mouse button
+  # @rbs click_count: Integer? -- Click count to report
+  # @rbs return: void -- No return value
+  def down: (?button: String?, ?click_count: Integer?) -> void
+
+  # @rbs button: String? -- Mouse button
+  # @rbs click_count: Integer? -- Click count to report
+  # @rbs return: void -- No return value
+  def up: (?button: String?, ?click_count: Integer?) -> void
+
+  # Dispatches a `mousewheel` event.
+  #
+  # @rbs delta_x: Numeric -- Scroll delta X
+  # @rbs delta_y: Numeric -- Scroll delta Y
+  # @rbs return: void -- No return value
+  def wheel: (?delta_x: Numeric, ?delta_y: Numeric) -> void
+
+  # @rbs start: Puppeteer::ElementHandle::Point -- Drag start point
+  # @rbs target: Puppeteer::ElementHandle::Point -- Drag end point
+  # @rbs return: Hash[String, untyped] -- Drag data payload
+  def drag: (Puppeteer::ElementHandle::Point start, Puppeteer::ElementHandle::Point target) -> Hash[String, untyped]
+
+  # @rbs target: Puppeteer::ElementHandle::Point -- Drag target point
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drag_enter: (Puppeteer::ElementHandle::Point target, Hash[String, untyped] data) -> void
+
+  # @rbs target: Puppeteer::ElementHandle::Point -- Drag target point
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drag_over: (Puppeteer::ElementHandle::Point target, Hash[String, untyped] data) -> void
+
+  # @rbs target: Puppeteer::ElementHandle::Point -- Drag target point
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drop: (Puppeteer::ElementHandle::Point target, Hash[String, untyped] data) -> void
+
+  # @rbs start: Puppeteer::ElementHandle::Point -- Drag start point
+  # @rbs target: Puppeteer::ElementHandle::Point -- Drag end point
+  # @rbs delay: Numeric? -- Delay before drop (ms)
+  # @rbs return: void -- No return value
+  def drag_and_drop: (Puppeteer::ElementHandle::Point start, Puppeteer::ElementHandle::Point target, ?delay: Numeric?) -> void
+
+  private def state: () -> untyped
+
+  # @rbs block: Proc -- Block receiving state update callback
+  # @rbs return: untyped -- Block result
+  private def with_transaction: () ?{ (?) -> untyped } -> untyped
+
+  private def merge_state: (untyped base_state, untyped transaction) -> untyped
+
+  private def button_flag: (untyped button) -> untyped
+
+  private def button_from_pressed_buttons: (untyped buttons) -> untyped
+end

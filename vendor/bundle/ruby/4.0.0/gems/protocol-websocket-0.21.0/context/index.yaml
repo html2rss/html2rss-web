@@ -1,0 +1,16 @@
+# Automatically generated context index for Utopia::Project guides.
+# Do not edit then files in this directory directly, instead edit the guides and then run `bake utopia:project:agent:context:update`.
+---
+description: A low level implementation of the WebSocket protocol.
+metadata:
+  documentation_uri: https://socketry.github.io/protocol-websocket/
+  source_code_uri: https://github.com/socketry/protocol-websocket.git
+files:
+- path: getting-started.md
+  title: Getting Started
+  description: This guide explains how to use `protocol-websocket` for implementing
+    a websocket client and server.
+- path: extensions.md
+  title: Extensions
+  description: This guide explains how to use `protocol-websocket` for implementing
+    a websocket client and server using extensions.

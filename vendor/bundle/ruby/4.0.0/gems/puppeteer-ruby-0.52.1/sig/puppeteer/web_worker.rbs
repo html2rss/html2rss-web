@@ -1,0 +1,83 @@
+# Generated from lib/puppeteer/web_worker.rb with RBS::Inline
+
+class Puppeteer::WorkerWorld
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  def initialize: (Puppeteer::CDPSession client) -> untyped
+
+  # @rbs context: Puppeteer::ExecutionContext -- Execution context to bind
+  # @rbs return: void -- No return value
+  def set_context: (Puppeteer::ExecutionContext context) -> void
+
+  # @rbs return: Puppeteer::ExecutionContext -- Worker execution context
+  def execution_context: () -> Puppeteer::ExecutionContext
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def evaluate: (String page_function, *untyped args) -> untyped
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: Puppeteer::JSHandle -- Handle to evaluation result
+  def evaluate_handle: (String page_function, *untyped args) -> Puppeteer::JSHandle
+
+  # @rbs return: nil -- Workers do not have frames
+  def frame: () -> nil
+
+  # @rbs return: void -- Dispose world resources
+  def dispose: () -> void
+end
+
+class Puppeteer::WebWorker
+  include Puppeteer::EventCallbackable
+
+  # @rbs url: String -- Worker URL
+  def initialize: (String url) -> untyped
+
+  # @rbs return: Puppeteer::TimeoutSettings -- Timeout settings
+  attr_reader timeout_settings: untyped
+
+  # @rbs return: String -- Worker URL
+  def url: () -> String
+
+  # @rbs return: Puppeteer::WorkerWorld -- Main realm
+  def main_realm: () -> Puppeteer::WorkerWorld
+
+  # @rbs return: Puppeteer::CDPSession -- CDP session
+  def client: () -> Puppeteer::CDPSession
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def evaluate: (String page_function, *untyped args) -> untyped
+
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: Puppeteer::JSHandle -- Handle to evaluation result
+  def evaluate_handle: (String page_function, *untyped args) -> Puppeteer::JSHandle
+
+  # @rbs return: void -- Not supported
+  def close: () -> void
+end
+
+class Puppeteer::CdpWebWorker < Puppeteer::WebWorker
+  include Puppeteer::DebugPrint
+
+  # @rbs client: Puppeteer::CDPSession -- Worker CDP session
+  # @rbs url: String -- Worker URL
+  # @rbs target_id: String -- Target ID
+  # @rbs target_type: String -- Target type
+  # @rbs console_api_called: Proc? -- Console callback
+  # @rbs exception_thrown: Proc? -- Exception callback
+  # @rbs network_manager: untyped? -- Network manager for worker requests
+  def initialize: (Puppeteer::CDPSession client, String url, String target_id, String target_type, Proc? console_api_called, Proc? exception_thrown, ?network_manager: untyped?) -> untyped
+
+  # @rbs return: Puppeteer::WorkerWorld -- Main realm
+  def main_realm: () -> Puppeteer::WorkerWorld
+
+  # @rbs return: Puppeteer::CDPSession -- Worker CDP session
+  def client: () -> Puppeteer::CDPSession
+
+  # @rbs return: void -- Close the worker
+  def close: () -> void
+end

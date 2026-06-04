@@ -1,0 +1,22 @@
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/stackprof-0.2.28/ext/stackprof
+/opt/hostedtoolcache/Ruby/4.0.1/x64/bin/ruby extconf.rb
+checking for rb_postponed_job_preregister()... yes
+checking for rb_profile_frames()... yes
+checking for rb_tracepoint_new()... yes
+checking for RUBY_INTERNAL_EVENT_NEWOBJ... yes
+creating Makefile
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/stackprof-0.2.28/ext/stackprof
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wcx8un sitelibdir\=./.gem.20260429-2339-wcx8un clean
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/stackprof-0.2.28/ext/stackprof
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wcx8un sitelibdir\=./.gem.20260429-2339-wcx8un
+compiling stackprof.c
+linking shared-object stackprof/stackprof.so
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/stackprof-0.2.28/ext/stackprof
+make -j4 DESTDIR\= sitearchdir\=./.gem.20260429-2339-wcx8un sitelibdir\=./.gem.20260429-2339-wcx8un install
+/usr/bin/install -c -m 0755 stackprof.so ./.gem.20260429-2339-wcx8un/stackprof
+
+current directory: /home/runner/work/html2rss-web/html2rss-web/vendor/bundle/ruby/4.0.0/gems/stackprof-0.2.28/ext/stackprof
+make DESTDIR\= sitearchdir\=./.gem.20260429-2339-wcx8un sitelibdir\=./.gem.20260429-2339-wcx8un clean

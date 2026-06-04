@@ -1,0 +1,313 @@
+# Generated from lib/puppeteer/element_handle.rb with RBS::Inline
+
+class Puppeteer::ElementHandle < Puppeteer::JSHandle
+  include Puppeteer::DebugPrint
+
+  include Puppeteer::IfPresent
+
+  # @rbs context: Puppeteer::ExecutionContext -- Execution context
+  # @rbs client: Puppeteer::CDPSession -- CDP session
+  # @rbs remote_object: Puppeteer::RemoteObject -- Remote object handle
+  # @rbs frame: Puppeteer::Frame -- Owning frame
+  def initialize: (context: Puppeteer::ExecutionContext, client: Puppeteer::CDPSession, remote_object: Puppeteer::RemoteObject, frame: Puppeteer::Frame) -> untyped
+
+  attr_reader page: untyped
+
+  attr_reader frame: untyped
+
+  attr_reader frame_manager: untyped
+
+  # @rbs return: String -- Inspection string
+  def inspect: () -> String
+
+  #
+  #  Wait for the `selector` to appear within the element. If at the moment of calling the
+  #  method the `selector` already exists, the method will return immediately. If
+  #  the `selector` doesn't appear after the `timeout` milliseconds of waiting, the
+  #  function will throw.
+  #
+  #  This method does not work across navigations or if the element is detached from DOM.
+  #
+  #  {@link https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | selector}
+  #  of an element to wait for
+  #  is added to DOM. Resolves to `null` if waiting for hidden: `true` and
+  #  selector is not found in DOM.
+  #  @remarks
+  #  The optional parameters in `options` are:
+  #
+  #  - `visible`: wait for the selected element to be present in DOM and to be
+  #  visible, i.e. to not have `display: none` or `visibility: hidden` CSS
+  #  properties. Defaults to `false`.
+  #
+  #  - `hidden`: wait for the selected element to not be found in the DOM or to be hidden,
+  #  i.e. have `display: none` or `visibility: hidden` CSS properties. Defaults to
+  #  `false`.
+  #
+  #  - `timeout`: maximum time to wait in milliseconds. Defaults to `30000`
+  #  (30 seconds). Pass `0` to disable timeout. The default value can be changed
+  #  by using the {@link Page.setDefaultTimeout} method.
+  #  @rbs selector: String -- CSS selector
+  #  @rbs visible: bool? -- Wait for element to be visible
+  #  @rbs hidden: bool? -- Wait for element to be hidden
+  #  @rbs timeout: Numeric? -- Maximum wait time in milliseconds
+  #  @rbs return: Puppeteer::ElementHandle? -- Matched element handle
+  def wait_for_selector: (String selector, ?visible: bool?, ?hidden: bool?, ?timeout: Numeric?) -> Puppeteer::ElementHandle?
+
+  # Wait for the `xpath` within the element. If at the moment of calling the
+  # method the `xpath` already exists, the method will return immediately. If
+  # the `xpath` doesn't appear after the `timeout` milliseconds of waiting, the
+  # function will throw.
+  #
+  # If `xpath` starts with `//` instead of `.//`, the dot will be appended automatically.
+  #
+  # This method works across navigation
+  # ```js
+  # const puppeteer = require('puppeteer');
+  # (async () => {
+  # const browser = await puppeteer.launch();
+  # const page = await browser.newPage();
+  # let currentURL;
+  # page
+  # .waitForXPath('//img')
+  # .then(() => console.log('First URL with image: ' + currentURL));
+  # for (currentURL of [
+  # 'https://example.com',
+  # 'https://google.com',
+  # 'https://bbc.com',
+  # ]) {
+  # await page.goto(currentURL);
+  # }
+  # await browser.close();
+  # })();
+  # ```
+  # {@link https://developer.mozilla.org/en-US/docs/Web/XPath | xpath} of an
+  # element to wait for
+  # added to DOM. Resolves to `null` if waiting for `hidden: true` and xpath is
+  # not found in DOM.
+  # @remarks
+  # The optional Argument `options` have properties:
+  #
+  # - `visible`: A boolean to wait for element to be present in DOM and to be
+  # visible, i.e. to not have `display: none` or `visibility: hidden` CSS
+  # properties. Defaults to `false`.
+  #
+  # - `hidden`: A boolean wait for element to not be found in the DOM or to be
+  # hidden, i.e. have `display: none` or `visibility: hidden` CSS properties.
+  # Defaults to `false`.
+  #
+  # - `timeout`: A number which is maximum time to wait for in milliseconds.
+  # Defaults to `30000` (30 seconds). Pass `0` to disable timeout. The default
+  # value can be changed by using the {@link Page.setDefaultTimeout} method.
+  # @rbs xpath: String -- XPath expression
+  # @rbs visible: bool? -- Wait for element to be visible
+  # @rbs hidden: bool? -- Wait for element to be hidden
+  # @rbs timeout: Numeric? -- Maximum wait time in milliseconds
+  # @rbs return: Puppeteer::ElementHandle? -- Matched element handle
+  def wait_for_xpath: (String xpath, ?visible: bool?, ?hidden: bool?, ?timeout: Numeric?) -> Puppeteer::ElementHandle?
+
+  # @rbs tag_name: String -- Tag name to assert
+  # @rbs return: Puppeteer::ElementHandle -- Element handle
+  def to_element: (String tag_name) -> Puppeteer::ElementHandle
+
+  # @rbs return: Puppeteer::ElementHandle -- Element handle
+  def as_element: () -> Puppeteer::ElementHandle
+
+  # @rbs return: Puppeteer::Locator -- Locator for this element
+  def as_locator: () -> Puppeteer::Locator
+
+  # @rbs return: bool -- Whether element is visible
+  def visible?: () -> bool
+
+  # @rbs return: bool -- Whether element is hidden
+  def hidden?: () -> bool
+
+  # @rbs visible: bool -- Expected visibility state
+  # @rbs return: bool -- Whether visibility matches
+  private def check_visibility: (bool visible) -> bool
+
+  # @rbs return: Puppeteer::Frame? -- Frame that owns this element
+  def content_frame: () -> Puppeteer::Frame?
+
+  class ScrollIntoViewError < Puppeteer::Error
+  end
+
+  # @rbs return: void -- No return value
+  def scroll_into_view_if_needed: () -> void
+
+  class ElementNotVisibleError < Puppeteer::Error
+    def initialize: () -> untyped
+  end
+
+  class ElementNotClickableError < Puppeteer::Error
+    def initialize: () -> untyped
+  end
+
+  # @rbs quad: Array[Point] -- Quad points
+  # @rbs offset: Point -- Offset to apply
+  # @rbs return: Array[Point] -- Offset quad points
+  private def apply_offsets_to_quad: (Array[Point] quad, Point offset) -> Array[Point]
+
+  # @rbs frame: Puppeteer::Frame -- Frame to calculate offsets for
+  # @rbs return: Point -- Calculated offset
+  private def oopif_offsets: (Puppeteer::Frame frame) -> Point
+
+  # @rbs offset: Puppeteer::ElementHandle::Offset | Hash[Symbol, Numeric] | nil -- Click offset
+  # @rbs return: Puppeteer::ElementHandle::Point -- Clickable point
+  def clickable_point: (?Puppeteer::ElementHandle::Offset | Hash[Symbol, Numeric] | nil offset) -> Puppeteer::ElementHandle::Point
+
+  # @rbs quad: Array[Numeric] -- Protocol quad coordinates
+  # @rbs return: Array[Point] -- Point array
+  private def from_protocol_quad: (Array[Numeric] quad) -> Array[Point]
+
+  private def intersect_quad_with_viewport: (untyped quad, untyped width, untyped height) -> untyped
+
+  # @rbs return: void -- No return value
+  def hover: () -> void
+
+  # @rbs delay: Numeric? -- Delay between down and up (ms)
+  # @rbs button: String? -- Mouse button
+  # @rbs click_count: Integer? -- Deprecated: use count (click_count only sets clickCount)
+  # @rbs count: Integer? -- Number of clicks to perform
+  # @rbs offset: Puppeteer::ElementHandle::Offset | Hash[Symbol, Numeric] | nil -- Click offset
+  # @rbs return: void -- No return value
+  def click: (?delay: Numeric?, ?button: String?, ?click_count: Integer?, ?count: Integer?, ?offset: Puppeteer::ElementHandle::Offset | Hash[Symbol, Numeric] | nil) -> void
+
+  # @rbs return: Puppeteer::TouchHandle -- Touch handle
+  def touch_start: () -> Puppeteer::TouchHandle
+
+  # @rbs touch: Puppeteer::TouchHandle? -- Optional touch handle
+  # @rbs return: void -- No return value
+  def touch_move: (?Puppeteer::TouchHandle? touch) -> void
+
+  # @rbs return: void -- No return value
+  def touch_end: () -> void
+
+  class DragInterceptionNotEnabledError < Puppeteer::Error
+    def initialize: () -> untyped
+  end
+
+  # @rbs x: Numeric -- Drag end X coordinate
+  # @rbs y: Numeric -- Drag end Y coordinate
+  # @rbs return: void -- No return value
+  def drag: (x: Numeric, y: Numeric) -> void
+
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drag_enter: (Hash[String, untyped] data) -> void
+
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drag_over: (Hash[String, untyped] data) -> void
+
+  # @rbs data: Hash[String, untyped] -- Drag data payload
+  # @rbs return: void -- No return value
+  def drop: (Hash[String, untyped] data) -> void
+
+  # @rbs target: Puppeteer::ElementHandle -- Drop target element
+  # @rbs delay: Numeric? -- Delay before dropping (ms)
+  # @rbs return: void -- No return value
+  def drag_and_drop: (Puppeteer::ElementHandle target, ?delay: Numeric?) -> void
+
+  # @rbs values: Array[String] -- Option values to select
+  # @rbs return: Array[String] -- Selected values
+  def select: (*untyped values) -> Array[String]
+
+  # @rbs file_paths: Array[String] -- Files to upload
+  # @rbs return: void -- No return value
+  def upload_file: (*untyped file_paths) -> void
+
+  # @rbs credit_card: Hash[Symbol | String, untyped]? -- Credit card autofill payload
+  # @rbs address: Hash[Symbol | String, untyped]? -- Address autofill payload
+  # @rbs return: void -- No return value
+  def autofill: (?credit_card: Hash[Symbol | String, untyped]?, ?address: Hash[Symbol | String, untyped]?) -> void
+
+  # @rbs block: Proc? -- Optional block for Object#tap usage
+  # @rbs return: Puppeteer::ElementHandle | nil -- Element handle or nil
+  def tap: () ?{ (?) -> untyped } -> (Puppeteer::ElementHandle | nil)
+
+  # @rbs return: void -- No return value
+  def focus: () -> void
+
+  # @rbs text: String -- Text to type
+  # @rbs delay: Numeric? -- Delay between key presses (ms)
+  # @rbs return: void -- No return value
+  def type_text: (String text, ?delay: Numeric?) -> void
+
+  # @rbs key: String -- Key name
+  # @rbs delay: Numeric? -- Delay between key events (ms)
+  # @rbs text: String? -- Text to input
+  # @rbs return: void -- No return value
+  def press: (String key, ?delay: Numeric?, ?text: String?) -> void
+
+  # @rbs return: Puppeteer::ElementHandle::BoundingBox? -- Bounding box or nil
+  def bounding_box: () -> Puppeteer::ElementHandle::BoundingBox?
+
+  # @rbs return: Puppeteer::ElementHandle::BoxModel? -- Box model or nil
+  def box_model: () -> Puppeteer::ElementHandle::BoxModel?
+
+  # @rbs type: String? -- Image format
+  # @rbs path: String? -- File path to save
+  # @rbs full_page: bool? -- Capture full page
+  # @rbs clip: Hash[Symbol, Numeric]? -- Clip rectangle
+  # @rbs quality: Integer? -- JPEG quality
+  # @rbs omit_background: bool? -- Omit background for PNG
+  # @rbs encoding: String? -- Encoding (base64 or binary)
+  # @rbs capture_beyond_viewport: bool? -- Capture beyond viewport
+  # @rbs from_surface: bool? -- Capture from surface
+  # @rbs return: String -- Screenshot data
+  def screenshot: (?type: String?, ?path: String?, ?full_page: bool?, ?clip: Hash[Symbol, Numeric]?, ?quality: Integer?, ?omit_background: bool?, ?encoding: String?, ?capture_beyond_viewport: bool?, ?from_surface: bool?) -> String
+
+  private def query_handler_manager: () -> untyped
+
+  private def query_selector_in_isolated_world: (untyped selector) -> untyped
+
+  private def query_selector_all_in_isolated_world: (untyped selector) -> untyped
+
+  # `$()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs return: Puppeteer::ElementHandle? -- Matching element or nil
+  def query_selector: (String selector) -> Puppeteer::ElementHandle?
+
+  # `$$()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs isolate: bool? -- Use isolated world for queries
+  # @rbs return: Array[Puppeteer::ElementHandle] -- Matching elements
+  def query_selector_all: (String selector, ?isolate: bool?) -> Array[Puppeteer::ElementHandle]
+
+  class ElementNotFoundError < Puppeteer::Error
+    # @rbs selector: String -- CSS selector
+    def initialize: (String selector) -> untyped
+  end
+
+  # `$eval()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def eval_on_selector: (String selector, String page_function, *untyped args) -> untyped
+
+  # `$$eval()` in JavaScript.
+  # @rbs selector: String -- CSS selector
+  # @rbs page_function: String -- Function or expression to evaluate
+  # @rbs args: Array[untyped] -- Arguments for evaluation
+  # @rbs return: untyped -- Evaluation result
+  def eval_on_selector_all: (String selector, String page_function, *untyped args) -> untyped
+
+  # `$x()` in JavaScript. $ is not allowed to use as a method name in Ruby.
+  # @rbs expression: String -- XPath expression
+  # @rbs return: Array[Puppeteer::ElementHandle] -- Matching elements
+  def Sx: (String expression) -> Array[Puppeteer::ElementHandle]
+
+  # in JS, #isIntersectingViewport.
+  # @rbs threshold: Numeric? -- Visibility threshold
+  # @rbs return: bool -- Whether element intersects viewport
+  def intersecting_viewport?: (?threshold: Numeric?) -> bool
+
+  private def compute_quad_area: (untyped quad) -> untyped
+
+  # used in AriaQueryHandler
+  # @rbs accessible_name: String? -- Accessible name filter
+  # @rbs role: String? -- Accessible role filter
+  # @rbs return: Hash[String, untyped] -- Accessibility tree result
+  def query_ax_tree: (?accessible_name: String?, ?role: String?) -> Hash[String, untyped]
+end

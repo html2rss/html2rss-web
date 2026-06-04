@@ -1,0 +1,73 @@
+# Generated from lib/puppeteer/p_query_handler.rb with RBS::Inline
+
+class Puppeteer::PQueryHandler
+  POLLING_DEFAULT_SECONDS: ::Float
+
+  CSS_QUERY_SELECTOR_JS: ::String
+
+  PIERCE_JS: ::String
+
+  PIERCE_ALL_JS: ::String
+
+  DOM_SORT_JS: ::String
+
+  # @rbs query_handler_manager: untyped -- Query handler manager
+  # @rbs return: void -- No return value
+  def initialize: (?query_handler_manager: untyped) -> void
+
+  # @rbs element: Puppeteer::ElementHandle -- Root element
+  # @rbs selector: String -- PSelector string
+  # @rbs return: Puppeteer::ElementHandle? -- First matching element
+  def query_one: (Puppeteer::ElementHandle element, String selector) -> Puppeteer::ElementHandle?
+
+  # @rbs element: Puppeteer::ElementHandle -- Root element
+  # @rbs selector: String -- PSelector string
+  # @rbs return: Array[Puppeteer::ElementHandle] -- Matching elements
+  def query_all: (Puppeteer::ElementHandle element, String selector) -> Array[Puppeteer::ElementHandle]
+
+  # @rbs element: Puppeteer::ElementHandle -- Root element
+  # @rbs selector: String -- PSelector string
+  # @rbs return: Puppeteer::JSHandle -- Handle to array of elements
+  def query_all_array: (Puppeteer::ElementHandle element, String selector) -> Puppeteer::JSHandle
+
+  # @rbs element_or_frame: Puppeteer::ElementHandle | Puppeteer::Frame -- Root element or frame
+  # @rbs selector: String -- PSelector string
+  # @rbs visible: bool? -- Wait for element to be visible
+  # @rbs hidden: bool? -- Wait for element to be hidden
+  # @rbs timeout: Numeric? -- Timeout in milliseconds
+  # @rbs polling: (String | Numeric | nil) -- Polling strategy
+  # @rbs return: Puppeteer::ElementHandle? -- Matching element
+  def wait_for: (Puppeteer::ElementHandle | Puppeteer::Frame element_or_frame, String selector, visible: bool?, hidden: bool?, timeout: Numeric?, ?polling: String | Numeric | nil) -> Puppeteer::ElementHandle?
+
+  private
+
+  def run_complex_selector: (untyped root, untyped complex) -> untyped
+
+  def apply_compound: (untyped elements, untyped compound) -> untyped
+
+  def apply_css_selector: (untyped elements, untyped selector) -> untyped
+
+  def query_css_selector: (untyped element, untyped selector) -> untyped
+
+  def apply_pseudo_selector: (untyped elements, untyped pseudo) -> untyped
+
+  def query_handler_for_pseudo: (untyped name) -> untyped
+
+  def pierce: (untyped elements) -> untyped
+
+  def pierce_all: (untyped elements) -> untyped
+
+  def dom_sort: (untyped elements) -> untyped
+
+  def array_handle_to_elements: (untyped array_handle) -> untyped
+
+  def ensure_context: (untyped handle, untyped context) -> untyped
+
+  def transfer_handle: (untyped frame, untyped handle) -> untyped
+
+  def polling_interval_seconds: (untyped polling, visible: untyped, hidden: untyped) -> untyped
+
+  def monotonic_time: () -> untyped
+
+  def raise_timeout: (untyped selector) -> untyped
+end

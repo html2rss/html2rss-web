@@ -1,0 +1,30 @@
+# Generated from lib/puppeteer/chrome_user_data_dir.rb with RBS::Inline
+
+module Puppeteer::ChromeUserDataDir
+  CHANNELS: Array[String]
+
+  MAC_DIR_NAMES: Hash[String, String]
+
+  LINUX_DIR_NAMES: Hash[String, String]
+
+  WINDOWS_DIR_NAMES: Hash[String, Array[String]]
+
+  # @rbs channel: (String | Symbol) -- Chrome release channel
+  # @rbs platform: Symbol? -- Optional platform override
+  # @rbs env: Hash[String, String] -- Environment variables
+  # @rbs home: String? -- Home directory override
+  # @rbs return: String -- Default user data directory
+  def self.resolve_default: (String | Symbol channel, ?platform: Symbol?, ?env: Hash[String, String], ?home: String?) -> String
+
+  # @rbs channel: (String | Symbol) -- Chrome release channel
+  # @rbs return: String -- Normalized channel
+  def self.normalize_channel: (String | Symbol channel) -> String
+
+  # @rbs return: Symbol -- Current platform
+  def self.current_platform: () -> Symbol
+
+  # @rbs platform: Symbol -- Target platform
+  # @rbs parts: String -- Path segments
+  # @rbs return: String -- Joined path
+  def self.join_path: (Symbol platform, *untyped parts) -> String
+end
