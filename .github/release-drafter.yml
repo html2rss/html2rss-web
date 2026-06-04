@@ -1,0 +1,56 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+      - 'feat'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+      - 'fix'
+  - title: '🧰 Maintenance'
+    labels:
+      - 'chore'
+      - 'documentation'
+      - 'dependencies'
+      - 'refactor'
+      - 'style'
+      - 'test'
+      - 'ci'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'feat'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'bug'
+      - 'fix'
+      - 'chore'
+      - 'refactor'
+      - 'style'
+      - 'test'
+      - 'ci'
+  default: patch
+
+template: |
+  $CHANGES
+
+  ---
+  ### 💡 How to Release:
+  1. Trigger the **Bump Version** workflow manually. Set the bump type to `auto` to use the version resolved above (`$RESOLVED_VERSION`), or set a specific override. This will create a version bump PR.
+  2. Merge the version bump PR into `main`.
+  3. Publish this draft release on GitHub. This will tag the commit and automatically build and publish the Docker images.

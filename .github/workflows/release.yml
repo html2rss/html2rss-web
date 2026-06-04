@@ -1,125 +1,27 @@
 name: release
 
 on:
-  # Release only after the CI workflow succeeds on main so Docker publishes
-  # are tied to a CI-validated commit instead of any direct branch push.
-  workflow_run:
-    workflows:
-      - ci
-    types:
-      - completed
-    branches:
-      - main
-  workflow_dispatch:
+  release:
+    types: [published]
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: release-${{ github.event.release.tag_name }}
   cancel-in-progress: true
 
 jobs:
-  guard:
-    runs-on: ubuntu-latest
-    outputs:
-      target_sha: ${{ steps.resolve.outputs.target_sha }}
-      target_ref: ${{ steps.resolve.outputs.target_ref }}
-    steps:
-      - name: Validate release trigger and resolve target
-        id: resolve
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
-          WORKFLOW_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
-          GITHUB_REF_VALUE: ${{ github.ref }}
-          GITHUB_SHA_VALUE: ${{ github.sha }}
-        run: |
-          if [ "$EVENT_NAME" = "workflow_run" ]; then
-            if [ "$WORKFLOW_CONCLUSION" != "success" ]; then
-              echo "Release requires successful CI on main; got conclusion=$WORKFLOW_CONCLUSION" >&2
-              exit 1
-            fi
-
-            if [ -z "$WORKFLOW_HEAD_SHA" ] || [ -z "$WORKFLOW_HEAD_BRANCH" ]; then
-              echo "workflow_run payload missing head SHA or branch" >&2
-              exit 1
-            fi
-
-            echo "target_sha=$WORKFLOW_HEAD_SHA" >> "$GITHUB_OUTPUT"
-            echo "target_ref=refs/heads/$WORKFLOW_HEAD_BRANCH" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            if [ "$GITHUB_REF_VALUE" != "refs/heads/main" ]; then
-              echo "Manual release is restricted to refs/heads/main; got $GITHUB_REF_VALUE" >&2
-              exit 1
-            fi
-
-            echo "target_sha=$GITHUB_SHA_VALUE" >> "$GITHUB_OUTPUT"
-            echo "target_ref=$GITHUB_REF_VALUE" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Unsupported event: $EVENT_NAME" >&2
-          exit 1
-
-  release:
-    needs:
-      - guard
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.guard.outputs.target_sha }}
-          fetch-depth: 0
-
-      - name: Run release-please
-        id: release
-        uses: googleapis/release-please-action@v5
-        with:
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
-          config-file: .github/release-please-config.json
-          manifest-file: .github/.release-please-manifest.json
-
-      - name: Summarize release outcome
-        env:
-          RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
-        run: |
-          {
-            echo "## Release outcome"
-            echo
-            echo "- Release created: ${RELEASE_CREATED:-false}"
-            if [ -n "${RELEASE_TAG}" ]; then
-              echo "- Release tag: ${RELEASE_TAG}"
-            else
-              echo "- Release tag: none"
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
   docker-publish:
-    if: needs.release.outputs.release_created == 'true'
-    needs:
-      - guard
-      - release
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: html2rss/web
-      TAG_SHA: ${{ needs.guard.outputs.target_sha }}
-      RELEASE_TAG: ${{ needs.release.outputs.tag_name }}
+      TAG_SHA: ${{ github.sha }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ needs.guard.outputs.target_sha }}
+          ref: refs/tags/${{ github.event.release.tag_name }}
           fetch-depth: 0
 
       - name: Set up QEMU
@@ -136,9 +38,8 @@ jobs:
       - name: Compute Docker tags
         id: tags
         run: |
-          # Extract the version part (e.g., html2rss-web/v1.1.0 -> v1.1.0, or v1.1.0 -> v1.1.0)
+          # Extract the version part (e.g., v1.1.0 -> 1.1.0)
           clean_tag="${RELEASE_TAG##*/}"
-          # Remove leading 'v' if present (e.g., v1.1.0 -> 1.1.0)
           release_version="${clean_tag#v}"
 
           echo "RELEASE_VERSION=${release_version}" >> "$GITHUB_ENV"
@@ -168,7 +69,7 @@ jobs:
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
             BUILD_TAG=${{ env.RELEASE_VERSION }}
-            GIT_SHA=${{ needs.guard.outputs.target_sha }}
+            GIT_SHA=${{ env.TAG_SHA }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -178,7 +79,7 @@ jobs:
             org.opencontainers.image.created=${{ env.TIMESTAMP_ISO }}
             org.opencontainers.image.description=Generates RSS feeds of any website & serves to the web!
             org.opencontainers.image.ref.name=${{ env.RELEASE_TAG }}
-            org.opencontainers.image.revision=${{ needs.guard.outputs.target_sha }}
+            org.opencontainers.image.revision=${{ env.TAG_SHA }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.title=html2rss-web
             org.opencontainers.image.url=https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}
