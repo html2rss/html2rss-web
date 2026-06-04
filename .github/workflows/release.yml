@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: html2rss/web
-      TAG_SHA: ${{ github.sha }}
       RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@v6
@@ -30,10 +29,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Get Git commit timestamp
+      - name: Get Git commit timestamp and SHA
         run: |
           echo "TIMESTAMP_EPOCH=$(git log -1 --format=%ct)" >> "$GITHUB_ENV"
           echo "TIMESTAMP_ISO=$(git log -1 --format=%cI)" >> "$GITHUB_ENV"
+          echo "TAG_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - name: Compute Docker tags
         id: tags
