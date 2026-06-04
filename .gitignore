@@ -54,3 +54,9 @@
 .yardoc
 frontend/.astro
 .pnpm-store
+
+# RSpec examples tracking
+/spec/examples.txt
+
+# Bundler/vendored dependencies
+/vendor/
