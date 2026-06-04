@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../config/version'
+
+# Helper method to calculate the next semantic version.
+#
+# @param current [String] the current semantic version
+# @param bump_type [String] the type of bump: major, minor, or patch
+# @return [String] the calculated next version
+def calculate_next_version(current, bump_type)
+  major, minor, patch = current.split('.').map(&:to_i)
+  case bump_type
+  when 'major' then "#{major + 1}.0.0"
+  when 'minor' then "#{major}.#{minor + 1}.0"
+  when 'patch' then "#{major}.#{minor}.#{patch + 1}"
+  else raise "Invalid bump type: #{bump_type}"
+  end
+end
+
+target = ARGV[0]
+abort "Usage: #{$PROGRAM_NAME} <major|minor|patch|version_string>" if target.nil? || target.strip.empty?
+
+target = target.strip.downcase
+current_version = Html2rss::Web::VERSION
+
+next_version = if %w[major minor patch].include?(target)
+                 calculate_next_version(current_version, target)
+               else
+                 target.delete_prefix('v')
+               end
+
+# Validate semantic version format
+unless next_version.match?(/\A\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?\z/)
+  abort "Error: Target version '#{next_version}' is not a valid semantic version (X.Y.Z)."
+end
+
+puts "Bumping version from #{current_version} to #{next_version}..."
+
+version_file_path = File.expand_path('../config/version.rb', __dir__)
+version_content = File.read(version_file_path)
+new_version_content = version_content.gsub(/VERSION = '.*'/, "VERSION = '#{next_version}'")
+File.write(version_file_path, new_version_content)
+
+puts "Successfully updated config/version.rb to #{next_version}"

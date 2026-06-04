@@ -1,0 +1,127 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: "Bump Type (auto uses Release Drafter resolved version)"
+        required: true
+        default: "auto"
+        type: choice
+        options:
+          - "auto"
+          - "patch"
+          - "minor"
+          - "major"
+          - "custom"
+      custom_version:
+        description: "Custom Version (only used if Bump Type is 'custom', e.g. 1.4.0)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump_version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Assert main branch
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            echo "Error: This workflow must be run against the main branch (refs/heads/main); got ${{ github.ref }}" >&2
+            exit 1
+          fi
+
+      - name: Resolve Version from Release Drafter
+        id: release_drafter
+        if: github.event.inputs.bump_type == 'auto'
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          disable-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Target Version
+        id: determine_version
+        run: |
+          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
+          CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
+          RESOLVED_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
+
+          if [ "$BUMP_TYPE" = "auto" ]; then
+            if [ -z "$RESOLVED_VERSION" ]; then
+              echo "Error: Release Drafter did not return a resolved version." >&2
+              exit 1
+            fi
+            echo "target_version=$RESOLVED_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Determined version: $RESOLVED_VERSION (via Release Drafter auto-resolve)"
+          elif [ "$BUMP_TYPE" = "custom" ]; then
+            if [ -z "$CUSTOM_VERSION" ]; then
+              echo "Error: Custom version must be provided if bump_type is 'custom'." >&2
+              exit 1
+            fi
+            echo "target_version=$CUSTOM_VERSION" >> "$GITHUB_OUTPUT"
+            echo "Determined version: $CUSTOM_VERSION (via manual input)"
+          else
+            echo "target_version=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
+            echo "Determined version: $BUMP_TYPE (via manual bump type)"
+          fi
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".tool-versions"
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Perform Version Bump
+        id: perform_bump
+        run: |
+          bundle exec ruby bin/bump-version "${{ steps.determine_version.outputs.target_version }}"
+          NEW_VERSION=$(ruby -I. -e "require 'config/version'; puts Html2rss::Web::VERSION")
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate OpenAPI spec and client
+        run: |
+          make openapi
+          make openapi-client
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.BUMP_VERSION_TOKEN || github.token }}
+          commit-message: "chore: bump version to v${{ steps.perform_bump.outputs.new_version }}"
+          branch: "bump-version/v${{ steps.perform_bump.outputs.new_version }}"
+          title: "chore: bump version to v${{ steps.perform_bump.outputs.new_version }}"
+          body: |
+            Automated version bump to `v${{ steps.perform_bump.outputs.new_version }}`.
+
+            This PR contains the version update in `config/version.rb` and regenerated OpenAPI specs and frontend API client.
+
+            ### 🚀 Next Steps
+            1. Verify that all CI checks pass.
+            2. Merge this Pull Request.
+            3. Go to the draft release on GitHub and publish it.
+          assignees: ${{ github.actor }}
