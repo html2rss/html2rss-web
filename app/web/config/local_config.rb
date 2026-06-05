@@ -125,11 +125,6 @@ module Html2rss
         # @param config [Hash{Symbol=>Object}]
         # @return [Hash{Symbol=>Object}]
         def apply_global_defaults(config)
-          global_config = global
-
-          config[:stylesheets] ||= deep_dup(global_config[:stylesheets]) if global_config[:stylesheets]
-          config[:headers] ||= deep_dup(global_config[:headers]) if global_config[:headers]
-
           config
         end
 
