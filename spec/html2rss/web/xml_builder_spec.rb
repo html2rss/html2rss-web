@@ -29,5 +29,9 @@ RSpec.describe Html2rss::Web::XmlBuilder do
     it 'does not mention hidden strategy controls in item text' do
       expect(xml_doc.at_xpath('//item/description').text).not_to include('browserless strategy')
     end
+
+    it 'includes the default stylesheet processing instruction' do
+      expect(xml_doc.to_s).to include('<?xml-stylesheet href="/rss.xsl" type="text/xsl" media="all"?>')
+    end
   end
 end

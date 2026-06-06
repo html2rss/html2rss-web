@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-require 'nokogiri'
+require 'rss'
 require 'time'
+
 module Html2rss
   module Web
     ##
@@ -18,17 +19,11 @@ module Html2rss
         # @param timestamp [Time, nil]
         # @return [String] serialized RSS XML document.
         def build_rss_feed(title:, description:, link: nil, items: [], timestamp: nil)
-          current_time = timestamp || Time.now
-          formatted_now = format_pub_date(current_time)
-
-          Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |xml|
-            xml.rss(version: '2.0') do
-              xml.channel do
-                build_channel(xml, title:, description:, link:, now: formatted_now)
-                build_items(xml, items, default_pub_date: formatted_now)
-              end
-            end
-          end.doc.to_xml(save_with: Nokogiri::XML::Node::SaveOptions::AS_XML)
+          RSS::Maker.make('2.0') do |maker|
+            apply_stylesheets(maker)
+            build_channel(maker.channel, title:, description:, link:, timestamp:)
+            build_items(maker, items, default_timestamp: timestamp)
+          end.to_s
         end
 
         # @param message [String]
@@ -61,6 +56,16 @@ module Html2rss
 
         private
 
+        # @param maker [RSS::Maker::RSS20]
+        # @return [void]
+        def apply_stylesheets(maker)
+          # Use the gem's internal stylesheet support.
+          stylesheets = Html2rss.configuration.stylesheets.map do |s|
+            Html2rss::RssBuilder::Stylesheet.new(**s)
+          end
+          Html2rss::RssBuilder::Stylesheet.add(maker, stylesheets)
+        end
+
         # @param title [String]
         # @param description [String]
         # @param item [Hash{Symbol=>Object}]
@@ -81,56 +86,42 @@ module Html2rss
         # @param timestamp [Time]
         # @return [Hash{Symbol=>Object}] normalized item with required RSS fields.
         def feed_item(item, timestamp:)
-          feed_item = {
+          {
             title: item[:title],
             description: item[:description],
+            link: item[:link],
             pubDate: timestamp
           }
-          feed_item[:link] = item[:link] if item[:link]
-          feed_item
         end
 
-        # @param xml [Nokogiri::XML::Builder]
+        # @param channel [RSS::Maker::RSS20::Channel]
         # @param title [String]
         # @param description [String]
         # @param link [String, nil]
-        # @param now [String]
+        # @param timestamp [Time, nil]
         # @return [void]
-        def build_channel(xml, title:, description:, link:, now:)
-          xml.title(title.to_s)
-          xml.description(description.to_s)
-          xml.link(link.to_s) if link
-          xml.lastBuildDate(now)
-          xml.pubDate(now)
+        def build_channel(channel, title:, description:, link:, timestamp:)
+          now = timestamp || Time.now
+          channel.title = title.to_s
+          channel.description = description.to_s
+          channel.link = link.to_s
+          channel.lastBuildDate = now
+          channel.pubDate = now
         end
 
-        # @param xml [Nokogiri::XML::Builder]
+        # @param maker [RSS::Maker::RSS20]
         # @param items [Array<Hash{Symbol=>Object}>]
-        # @param default_pub_date [String]
+        # @param default_timestamp [Time, nil]
         # @return [void]
-        def build_items(xml, items, default_pub_date:)
+        def build_items(maker, items, default_timestamp:)
           items.each do |item|
-            xml.item do
-              append_text_node(xml, :title, item[:title])
-              append_text_node(xml, :description, item[:description])
-              append_text_node(xml, :link, item[:link])
-              xml.pubDate(format_pub_date(item[:pubDate] || default_pub_date))
+            maker.items.new_item do |i|
+              i.title = item[:title].to_s
+              i.description = item[:description].to_s
+              i.link = item[:link].to_s
+              i.pubDate = item[:pubDate] || default_timestamp || Time.now
             end
           end
-        end
-
-        # @param xml [Nokogiri::XML::Builder]
-        # @param node_name [Symbol]
-        # @param value [Object]
-        # @return [void]
-        def append_text_node(xml, node_name, value)
-          xml.public_send(node_name, value.to_s) if value
-        end
-
-        # @param pub_date [Time, String]
-        # @return [String] RFC2822 date string for RSS output.
-        def format_pub_date(pub_date)
-          pub_date.is_a?(Time) ? pub_date.rfc2822 : pub_date.to_s
         end
       end
     end
