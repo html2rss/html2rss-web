@@ -42,7 +42,7 @@ module Html2rss
           config_hash = local_feed_config(normalized_name) || embedded_feed_config(normalized_name)
           raise NotFound, "Did not find local feed config at '#{normalized_name}'" unless config_hash
 
-          apply_global_defaults(config_hash)
+          config_hash
         end
 
         ##
@@ -118,19 +118,6 @@ module Html2rss
           deep_dup(Html2rss::Configs.find_by_name(normalized_name))
         rescue Html2rss::Configs::ConfigNotFound
           nil
-        end
-
-        # Applies global defaults only when feed-level keys are absent.
-        #
-        # @param config [Hash{Symbol=>Object}]
-        # @return [Hash{Symbol=>Object}]
-        def apply_global_defaults(config)
-          global_config = global
-
-          config[:stylesheets] ||= deep_dup(global_config[:stylesheets]) if global_config[:stylesheets]
-          config[:headers] ||= deep_dup(global_config[:headers]) if global_config[:headers]
-
-          config
         end
 
         # @param name [String, Symbol, #to_s]

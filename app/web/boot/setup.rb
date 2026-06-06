@@ -23,10 +23,20 @@ module Html2rss
             configure_sentry!
             configure_request_service!
             configure_runtime_logging!
+            configure_gem_defaults!
             log_startup!
           end
 
           private
+
+          # @return [void]
+          def configure_gem_defaults!
+            global_config = LocalConfig.global
+            Html2rss.configure do |config|
+              config.headers = global_config[:headers] if global_config[:headers]
+              config.stylesheets = global_config[:stylesheets] if global_config[:stylesheets]
+            end
+          end
 
           # @return [void]
           def validate_environment!
