@@ -43,7 +43,7 @@ jobs:
       - name: Resolve Version from Release Drafter
         id: release_drafter
         if: github.event.inputs.bump_type == 'auto'
-        uses: release-drafter/release-drafter@v6
+        uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
           disable-releaser: true
@@ -110,7 +110,7 @@ jobs:
           make openapi-client
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.BUMP_VERSION_TOKEN || github.token }}
           commit-message: "chore: bump version to v${{ steps.perform_bump.outputs.new_version }}"
