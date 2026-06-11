@@ -61,8 +61,12 @@ module Html2rss
             return unless Rack::Timeout.respond_to?(:service_timeout=)
 
             Rack::Timeout.service_timeout =
-              Html2rss::RequestService::Policy::DEFAULTS[:total_timeout_seconds] +
-              RACK_TIMEOUT_BUFFER_SECONDS
+              if ENV.key?('RACK_TIMEOUT_SERVICE_TIMEOUT')
+                Integer(ENV['RACK_TIMEOUT_SERVICE_TIMEOUT'])
+              else
+                Html2rss::RequestService::Policy::DEFAULTS[:total_timeout_seconds] +
+                  RACK_TIMEOUT_BUFFER_SECONDS
+              end
           end
 
           # @return [void]

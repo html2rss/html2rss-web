@@ -46,6 +46,35 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       expect(Rack::Timeout::Logger.logger).to be(Html2rss::Web::AppLogger.logger)
     end
 
+    describe 'Rack::Timeout service timeout' do
+      let(:timeout_holder) { { value: nil } }
+
+      before do
+        stub_const('Rack::Timeout', Module.new)
+        Rack::Timeout.define_singleton_method(:service_timeout=) { |v| v }
+        allow(Rack::Timeout).to receive(:service_timeout=) { |v| timeout_holder[:value] = v }
+        stub_environment_validation
+      end
+
+      it 'sets timeout from RACK_TIMEOUT_SERVICE_TIMEOUT if present' do
+        ClimateControl.modify(boot_env.merge('RACK_TIMEOUT_SERVICE_TIMEOUT' => '42')) do
+          described_class.call!
+        end
+
+        expect(timeout_holder[:value]).to eq(42)
+      end
+
+      it 'sets timeout from gem default + buffer if RACK_TIMEOUT_SERVICE_TIMEOUT is absent' do
+        ClimateControl.modify(boot_env.merge('RACK_TIMEOUT_SERVICE_TIMEOUT' => nil)) do
+          described_class.call!
+        end
+
+        expected = Html2rss::RequestService::Policy::DEFAULTS[:total_timeout_seconds] +
+                   described_class::RACK_TIMEOUT_BUFFER_SECONDS
+        expect(timeout_holder[:value]).to eq(expected)
+      end
+    end
+
     it 'captures and scrubs sensitive env vars after validation', :aggregate_failures do
       expect_sensitive_env_during_validation
 
