@@ -50,6 +50,8 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       let(:timeout_holder) { { value: nil } }
 
       before do
+        stub_const('Rack::Timeout', Module.new)
+        Rack::Timeout.define_singleton_method(:service_timeout=) { |v| v }
         allow(Rack::Timeout).to receive(:service_timeout=) { |v| timeout_holder[:value] = v }
         stub_environment_validation
       end

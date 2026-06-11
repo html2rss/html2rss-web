@@ -65,7 +65,7 @@ module Html2rss
                 Integer(ENV['RACK_TIMEOUT_SERVICE_TIMEOUT'])
               else
                 Html2rss::RequestService::Policy::DEFAULTS[:total_timeout_seconds] +
-                RACK_TIMEOUT_BUFFER_SECONDS
+                  RACK_TIMEOUT_BUFFER_SECONDS
               end
           end
 
