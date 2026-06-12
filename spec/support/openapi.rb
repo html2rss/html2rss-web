@@ -174,7 +174,7 @@ if ENV['OPENAPI']
         end
 
         # Inject Retry-After header for rate limiting and timeout responses
-        %w[429 503 504].each do |status|
+        %w[429 503 504].each do |status| # rubocop:disable Performance/CollectionLiteralInLoop
           response = normalized_paths[normalized][verb].dig('responses', status)
           next unless response
 
