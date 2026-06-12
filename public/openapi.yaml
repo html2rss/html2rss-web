@@ -83,7 +83,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns OpenAPI document URL in metadata
+          description: returns API information with trailing slash
       security:
       - {}
       summary: API metadata
