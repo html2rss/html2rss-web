@@ -72,14 +72,16 @@ module Html2rss
             return if entries.size < max
 
             now = Time.now.utc
-            entries.each_key do |key|
-              entry = entries[key]
+            entries.each_pair do |key, entry|
               entries.delete(key) if entry && now >= entry.expires_at
             end
 
             return if entries.size < max
 
-            candidates = entries.keys.map { |k| [k, entries[k]&.expires_at] }.select { |_, exp| exp }
+            candidates = []
+            entries.each_pair do |key, entry|
+              candidates << [key, entry.expires_at] if entry&.expires_at
+            end
             candidates.sort_by! { |_, exp| exp }
 
             target_size = (max * 0.9).to_i
