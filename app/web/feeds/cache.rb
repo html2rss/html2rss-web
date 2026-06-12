@@ -58,9 +58,39 @@ module Html2rss
           end
 
           def write_entry(key, ttl_seconds, result)
+            prune_if_needed
             entries[key] = Entry.new(result: result, expires_at: Time.now.utc + normalize_ttl(ttl_seconds))
             SecurityLogger.log_cache_lifecycle('feeds_cache', 'write', key_hash: key_hash(key))
           end
+
+          # Prunes expired entries first. If still over the max limit, prunes entries expiring soonest.
+          #
+          # @return [void]
+          # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+          def prune_if_needed
+            max = Flags.feeds_cache_max_size
+            return if entries.size < max
+
+            now = Time.now.utc
+            entries.each_pair do |key, entry|
+              entries.delete(key) if entry && now >= entry.expires_at
+            end
+
+            return if entries.size < max
+
+            candidates = []
+            entries.each_pair do |key, entry|
+              candidates << [key, entry.expires_at] if entry&.expires_at
+            end
+            candidates.sort_by! { |_, exp| exp }
+
+            target_size = (max * 0.9).to_i
+            num_to_delete = entries.size - target_size
+            return if num_to_delete <= 0
+
+            candidates.first(num_to_delete).each { |item| entries.delete(item[0]) }
+          end
+          # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
           # @param cacheable [Boolean, Proc]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]

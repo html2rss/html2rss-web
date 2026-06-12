@@ -4,7 +4,7 @@ module Html2rss
   module Web
     ##
     # Typed feature flag registry and runtime access.
-    module Flags
+    module Flags # rubocop:disable Metrics/ModuleLength
       # @!attribute [r] name
       #   @return [Symbol]
       # @!attribute [r] env_key
@@ -37,11 +37,71 @@ module Html2rss
           type: :integer,
           default: 3,
           validator: ->(value) { value >= 1 }
+        ),
+        feeds_cache_max_size: Definition.new(
+          name: :feeds_cache_max_size,
+          env_key: 'FEEDS_CACHE_MAX_SIZE',
+          type: :integer,
+          default: 500,
+          validator: ->(value) { value >= 1 }
+        ),
+        rate_limit_enabled: Definition.new(
+          name: :rate_limit_enabled,
+          env_key: 'RATE_LIMIT_ENABLED',
+          type: :boolean,
+          default: -> { ENV.fetch('RACK_ENV', 'development') != 'test' },
+          validator: nil
+        ),
+        rate_limit_max_requests: Definition.new(
+          name: :rate_limit_max_requests,
+          env_key: 'RATE_LIMIT_MAX_REQUESTS',
+          type: :integer,
+          default: 60,
+          validator: ->(value) { value >= 1 }
+        ),
+        rate_limit_window_seconds: Definition.new(
+          name: :rate_limit_window_seconds,
+          env_key: 'RATE_LIMIT_WINDOW_SECONDS',
+          type: :integer,
+          default: 60,
+          validator: ->(value) { value >= 1 }
+        ),
+        retry_after_timeout_seconds: Definition.new(
+          name: :retry_after_timeout_seconds,
+          env_key: 'RETRY_AFTER_TIMEOUT_SECONDS',
+          type: :integer,
+          default: 300,
+          validator: ->(value) { value >= 1 }
         )
       }.freeze
-      MANAGED_ENV_PREFIXES = %w[AUTO_SOURCE_ ASYNC_FEED_REFRESH_].freeze
+      MANAGED_ENV_PREFIXES = %w[AUTO_SOURCE_ ASYNC_FEED_REFRESH_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_].freeze
 
       class << self
+        # @return [Boolean]
+        def rate_limit_enabled?
+          fetch(:rate_limit_enabled)
+        end
+
+        # @return [Integer]
+        def rate_limit_max_requests
+          fetch(:rate_limit_max_requests)
+        end
+
+        # @return [Integer]
+        def rate_limit_window_seconds
+          fetch(:rate_limit_window_seconds)
+        end
+
+        # @return [Integer]
+        def retry_after_timeout_seconds
+          fetch(:retry_after_timeout_seconds)
+        end
+
+        # @return [Integer]
+        def feeds_cache_max_size
+          fetch(:feeds_cache_max_size)
+        end
+
         # @return [Boolean]
         def auto_source_enabled?
           fetch(:auto_source_enabled)

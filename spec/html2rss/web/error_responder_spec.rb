@@ -119,6 +119,37 @@ RSpec.describe Html2rss::Web::ErrorResponder do
     it 'keeps the xml error representation when xml outranks json' do
       expect(xml_preferred_feed_error_response).to eq(['application/xml', true])
     end
+
+    it 'maps TooManyRequestsError to 429 and injects Retry-After header', :aggregate_failures do
+      response, _body = respond_with(
+        error: Html2rss::Web::TooManyRequestsError.new,
+        path: '/api/v1/feeds',
+        target: Html2rss::Web::RequestTarget::API
+      )
+      expect(response.status).to eq(429)
+      expect(response['Retry-After']).to eq('60')
+    end
+
+    it 'maps Rack::Timeout::RequestTimeoutException to 503 and injects Retry-After header', :aggregate_failures do
+      stub_const('Rack::Timeout::RequestTimeoutException', Class.new(StandardError))
+      response, _body = respond_with(
+        error: Rack::Timeout::RequestTimeoutException.new('timeout'),
+        path: '/api/v1/feeds',
+        target: Html2rss::Web::RequestTarget::API
+      )
+      expect(response.status).to eq(503)
+      expect(response['Retry-After']).to eq('300')
+    end
+
+    it 'maps network timeouts to 504 and injects Retry-After header', :aggregate_failures do
+      response, _body = respond_with(
+        error: Net::OpenTimeout.new('timeout'),
+        path: '/api/v1/feeds',
+        target: Html2rss::Web::RequestTarget::API
+      )
+      expect(response.status).to eq(504)
+      expect(response['Retry-After']).to eq('300')
+    end
   end
 
   # @return [Hash{String=>Object}]

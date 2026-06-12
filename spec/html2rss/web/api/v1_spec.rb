@@ -145,7 +145,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     header 'Accept', nil
   end
 
-  let(:health_token) { 'CHANGE_ME_HEALTH_CHECK_TOKEN' }
+  let(:health_token) { Html2rss::Web::RuntimeEnv.health_check_token }
   let(:admin_token) { 'CHANGE_ME_ADMIN_TOKEN' }
   let(:feed_url) { 'https://example.com/articles' }
 
@@ -153,7 +153,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'API metadata',
     operation_id: 'getApiMetadata',
     tags: ['Root'],
-    security: []
+    security: [{}]
   } do
     it 'returns API information', :aggregate_failures do
       get '/api/v1'
@@ -308,7 +308,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Readiness probe',
     operation_id: 'getReadinessProbe',
     tags: ['Health'],
-    security: []
+    security: [{}]
   } do
     it 'returns readiness status without authentication', :aggregate_failures do
       get '/api/v1/health/ready'
@@ -324,7 +324,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Liveness probe',
     operation_id: 'getLivenessProbe',
     tags: ['Health'],
-    security: []
+    security: [{}]
   } do
     it 'returns liveness status without authentication', :aggregate_failures do
       get '/api/v1/health/live'
@@ -340,7 +340,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'List extraction strategies',
     operation_id: 'listStrategies',
     tags: ['Strategies'],
-    security: []
+    security: [{}]
   } do
     it 'returns available strategies', :aggregate_failures do
       get '/api/v1/strategies'
@@ -356,7 +356,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Render feed by token',
     operation_id: 'renderFeedByToken',
     tags: ['Feeds'],
-    security: [],
+    security: [{}],
     example_mode: :multiple
   } do
     before do
@@ -515,6 +515,51 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.headers['Cache-Control']).to include('max-age=600')
       expect(JSON.parse(last_response.body).fetch('title')).to eq('Content Extraction Issue')
     end
+
+    # rubocop:disable RSpec/ExampleLength
+    it 'returns 429 when rate limit is exceeded', :aggregate_failures do
+      allow(Html2rss::Web::Flags).to receive_messages(
+        rate_limit_enabled?: true,
+        rate_limit_max_requests: 1,
+        rate_limit_window_seconds: 60
+      )
+
+      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/rate-limited-429", strategy: 'faraday')
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
+      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+
+      get "/api/v1/feeds/#{token}.xml", {}, { 'REMOTE_ADDR' => '192.168.99.1' }
+      expect(last_response.status).to eq(200)
+
+      get "/api/v1/feeds/#{token}.xml", {}, { 'REMOTE_ADDR' => '192.168.99.1' }
+      expect(last_response.status).to eq(429)
+      expect(last_response.headers['Retry-After']).not_to be_nil
+    end
+    # rubocop:enable RSpec/ExampleLength
+
+    it 'returns 503 when the server times out', :aggregate_failures do
+      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-503", strategy: 'faraday')
+      stub_const('Rack::Timeout::RequestTimeoutException', Class.new(StandardError))
+
+      allow(Html2rss::Web::Feeds::Service).to receive(:call)
+        .and_raise(Rack::Timeout::RequestTimeoutException.new('service timeout'))
+
+      get "/api/v1/feeds/#{token}.xml"
+
+      expect(last_response.status).to eq(503)
+      expect(last_response.headers['Retry-After']).not_to be_nil
+    end
+
+    it 'returns 504 when the gateway times out', :aggregate_failures do
+      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-504", strategy: 'faraday')
+
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_raise(Timeout::Error.new('gateway timeout'))
+
+      get "/api/v1/feeds/#{token}.xml"
+
+      expect(last_response.status).to eq(504)
+      expect(last_response.headers['Retry-After']).not_to be_nil
+    end
   end
 
   describe 'POST /api/v1/feeds', openapi: {
@@ -587,6 +632,23 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         retry_action: 'none'
       )
       expect(json.dig('error', 'message')).to eq(Html2rss::Web::AutoSourceDisabledError::DEFAULT_MESSAGE)
+    end
+
+    it 'returns 429 when rate limit is exceeded', :aggregate_failures do
+      allow(Html2rss::Web::Flags).to receive_messages(
+        rate_limit_enabled?: true,
+        rate_limit_max_requests: 1,
+        rate_limit_window_seconds: 60
+      )
+
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds', { url: 'https://example.com/articles-post-429' }.to_json, { 'REMOTE_ADDR' => '192.168.99.2' }
+      expect(last_response.status).to eq(201)
+
+      post '/api/v1/feeds', { url: 'https://example.com/articles-post-429' }.to_json, { 'REMOTE_ADDR' => '192.168.99.2' }
+      expect(last_response.status).to eq(429)
+      expect(last_response.headers['Retry-After']).not_to be_nil
     end
   end
 end

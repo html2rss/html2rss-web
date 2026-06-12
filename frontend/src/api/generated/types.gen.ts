@@ -81,6 +81,20 @@ export type CreateFeedErrors = {
         };
         success: boolean;
     };
+    /**
+     * returns 429 when rate limit is exceeded
+     */
+    429: {
+        error: {
+            code: string;
+            kind: string;
+            message: string;
+            next_action: string;
+            retry_action: string;
+            retryable: boolean;
+        };
+        success: boolean;
+    };
 };
 
 export type CreateFeedError = CreateFeedErrors[keyof CreateFeedErrors];
@@ -130,9 +144,21 @@ export type RenderFeedByTokenErrors = {
      */
     403: string;
     /**
+     * returns 429 when rate limit is exceeded
+     */
+    429: string;
+    /**
      * returns non-cacheable feed errors when service generation fails
      */
     500: string;
+    /**
+     * returns 503 when the server times out
+     */
+    503: string;
+    /**
+     * returns 504 when the gateway times out
+     */
+    504: string;
 };
 
 export type RenderFeedByTokenError = RenderFeedByTokenErrors[keyof RenderFeedByTokenErrors];

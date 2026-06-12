@@ -48,7 +48,7 @@ if ENV['OPENAPI']
 
   # Keep path keys relative to /api/v1 because servers include the versioned base path.
   RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
-    token_feed_error_statuses = %w[401 403 500].freeze
+    token_feed_error_statuses = %w[401 403 429 500 503 504].freeze
 
     stringify = lambda do |value|
       case value
@@ -171,6 +171,18 @@ if ENV['OPENAPI']
               'schema' => { 'type' => 'string' }
             }
           end
+        end
+
+        # Inject Retry-After header for rate limiting and timeout responses
+        %w[429 503 504].each do |status| # rubocop:disable Performance/CollectionLiteralInLoop
+          response = normalized_paths[normalized][verb].dig('responses', status)
+          next unless response
+
+          response['headers'] ||= {}
+          response['headers']['Retry-After'] = {
+            'description' => 'The number of seconds to wait before retrying the request.',
+            'schema' => { 'type' => 'integer' }
+          }
         end
 
         next unless normalized == '/feeds/{token}'
