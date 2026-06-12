@@ -25,7 +25,7 @@ module Html2rss
         # @param response [Rack::Response]
         # @param error [StandardError]
         # @return [String]
-        # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
         def respond(request:, response:, error:)
           status = resolve_status(error)
           code = resolve_error_code(error)
@@ -34,7 +34,7 @@ module Html2rss
           if status == 429
             response['Retry-After'] ||= Flags.rate_limit_window_seconds.to_s
           elsif [503, 504].include?(status)
-            response['Retry-After'] = Flags.retry_after_timeout_seconds.to_s
+            response['Retry-After'] ||= Flags.retry_after_timeout_seconds.to_s
           end
 
           emit_error_event(error, code, response.status)
@@ -48,7 +48,7 @@ module Html2rss
 
           render_xml_error(response, error)
         end
-        # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
+        # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
         private
 
@@ -74,9 +74,8 @@ module Html2rss
         def resolve_error_code(error)
           case error
           when ->(e) { extraction_empty_failure?(e) } then EXTRACTION_EMPTY_CODE
-          when TooManyRequestsError then 'TOO_MANY_REQUESTS'
-          when ServiceUnavailableError, ->(e) { server_timeout?(e) } then 'SERVICE_UNAVAILABLE'
-          when GatewayTimeoutError, ->(e) { gateway_timeout?(e) } then 'GATEWAY_TIMEOUT'
+          when ->(e) { server_timeout?(e) } then ServiceUnavailableError::CODE
+          when ->(e) { gateway_timeout?(e) } then GatewayTimeoutError::CODE
           else error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE
           end
         end
