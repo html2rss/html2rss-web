@@ -4,7 +4,7 @@ module Html2rss
   module Web
     ##
     # Centralized error rendering for API and XML endpoints.
-    module ErrorResponder
+    module ErrorResponder # rubocop:disable Metrics/ModuleLength
       API_ROOT_PATH = '/api/v1'
       EXTRACTION_EMPTY_CODE = 'EXTRACTION_EMPTY'
       EXTRACTION_EMPTY_MESSAGE = 'We could not extract feed items from this page yet. ' \
@@ -20,14 +20,23 @@ module Html2rss
       SERVER_META = { kind: 'server', retryable: false, next_action: 'none', retry_action: 'none' }.freeze
       RETRY_META = { retryable: true, next_action: 'retry', retry_action: 'primary' }.freeze
 
-      class << self
+      class << self # rubocop:disable Metrics/ClassLength
         # @param request [Rack::Request]
         # @param response [Rack::Response]
         # @param error [StandardError]
         # @return [String]
+        # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
         def respond(request:, response:, error:)
+          status = resolve_status(error)
           code = resolve_error_code(error)
-          response.status = resolve_status(error)
+          response.status = status
+
+          if status == 429
+            response['Retry-After'] ||= '60'
+          elsif [503, 504].include?(status)
+            response['Retry-After'] = Flags.retry_after_timeout_seconds.to_s
+          end
+
           emit_error_event(error, code, response.status)
           write_internal_error_log(request, error)
 
@@ -39,6 +48,7 @@ module Html2rss
 
           render_xml_error(response, error)
         end
+        # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
         private
 
@@ -62,25 +72,36 @@ module Html2rss
         end
 
         def resolve_error_code(error)
-          if extraction_empty_failure?(error)
-            EXTRACTION_EMPTY_CODE
-          else
-            (error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE)
+          case error
+          when ->(e) { extraction_empty_failure?(e) } then EXTRACTION_EMPTY_CODE
+          when TooManyRequestsError then 'TOO_MANY_REQUESTS'
+          when ServiceUnavailableError, ->(e) { server_timeout?(e) } then 'SERVICE_UNAVAILABLE'
+          when GatewayTimeoutError, ->(e) { gateway_timeout?(e) } then 'GATEWAY_TIMEOUT'
+          else error.respond_to?(:code) ? error.code : INTERNAL_ERROR_CODE
           end
         end
 
         def resolve_status(error)
-          if extraction_empty_failure?(error)
-            422
-          else
-            (error.respond_to?(:status) ? error.status : 500)
+          case error
+          when ->(e) { extraction_empty_failure?(e) } then 422
+          when TooManyRequestsError then 429
+          when ServiceUnavailableError, ->(e) { server_timeout?(e) } then 503
+          when GatewayTimeoutError, ->(e) { gateway_timeout?(e) } then 504
+          else error.respond_to?(:status) ? error.status : 500
           end
         end
 
         def client_message_for(error)
-          return EXTRACTION_EMPTY_MESSAGE if extraction_empty_failure?(error)
-
-          error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
+          case error
+          when ->(e) { extraction_empty_failure?(e) } then EXTRACTION_EMPTY_MESSAGE
+          when TooManyRequestsError then 'Too many requests. Please wait before retrying.'
+          when ServiceUnavailableError, ->(e) { server_timeout?(e) }
+            'The server is too busy or the request timed out. Please try again later.'
+          when GatewayTimeoutError, ->(e) { gateway_timeout?(e) }
+            'The target website took too long to respond. Please try again later.'
+          else
+            error.is_a?(HttpError) ? error.message : HttpError::DEFAULT_MESSAGE
+          end
         end
 
         def extraction_empty_failure?(error)
@@ -104,7 +125,21 @@ module Html2rss
         end
 
         def error_kind(error)
-          error_chain(error).any? { |e| NETWORK_ERRORS.include?(e.class) } ? 'network' : 'server'
+          if error.is_a?(TooManyRequestsError)
+            'client'
+          elsif error.is_a?(GatewayTimeoutError) || gateway_timeout?(error)
+            'network'
+          else
+            error_chain(error).any? { |e| NETWORK_ERRORS.include?(e.class) } ? 'network' : 'server'
+          end
+        end
+
+        def server_timeout?(error)
+          defined?(::Rack::Timeout::RequestTimeoutException) && error.is_a?(::Rack::Timeout::RequestTimeoutException)
+        end
+
+        def gateway_timeout?(error)
+          error.is_a?(Timeout::Error) || error.is_a?(Errno::ETIMEDOUT)
         end
 
         def error_chain(error)

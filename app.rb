@@ -54,6 +54,7 @@ module Html2rss
       def development? = self.class.development?
       opts.merge!(check_dynamic_arity: false, check_arity: :warn)
       use RequestContextMiddleware
+      use RateLimiter
       use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
                        verbose: development?
 

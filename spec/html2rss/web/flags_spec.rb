@@ -20,6 +20,20 @@ RSpec.describe Html2rss::Web::Flags do
     end
   end
 
+  describe '.feeds_cache_max_size' do
+    it 'defaults to 500 when unset' do
+      ClimateControl.modify('FEEDS_CACHE_MAX_SIZE' => nil) do
+        expect(described_class.feeds_cache_max_size).to eq(500)
+      end
+    end
+
+    it 'returns the configured integer' do
+      ClimateControl.modify('FEEDS_CACHE_MAX_SIZE' => '100') do
+        expect(described_class.feeds_cache_max_size).to eq(100)
+      end
+    end
+  end
+
   describe '.validate!' do
     it 'raises for malformed boolean values' do
       ClimateControl.modify('AUTO_SOURCE_ENABLED' => 'not-a-bool') do
@@ -35,6 +49,12 @@ RSpec.describe Html2rss::Web::Flags do
 
     it 'raises for malformed stale factor' do
       ClimateControl.modify('ASYNC_FEED_REFRESH_STALE_FACTOR' => '0') do
+        expect { described_class.validate! }.to raise_error(ArgumentError, /failed constraints/)
+      end
+    end
+
+    it 'raises for invalid feeds cache max size' do
+      ClimateControl.modify('FEEDS_CACHE_MAX_SIZE' => '0') do
         expect { described_class.validate! }.to raise_error(ArgumentError, /failed constraints/)
       end
     end
