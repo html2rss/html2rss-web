@@ -31,7 +31,7 @@ module Html2rss
             @timestamps.reject! { |t| t < window_start }
 
             if @timestamps.size >= max_requests
-              oldest = @timestamps.min
+              oldest = @timestamps.first
               retry_after = [1, oldest + window_seconds - now].max
               [true, retry_after]
             else
@@ -42,22 +42,38 @@ module Html2rss
         end
         # rubocop:enable Metrics/MethodLength
 
-        # Prunes expired timestamps and checks if the track is empty.
+        # Prunes expired timestamps and deletes the key from history if empty.
+        # Uses non-blocking try_lock to avoid blocking the pruning thread.
         #
         # @param window_start [Integer]
-        # @return [Boolean] true if no timestamps remain.
-        def prune(window_start)
-          @mutex.synchronize do
+        # @param history [Concurrent::Map]
+        # @param key [String]
+        # @return [Boolean] true if key was pruned and deleted.
+        # rubocop:disable Metrics/MethodLength
+        def prune(window_start, history, key)
+          return false unless @mutex.try_lock
+
+          begin
             @timestamps.reject! { |t| t < window_start }
-            @timestamps.empty?
+            if @timestamps.empty?
+              history.delete(key)
+              true
+            else
+              false
+            end
+          ensure
+            @mutex.unlock
           end
         end
+        # rubocop:enable Metrics/MethodLength
       end
 
       # @param app [#call]
       def initialize(app)
         @app = app
         @history = Concurrent::Map.new
+        @last_pruned = 0
+        @prune_mutex = Mutex.new
       end
 
       # @param env [Hash]
@@ -83,6 +99,8 @@ module Html2rss
         )
 
         if limit_exceeded
+          SecurityLogger.log_rate_limit_exceeded(client_key, path, Flags.rate_limit_max_requests)
+
           error = TooManyRequestsError.new
           response = Rack::Response.new
           response.status = 429
@@ -110,26 +128,53 @@ module Html2rss
           path.start_with?('/api/v1/health/')
       end
 
-      # Prunes inactive IP tracks on 1% of requests or when history grows too large.
+      # Prunes inactive IP tracks when history grows too large.
+      # Utilizes a prune mutex and a time-based throttle to minimize CPU overhead.
+      # Hard-caps the history size to prevent OOM.
       #
       # @return [void]
-      # rubocop:disable Metrics/MethodLength
       def prune_history_if_needed
-        return unless @history.size > 1000 || Random.rand(100).zero?
-
         now = Time.now.to_i
+        size = @history.size
+
+        if size > 20_000
+          handle_overflow(size, now)
+        elsif size > 1000 && (now - @last_pruned) > 10 && @prune_mutex.try_lock
+          perform_cleanup(now)
+        end
+        nil
+      end
+
+      # Handles history map overflow by logging a security event and clearing.
+      #
+      # @param size [Integer]
+      # @param now [Integer]
+      # @return [void]
+      def handle_overflow(size, now)
+        SecurityLogger.log_suspicious_activity(
+          'system',
+          'rate_limiter_history_overflow',
+          { size: size, action: 'clear_history' }
+        )
+        @history.clear
+        @last_pruned = now
+      end
+
+      # Iterates over history and prunes inactive tracks.
+      #
+      # @param now [Integer]
+      # @return [void]
+      def perform_cleanup(now)
+        @last_pruned = now
         window_start = now - Flags.rate_limit_window_seconds
 
         @history.each_key do |key|
           track = @history[key]
-          if track
-            is_empty = track.prune(window_start)
-            @history.delete(key) if is_empty
-          end
+          track&.prune(window_start, @history, key)
         end
-        nil
+      ensure
+        @prune_mutex.unlock
       end
-      # rubocop:enable Metrics/MethodLength
     end
   end
 end
