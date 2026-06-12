@@ -58,14 +58,6 @@ services:
     #     target: /app/config/feeds.yml
     #     read_only: true
 
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - "${HOME}/.docker/config.json:/config.json"
-    command: --cleanup --interval 7200
-
   browserless:
     image: "ghcr.io/browserless/chromium"
     restart: unless-stopped
