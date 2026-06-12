@@ -108,6 +108,28 @@ RSpec.describe Html2rss::Web::RateLimiter do
       # Should prune down to 10,000 plus the active client request track = 10,001
       expect(history_map.size).to eq(10_001)
     end
+
+    it 'evicts keys randomly on overflow' do
+      history_map = middleware.instance_variable_get(:@history)
+      now = Time.now.to_i
+
+      # Helper to fill history and trigger overflow
+      perform_overflow_eviction = lambda do
+        history_map.clear
+        20_100.times do |i|
+          track = described_class::RequestTrack.new
+          track.instance_variable_set(:@timestamps, [now])
+          history_map["ip-#{i}"] = track
+        end
+        middleware.send(:handle_overflow, now)
+        history_map.keys.sort
+      end
+
+      remaining_keys_1 = perform_overflow_eviction.call
+      remaining_keys_2 = perform_overflow_eviction.call
+
+      expect(remaining_keys_1).not_to eq(remaining_keys_2)
+    end
     # rubocop:enable RSpec/ExampleLength
 
     it 'logs rate limit exceeded events to SecurityLogger' do
