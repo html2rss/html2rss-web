@@ -124,10 +124,10 @@ RSpec.describe Html2rss::Web::RateLimiter do
         middleware.send(:handle_overflow, now)
         history_map.keys.sort
       end
-
+      # rubocop:disable Naming/VariableNumber
       remaining_keys_1 = perform_overflow_eviction.call
       remaining_keys_2 = perform_overflow_eviction.call
-
+      # rubocop:enable Naming/VariableNumber
       expect(remaining_keys_1).not_to eq(remaining_keys_2)
     end
     # rubocop:enable RSpec/ExampleLength
