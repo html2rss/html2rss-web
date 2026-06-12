@@ -173,6 +173,18 @@ if ENV['OPENAPI']
           end
         end
 
+        # Inject Retry-After header for rate limiting and timeout responses
+        %w[429 503 504].each do |status|
+          response = normalized_paths[normalized][verb].dig('responses', status)
+          next unless response
+
+          response['headers'] ||= {}
+          response['headers']['Retry-After'] = {
+            'description' => 'The number of seconds to wait before retrying the request.',
+            'schema' => { 'type' => 'integer' }
+          }
+        end
+
         next unless normalized == '/feeds/{token}'
 
         token_feed_error_statuses.each do |status|

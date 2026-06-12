@@ -83,8 +83,9 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns API information with trailing slash
-      security: []
+          description: returns OpenAPI document URL in metadata
+      security:
+      - {}
       summary: API metadata
       tags:
       - Root
@@ -265,6 +266,11 @@ paths:
                 - error
                 type: object
           description: returns 429 when rate limit is exceeded
+          headers:
+            Retry-After:
+              description: The number of seconds to wait before retrying the request.
+              schema:
+                type: integer
       security:
       - BearerAuth: []
       summary: Create a feed
@@ -322,37 +328,6 @@ paths:
               example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
               schema:
                 type: string
-            application/json:
-              schema:
-                properties:
-                  error:
-                    properties:
-                      code:
-                        type: string
-                      kind:
-                        type: string
-                      message:
-                        type: string
-                      next_action:
-                        type: string
-                      retry_action:
-                        type: string
-                      retryable:
-                        type: boolean
-                    required:
-                    - message
-                    - code
-                    - retryable
-                    - next_action
-                    - retry_action
-                    - kind
-                    type: object
-                  success:
-                    type: boolean
-                required:
-                - success
-                - error
-                type: object
             application/xml:
               example: |-
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -360,6 +335,11 @@ paths:
               schema:
                 type: string
           description: returns 429 when rate limit is exceeded
+          headers:
+            Retry-After:
+              description: The number of seconds to wait before retrying the request.
+              schema:
+                type: integer
         '500':
           content:
             application/feed+json:
@@ -386,6 +366,11 @@ paths:
               schema:
                 type: string
           description: returns 503 when the server times out
+          headers:
+            Retry-After:
+              description: The number of seconds to wait before retrying the request.
+              schema:
+                type: integer
         '504':
           content:
             application/feed+json:
@@ -399,7 +384,13 @@ paths:
               schema:
                 type: string
           description: returns 504 when the gateway times out
-      security: []
+          headers:
+            Retry-After:
+              description: The number of seconds to wait before retrying the request.
+              schema:
+                type: integer
+      security:
+      - {}
       summary: Render feed by token
       tags:
       - Feeds
@@ -557,7 +548,8 @@ paths:
                 - data
                 type: object
           description: returns liveness status without authentication
-      security: []
+      security:
+      - {}
       summary: Liveness probe
       tags:
       - Health
@@ -604,7 +596,8 @@ paths:
                 - data
                 type: object
           description: returns readiness status without authentication
-      security: []
+      security:
+      - {}
       summary: Readiness probe
       tags:
       - Health
@@ -653,7 +646,8 @@ paths:
                 - meta
                 type: object
           description: returns available strategies
-      security: []
+      security:
+      - {}
       summary: List extraction strategies
       tags:
       - Strategies

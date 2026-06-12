@@ -40,7 +40,7 @@ module Html2rss
               [true, retry_after, false]
             else
               @timestamps << now
-              [false, nil, false]
+              [false, 0, false]
             end
           end
         end
@@ -123,6 +123,11 @@ module Html2rss
 
         if limit_exceeded
           SecurityLogger.log_rate_limit_exceeded(client_key, path, Flags.rate_limit_max_requests)
+
+          # Ensure feed endpoints get feed-formatted errors
+          if path.start_with?('/api/v1/feeds/') || !path.start_with?('/api/v1/')
+            env[RequestTarget::ENV_KEY] = RequestTarget::FEED
+          end
 
           error = TooManyRequestsError.new
           response = Rack::Response.new

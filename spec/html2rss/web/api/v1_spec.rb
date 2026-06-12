@@ -145,7 +145,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     header 'Accept', nil
   end
 
-  let(:health_token) { 'CHANGE_ME_HEALTH_CHECK_TOKEN' }
+  let(:health_token) { Html2rss::Web::RuntimeEnv.health_check_token }
   let(:admin_token) { 'CHANGE_ME_ADMIN_TOKEN' }
   let(:feed_url) { 'https://example.com/articles' }
 
@@ -153,7 +153,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'API metadata',
     operation_id: 'getApiMetadata',
     tags: ['Root'],
-    security: []
+    security: [{}]
   } do
     it 'returns API information', :aggregate_failures do
       get '/api/v1'
@@ -308,7 +308,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Readiness probe',
     operation_id: 'getReadinessProbe',
     tags: ['Health'],
-    security: []
+    security: [{}]
   } do
     it 'returns readiness status without authentication', :aggregate_failures do
       get '/api/v1/health/ready'
@@ -324,7 +324,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Liveness probe',
     operation_id: 'getLivenessProbe',
     tags: ['Health'],
-    security: []
+    security: [{}]
   } do
     it 'returns liveness status without authentication', :aggregate_failures do
       get '/api/v1/health/live'
@@ -340,7 +340,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'List extraction strategies',
     operation_id: 'listStrategies',
     tags: ['Strategies'],
-    security: []
+    security: [{}]
   } do
     it 'returns available strategies', :aggregate_failures do
       get '/api/v1/strategies'
@@ -356,7 +356,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     summary: 'Render feed by token',
     operation_id: 'renderFeedByToken',
     tags: ['Feeds'],
-    security: [],
+    security: [{}],
     example_mode: :multiple
   } do
     before do

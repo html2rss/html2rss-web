@@ -32,7 +32,7 @@ module Html2rss
           response.status = status
 
           if status == 429
-            response['Retry-After'] ||= '60'
+            response['Retry-After'] ||= Flags.rate_limit_window_seconds.to_s
           elsif [503, 504].include?(status)
             response['Retry-After'] = Flags.retry_after_timeout_seconds.to_s
           end
