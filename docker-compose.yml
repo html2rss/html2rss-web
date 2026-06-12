@@ -2,11 +2,38 @@
 # This is the default configuration - customize as needed
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - html2rss-web
+    command:
+      - sh
+      - -c
+      - |
+        caddy run --config - --adapter caddyfile <<EOF
+        {
+          admin off
+          ${CADDY_GLOBAL_OPTIONS:-}
+        }
+        https://${CADDY_HOST:-localhost} {
+          reverse_proxy html2rss-web:4000 {
+            header_up   X-Forwarded-For {client_ip}
+            header_up   X-Real-IP       {client_ip}
+            header_down -Via
+          }
+        }
+        EOF
+
   html2rss-web:
     image: html2rss/web
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:4000:4000"
     env_file:
       - path: .env
         required: false
@@ -48,3 +75,7 @@ services:
       PORT: 4002
       CONCURRENT: 10
       TOKEN: ${BROWSERLESS_IO_API_TOKEN:?set BROWSERLESS_IO_API_TOKEN}
+
+volumes:
+  caddy_data:
+  caddy_config:
