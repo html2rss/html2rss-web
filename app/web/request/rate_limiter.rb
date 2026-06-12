@@ -3,6 +3,7 @@
 require 'concurrent/map'
 require 'rack/request'
 require 'rack/response'
+require 'rack/utils'
 
 module Html2rss
   module Web
@@ -16,6 +17,14 @@ module Html2rss
         def initialize
           @mutex = Mutex.new
           @timestamps = []
+          @deleted = false
+        end
+
+        # Checks if this track has been deleted/pruned.
+        #
+        # @return [Boolean]
+        def deleted?
+          @mutex.synchronize { @deleted }
         end
 
         # Records request time, prunes old timestamps, and checks if limit is exceeded.
@@ -23,20 +32,22 @@ module Html2rss
         # @param now [Integer]
         # @param window_seconds [Integer]
         # @param max_requests [Integer]
-        # @return [Array<(Boolean, Integer, nil)>] limit exceeded flag and retry_after seconds.
+        # @return [Array<(Boolean, Integer, Boolean)>] limit exceeded flag, retry_after seconds, and deleted flag.
         # rubocop:disable Metrics/MethodLength
         def record_and_check_limit(now, window_seconds, max_requests)
           @mutex.synchronize do
+            return [false, 0, true] if @deleted
+
             window_start = now - window_seconds
             @timestamps.reject! { |t| t < window_start }
 
             if @timestamps.size >= max_requests
               oldest = @timestamps.first
               retry_after = [1, oldest + window_seconds - now].max
-              [true, retry_after]
+              [true, retry_after, false]
             else
               @timestamps << now
-              [false, nil]
+              [false, nil, false]
             end
           end
         end
@@ -56,8 +67,12 @@ module Html2rss
           begin
             @timestamps.reject! { |t| t < window_start }
             if @timestamps.empty?
-              history.delete(key)
-              true
+              if history.delete_pair(key, self)
+                @deleted = true
+                true
+              else
+                false
+              end
             else
               false
             end
@@ -83,20 +98,35 @@ module Html2rss
         return @app.call(env) unless Flags.rate_limit_enabled?
 
         request = Rack::Request.new(env)
-        path = request.path_info.to_s
+        path = Rack::Utils.clean_path_info(request.path_info.to_s)
         return @app.call(env) if bypass?(path)
 
         prune_history_if_needed
 
         client_key = request.ip
         now = Time.now.to_i
-        track = @history.compute_if_absent(client_key) { RequestTrack.new }
 
-        limit_exceeded, retry_after = track.record_and_check_limit(
-          now,
-          Flags.rate_limit_window_seconds,
-          Flags.rate_limit_max_requests
-        )
+        limit_exceeded = false
+        retry_after = nil
+
+        loop do
+          track = @history.compute_if_absent(client_key) { RequestTrack.new }
+
+          exceeded, after, deleted = track.record_and_check_limit(
+            now,
+            Flags.rate_limit_window_seconds,
+            Flags.rate_limit_max_requests
+          )
+
+          if deleted
+            @history.delete_pair(client_key, track)
+            next
+          end
+
+          limit_exceeded = exceeded
+          retry_after = after
+          break
+        end
 
         if limit_exceeded
           SecurityLogger.log_rate_limit_exceeded(client_key, path, Flags.rate_limit_max_requests)
@@ -133,47 +163,61 @@ module Html2rss
       # Hard-caps the history size to prevent OOM.
       #
       # @return [void]
+      # rubocop:disable Metrics/MethodLength
       def prune_history_if_needed
         now = Time.now.to_i
         size = @history.size
 
         if size > 20_000
-          handle_overflow(size, now)
+          @prune_mutex.synchronize do
+            handle_overflow(now) if @history.size > 20_000
+          end
         elsif size > 1000 && (now - @last_pruned) > 10 && @prune_mutex.try_lock
-          perform_cleanup(now)
+          begin
+            @last_pruned = now
+            prune_all_expired(now)
+          ensure
+            @prune_mutex.unlock
+          end
         end
         nil
       end
+      # rubocop:enable Metrics/MethodLength
 
-      # Handles history map overflow by logging a security event and clearing.
+      # Handles history map overflow by logging a security event and evicting entries.
       #
-      # @param size [Integer]
       # @param now [Integer]
       # @return [void]
-      def handle_overflow(size, now)
+      # rubocop:disable Metrics/MethodLength
+      def handle_overflow(now)
+        @last_pruned = now
+        prune_all_expired(now)
+
+        post_prune_size = @history.size
+        return if post_prune_size <= 20_000
+
         SecurityLogger.log_suspicious_activity(
           'system',
           'rate_limiter_history_overflow',
-          { size: size, action: 'clear_history' }
+          { size: post_prune_size, action: 'prune_to_limit' }
         )
-        @history.clear
-        @last_pruned = now
+
+        keys_to_evict = @history.keys.sample(post_prune_size - 10_000)
+        keys_to_evict.each { |k| @history.delete(k) }
       end
+      # rubocop:enable Metrics/MethodLength
 
       # Iterates over history and prunes inactive tracks.
       #
       # @param now [Integer]
       # @return [void]
-      def perform_cleanup(now)
-        @last_pruned = now
+      def prune_all_expired(now)
         window_start = now - Flags.rate_limit_window_seconds
 
         @history.each_key do |key|
           track = @history[key]
           track&.prune(window_start, @history, key)
         end
-      ensure
-        @prune_mutex.unlock
       end
     end
   end

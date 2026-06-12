@@ -231,6 +231,40 @@ paths:
                 type: object
           description: returns forbidden for authenticated requests when auto source
             is disabled
+        '429':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - message
+                    - code
+                    - retryable
+                    - next_action
+                    - retry_action
+                    - kind
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: returns 429 when rate limit is exceeded
       security:
       - BearerAuth: []
       summary: Create a feed
@@ -282,6 +316,50 @@ paths:
               schema:
                 type: string
           description: returns forbidden when auto source is disabled
+        '429':
+          content:
+            application/feed+json:
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
+              schema:
+                type: string
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - message
+                    - code
+                    - retryable
+                    - next_action
+                    - retry_action
+                    - kind
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+              schema:
+                type: string
+          description: returns 429 when rate limit is exceeded
         '500':
           content:
             application/feed+json:
@@ -295,6 +373,32 @@ paths:
               schema:
                 type: string
           description: returns non-cacheable feed errors when service generation fails
+        '503':
+          content:
+            application/feed+json:
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
+              schema:
+                type: string
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+              schema:
+                type: string
+          description: returns 503 when the server times out
+        '504':
+          content:
+            application/feed+json:
+              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
+              schema:
+                type: string
+            application/xml:
+              example: |-
+                <?xml version="1.0" encoding="UTF-8"?>
+                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+              schema:
+                type: string
+          description: returns 504 when the gateway times out
       security: []
       summary: Render feed by token
       tags:

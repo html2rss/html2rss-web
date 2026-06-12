@@ -48,7 +48,7 @@ if ENV['OPENAPI']
 
   # Keep path keys relative to /api/v1 because servers include the versioned base path.
   RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
-    token_feed_error_statuses = %w[401 403 500].freeze
+    token_feed_error_statuses = %w[401 403 429 500 503 504].freeze
 
     stringify = lambda do |value|
       case value
