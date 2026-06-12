@@ -150,6 +150,32 @@ RSpec.describe Html2rss::Web::ErrorResponder do
       expect(response.status).to eq(504)
       expect(response['Retry-After']).to eq('300')
     end
+
+    it 'preserves existing Retry-After header for 503 errors', :aggregate_failures do
+      existing_response = Rack::Response.new
+      existing_response['Retry-After'] = '10'
+      response, _body = respond_with(
+        error: Html2rss::Web::ServiceUnavailableError.new('service down'),
+        path: '/api/v1/feeds',
+        target: Html2rss::Web::RequestTarget::API,
+        response: existing_response
+      )
+      expect(response.status).to eq(503)
+      expect(response['Retry-After']).to eq('10')
+    end
+
+    it 'preserves existing Retry-After header for 504 errors', :aggregate_failures do
+      existing_response = Rack::Response.new
+      existing_response['Retry-After'] = '10'
+      response, _body = respond_with(
+        error: Html2rss::Web::GatewayTimeoutError.new('gateway down'),
+        path: '/api/v1/feeds',
+        target: Html2rss::Web::RequestTarget::API,
+        response: existing_response
+      )
+      expect(response.status).to eq(504)
+      expect(response['Retry-After']).to eq('10')
+    end
   end
 
   # @return [Hash{String=>Object}]

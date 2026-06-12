@@ -200,8 +200,14 @@ module Html2rss
           { size: post_prune_size, action: 'prune_to_limit' }
         )
 
-        keys_to_evict = @history.keys.sample(post_prune_size - 10_000)
-        keys_to_evict.each { |k| @history.delete(k) }
+        needed = post_prune_size - 10_000
+        evicted = 0
+        @history.each_key do |key|
+          break if evicted >= needed
+
+          @history.delete(key)
+          evicted += 1
+        end
       end
       # rubocop:enable Metrics/MethodLength
 
