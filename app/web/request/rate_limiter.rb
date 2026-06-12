@@ -20,13 +20,6 @@ module Html2rss
           @deleted = false
         end
 
-        # Checks if this track has been deleted/pruned.
-        #
-        # @return [Boolean]
-        def deleted?
-          @mutex.synchronize { @deleted }
-        end
-
         # Records request time, prunes old timestamps, and checks if limit is exceeded.
         #
         # @param now [Integer]
