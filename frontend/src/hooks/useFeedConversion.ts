@@ -487,14 +487,8 @@ function normalizeNextAction(
   kind: FeedCreationError['kind'],
   retryable: boolean
 ): FeedNextAction {
-  if (
-    value === 'enter_token' ||
-    value === 'correct_input' ||
-    value === 'retry' ||
-    value === 'wait' ||
-    value === 'none'
-  ) {
-    return value;
+  if ((['enter_token', 'correct_input', 'retry', 'wait', 'none'] as unknown[]).includes(value)) {
+    return value as FeedNextAction;
   }
 
   if (kind === 'auth') return 'enter_token';
@@ -508,8 +502,8 @@ function normalizeRetryAction(
   nextAction: FeedNextAction,
   retryable: boolean
 ): FeedRetryAction {
-  if (value === 'alternate' || value === 'primary' || value === 'none') {
-    return value;
+  if ((['alternate', 'primary', 'none'] as unknown[]).includes(value)) {
+    return value as FeedRetryAction;
   }
 
   if (!retryable || nextAction !== 'retry') return 'none';
@@ -517,10 +511,11 @@ function normalizeRetryAction(
 }
 
 function normalizeErrorKind(value: unknown, status: number): FeedCreationError['kind'] {
-  if (value === 'auth' || value === 'input' || value === 'network' || value === 'server') return value;
+  if ((['auth', 'input', 'network', 'server'] as unknown[]).includes(value))
+    return value as FeedCreationError['kind'];
 
   if (status === 401 || status === 403) return 'auth';
-  if (status === 400 || status === 404 || status === 422) return 'input';
+  if ([400, 404, 422].includes(status)) return 'input';
   if (isTransientHttpStatus(status)) return 'network';
   return 'server';
 }
@@ -565,10 +560,7 @@ function isFeedCreationError(value: unknown): value is FeedCreationError {
 
   const candidate = value as Partial<FeedCreationError>;
   return (
-    (candidate.kind === 'auth' ||
-      candidate.kind === 'input' ||
-      candidate.kind === 'network' ||
-      candidate.kind === 'server') &&
+    (['auth', 'input', 'network', 'server'] as unknown[]).includes(candidate.kind) &&
     typeof candidate.code === 'string' &&
     typeof candidate.retryable === 'boolean' &&
     typeof candidate.nextAction === 'string' &&
@@ -635,16 +627,7 @@ function buildCreateHeaders(token: string): HeadersInit {
 }
 
 function isTransientHttpStatus(status: number): boolean {
-  return (
-    status === 408 ||
-    status === 409 ||
-    status === 425 ||
-    status === 429 ||
-    status === 500 ||
-    status === 502 ||
-    status === 503 ||
-    status === 504
-  );
+  return [408, 409, 425, 429, 500, 502, 503, 504].includes(status);
 }
 
 function isAbortError(error: unknown): boolean {

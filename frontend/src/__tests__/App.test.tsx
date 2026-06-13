@@ -68,7 +68,7 @@ describe('App', () => {
         api: {
           name: 'html2rss-web API',
           description: 'RESTful API for converting websites to RSS feeds',
-          openapi_url: 'http://example.test/openapi.yaml',
+          openapi_url: 'https://example.test/openapi.yaml',
         },
         instance: {
           feed_creation: {
@@ -206,7 +206,7 @@ describe('App', () => {
         api: {
           name: 'html2rss-web API',
           description: 'RESTful API for converting websites to RSS feeds',
-          openapi_url: 'http://example.test/openapi.yaml',
+          openapi_url: 'https://example.test/openapi.yaml',
         },
         instance: {
           feed_creation: {
@@ -663,7 +663,7 @@ describe('App', () => {
 
     expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
       'href',
-      'http://example.test/openapi.yaml'
+      'https://example.test/openapi.yaml'
     );
     expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
       'href',

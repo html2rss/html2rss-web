@@ -3,13 +3,7 @@ import { App } from './components/App';
 import './styles/main.css';
 
 function Root() {
-  return (
-    <div class="page-shell">
-      <main class="page-main">
-        <App />
-      </main>
-    </div>
-  );
+  return <App />;
 }
 
 render(<Root />, document.querySelector('#app')!);

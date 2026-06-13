@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
+import { Notice } from './Notice';
 import type { FeedCreationError } from '../api/contracts';
 
 export interface FeedFormData {
@@ -99,6 +100,7 @@ export function CreateFeedPanel({
     >
       <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
         <DominantField
+          className="layout-rail-reading"
           id="url"
           label="Page URL"
           type="text"
@@ -120,13 +122,12 @@ export function CreateFeedPanel({
           <>
             <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
             {featuredFeeds.length > 0 && (
-              <div
-                class="ui-card ui-card--notice ui-card--padded notice"
+              <Notice
+                className="layout-rail-reading"
                 role="status"
-                aria-label="Included feeds"
+                ariaLabel="Included feeds"
+                title="Try a working included feed"
               >
-                <p class="ui-eyebrow">Included feeds</p>
-                <div class="notice__title">Try a working included feed</div>
                 <p class="notice__intro">Start with a ready-made feed from this instance.</p>
                 <div class="featured-feed-list" role="list" aria-label="Featured feeds">
                   {featuredFeeds.map((feed) => (
@@ -147,14 +148,14 @@ export function CreateFeedPanel({
                     Learn how included configs work.
                   </a>
                 </p>
-              </div>
+              </Notice>
             )}
           </>
         )}
       </div>
 
       {showTokenPrompt && (
-        <div class="token-gate" role="group" aria-label="Access token">
+        <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
           <div class="token-gate__copy">
             <h2>Enter access token</h2>
             <p class="token-gate__hint">Required by this instance.</p>
@@ -208,29 +209,26 @@ export function CreateFeedPanel({
       )}
 
       {failureMessage && (
-        <div
-          class="ui-card ui-card--notice ui-card--padded notice"
-          data-tone="error"
-          data-error-kind={errorKind}
-          role="alert"
-        >
-          <div class="notice__title">Couldn't create feed yet</div>
-          <p>{failureMessage}</p>
-          {showRetryButton && (
-            <div class="notice__actions">
+        <Notice
+          className="layout-rail-reading"
+          tone="error"
+          title="Couldn't create feed yet"
+          actions={
+            showRetryButton && (
               <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
                 Try again
               </button>
-            </div>
-          )}
-        </div>
+            )
+          }
+        >
+          <p>{failureMessage}</p>
+        </Notice>
       )}
 
       {isConverting && (
-        <div class="ui-card ui-card--notice ui-card--padded notice" data-state="loading" role="status">
-          <div class="notice__title">Creating feed link</div>
+        <Notice className="layout-rail-reading" state="loading" title="Creating feed link">
           <p>Preparing preview.</p>
-        </div>
+        </Notice>
       )}
     </form>
   );
@@ -240,9 +238,15 @@ interface UtilityStripProperties {
   hasAccessToken: boolean;
   openapiUrl?: string;
   onClearToken: () => void;
+  onShowBookmarkletHelp: () => void;
 }
 
-export function UtilityStrip({ hasAccessToken, openapiUrl, onClearToken }: UtilityStripProperties) {
+export function UtilityStrip({
+  hasAccessToken,
+  openapiUrl,
+  onClearToken,
+  onShowBookmarkletHelp,
+}: UtilityStripProperties) {
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
@@ -259,7 +263,7 @@ export function UtilityStrip({ hasAccessToken, openapiUrl, onClearToken }: Utili
         <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
           Try included feeds
         </a>
-        <Bookmarklet />
+        <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>
             Logout

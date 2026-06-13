@@ -12,7 +12,7 @@ test.describe('frontend smoke', () => {
             api: {
               name: 'html2rss-web API',
               description: 'RESTful API for converting websites to RSS feeds',
-              openapi_url: 'http://example.test/openapi.yaml',
+              openapi_url: 'https://example.test/openapi.yaml',
             },
             instance: {
               feed_creation: {
@@ -57,7 +57,7 @@ test.describe('frontend smoke', () => {
             api: {
               name: 'html2rss-web API',
               description: 'RESTful API for converting websites to RSS feeds',
-              openapi_url: 'http://example.test/openapi.yaml',
+              openapi_url: 'https://example.test/openapi.yaml',
             },
             instance: {
               feed_creation: {
@@ -118,7 +118,7 @@ test.describe('frontend smoke', () => {
     await page.getByLabel('Page URL').fill('https://example.com/articles');
     await page.getByRole('button', { name: 'Generate feed URL' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Feed ready' })).toBeVisible();
+    await expect(page.getByText('Feed ready')).toBeVisible();
     await expect(page.locator('.result-shell')).toHaveAttribute('data-state', 'result');
     await expect(page.getByText('Example Feed')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open feed' })).toBeVisible();

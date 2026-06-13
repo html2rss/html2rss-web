@@ -9,7 +9,7 @@ export const server = setupServer(
         api: {
           name: 'html2rss-web API',
           description: 'RESTful API for converting websites to RSS feeds',
-          openapi_url: 'http://example.test/openapi.yaml',
+          openapi_url: 'https://example.test/openapi.yaml',
         },
         instance: {
           feed_creation: {
