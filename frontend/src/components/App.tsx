@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { JSX } from 'preact';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
+import { Notice } from './Notice';
 import { useAccessToken } from '../hooks/useAccessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
@@ -92,6 +93,7 @@ export function App() {
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
   const [tokenDraft, setTokenDraft] = useState('');
   const [tokenError, setTokenError] = useState('');
+  const [bookmarkletNotice, setBookmarkletNotice] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
   const autoSubmitUrlReference = useRef<string | undefined>(route.prefillUrl);
   const hasAutoSubmittedReference = useRef(false);
@@ -256,13 +258,9 @@ export function App() {
   let bodyContent: JSX.Element;
   if (metadataLoading || tokenLoading) {
     bodyContent = (
-      <div class="ui-card ui-card--notice ui-card--roomy notice" data-state="loading" aria-live="polite">
-        <div class="notice__spinner" aria-hidden="true" />
-        <div>
-          <strong>Loading instance</strong>
-          <p>Reading feed-generation capabilities.</p>
-        </div>
-      </div>
+      <Notice title="Loading instance" state="loading" ariaLive="polite">
+        <p>Reading feed-generation capabilities.</p>
+      </Notice>
     );
   } else if (activeResult) {
     bodyContent = (
@@ -308,23 +306,45 @@ export function App() {
   }
 
   return (
-    <>
-      <section class="workspace-shell workspace-shell--centered">
-        <header class="workspace-hero">
-          <BrandLockup onNavigateHome={() => navigate({ kind: 'create' })} />
-        </header>
+    <div class="page-shell">
+      <main class="page-main">
+        <section class="workspace-shell workspace-shell--centered">
+          <header class="workspace-hero">
+            <BrandLockup onNavigateHome={() => navigate({ kind: 'create' })} />
+          </header>
 
-        <div class="workspace-content">
-          {(metadataError || tokenStateError) && (
-            <section class="ui-card ui-card--notice ui-card--padded notice" data-tone="error" role="alert">
-              <div class="notice__title">Instance metadata unavailable</div>
-              <p>{metadataError ?? tokenStateError}</p>
-            </section>
-          )}
+          <div class="workspace-content">
+            {bookmarkletNotice && (
+              <Notice
+                title="How to use the Bookmarklet"
+                actions={
+                  <button
+                    type="button"
+                    class="btn btn--quiet btn--linkish"
+                    onClick={() => setBookmarkletNotice('')}
+                  >
+                    Dismiss
+                  </button>
+                }
+              >
+                <p style="margin: 0; line-height: 1.5;">
+                  Drag the "Bookmarklet" link from the footer to your browser's bookmarks bar. When viewing
+                  any website you want to convert to RSS, click the bookmark to automatically prefill its URL
+                  here.
+                </p>
+              </Notice>
+            )}
 
-          {bodyContent}
-        </div>
-      </section>
+            {(metadataError || tokenStateError) && (
+              <Notice tone="error" title="Instance metadata unavailable">
+                <p>{metadataError ?? tokenStateError}</p>
+              </Notice>
+            )}
+
+            {bodyContent}
+          </div>
+        </section>
+      </main>
 
       <footer class="app-footer" aria-label="Footer navigation">
         <div class="app-footer__inner">
@@ -336,9 +356,10 @@ export function App() {
               clearError();
               navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
             }}
+            onShowBookmarkletHelp={() => setBookmarkletNotice('show')}
           />
         </div>
       </footer>
-    </>
+    </div>
   );
 }

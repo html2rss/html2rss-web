@@ -136,7 +136,7 @@ describe('ResultDisplay', () => {
     );
 
     expect(screen.getByText('Feed link created')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Check preview again' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     expect(mockOnRetryPreview).toHaveBeenCalled();
   });
 
