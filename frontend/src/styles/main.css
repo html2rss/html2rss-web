@@ -779,11 +779,6 @@ a:focus-visible {
     width: 100%;
   }
 
-  .result-recovery {
-    width: 100%;
-    padding: var(--space-4);
-  }
-
   .input--lg {
     min-height: 4rem;
 
