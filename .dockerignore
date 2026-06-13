@@ -21,3 +21,7 @@ spec/
 tmp/
 work/
 frontend/dist/
+frontend/node_modules/
+frontend/test-results/
+frontend/.astro/
+

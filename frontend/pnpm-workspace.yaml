@@ -1,2 +1,8 @@
+allowBuilds:
+  esbuild: true
+  msw: true
+minimumReleaseAgeExclude:
+  - baseline-browser-mapping@2.10.37
+  - eslint@10.5.0
 overrides:
   postcss@<8.5.10: ">=8.5.10"
