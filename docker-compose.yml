@@ -2,11 +2,38 @@
 # This is the default configuration - customize as needed
 
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - html2rss-web
+    command:
+      - sh
+      - -c
+      - |
+        caddy run --config - --adapter caddyfile <<EOF
+        {
+          admin off
+          ${CADDY_GLOBAL_OPTIONS:-}
+        }
+        https://${CADDY_HOST:-localhost} {
+          reverse_proxy html2rss-web:4000 {
+            header_up   X-Forwarded-For {client_ip}
+            header_up   X-Real-IP       {client_ip}
+            header_down -Via
+          }
+        }
+        EOF
+
   html2rss-web:
     image: html2rss/web
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:4000:4000"
     env_file:
       - path: .env
         required: false
@@ -15,6 +42,8 @@ services:
       PORT: 4000
       BUILD_TAG: ${BUILD_TAG:-local}
       GIT_SHA: ${GIT_SHA:-local}
+      AUTO_SOURCE_ENABLED: ${AUTO_SOURCE_ENABLED:-false}
+      HTML2RSS_ACCESS_TOKEN: ${HTML2RSS_ACCESS_TOKEN:-}
       HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY}
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:?set HEALTH_CHECK_TOKEN}
       SENTRY_DSN: ${SENTRY_DSN:-}
@@ -31,14 +60,6 @@ services:
     #     target: /app/config/feeds.yml
     #     read_only: true
 
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - "${HOME}/.docker/config.json:/config.json"
-    command: --cleanup --interval 7200
-
   browserless:
     image: "ghcr.io/browserless/chromium"
     restart: unless-stopped
@@ -48,3 +69,7 @@ services:
       PORT: 4002
       CONCURRENT: 10
       TOKEN: ${BROWSERLESS_IO_API_TOKEN:?set BROWSERLESS_IO_API_TOKEN}
+
+volumes:
+  caddy_data:
+  caddy_config:

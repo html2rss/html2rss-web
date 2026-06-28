@@ -1,8 +1,34 @@
 services:
-  html2rss-web:
-    image: ${HTML2RSS_WEB_IMAGE:-html2rss/web:1}
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - html2rss-web
+    command:
+      - sh
+      - -c
+      - |
+        caddy run --config - --adapter caddyfile <<EOF
+        {
+          admin off
+          ${CADDY_GLOBAL_OPTIONS:-}
+        }
+        https://localhost:4000 {
+          reverse_proxy html2rss-web:4000 {
+            header_up   X-Forwarded-For {client_ip}
+            header_up   X-Real-IP       {client_ip}
+            header_down -Via
+          }
+        }
+        EOF
+
+  html2rss-web:
+    image: ${HTML2RSS_WEB_IMAGE:-html2rss/web:1}
     environment:
       RACK_ENV: development
       HTML2RSS_ACCESS_TOKEN: CHANGE_ME_ADMIN_TOKEN
@@ -10,3 +36,7 @@ services:
 
   botasaurus:
     image: html2rss/botasaurus-scrape-api:latest
+
+volumes:
+  caddy_data:
+  caddy_config:
