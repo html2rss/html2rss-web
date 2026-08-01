@@ -56,6 +56,7 @@ ENV PORT=4000 \
 
 EXPOSE $PORT
 
+# hadolint ignore=DL3025
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
   CMD ruby -ruri -rnet/http -e ' \
     port = ENV.fetch("PORT", "4000") \
@@ -91,6 +92,7 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
+# hadolint ignore=DL3066
 USER html2rss
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
