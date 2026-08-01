@@ -57,16 +57,7 @@ ENV PORT=4000 \
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD ruby -ruri -rnet/http -e ' \
-    port = ENV.fetch("PORT", "4000") \
-    token = ENV["HEALTH_CHECK_TOKEN"] \
-    token = "CHANGE_ME_HEALTH_CHECK_TOKEN" if token.nil? || token.empty? \
-    uri = URI("http://localhost:#{port}/api/v1/health") \
-    request = Net::HTTP::Get.new(uri) \
-    request["Authorization"] = "Bearer #{token}" \
-    response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) } \
-    exit(response.is_a?(Net::HTTPSuccess) ? 0 : 1) \
-  '
+  CMD ["/app/bin/docker-healthcheck"]
 
 ARG USER=html2rss
 ARG UID=991
@@ -91,9 +82,10 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-USER html2rss
+USER 991
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY --chown=$USER:$USER bin/docker-healthcheck ./bin/docker-healthcheck
 COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config

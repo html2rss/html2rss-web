@@ -40,7 +40,7 @@ const createStorageMock = () => {
       clear: vi.fn(() => {
         store.clear();
       }),
-      // eslint-disable-next-line unicorn/no-null -- Web Storage key() returns null for out-of-range indexes.
+      // eslint-disable-next-line unicorn/no-null, unicorn/prefer-iterator-to-array -- Web Storage key() returns null for out-of-range indexes.
       key: vi.fn((index: number) => [...store.keys()][index] ?? null),
     },
   };
@@ -49,16 +49,17 @@ const createStorageMock = () => {
 const local = createStorageMock();
 const session = createStorageMock();
 
-Object.defineProperty(globalThis, 'localStorage', {
-  value: local.api,
-  configurable: true,
-  writable: true,
-});
-
-Object.defineProperty(globalThis, 'sessionStorage', {
-  value: session.api,
-  configurable: true,
-  writable: true,
+Object.defineProperties(globalThis, {
+  localStorage: {
+    value: local.api,
+    configurable: true,
+    writable: true,
+  },
+  sessionStorage: {
+    value: session.api,
+    configurable: true,
+    writable: true,
+  },
 });
 
 beforeEach(() => {
@@ -88,6 +89,7 @@ Element.prototype.scrollIntoView = vi.fn();
 
 // Wire up MSW in node environment
 beforeAll(async () => {
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
   ({ server } = await import('./mocks/server'));
   server.listen({ onUnhandledRequest: 'error' });
 });

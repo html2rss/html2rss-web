@@ -42,6 +42,7 @@ function isFeedDraftState(value: unknown): value is FeedDraftState {
 
 function parseJson<T>(
   value: string | null | undefined,
+  // eslint-disable-next-line unicorn/consistent-boolean-name
   guard: (candidate: unknown) => candidate is T
 ): T | undefined {
   if (!value) return undefined;

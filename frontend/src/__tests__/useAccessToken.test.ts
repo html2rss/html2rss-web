@@ -4,11 +4,11 @@ import { useAccessToken } from '../hooks/useAccessToken';
 
 describe('useAccessToken', () => {
   beforeEach(() => {
-    globalThis.sessionStorage.clear();
+    sessionStorage.clear();
   });
 
   it('loads the persisted token from sessionStorage', async () => {
-    globalThis.sessionStorage.setItem('html2rss_access_token', 'persisted-token');
+    sessionStorage.setItem('html2rss_access_token', 'persisted-token');
 
     const { result } = renderHook(() => useAccessToken());
 
@@ -27,11 +27,11 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBe('new-token');
     expect(result.current.hasToken).toBe(true);
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBe('new-token');
+    expect(sessionStorage.getItem('html2rss_access_token')).toBe('new-token');
   });
 
   it('clears the canonical session token copy', async () => {
-    globalThis.sessionStorage.setItem('html2rss_access_token', 'persisted-token');
+    sessionStorage.setItem('html2rss_access_token', 'persisted-token');
 
     const { result } = renderHook(() => useAccessToken());
 
@@ -41,11 +41,11 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBeUndefined();
     expect(result.current.hasToken).toBe(false);
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 
   it('falls back to in-memory token when sessionStorage write is unavailable', async () => {
-    globalThis.sessionStorage.setItem.mockImplementationOnce(() => {
+    sessionStorage.setItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 
@@ -60,7 +60,7 @@ describe('useAccessToken', () => {
   });
 
   it('loads from in-memory fallback when sessionStorage read is unavailable', async () => {
-    globalThis.sessionStorage.setItem.mockImplementationOnce(() => {
+    sessionStorage.setItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 
@@ -70,7 +70,7 @@ describe('useAccessToken', () => {
     });
     seeded.unmount();
 
-    globalThis.sessionStorage.getItem.mockImplementationOnce(() => {
+    sessionStorage.getItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 

@@ -20,6 +20,7 @@ const readSessionToken = (): string => {
 };
 
 const writeSessionToken = (token: string) => {
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
   inMemoryToken = token;
   if (globalThis.window === undefined) return;
 

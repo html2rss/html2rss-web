@@ -18,7 +18,7 @@ export function useApiMetadata() {
   });
 
   useEffect(() => {
-    let cancelled = false;
+    let isCancelled = false;
 
     const load = async () => {
       setState((previous) => ({ ...previous, isLoading: true, error: undefined }));
@@ -33,14 +33,14 @@ export function useApiMetadata() {
         if (!response.ok || !payload.success || !metadata?.instance) {
           throw new Error('Invalid response format from API metadata');
         }
-        if (cancelled) return;
+        if (isCancelled) return;
 
         setState({
           metadata,
           isLoading: false,
         });
       } catch (error) {
-        if (cancelled) return;
+        if (isCancelled) return;
 
         setState({
           isLoading: false,
@@ -51,7 +51,7 @@ export function useApiMetadata() {
 
     load();
     return () => {
-      cancelled = true;
+      isCancelled = true;
     };
   }, []);
 
