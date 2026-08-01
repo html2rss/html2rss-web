@@ -62,7 +62,7 @@ export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()):
     if (route.prefillUrl) url.searchParams.set('url', route.prefillUrl);
     if (route.prefillUrl) url.hash = `${ROUTE_PATHS.create}?${url.searchParams.toString()}`;
     url.search = '';
-    return url.toString();
+    return url.href;
   }
 
   if (route.kind === 'token') {
@@ -70,12 +70,12 @@ export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()):
     if (route.prefillUrl) url.searchParams.set('url', route.prefillUrl);
     if (route.prefillUrl) url.hash = `${ROUTE_PATHS.token}?${url.searchParams.toString()}`;
     url.search = '';
-    return url.toString();
+    return url.href;
   }
 
   url.hash = `${ROUTE_PATHS.resultPrefix}${route.feedToken}`;
   url.search = '';
-  return url.toString();
+  return url.href;
 }
 
 export function useAppRoute() {
@@ -88,18 +88,18 @@ export function useAppRoute() {
       const nextRoute = readAppRoute();
       setRoute(nextRoute);
 
-      if (!globalThis.location.hash || globalThis.location.pathname !== '/') {
+      if (!location.hash || location.pathname !== '/') {
         replaceRoute(nextRoute);
       }
     };
 
     canonicalize();
-    globalThis.addEventListener('popstate', canonicalize);
-    globalThis.addEventListener('hashchange', canonicalize);
+    addEventListener('popstate', canonicalize);
+    addEventListener('hashchange', canonicalize);
 
     return () => {
-      globalThis.removeEventListener('popstate', canonicalize);
-      globalThis.removeEventListener('hashchange', canonicalize);
+      removeEventListener('popstate', canonicalize);
+      removeEventListener('hashchange', canonicalize);
     };
   }, []);
 
@@ -108,9 +108,9 @@ export function useAppRoute() {
 
     const href = buildAppRouteHref(nextRoute);
     if (options?.replace) {
-      globalThis.history.replaceState({}, '', href);
+      history.replaceState({}, '', href);
     } else {
-      globalThis.history.pushState({}, '', href);
+      history.pushState({}, '', href);
     }
 
     setRoute(readAppRoute());
@@ -143,7 +143,7 @@ function parseHashRoute(hash: string): { pathname: string; search: string } {
 
 function replaceRoute(route: AppRoute) {
   const href = buildAppRouteHref(route);
-  globalThis.history.replaceState({}, '', href);
+  history.replaceState({}, '', href);
 }
 
 function getCurrentLocation(): RouteLocationLike {
@@ -152,9 +152,9 @@ function getCurrentLocation(): RouteLocationLike {
   }
 
   return {
-    pathname: globalThis.location.pathname,
-    search: globalThis.location.search,
-    hash: globalThis.location.hash,
+    pathname: location.pathname,
+    search: location.search,
+    hash: location.hash,
   };
 }
 
@@ -163,5 +163,5 @@ function getCurrentHref(): string {
     return 'http://localhost/';
   }
 
-  return globalThis.location.href;
+  return location.href;
 }

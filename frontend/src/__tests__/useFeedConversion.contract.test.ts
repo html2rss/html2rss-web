@@ -7,7 +7,7 @@ import { useFeedConversion } from '../hooks/useFeedConversion';
 describe('useFeedConversion contract', () => {
   it('sends feed creation requests with bearer auth and hydrates preview from json_public_url', async () => {
     let receivedAuthorization: string | undefined;
-    const nativeFetch = globalThis.fetch;
+    const nativeFetch = fetch;
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
         return Promise.resolve(
@@ -137,7 +137,7 @@ describe('useFeedConversion contract', () => {
   });
 
   it('marks preview failure from the feed json response without status polling', async () => {
-    const nativeFetch = globalThis.fetch;
+    const nativeFetch = fetch;
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
         return Promise.resolve(new Response('No feed items', { status: 422 }));

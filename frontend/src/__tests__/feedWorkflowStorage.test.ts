@@ -3,8 +3,8 @@ import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../
 
 describe('feedWorkflowStorage', () => {
   beforeEach(() => {
-    globalThis.localStorage.clear();
-    globalThis.sessionStorage.clear();
+    localStorage.clear();
+    sessionStorage.clear();
   });
 
   it('persists and hydrates the create draft state from the url only', () => {
@@ -13,7 +13,7 @@ describe('feedWorkflowStorage', () => {
     expect(loadFeedDraftState()).toEqual({
       url: 'https://example.com/articles',
     });
-    expect(globalThis.localStorage.getItem('html2rss_feed_draft_state')).toBe(
+    expect(localStorage.getItem('html2rss_feed_draft_state')).toBe(
       JSON.stringify({ url: 'https://example.com/articles' })
     );
 
@@ -22,7 +22,7 @@ describe('feedWorkflowStorage', () => {
   });
 
   it('ignores extra draft properties beyond the canonical shape', () => {
-    globalThis.localStorage.setItem(
+    localStorage.setItem(
       'html2rss_feed_draft_state',
       JSON.stringify({
         url: 'https://example.com/articles',

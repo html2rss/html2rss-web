@@ -63,14 +63,14 @@ export function CreateFeedPanel({
   const urlInputReference = useRef<HTMLInputElement>(undefined as never);
   const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
   const failureMessage = conversionError?.message || feedFieldErrors.form;
-  const showRetryButton = Boolean(
+  const isShowRetryButton = Boolean(
     conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
   );
 
   useLayoutEffect(() => {
     if (!urlInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = globalThis.requestAnimationFrame(() => {
+    const focusHandle = requestAnimationFrame(() => {
       const input = urlInputReference.current;
       if (!input) return;
 
@@ -78,17 +78,17 @@ export function CreateFeedPanel({
       input.select();
     });
 
-    return () => globalThis.cancelAnimationFrame(focusHandle);
+    return () => cancelAnimationFrame(focusHandle);
   }, [focusComposerKey]);
 
   useLayoutEffect(() => {
     if (!showTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
 
-    const focusHandle = globalThis.requestAnimationFrame(() => {
+    const focusHandle = requestAnimationFrame(() => {
       tokenInputReference.current?.focus();
     });
 
-    return () => globalThis.cancelAnimationFrame(focusHandle);
+    return () => cancelAnimationFrame(focusHandle);
   }, [showTokenPrompt]);
 
   return (
@@ -214,7 +214,7 @@ export function CreateFeedPanel({
           tone="error"
           title="Couldn't create feed yet"
           actions={
-            showRetryButton && (
+            isShowRetryButton && (
               <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
                 Try again
               </button>
@@ -250,11 +250,11 @@ export function UtilityStrip({
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
   const includedFeedsHref = (() => {
     const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
-    if (globalThis.window === undefined) return directoryUrl.toString();
+    if (globalThis.window === undefined) return directoryUrl.href;
 
-    const instanceUrl = new URL('/', globalThis.location.origin);
-    directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.toString())}`;
-    return directoryUrl.toString();
+    const instanceUrl = new URL('/', location.origin);
+    directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.href)}`;
+    return directoryUrl.href;
   })();
 
   return (
@@ -304,15 +304,15 @@ function normalizeLocalOriginUrl(value?: string): string | undefined {
   if (!value || globalThis.window === undefined) return value;
 
   try {
-    const target = new URL(value, globalThis.location.origin);
-    const current = new URL(globalThis.location.origin);
+    const target = new URL(value, location.origin);
+    const current = new URL(location.origin);
     const isLocalHost = (host: string) => host === 'localhost' || host === '127.0.0.1';
 
     if (isLocalHost(current.hostname) && isLocalHost(target.hostname) && target.port !== current.port) {
       return `${current.origin}${target.pathname}${target.search}${target.hash}`;
     }
 
-    return target.toString();
+    return target.href;
   } catch {
     return value;
   }

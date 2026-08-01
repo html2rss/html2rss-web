@@ -8,14 +8,14 @@ describe('App contract', () => {
   const token = 'contract-token';
 
   beforeEach(() => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/create');
-    globalThis.localStorage.clear();
-    globalThis.sessionStorage.clear();
-    globalThis.sessionStorage.setItem('html2rss_access_token', token);
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    localStorage.clear();
+    sessionStorage.clear();
+    sessionStorage.setItem('html2rss_access_token', token);
   });
 
   it('shows feed result when the API returns structured create payload and preview feed', async () => {
-    const nativeFetch = globalThis.fetch;
+    const nativeFetch = fetch;
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       if (String(input).endsWith('/api/v1/feeds/generated-token.json')) {
         expect((init?.headers as Record<string, string> | undefined)?.Accept).toBe('application/feed+json');
@@ -146,6 +146,6 @@ describe('App contract', () => {
 
     expect(screen.getByText('Enter access token')).toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
-    expect(globalThis.sessionStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });
