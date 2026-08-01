@@ -144,7 +144,7 @@ export function useFeedConversion() {
 }
 
 async function requestFeedCreation(url: string, token: string): Promise<FeedRecord> {
-  const response = await globalThis.fetch(resolveApiUrl('feeds'), {
+  const response = await fetch(resolveApiUrl('feeds'), {
     method: 'POST',
     headers: buildCreateHeaders(token),
     body: JSON.stringify({ url }),
@@ -239,7 +239,7 @@ async function loadPreviewItemsWithRetry(
 
     const result = await loadPreviewItems(previewUrl, signal);
     if (result.workflowState === 'preview_ready') return result;
-    if (!result.warnings.some((warning) => warning.retryable)) return result;
+    if (result.warnings.every((warning) => !warning.retryable)) return result;
 
     latestRetryableFailure = result;
     if (index === delays.length - 1) return result;
@@ -258,7 +258,7 @@ async function loadPreviewItems(previewUrl: string, signal?: AbortSignal): Promi
   let response: Response;
 
   try {
-    response = await globalThis.fetch(resolveFetchUrl(previewUrl), {
+    response = await fetch(resolveFetchUrl(previewUrl), {
       headers: { Accept: 'application/feed+json' },
       signal,
     });
@@ -399,13 +399,13 @@ function normalizeFeedCreationErrorFromResponse(
   const envelope = resolveErrorEnvelope(errorPayload, payload);
 
   const kind = normalizeErrorKind(envelope?.kind, status);
-  const retryable = normalizeBoolean(envelope?.retryable, defaultRetryableFromStatus(status, kind));
-  const nextAction = normalizeNextAction(envelope?.next_action, kind, retryable);
-  const retryAction = normalizeRetryAction(envelope?.retry_action, nextAction, retryable);
+  const isRetryable = normalizeBoolean(envelope?.retryable, defaultRetryableFromStatus(status, kind));
+  const nextAction = normalizeNextAction(envelope?.next_action, kind, isRetryable);
+  const retryAction = normalizeRetryAction(envelope?.retry_action, nextAction, isRetryable);
   const code = normalizeString(envelope?.code) || fallbackErrorCode(status, kind);
   const message = normalizeString(envelope?.message) || fallbackErrorMessage(status, kind, nextAction);
 
-  return buildStructuredError(kind, code, retryable, nextAction, retryAction, message, status);
+  return buildStructuredError(kind, code, isRetryable, nextAction, retryAction, message, status);
 }
 
 function resolveErrorEnvelope(errorPayload: unknown, payload?: RawApiResponse): RawErrorEnvelope | undefined {
@@ -418,6 +418,7 @@ function resolveErrorEnvelope(errorPayload: unknown, payload?: RawApiResponse): 
 function buildStructuredError(
   kind: FeedCreationError['kind'],
   code: string,
+  // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean,
   nextAction: FeedNextAction,
   retryAction: FeedRetryAction,
@@ -431,7 +432,7 @@ function buildStructuredError(
     nextAction,
     retryAction,
     message,
-    ...(typeof status === 'number' ? { status } : {}),
+    ...(typeof status === 'number' && { status }),
   };
 }
 
@@ -440,13 +441,13 @@ function buildLocalError(
   kind: FeedCreationError['kind'],
   nextAction: FeedNextAction
 ): FeedCreationError {
-  const retryable = nextAction === 'retry';
+  const isRetryable = nextAction === 'retry';
   return buildStructuredError(
     kind,
     localErrorCode(kind, nextAction),
-    retryable,
+    isRetryable,
     nextAction,
-    retryable ? 'primary' : 'none',
+    isRetryable ? 'primary' : 'none',
     message
   );
 }
@@ -454,6 +455,7 @@ function buildLocalError(
 function buildPreviewWarning(
   code: string,
   message: string,
+  // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean,
   nextAction: FeedNextAction
 ): FeedPreviewWarning {
@@ -485,6 +487,7 @@ function normalizeFeedRecord(raw?: RawFeedRecord): FeedRecord | undefined {
 function normalizeNextAction(
   value: unknown,
   kind: FeedCreationError['kind'],
+  // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean
 ): FeedNextAction {
   if ((['enter_token', 'correct_input', 'retry', 'wait', 'none'] as unknown[]).includes(value)) {
@@ -500,6 +503,7 @@ function normalizeNextAction(
 function normalizeRetryAction(
   value: unknown,
   nextAction: FeedNextAction,
+  // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean
 ): FeedRetryAction {
   if ((['alternate', 'primary', 'none'] as unknown[]).includes(value)) {
@@ -520,6 +524,7 @@ function normalizeErrorKind(value: unknown, status: number): FeedCreationError['
   return 'server';
 }
 
+// eslint-disable-next-line unicorn/consistent-boolean-name
 function defaultRetryableFromStatus(status: number, kind: FeedCreationError['kind']): boolean {
   if (kind === 'auth' || kind === 'input') return false;
   if (kind === 'network') return true;
@@ -583,6 +588,7 @@ function isErrorEnvelope(value: unknown): value is RawErrorEnvelope {
   );
 }
 
+// eslint-disable-next-line unicorn/consistent-boolean-name
 function normalizeBoolean(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback;
 }
@@ -609,7 +615,7 @@ function resolveApiUrl(path: string): string {
 function resolveFetchUrl(url: string): string {
   if (/^https?:\/\//i.test(url)) return url;
   const origin = globalThis.location?.origin ?? 'http://localhost';
-  return new URL(url, origin).toString();
+  return new URL(url, origin).href;
 }
 
 function buildCreateHeaders(token: string): HeadersInit {
@@ -650,19 +656,19 @@ async function wait(delayMs: number, signal?: AbortSignal): Promise<void> {
   if (delayMs <= 0) return;
 
   await new Promise<void>((resolve, reject) => {
-    const timeoutHandle = globalThis.setTimeout(() => {
+    const timeoutHandle = setTimeout(() => {
       signal?.removeEventListener('abort', onAbort);
       resolve();
     }, delayMs);
 
     const onAbort = () => {
-      globalThis.clearTimeout(timeoutHandle);
+      clearTimeout(timeoutHandle);
       reject(new DOMException('Aborted', 'AbortError'));
     };
 
     if (signal) {
       if (signal.aborted) {
-        globalThis.clearTimeout(timeoutHandle);
+        clearTimeout(timeoutHandle);
         reject(new DOMException('Aborted', 'AbortError'));
         return;
       }
@@ -719,6 +725,6 @@ function normalizePreviewItem(value: unknown): FeedPreviewItem | undefined {
           candidate.date_modified ??
           candidate.dateModified
       ) || '',
-    ...(url ? { url } : {}),
+    ...(url && { url }),
   };
 }

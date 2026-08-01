@@ -2,7 +2,7 @@ export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
   const bookmarkletHref = (() => {
     if (globalThis.window === undefined) return '#';
 
-    const targetPrefix = new URL('/#/create?url=', globalThis.location.href).toString();
+    const targetPrefix = new URL('/#/create?url=', location.href).href;
 
     return `javascript:window.location.assign(${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href));`;
   })();
@@ -14,10 +14,12 @@ export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
       href={bookmarkletHref}
       title="Drag this bookmarklet to your bookmarks bar"
       onClick={(event) => {
-        if (onClick) {
-          event.preventDefault();
-          onClick(event);
+        if (!onClick) {
+          return;
         }
+
+        event.preventDefault();
+        onClick(event);
       }}
     >
       Bookmarklet

@@ -50,8 +50,8 @@ describe('App', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/create');
-    globalThis.localStorage.clear();
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    localStorage.clear();
     mockConvertFeed.mockResolvedValue(mockCreatedFeedResult);
 
     mockUseAccessToken.mockReturnValue({
@@ -154,22 +154,18 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    globalThis.history.replaceState(
-      {},
-      '',
-      'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles'
-    );
+    history.replaceState({}, '', 'http://localhost:3000/?url=https%3A%2F%2Fexample.com%2Farticles');
 
     render(<App />);
 
     await waitFor(() => {
       expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
-      expect(globalThis.location.hash).toBe('#/result/generated-token');
+      expect(location.hash).toBe('#/result/generated-token');
     });
   });
 
   it('shows the create flow when opening a stale result deep link', async () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
+    history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
 
     render(<App />);
 
@@ -186,7 +182,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     expect(screen.getByText('Enter access token')).toBeInTheDocument();
-    expect(globalThis.location.hash).toMatch(/^#\/token/);
+    expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
     expect(screen.getByLabelText('Page URL')).toBeDisabled();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
@@ -237,7 +233,7 @@ describe('App', () => {
   });
 
   it('renders the result panel when a feed is available', async () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/result/example-token');
+    history.replaceState({}, '', 'http://localhost:3000/#/result/example-token');
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: {
@@ -283,7 +279,7 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
     return waitFor(() => {
-      expect(globalThis.location.hash).toMatch(/^#\/create/);
+      expect(location.hash).toMatch(/^#\/create/);
     });
   });
 
@@ -359,7 +355,7 @@ describe('App', () => {
     const utilityItems = [
       ...screen
         .getByLabelText('Utilities')
-        .querySelectorAll('.utility-strip__items > a, .utility-strip__items > button'),
+        .querySelectorAll(':scope .utility-strip__items > a, :scope .utility-strip__items > button'),
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
@@ -451,7 +447,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
     await waitFor(() => {
-      expect(globalThis.location.hash).toMatch(/^#\/create/);
+      expect(location.hash).toMatch(/^#\/create/);
     });
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
     expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
@@ -475,7 +471,7 @@ describe('App', () => {
   });
 
   it('builds a bookmarklet that returns to the root app entry', () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/create');
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
     const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
@@ -484,12 +480,12 @@ describe('App', () => {
   });
 
   it('opens token entry immediately for bookmarklet urls when no token is saved', async () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/?url=example.com%2Farticles');
+    history.replaceState({}, '', 'http://localhost:3000/?url=example.com%2Farticles');
 
     render(<App />);
 
     await screen.findByText('Enter access token');
-    expect(globalThis.location.hash).toMatch(/^#\/token/);
+    expect(location.hash).toMatch(/^#\/token/);
     expect(screen.getByLabelText('Page URL')).toHaveValue('https://example.com/articles');
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
@@ -647,11 +643,11 @@ describe('App', () => {
   });
 
   it('shows the utility links in a user-focused order', () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/create');
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
     const utilityLinks = [
-      ...screen.getByLabelText('Utilities').querySelectorAll('.utility-strip__items > a'),
+      ...screen.getByLabelText('Utilities').querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
       'Try included feeds',
@@ -695,7 +691,7 @@ describe('App', () => {
       error: undefined,
     });
 
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/create');
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
     expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
@@ -705,7 +701,7 @@ describe('App', () => {
   });
 
   it('shows footer utilities on result routes', async () => {
-    globalThis.history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
+    history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
     render(<App />);
 
     await waitFor(() => {

@@ -37,8 +37,8 @@ describe('useFeedConversion', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    globalThis.localStorage.clear();
-    globalThis.sessionStorage.clear();
+    localStorage.clear();
+    sessionStorage.clear();
     fetchMock = vi.spyOn(globalThis, 'fetch');
   });
 

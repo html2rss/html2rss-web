@@ -41,10 +41,10 @@ export function ResultDisplay({
 
   const fullUrl = feed.public_url.startsWith('http')
     ? feed.public_url
-    : `${globalThis.location.origin}${feed.public_url}`;
+    : `${location.origin}${feed.public_url}`;
   const jsonFeedUrl = feed.json_public_url.startsWith('http')
     ? feed.json_public_url
-    : `${globalThis.location.origin}${feed.json_public_url}`;
+    : `${location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
   const canUseFeed = previewWorkflowState !== 'preview_loading';
   const canManuallyRetryPreview =
@@ -57,12 +57,12 @@ export function ResultDisplay({
   }[previewWorkflowState];
   const previewMessage = warnings[0]?.message ?? '';
   const hasPreviewItems = preview.items.length > 0;
-  const showPreviewError =
+  const isShowPreviewError =
     previewWorkflowState === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
 
   useEffect(() => {
     return () => {
-      if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
+      if (copyResetReference.current) clearTimeout(copyResetReference.current);
     };
   }, []);
 
@@ -70,8 +70,8 @@ export function ResultDisplay({
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
-      if (copyResetReference.current) globalThis.clearTimeout(copyResetReference.current);
-      copyResetReference.current = globalThis.setTimeout(() => setCopied(false), 2500);
+      if (copyResetReference.current) clearTimeout(copyResetReference.current);
+      copyResetReference.current = setTimeout(() => setCopied(false), 2500);
     } catch {
       // Fallback
     }
@@ -151,7 +151,7 @@ export function ResultDisplay({
         </PreviewSection>
       )}
 
-      {showPreviewError && (
+      {isShowPreviewError && (
         <PreviewSection ariaLabel="Feed preview status">
           <div class="preview-feedback preview-feedback--error">
             <span>{previewMessage}</span>

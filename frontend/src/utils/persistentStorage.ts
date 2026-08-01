@@ -10,7 +10,7 @@ const memoryStorage = (() => {
     // eslint-disable-next-line unicorn/no-null
     getItem: (key: string) => store.get(key) ?? null,
     // Storage#key returns null when the index is out of range.
-    // eslint-disable-next-line unicorn/no-null
+    // eslint-disable-next-line unicorn/no-null, unicorn/prefer-iterator-to-array
     key: (index: number) => [...store.keys()][index] ?? null,
     removeItem: (key: string) => {
       store.delete(key);
