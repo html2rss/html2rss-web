@@ -43,17 +43,15 @@ module Html2rss
             return render_api_error(request, response, error, decision)
           end
 
-          render_xml_error(response, error, decision)
+          render_xml_error(request, response, error, decision)
         end
         # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
         private
 
         def render_feed_error(request, response, error, decision)
-          f = FeedResponseFormat.for_request(request)
-          response['Content-Type'] = FeedResponseFormat.content_type(f)
           msg = client_message_for(error, decision)
-          Feeds::Renderer.call_error(message: msg, format: f)
+          Feeds::Renderer.render_error(msg, response: response, request: request)
         end
 
         def render_api_error(_request, response, error, decision)
@@ -61,9 +59,10 @@ module Html2rss
           JSON.generate({ success: false, error: failure_payload(error, decision) })
         end
 
-        def render_xml_error(response, error, decision)
-          response['Content-Type'] = 'application/xml'
-          Feeds::Renderer.call_error(message: client_message_for(error, decision), format: :rss)
+        def render_xml_error(request, response, error, decision)
+          Feeds::Renderer.render_error(
+            client_message_for(error, decision), response: response, request: request, format: :rss
+          )
         end
 
         def resolve_error_code(error, decision)

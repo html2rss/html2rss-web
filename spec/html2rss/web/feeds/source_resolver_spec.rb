@@ -20,7 +20,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       let(:feed_request) do
         Html2rss::Web::Feeds::Contracts::Request.new(
           target_kind: :static,
-          representation: Html2rss::Web::FeedResponseFormat::RSS,
+          representation: Html2rss::Web::Feeds::Renderer::RSS,
           feed_name: 'legacy',
           token: nil,
           params: { 'page' => '3' }
@@ -68,7 +68,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       let(:feed_request) do
         Html2rss::Web::Feeds::Contracts::Request.new(
           target_kind: :token,
-          representation: Html2rss::Web::FeedResponseFormat::RSS,
+          representation: Html2rss::Web::Feeds::Renderer::RSS,
           feed_name: nil,
           token: 'public-token',
           params: {}
