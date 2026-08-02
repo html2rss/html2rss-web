@@ -12,8 +12,6 @@ module Html2rss
       #
       # Wire shape is JSON +zlib+base64 of +{ p: { u, l, e, t? }, s }+.
       module Codec
-        COMPRESSED_PAYLOAD_KEYS = %i[u l e].freeze
-
         class << self
           # @param token [Html2rss::Web::FeedToken]
           # @return [String]
@@ -70,10 +68,18 @@ module Html2rss
           def valid_token_data?(token_data)
             return false unless token_data.is_a?(Hash)
 
-            payload = token_data[:p]
             signature = token_data[:s]
-            payload.is_a?(Hash) && signature.is_a?(String) && !signature.empty? &&
-              COMPRESSED_PAYLOAD_KEYS.all? { |key| payload[key] }
+            signature.is_a?(String) && !signature.empty? && valid_payload?(token_data[:p])
+          end
+
+          # @param payload [Object]
+          # @return [Boolean]
+          def valid_payload?(payload)
+            payload.is_a?(Hash) &&
+              payload[:u].is_a?(String) &&
+              payload[:l].is_a?(String) &&
+              payload[:e].is_a?(Integer) &&
+              (payload[:t].nil? || payload[:t].is_a?(String))
           end
         end
       end

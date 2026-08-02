@@ -171,6 +171,22 @@ RSpec.describe Html2rss::Web::FeedToken do
       it 'rejects nil payloads' do
         expect(described_class.decode(nil)).to be_nil
       end
+
+      it 'rejects payloads with incorrect types', :aggregate_failures do
+        invalid_payloads = [
+          { u: 'alice', l: 'https://example.com/feed', e: '123456' },
+          { u: 123, l: 'https://example.com/feed', e: 123_456 },
+          { u: 'alice', l: 123, e: 123_456 },
+          { u: 'alice', l: 'https://example.com/feed', e: 123_456, t: 123 }
+        ]
+
+        invalid_payloads.each do |payload|
+          bad_token = Base64.urlsafe_encode64(
+            Zlib::Deflate.deflate({ p: payload, s: 'sig' }.to_json)
+          )
+          expect(described_class.decode(bad_token)).to be_nil
+        end
+      end
     end
 
     describe 'wire format compatibility' do
