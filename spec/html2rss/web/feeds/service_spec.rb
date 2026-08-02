@@ -176,7 +176,10 @@ RSpec.describe Html2rss::Web::Feeds::Service do
           code: 'NON_CACHEABLE',
           message: 'classified but not cacheable',
           kind: 'input',
-          cacheable: false
+          cacheable: false,
+          retryable: false,
+          next_action: 'correct_input',
+          retry_action: 'none'
         )
       )
     end

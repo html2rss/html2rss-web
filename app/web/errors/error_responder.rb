@@ -109,12 +109,23 @@ module Html2rss
         end
 
         def failure_metadata(error, decision)
-          return INPUT_META.merge(kind: decision.kind) if decision
+          return decision_metadata(decision) if decision
           return AUTH_META if error.is_a?(UnauthorizedError)
           return INPUT_META if error.is_a?(BadRequestError) || error.is_a?(ForbiddenError)
           return SERVER_META if error.is_a?(HealthCheckFailedError)
 
           RETRY_META.merge(kind: error_kind(error))
+        end
+
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        # @return [Hash{Symbol=>Object}]
+        def decision_metadata(decision)
+          {
+            kind: decision.kind,
+            retryable: decision.retryable,
+            next_action: decision.next_action,
+            retry_action: decision.retry_action
+          }
         end
 
         def error_kind(error)

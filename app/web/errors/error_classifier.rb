@@ -10,7 +10,9 @@ module Html2rss
     module ErrorClassifier
       ##
       # Immutable HTTP decision for a classified error.
-      Decision = Data.define(:status, :code, :message, :kind, :cacheable)
+      Decision = Data.define(
+        :status, :code, :message, :kind, :cacheable, :retryable, :next_action, :retry_action
+      )
 
       EXTRACTION_EMPTY_CODE = 'EXTRACTION_EMPTY'
       EXTRACTION_EMPTY_MESSAGE = 'We could not extract feed items from this page yet. ' \
@@ -21,7 +23,10 @@ module Html2rss
         code: EXTRACTION_EMPTY_CODE,
         message: EXTRACTION_EMPTY_MESSAGE,
         kind: 'input',
-        cacheable: true
+        cacheable: true,
+        retryable: false,
+        next_action: 'correct_input',
+        retry_action: 'none'
       ).freeze
 
       class << self

@@ -46,6 +46,9 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
         code: 'EXTRACTION_EMPTY',
         kind: 'input',
         cacheable: true,
+        retryable: false,
+        next_action: 'correct_input',
+        retry_action: 'none',
         message: a_string_including('could not extract feed items')
       )
     end
