@@ -1,11 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ResultDisplay } from '../components/ResultDisplay';
+import type { AppViewModel } from '../appViewModel';
 
 describe('ResultDisplay', () => {
   const mockOnCreateAnother = vi.fn();
   const mockOnRetryPreview = vi.fn();
-  const mockResult = {
+  const mockViewModel: Extract<AppViewModel, { kind: 'result' }> = {
+    kind: 'result',
     feed: {
       id: 'test-id',
       name: 'Test Feed',
@@ -17,6 +19,7 @@ describe('ResultDisplay', () => {
       updated_at: '2024-01-01T00:00:00Z',
     },
     preview: {
+      status: 'preview_ready',
       items: [
         {
           title: 'Item One',
@@ -27,7 +30,6 @@ describe('ResultDisplay', () => {
       ],
       isLoading: false,
     },
-    workflowState: 'preview_ready' as const,
     warnings: [],
   };
 
@@ -36,9 +38,10 @@ describe('ResultDisplay', () => {
   });
 
   it('renders ready feed actions and preview cards', async () => {
-    const resultWithMultiplePreviewItems = {
-      ...mockResult,
+    const viewModelWithMultiplePreviewItems = {
+      ...mockViewModel,
       preview: {
+        status: 'preview_ready' as const,
         items: [
           {
             title: 'Item One',
@@ -71,8 +74,7 @@ describe('ResultDisplay', () => {
 
     render(
       <ResultDisplay
-        result={resultWithMultiplePreviewItems}
-        workflowState="result"
+        viewModel={viewModelWithMultiplePreviewItems}
         onCreateAnother={mockOnCreateAnother}
         onRetryPreview={mockOnRetryPreview}
       />
@@ -97,12 +99,10 @@ describe('ResultDisplay', () => {
   it('renders preview loading as frontend-owned progress', () => {
     render(
       <ResultDisplay
-        result={{
-          ...mockResult,
-          workflowState: 'preview_loading',
-          preview: { items: [], isLoading: true },
+        viewModel={{
+          ...mockViewModel,
+          preview: { status: 'preview_loading', items: [], isLoading: true },
         }}
-        workflowState="result"
         onCreateAnother={mockOnCreateAnother}
         onRetryPreview={mockOnRetryPreview}
       />
@@ -116,10 +116,9 @@ describe('ResultDisplay', () => {
   it('lets retryable preview failures retry preview only', () => {
     render(
       <ResultDisplay
-        result={{
-          ...mockResult,
-          workflowState: 'preview_failed',
-          preview: { items: [], isLoading: false },
+        viewModel={{
+          ...mockViewModel,
+          preview: { status: 'preview_failed', items: [], isLoading: false },
           warnings: [
             {
               code: 'PREVIEW_HTTP_503',
@@ -129,7 +128,6 @@ describe('ResultDisplay', () => {
             },
           ],
         }}
-        workflowState="result"
         onCreateAnother={mockOnCreateAnother}
         onRetryPreview={mockOnRetryPreview}
       />
@@ -143,8 +141,7 @@ describe('ResultDisplay', () => {
   it('calls onCreateAnother and copies feed URL', async () => {
     render(
       <ResultDisplay
-        result={mockResult}
-        workflowState="result"
+        viewModel={mockViewModel}
         onCreateAnother={mockOnCreateAnother}
         onRetryPreview={mockOnRetryPreview}
       />

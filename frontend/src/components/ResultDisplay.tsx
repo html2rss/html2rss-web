@@ -1,12 +1,10 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { CreatedFeedResult } from '../api/contracts';
-import type { WorkflowState } from './AppPanels';
+import type { AppViewModel } from '../appViewModel';
 import { DominantField } from './DominantField';
 
 interface ResultDisplayProperties {
-  result: CreatedFeedResult;
-  workflowState: WorkflowState;
+  viewModel: Extract<AppViewModel, { kind: 'result' }>;
   onCreateAnother: () => void;
   onRetryPreview: () => void;
 }
@@ -30,14 +28,13 @@ function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties
 }
 
 export function ResultDisplay({
-  result,
-  workflowState,
+  viewModel,
   onCreateAnother,
   onRetryPreview,
 }: ResultDisplayProperties) {
   const [copied, setCopied] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
-  const { feed, preview, workflowState: previewWorkflowState, warnings } = result;
+  const { feed, preview, warnings } = viewModel;
 
   const fullUrl = feed.public_url.startsWith('http')
     ? feed.public_url
@@ -46,19 +43,19 @@ export function ResultDisplay({
     ? feed.json_public_url
     : `${location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
-  const canUseFeed = previewWorkflowState !== 'preview_loading';
+  const canUseFeed = preview.status !== 'preview_loading';
   const canManuallyRetryPreview =
-    previewWorkflowState === 'preview_failed' && warnings.some((warning) => warning.retryable);
+    preview.status === 'preview_failed' && warnings.some((warning) => warning.retryable);
   const statusTitle = {
     created: 'Feed created',
     preview_loading: 'Checking preview',
     preview_ready: 'Feed ready',
     preview_failed: 'Feed link created',
-  }[previewWorkflowState];
+  }[preview.status];
   const previewMessage = warnings[0]?.message ?? '';
   const hasPreviewItems = preview.items.length > 0;
   const isShowPreviewError =
-    previewWorkflowState === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
+    preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
 
   useEffect(() => {
     return () => {
@@ -78,7 +75,7 @@ export function ResultDisplay({
   };
 
   return (
-    <section class="result-shell layout-stack" aria-live="polite" data-state={workflowState}>
+    <section class="result-shell layout-stack" aria-live="polite" data-state={viewModel.kind}>
       <header class="result-header layout-rail-reading layout-stack layout-stack--tight">
         <p class="ui-eyebrow">{statusTitle}</p>
         <h1 class="result-title ui-display-title">{feed.name}</h1>
