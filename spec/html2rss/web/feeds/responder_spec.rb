@@ -40,7 +40,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return('<rss/>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :rss).and_return('<rss/>')
     end
 
     it 'writes the expected response tuple' do
@@ -89,7 +89,8 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return('{"title":"Error"}')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result,
+                                                                   format: :json_feed).and_return('{"title":"Error"}')
     end
 
     it 'writes the expected response tuple' do
@@ -132,9 +133,9 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::JsonRenderer)
+      allow(Html2rss::Web::Feeds::Renderer)
         .to receive(:call)
-        .with(result)
+        .with(result, format: :json_feed)
         .and_return('{"title":"Content Extraction Issue"}')
     end
 
@@ -167,7 +168,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_raise(StandardError, 'render failed')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).and_raise(StandardError, 'render failed')
     end
 
     it 'emits only the failure event' do

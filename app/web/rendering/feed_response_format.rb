@@ -4,6 +4,7 @@ module Html2rss
   module Web
     ##
     # Resolves feed response formats from request paths and Accept headers.
+    # rubocop:disable Metrics/ModuleLength
     module FeedResponseFormat
       JSON_FEED = :json_feed
       RSS = :rss
@@ -27,6 +28,26 @@ module Html2rss
         'application/xml',
         'text/xml'
       ].freeze
+
+      MediaRange = Data.define(:type, :subtype, :quality, :position) do
+        # @return [Integer]
+        def specificity
+          return 0 if type == '*' && subtype == '*'
+          return 1 if subtype == '*'
+
+          2
+        end
+
+        # @param candidate [String]
+        # @return [Boolean]
+        def matches?(candidate)
+          candidate_type, candidate_subtype = candidate.downcase.split('/', 2)
+          return true if type == '*' && subtype == '*'
+          return candidate_type == type if subtype == '*'
+
+          candidate_type == type && candidate_subtype == subtype
+        end
+      end
 
       class << self
         # @param request [Rack::Request]
@@ -63,6 +84,23 @@ module Html2rss
           format == JSON_FEED ? JSON_CONTENT_TYPE : RSS_CONTENT_TYPE
         end
 
+        # Parses Accept header and returns the preferred format based on priority.
+        #
+        # @param accept_header [String, nil]
+        # @return [Symbol, nil] preferred format (:json_feed, or nil meaning fallback to rss)
+        def from_accept(accept_header)
+          media_ranges = parse_accept(accept_header)
+          return nil if media_ranges.empty?
+
+          json_score = best_score(media_ranges, JSON_MEDIA_TYPES)
+          rss_score = best_score(media_ranges, RSS_MEDIA_TYPES)
+
+          return nil unless json_score
+          return JSON_FEED if rss_score.nil?
+
+          (json_score <=> rss_score)&.positive? ? JSON_FEED : nil
+        end
+
         private
 
         # @param request [Rack::Request]
@@ -90,15 +128,54 @@ module Html2rss
         end
 
         # @param accept_header [String, nil]
-        # @return [Symbol, nil]
-        def from_accept(accept_header)
-          FeedAcceptHeader.preferred_format(
-            accept_header,
-            json_media_types: JSON_MEDIA_TYPES,
-            rss_media_types: RSS_MEDIA_TYPES
+        # @return [Array<MediaRange>]
+        def parse_accept(accept_header)
+          accept_header.to_s.split(',').filter_map.with_index do |raw_range, position|
+            build_media_range(raw_range, position)
+          end
+        end
+
+        # @param raw_range [String]
+        # @param position [Integer]
+        # @return [MediaRange, nil]
+        def build_media_range(raw_range, position)
+          media_type, *parameter_parts = raw_range.strip.downcase.split(';')
+          type, subtype = media_type.to_s.split('/', 2)
+          return if type.to_s.empty? || subtype.to_s.empty?
+
+          MediaRange.new(
+            type: type,
+            subtype: subtype,
+            quality: extract_quality(parameter_parts),
+            position: position
           )
+        end
+
+        # @param parameter_parts [Array<String>]
+        # @return [Float]
+        def extract_quality(parameter_parts)
+          raw_value = parameter_parts
+                      .map(&:strip)
+                      .find { |part| part.start_with?('q=') }
+                      &.split('=', 2)
+                      &.last
+          quality = raw_value ? Float(raw_value) : 1.0
+          quality.clamp(0.0, 1.0)
+        rescue ArgumentError
+          1.0
+        end
+
+        # @param media_ranges [Array<MediaRange>]
+        # @param candidates [Array<String>]
+        # @return [Array(Float, Integer, Integer), nil]
+        def best_score(media_ranges, candidates)
+          media_ranges
+            .filter { |range| range.quality.positive? && candidates.any? { |candidate| range.matches?(candidate) } }
+            .map { |range| [range.quality, range.specificity, -range.position] }
+            .max
         end
       end
     end
+    # rubocop:enable Metrics/ModuleLength
   end
 end

@@ -112,8 +112,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   def stub_json_feed_success
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
-      .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result, format: :json_feed)
+                                                           .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
   end
 
   def json_feed_headers_tuple
@@ -375,7 +375,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
+                                                                   format: :rss).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}.xml"
 
@@ -395,7 +396,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
+                                                                   format: :rss).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml;q=1.0, application/feed+json;q=0.2' }
 
@@ -407,7 +409,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'faraday')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
+                                                                   format: :rss).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}", { strategy: 'bad' }, { 'HTTP_ACCEPT' => 'application/xml' }
 
@@ -492,7 +495,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     it 'returns 422 for empty extraction feeds in xml representation', :aggregate_failures, openapi: false do
       token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/empty-xml", strategy: 'faraday')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(extraction_empty_result,
+                                                                   format: :rss).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}.xml"
 
@@ -504,7 +508,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     it 'returns 422 for empty extraction feeds in json feed representation', :aggregate_failures, openapi: false do
       token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/empty-json", strategy: 'faraday')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
-      allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call)
+        .with(extraction_empty_result, format: :json_feed)
         .and_return('{"version":"https://jsonfeed.org/version/1.1","title":"Content Extraction Issue","items":[]}')
 
       get "/api/v1/feeds/#{token}.json"
@@ -525,7 +530,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
       token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/rate-limited-429", strategy: 'faraday')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-      allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
+                                                                   format: :rss).and_return('<rss version="2.0"></rss>')
 
       get "/api/v1/feeds/#{token}.xml", {}, { 'REMOTE_ADDR' => '192.168.99.1' }
       expect(last_response.status).to eq(200)

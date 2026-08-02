@@ -62,9 +62,10 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
     allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-    allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).and_return('<rss version="2.0"></rss>')
-    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
-      .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
+                                                                 format: :rss).and_return('<rss version="2.0"></rss>')
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result, format: :json_feed)
+                                                           .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
   end
 
   describe 'GET /create, /token, /result/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -262,7 +263,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
           error_kind: nil
         )
       )
-      allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call)
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call)
         .and_return('{"version":"https://jsonfeed.org/version/1.1","title":"Content Extraction Issue","items":[]}')
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength

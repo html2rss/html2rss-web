@@ -4,7 +4,7 @@ import {
   loadPreviewItems,
   loadPreviewItemsWithRetry,
   normalizePreviewItems,
-} from '../feeds/previewHydration';
+} from '../feeds/feedsService';
 
 const feed = {
   id: 'feed-1',

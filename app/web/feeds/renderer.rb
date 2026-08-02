@@ -1,0 +1,231 @@
+# frozen_string_literal: true
+
+require 'rss'
+require 'json'
+require 'time'
+
+module Html2rss
+  module Web
+    module Feeds
+      ##
+      # rubocop:disable Metrics/ModuleLength, Metrics/ClassLength, Metrics/MethodLength, Metrics/AbcSize
+      module Renderer
+        JSON_FEED_VERSION = 'https://jsonfeed.org/version/1.1'
+
+        EMPTY_FEED_DESCRIPTION_TEMPLATE = <<~DESC
+          We could not extract entries from %<url>s right now.
+          The source may block automated requests, require dynamic rendering, or be temporarily unavailable.
+        DESC
+
+        EMPTY_FEED_ITEM_TEMPLATE = <<~DESC
+          No entries were extracted from %<url>s.
+
+          What you can do:
+          - Try again in a few moments
+          - Open the original page to confirm content is available
+          - Reach out to the site owner if access is restricted
+        DESC
+
+        class << self
+          # Renders a RenderResult into the requested format.
+          #
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @param format [Symbol] :rss or :json_feed
+          # @return [String] serialized feed representation
+          def call(result, format:)
+            case result.status
+            when :ok
+              render_success(result, format)
+            when :empty
+              render_empty(result, format)
+            else
+              call_error(message: result.message || HttpError::DEFAULT_MESSAGE, format: format)
+            end
+          end
+
+          # Renders a single-item error feed in the requested format.
+          #
+          # @param message [String] the error message to display in the feed.
+          # @param format [Symbol] :rss or :json_feed
+          # @return [String] serialized error feed representation
+          def call_error(message:, format:)
+            title = 'Error'
+            desc = "Failed to generate feed: #{message}"
+            timestamp = Time.now.utc
+
+            if format == FeedResponseFormat::JSON_FEED
+              JSON.generate({
+                              version: JSON_FEED_VERSION,
+                              title: title,
+                              description: desc,
+                              items: [{
+                                id: "#{title}-#{timestamp.iso8601}",
+                                title: title,
+                                content_text: message,
+                                date_published: timestamp.iso8601
+                              }]
+                            })
+            else
+              build_rss(
+                title: title,
+                description: desc,
+                items: [{
+                  title: title,
+                  description: message,
+                  pubDate: timestamp
+                }],
+                timestamp: timestamp
+              )
+            end
+          end
+
+          private
+
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @param format [Symbol]
+          # @return [String]
+          def render_success(result, format)
+            if format == FeedResponseFormat::JSON_FEED
+              serialize_json_feed(result.payload.feed)
+            else
+              result.payload.feed.to_s
+            end
+          end
+
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @param format [Symbol]
+          # @return [String]
+          def render_empty(result, format)
+            url = result.payload.url
+            strategy = result.payload.strategy
+            site_title = result.payload.site_title
+
+            title = empty_feed_title(site_title)
+            desc = empty_feed_description(url, strategy)
+            timestamp = Time.now.utc
+
+            if format == FeedResponseFormat::JSON_FEED
+              JSON.generate({
+                version: JSON_FEED_VERSION,
+                title: title,
+                home_page_url: url,
+                description: desc,
+                items: [{
+                  id: url,
+                  url: url,
+                  title: 'Preview unavailable for this source',
+                  content_text: empty_feed_item(url),
+                  date_published: timestamp.iso8601
+                }]
+              }.compact)
+            else
+              build_rss(
+                title: title,
+                description: desc,
+                link: url,
+                items: [{
+                  title: 'Preview unavailable for this source',
+                  description: empty_feed_item(url),
+                  link: url,
+                  pubDate: timestamp
+                }],
+                timestamp: timestamp
+              )
+            end
+          end
+
+          # @param feed [RSS::Rss]
+          # @return [String]
+          def serialize_json_feed(feed)
+            payload = {
+              version: JSON_FEED_VERSION,
+              title: feed.channel.title,
+              home_page_url: feed.channel.link,
+              description: feed.channel.description,
+              items: feed.items.map { |item| serialize_json_item(item) }
+            }.compact
+
+            JSON.generate(payload)
+          end
+
+          # @param item [Object]
+          # @return [Hash{Symbol=>Object}]
+          def serialize_json_item(item)
+            {
+              id: item.respond_to?(:guid) && item.guid ? item.guid.content : (item.link || item.title),
+              url: item.link,
+              title: item.title,
+              content_text: item.description,
+              date_published: parse_date(item)
+            }.compact
+          end
+
+          # @param item [Object]
+          # @return [String, nil]
+          def parse_date(item)
+            value = item.respond_to?(:pubDate) ? item.pubDate : nil
+            return value.iso8601 if value.respond_to?(:iso8601)
+
+            Time.parse(value.to_s).utc.iso8601 if value
+          rescue ArgumentError
+            nil
+          end
+
+          # @param title [String]
+          # @param description [String]
+          # @param link [String, nil]
+          # @param items [Array<Hash>]
+          # @param timestamp [Time]
+          # @return [String]
+          def build_rss(title:, description:, link: nil, items: [], timestamp: nil)
+            RSS::Maker.make('2.0') do |maker|
+              # Apply stylesheets
+              stylesheets = Html2rss.configuration.stylesheets.map do |s|
+                Html2rss::RssBuilder::Stylesheet.new(**s)
+              end
+              Html2rss::RssBuilder::Stylesheet.add(maker, stylesheets)
+
+              # Channel details
+              now = timestamp || Time.now
+              maker.channel.title = title.to_s
+              maker.channel.description = description.to_s
+              maker.channel.link = link.to_s
+              maker.channel.lastBuildDate = now
+              maker.channel.pubDate = now
+
+              # Items
+              items.each do |item|
+                maker.items.new_item do |i|
+                  i.title = item[:title].to_s
+                  i.description = item[:description].to_s
+                  i.link = item[:link].to_s
+                  i.pubDate = item[:pubDate] || now
+                end
+              end
+            end.to_s
+          end
+
+          # @param site_title [String, nil]
+          # @return [String]
+          def empty_feed_title(site_title)
+            site_title ? "#{site_title} - Content Extraction Issue" : 'Content Extraction Issue'
+          end
+
+          # @param url [String]
+          # @param strategy [String]
+          # @return [String]
+          def empty_feed_description(url, strategy)
+            format(EMPTY_FEED_DESCRIPTION_TEMPLATE, url: url, strategy: strategy)
+          end
+
+          # @param url [String]
+          # @return [String]
+          def empty_feed_item(url)
+            format(EMPTY_FEED_ITEM_TEMPLATE, url: url)
+          end
+        end
+      end
+      # rubocop:enable Metrics/ModuleLength, Metrics/ClassLength, Metrics/MethodLength, Metrics/AbcSize
+    end
+  end
+end

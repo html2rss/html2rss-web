@@ -43,8 +43,8 @@ RSpec.describe Html2rss::Web::App do
 
   def stub_static_renderers(result, rss_body:, json_body:)
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-    allow(Html2rss::Web::Feeds::RssRenderer).to receive(:call).with(result).and_return(rss_body)
-    allow(Html2rss::Web::Feeds::JsonRenderer).to receive(:call).with(result).and_return(json_body)
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :rss).and_return(rss_body)
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :json_feed).and_return(json_body)
   end
 
   def static_service_error_result
@@ -65,7 +65,7 @@ RSpec.describe Html2rss::Web::App do
       .with(feed_name)
       .and_return({ channel: { ttl: 180 } })
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(static_service_error_result)
-    allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call_error).and_return('<error/>')
   end
 
   def service_error_response_tuple(path)
@@ -183,7 +183,7 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'renders XML not found when static feed config is missing' do
-      allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:call_error).and_return('<error/>')
 
       get '/missing-feed'
 
