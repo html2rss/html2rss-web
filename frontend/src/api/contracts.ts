@@ -11,7 +11,7 @@ export interface FeedRecord {
   updated_at: string;
 }
 
-export type FeedWorkflowState = 'created' | 'preview_loading' | 'preview_ready' | 'preview_failed';
+export type FeedPreviewStatus = 'created' | 'preview_loading' | 'preview_ready' | 'preview_failed';
 export type FeedRetryAction = 'alternate' | 'primary' | 'none';
 export type FeedNextAction = 'enter_token' | 'correct_input' | 'retry' | 'wait' | 'none';
 
@@ -30,6 +30,7 @@ export interface FeedPreviewWarning {
 }
 
 export interface FeedPreviewState {
+  status: FeedPreviewStatus;
   items: FeedPreviewItem[];
   isLoading: boolean;
 }
@@ -37,7 +38,6 @@ export interface FeedPreviewState {
 export interface CreatedFeedResult {
   feed: FeedRecord;
   preview: FeedPreviewState;
-  workflowState: FeedWorkflowState;
   warnings: FeedPreviewWarning[];
 }
 

@@ -59,7 +59,7 @@ describe('useFeedConversion', () => {
     expect(fetchMock.mock.calls).toHaveLength(2);
 
     await waitFor(() => {
-      expect(result.current.result?.workflowState).toBe('preview_ready');
+      expect(result.current.result?.preview.status).toBe('preview_ready');
       expect(result.current.result?.preview.items[0]?.title).toBe('Preview item');
     });
   });
@@ -81,7 +81,7 @@ describe('useFeedConversion', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.result?.workflowState).toBe('preview_ready');
+      expect(result.current.result?.preview.status).toBe('preview_ready');
     });
     expect(fetchMock.mock.calls.filter((call) => String(call[0]) === '/api/v1/feeds').length).toBe(1);
     expect(
@@ -103,7 +103,7 @@ describe('useFeedConversion', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.result?.workflowState).toBe('preview_failed');
+      expect(result.current.result?.preview.status).toBe('preview_failed');
       expect(result.current.result?.warnings[0]).toMatchObject({
         code: 'PREVIEW_HTTP_422',
         retryable: false,
@@ -121,12 +121,12 @@ describe('useFeedConversion', () => {
     await act(async () => {
       await result.current.convertFeed('https://example.com/articles', 'token-123');
     });
-    await waitFor(() => expect(result.current.result?.workflowState).toBe('preview_failed'));
+    await waitFor(() => expect(result.current.result?.preview.status).toBe('preview_failed'));
 
     fetchMock.mockResolvedValueOnce(previewResponse());
     act(() => result.current.retryPreviewFetch());
 
-    await waitFor(() => expect(result.current.result?.workflowState).toBe('preview_ready'));
+    await waitFor(() => expect(result.current.result?.preview.status).toBe('preview_ready'));
     expect(fetchMock.mock.calls.filter((call) => String(call[0]) === '/api/v1/feeds').length).toBe(1);
   });
 });
