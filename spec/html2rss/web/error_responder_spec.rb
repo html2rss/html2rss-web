@@ -48,7 +48,7 @@ RSpec.describe Html2rss::Web::ErrorResponder do
   end
 
   def legacy_error_response
-    allow(Html2rss::Web::XmlBuilder).to receive(:build_error_feed).and_return('<error/>')
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:call_error).and_return('<error/>')
     response, body = respond_with(
       error: Html2rss::Web::InternalServerError.new('oops'),
       path: '/legacy'

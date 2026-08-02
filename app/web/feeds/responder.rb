@@ -81,9 +81,7 @@ module Html2rss
           # @param representation [Symbol]
           # @return [String]
           def render_result(result, representation)
-            return JsonRenderer.call(result) if representation == FeedResponseFormat::JSON_FEED
-
-            RssRenderer.call(result)
+            Renderer.call(result, format: representation)
           end
 
           # @param target_kind [Symbol]
