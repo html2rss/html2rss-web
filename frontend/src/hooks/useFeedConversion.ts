@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult, FeedCreationError } from '../api/contracts';
-import { buildLocalError, normalizeFeedCreationError } from '../feeds/feedCreationError';
-import { requestFeedCreation } from '../feeds/feedsApi';
 import {
+  buildLocalError,
+  normalizeFeedCreationError,
+  requestFeedCreation,
   buildCreatedFeedResult,
   buildPreviewLoadingResult,
   buildPreviewWarning,
   loadPreviewItemsWithRetry,
   PREVIEW_UNAVAILABLE_MESSAGE,
-} from '../feeds/previewHydration';
-import { isAbortError } from '../feeds/shared';
+  isAbortError,
+} from '../feeds/feedsService';
 import { isNormalizedHttpUrl, normalizeUserUrl } from '../utils/url';
 
 interface ConversionState {

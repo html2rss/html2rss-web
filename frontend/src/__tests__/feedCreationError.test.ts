@@ -3,7 +3,7 @@ import {
   buildLocalError,
   normalizeFeedCreationError,
   normalizeFeedCreationErrorFromResponse,
-} from '../feeds/feedCreationError';
+} from '../feeds/feedsService';
 
 describe('feedCreationError', () => {
   it('normalizes structured response envelopes without parsing message text', () => {
