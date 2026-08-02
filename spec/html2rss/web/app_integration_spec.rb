@@ -243,6 +243,9 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       allow(Html2rss::Web::FeedToken::Signer)
         .to receive(:validate).with(raw_token, feed_url, anything)
         .and_return(escaped_token_payload)
+      allow(Html2rss::Web::FeedToken::Signer)
+        .to receive(:validate_decoded).with(escaped_token_payload, feed_url, anything)
+        .and_return(escaped_token_payload)
     end
 
     # @return [void]
