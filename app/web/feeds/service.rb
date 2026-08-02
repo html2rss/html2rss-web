@@ -31,7 +31,7 @@ module Html2rss
             success_result(feed, resolved_source, cache_key)
           rescue StandardError => error
             decision = ErrorClassifier.classify(error)
-            return empty_result(error, resolved_source, cache_key) if decision
+            return empty_result(error, resolved_source, cache_key) if decision&.cacheable
 
             error_result(error, resolved_source, cache_key)
           end

@@ -165,4 +165,28 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.error_kind).to eq(:extraction_empty)
     end
   end
+
+  context 'when a classified decision is not cacheable' do
+    before do
+      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input)
+                                       .and_raise(StandardError, 'classified boom')
+      allow(Html2rss::Web::ErrorClassifier).to receive(:classify).and_return(
+        Html2rss::Web::ErrorClassifier::Decision.new(
+          status: 422,
+          code: 'NON_CACHEABLE',
+          message: 'classified but not cacheable',
+          kind: 'input',
+          cacheable: false
+        )
+      )
+    end
+
+    it 'marks the result as an error instead of empty' do
+      expect(result.status).to eq(:error)
+    end
+
+    it 'does not treat the failure as extraction_empty' do
+      expect(result.error_kind).to be_nil
+    end
+  end
 end
