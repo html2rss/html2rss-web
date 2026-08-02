@@ -166,4 +166,3 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     end
   end
 end
-

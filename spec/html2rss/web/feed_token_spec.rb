@@ -145,9 +145,10 @@ RSpec.describe Html2rss::Web::FeedToken do
         document = JSON.parse(inflated, symbolize_names: true)
 
         expect(document.keys).to contain_exactly(:p, :s)
-        expect(document[:p]).to include(u: 'alice', l: 'https://example.com/feed', t: 'some_strategy')
-        expect(document[:p]).to have_key(:e)
-        expect(document[:s]).to eq(token.signature)
+        expect(document).to include(
+          p: a_hash_including(u: 'alice', l: 'https://example.com/feed', t: 'some_strategy', e: kind_of(Integer)),
+          s: token.signature
+        )
       end
     end
   end

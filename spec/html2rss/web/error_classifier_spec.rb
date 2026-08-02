@@ -8,6 +8,17 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
   end
 
+  def stub_no_feed_items_extracted_with_attempts
+    stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
+      def initialize(attempts:)
+        @attempts = attempts
+        super('No feed items extracted after auto fallback')
+      end
+
+      attr_reader :attempts
+    end)
+  end
+
   describe '.classify' do
     it 'returns the extraction-empty decision for NoFeedItemsExtracted' do
       klass = stub_no_feed_items_extracted
@@ -27,25 +38,16 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'ignores attempts payload when mapping HTTP semantics' do
-      klass = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-        def initialize(attempts:)
-          @attempts = attempts
-          super('No feed items extracted after auto fallback')
-        end
-
-        attr_reader :attempts
-      end)
+      klass = stub_no_feed_items_extracted_with_attempts
       error = klass.new(attempts: [{ strategy: :faraday, items_count: 0 }])
 
-      decision = described_class.classify(error)
-
-      expect(decision).to have_attributes(
+      expect(described_class.classify(error)).to have_attributes(
         status: 422,
         code: 'EXTRACTION_EMPTY',
         kind: 'input',
-        cacheable: true
+        cacheable: true,
+        message: a_string_including('could not extract feed items')
       )
-      expect(decision.message).to include('could not extract feed items')
     end
 
     it 'returns nil for unrelated errors' do
