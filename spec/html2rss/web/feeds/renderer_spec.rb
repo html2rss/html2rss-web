@@ -95,9 +95,16 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
   end
 
   describe '.call_error' do
-    it 'renders error in RSS' do
+    before do
+      config_double = instance_double(Html2rss::Config)
+      allow(Html2rss).to receive(:configuration).and_return(config_double)
+      allow(config_double).to receive(:stylesheets).and_return([{ href: '/custom.xsl', type: 'text/xsl' }])
+    end
+
+    it 'renders error in RSS and applies stylesheets', :aggregate_failures do
       xml = described_class.call_error(message: 'Invalid key', format: :rss)
       expect(xml).to include('Failed to generate feed: Invalid key')
+      expect(xml).to include('<?xml-stylesheet href="/custom.xsl" type="text/xsl" media="all"?>')
     end
 
     it 'renders error in JSON Feed' do
