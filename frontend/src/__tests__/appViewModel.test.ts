@@ -92,4 +92,15 @@ describe('deriveAppViewModel', () => {
       })
     ).toMatchObject({ kind: 'error', message: 'Bad url', errorKind: 'input' });
   });
+
+  it('returns submitting on token route while converting', () => {
+    expect(
+      deriveAppViewModel({
+        feedFieldErrors: emptyErrors,
+        isConverting: true,
+        routeKind: 'token',
+        tokenError: '',
+      })
+    ).toEqual({ kind: 'submitting' });
+  });
 });

@@ -58,6 +58,8 @@ export function deriveAppViewModel({
     };
   }
 
+  if (isConverting) return { kind: 'submitting' };
+
   if (routeKind === 'token' || tokenError) {
     return { kind: 'token_prompt', tokenError, error: conversionError };
   }
@@ -74,8 +76,6 @@ export function deriveAppViewModel({
       errorKind: conversionError?.kind,
     };
   }
-
-  if (isConverting) return { kind: 'submitting' };
 
   if (conversionError) {
     return {
