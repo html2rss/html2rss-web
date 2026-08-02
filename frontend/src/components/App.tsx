@@ -95,8 +95,7 @@ export function App() {
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const featuredFeeds = metadata?.instance.featured_feeds ?? [];
-  const submitDisabled =
-    isConverting || !feedCreation.enabled || viewModel.kind === 'token_prompt';
+  const submitDisabled = isConverting || !feedCreation.enabled || viewModel.kind === 'token_prompt';
 
   const setFeedField = (key: 'url', value: string) => {
     setFeedFormData((previous) => {

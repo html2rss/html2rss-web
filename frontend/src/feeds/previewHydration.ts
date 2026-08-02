@@ -73,10 +73,7 @@ export async function loadPreviewItemsWithRetry(
   );
 }
 
-export async function loadPreviewItems(
-  previewUrl: string,
-  signal?: AbortSignal
-): Promise<PreviewLoadResult> {
+export async function loadPreviewItems(previewUrl: string, signal?: AbortSignal): Promise<PreviewLoadResult> {
   let response: Response;
 
   try {

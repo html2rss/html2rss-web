@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult, FeedCreationError } from '../api/contracts';
-import {
-  buildLocalError,
-  normalizeFeedCreationError,
-} from '../feeds/feedCreationError';
+import { buildLocalError, normalizeFeedCreationError } from '../feeds/feedCreationError';
 import { requestFeedCreation } from '../feeds/feedsApi';
 import {
   buildCreatedFeedResult,

@@ -27,11 +27,7 @@ function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties
   );
 }
 
-export function ResultDisplay({
-  viewModel,
-  onCreateAnother,
-  onRetryPreview,
-}: ResultDisplayProperties) {
+export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: ResultDisplayProperties) {
   const [copied, setCopied] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
   const { feed, preview, warnings } = viewModel;
