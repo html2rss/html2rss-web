@@ -85,13 +85,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   end
 
   def ghost_feed_token
-    Html2rss::Web::FeedToken
-      .create_with_validation(
-        username: 'ghost',
-        url: feed_url,
-        secret_key: ENV.fetch('HTML2RSS_SECRET_KEY')
-      )
-      .encode
+    token = Html2rss::Web::FeedToken::Signer.create(
+      username: 'ghost',
+      url: feed_url,
+      secret_key: ENV.fetch('HTML2RSS_SECRET_KEY')
+    )
+    Html2rss::Web::FeedToken::Codec.encode(token)
   end
 
   def valid_feed_token

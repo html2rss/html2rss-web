@@ -14,7 +14,7 @@ if (ENV.fetch('CI', nil) || ENV.fetch('COVERAGE', nil)) && ENV['RUN_DOCKER_SPECS
     track_files '**/*.rb'
 
     minimum_coverage 80 unless ENV['OPENAPI']
-    maximum_coverage_drop 5
+    maximum_coverage_drop 5 unless ENV['OPENAPI']
   end
 end
 

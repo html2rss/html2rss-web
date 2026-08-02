@@ -9,43 +9,11 @@ import { useFeedConversion } from '../hooks/useFeedConversion';
 import { useAppRoute } from '../routes/appRoute';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { normalizeUserUrl } from '../utils/url';
-import type { WorkflowState } from './AppPanels';
+import { deriveAppViewModel } from '../appViewModel';
 import type { FeedCreationError } from '../api/contracts';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
-
-function deriveWorkflowState({
-  conversionError,
-  feedFieldErrors,
-  isConverting,
-  routeKind,
-  tokenError,
-  tokenStateError,
-  metadataError,
-}: {
-  conversionError?: FeedCreationError;
-  feedFieldErrors: { url: string; form: string };
-  isConverting: boolean;
-  routeKind: string;
-  tokenError: string;
-  tokenStateError?: string;
-  metadataError?: string;
-}): WorkflowState {
-  if (tokenStateError || metadataError) return 'error';
-  if (routeKind === 'token' || tokenError) return 'token_prompt';
-  if (conversionError?.nextAction === 'enter_token' || conversionError?.kind === 'auth')
-    return 'token_prompt';
-  if (routeKind === 'result') return 'result';
-  if (feedFieldErrors.url || feedFieldErrors.form || conversionError?.nextAction === 'correct_input') {
-    return 'error';
-  }
-  if (isConverting) return 'submitting';
-
-  if (conversionError) return 'error';
-
-  return 'create';
-}
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
@@ -100,13 +68,13 @@ export function App() {
   const isTokenRoute = route.kind === 'token';
   const activeResult =
     route.kind === 'result' && result?.feed.feed_token === route.feedToken ? result : undefined;
-  let visibleRouteKind = 'create';
+  let visibleRouteKind: 'create' | 'token' | 'result' = 'create';
   if (activeResult) {
     visibleRouteKind = 'result';
   } else if (isTokenRoute) {
     visibleRouteKind = 'token';
   }
-  const workflowState: WorkflowState = deriveWorkflowState({
+  const viewModel = deriveAppViewModel({
     conversionError,
     feedFieldErrors,
     isConverting,
@@ -114,6 +82,7 @@ export function App() {
     tokenError,
     tokenStateError,
     metadataError,
+    result: activeResult,
   });
 
   useEffect(() => {
@@ -126,7 +95,7 @@ export function App() {
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const featuredFeeds = metadata?.instance.featured_feeds ?? [];
-  const submitDisabled = isConverting || !feedCreation.enabled || isTokenRoute;
+  const submitDisabled = isConverting || !feedCreation.enabled || viewModel.kind === 'token_prompt';
 
   const setFeedField = (key: 'url', value: string) => {
     setFeedFormData((previous) => {
@@ -262,11 +231,10 @@ export function App() {
         <p>Reading feed-generation capabilities.</p>
       </Notice>
     );
-  } else if (activeResult) {
+  } else if (viewModel.kind === 'result') {
     bodyContent = (
       <ResultDisplay
-        result={activeResult}
-        workflowState={workflowState}
+        viewModel={viewModel}
         onCreateAnother={handleCreateAnother}
         onRetryPreview={retryPreviewFetch}
       />
@@ -275,18 +243,13 @@ export function App() {
     bodyContent = (
       <CreateFeedPanel
         focusComposerKey={focusCreateComposerKey}
-        workflowState={workflowState}
+        viewModel={viewModel}
         feedFormData={feedFormData}
         feedFieldErrors={feedFieldErrors}
-        conversionError={conversionError}
-        errorKind={conversionError?.kind}
-        isConverting={isConverting}
         submitDisabled={submitDisabled}
         feedCreationEnabled={feedCreation.enabled}
         featuredFeeds={featuredFeeds}
         tokenDraft={tokenDraft}
-        tokenError={tokenError}
-        showTokenPrompt={isTokenRoute}
         onFeedSubmit={handleFeedSubmit}
         onFeedFieldChange={setFeedField}
         onTokenDraftChange={(value) => {

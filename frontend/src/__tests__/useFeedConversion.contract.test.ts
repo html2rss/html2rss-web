@@ -61,7 +61,7 @@ describe('useFeedConversion contract', () => {
     expect(receivedAuthorization).toBe('Bearer test-token-123');
     expect(result.current.error).toBeUndefined();
     expect(result.current.result?.feed.feed_token).toBe('generated-token');
-    await waitFor(() => expect(result.current.result?.workflowState).toBe('preview_ready'));
+    await waitFor(() => expect(result.current.result?.preview.status).toBe('preview_ready'));
     fetchSpy.mockRestore();
   });
 
@@ -178,7 +178,7 @@ describe('useFeedConversion contract', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.result?.workflowState).toBe('preview_failed');
+      expect(result.current.result?.preview.status).toBe('preview_failed');
       expect(result.current.result?.warnings[0]?.code).toBe('PREVIEW_HTTP_422');
     });
     fetchSpy.mockRestore();

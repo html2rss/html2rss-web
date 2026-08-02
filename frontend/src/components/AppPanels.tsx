@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
-import type { FeedCreationError } from '../api/contracts';
+import type { AppViewModel } from '../appViewModel';
 
 export interface FeedFormData {
   url: string;
@@ -13,24 +13,17 @@ export interface FeedFieldErrors {
   form: string;
 }
 
-export type WorkflowState = 'create' | 'submitting' | 'token_prompt' | 'result' | 'error';
-
-export type WorkflowErrorKind = FeedCreationError['kind'];
+type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' }>;
 
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
-  workflowState: WorkflowState;
+  viewModel: CreatePanelViewModel;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
-  conversionError?: FeedCreationError;
-  errorKind?: WorkflowErrorKind;
-  isConverting: boolean;
   submitDisabled: boolean;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
   tokenDraft: string;
-  tokenError: string;
-  showTokenPrompt: boolean;
   onFeedSubmit: (event: Event) => void;
   onFeedFieldChange: (key: 'url', value: string) => void;
   onTokenDraftChange: (value: string) => void;
@@ -41,18 +34,13 @@ interface CreateFeedPanelProperties {
 
 export function CreateFeedPanel({
   focusComposerKey,
-  workflowState,
+  viewModel,
   feedFormData,
   feedFieldErrors,
-  conversionError,
-  errorKind,
-  isConverting,
   submitDisabled,
   feedCreationEnabled,
   featuredFeeds,
   tokenDraft,
-  tokenError,
-  showTokenPrompt,
   onFeedSubmit,
   onFeedFieldChange,
   onTokenDraftChange,
@@ -62,7 +50,16 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProperties) {
   const urlInputReference = useRef<HTMLInputElement>(undefined as never);
   const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
-  const failureMessage = conversionError?.message || feedFieldErrors.form;
+  const isTokenPrompt = viewModel.kind === 'token_prompt';
+  const isConverting = viewModel.kind === 'submitting';
+  const conversionError =
+    viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
+  const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
+  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
+  const failureMessage =
+    (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+    conversionError?.message ||
+    feedFieldErrors.form;
   const isShowRetryButton = Boolean(
     conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
   );
@@ -82,23 +79,23 @@ export function CreateFeedPanel({
   }, [focusComposerKey]);
 
   useLayoutEffect(() => {
-    if (!showTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
+    if (!isTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
 
     const focusHandle = requestAnimationFrame(() => {
       tokenInputReference.current?.focus();
     });
 
     return () => cancelAnimationFrame(focusHandle);
-  }, [showTokenPrompt]);
+  }, [isTokenPrompt]);
 
   return (
     <form
       class="form-shell form-shell--minimal"
       onSubmit={onFeedSubmit}
-      data-state={workflowState}
+      data-state={viewModel.kind}
       data-error-kind={errorKind}
     >
-      <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
+      <div class={`field-stack field-stack--dense${isTokenPrompt ? ' field-stack--inactive' : ''}`}>
         <DominantField
           className="layout-rail-reading"
           id="url"
@@ -154,7 +151,7 @@ export function CreateFeedPanel({
         )}
       </div>
 
-      {showTokenPrompt && (
+      {isTokenPrompt && (
         <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
           <div class="token-gate__copy">
             <h2>Enter access token</h2>

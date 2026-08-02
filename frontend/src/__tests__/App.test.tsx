@@ -31,13 +31,11 @@ const mockCreatedFeedResult = {
     json_public_url: '/api/v1/feeds/generated-token.json',
   },
   preview: {
+    status: 'created' as const,
     items: [],
-    error: undefined,
     isLoading: true,
   },
-  workflowState: 'created' as const,
   warnings: [],
-  retry: undefined,
 };
 
 describe('App', () => {
@@ -246,10 +244,10 @@ describe('App', () => {
           json_public_url: '/api/v1/feeds/example-token.json',
         },
         preview: {
+          status: 'preview_failed' as const,
           items: [],
           isLoading: false,
         },
-        workflowState: 'preview_failed' as const,
         warnings: [
           {
             code: 'preview_unavailable',
@@ -258,7 +256,6 @@ describe('App', () => {
             nextAction: 'none',
           },
         ],
-        retry: undefined,
       },
       error: undefined,
       convertFeed: mockConvertFeed,
@@ -288,6 +285,31 @@ describe('App', () => {
       isConverting: false,
       result: undefined,
       error: {
+        kind: 'server',
+        code: 'INTERNAL_SERVER_ERROR',
+        retryable: true,
+        nextAction: 'retry',
+        retryAction: 'primary',
+        message: 'Access denied',
+      },
+      convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
+      clearResult: mockClearResult,
+      retryPreviewFetch: mockRetryPreviewFetch,
+    });
+
+    render(<App />);
+
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
+    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(screen.getByText('Access denied')).toBeInTheDocument();
+  });
+
+  it('maps auth conversion failures onto the token_prompt view model', () => {
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: false,
+      result: undefined,
+      error: {
         kind: 'auth',
         code: 'UNAUTHORIZED',
         retryable: false,
@@ -303,7 +325,8 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
+    expect(screen.getByText('Enter access token')).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
