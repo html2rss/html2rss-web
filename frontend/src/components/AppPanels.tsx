@@ -50,7 +50,7 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProperties) {
   const urlInputReference = useRef<HTMLInputElement>(undefined as never);
   const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
-  const showTokenPrompt = viewModel.kind === 'token_prompt';
+  const isTokenPrompt = viewModel.kind === 'token_prompt';
   const isConverting = viewModel.kind === 'submitting';
   const conversionError =
     viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
@@ -79,14 +79,14 @@ export function CreateFeedPanel({
   }, [focusComposerKey]);
 
   useLayoutEffect(() => {
-    if (!showTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
+    if (!isTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
 
     const focusHandle = requestAnimationFrame(() => {
       tokenInputReference.current?.focus();
     });
 
     return () => cancelAnimationFrame(focusHandle);
-  }, [showTokenPrompt]);
+  }, [isTokenPrompt]);
 
   return (
     <form
@@ -95,7 +95,7 @@ export function CreateFeedPanel({
       data-state={viewModel.kind}
       data-error-kind={errorKind}
     >
-      <div class={`field-stack field-stack--dense${showTokenPrompt ? ' field-stack--inactive' : ''}`}>
+      <div class={`field-stack field-stack--dense${isTokenPrompt ? ' field-stack--inactive' : ''}`}>
         <DominantField
           className="layout-rail-reading"
           id="url"
@@ -151,7 +151,7 @@ export function CreateFeedPanel({
         )}
       </div>
 
-      {showTokenPrompt && (
+      {isTokenPrompt && (
         <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
           <div class="token-gate__copy">
             <h2>Enter access token</h2>

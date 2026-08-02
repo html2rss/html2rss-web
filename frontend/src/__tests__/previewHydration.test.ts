@@ -46,7 +46,7 @@ describe('previewHydration', () => {
       { title: 'Five' },
       { title: 'Six' },
       { title: '' },
-      null,
+      undefined,
     ]);
 
     expect(items).toHaveLength(5);
