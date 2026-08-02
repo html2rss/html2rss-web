@@ -31,7 +31,16 @@ module Html2rss
           # @param secret_key [String]
           # @return [Html2rss::Web::FeedToken, nil]
           def validate(encoded_token, expected_url, secret_key)
-            token = Codec.decode(encoded_token)
+            validate_decoded(Codec.decode(encoded_token), expected_url, secret_key)
+          end
+
+          # Validates signature, URL binding, and expiry for an already-decoded token.
+          #
+          # @param token [Html2rss::Web::FeedToken, nil]
+          # @param expected_url [String, nil]
+          # @param secret_key [String]
+          # @return [Html2rss::Web::FeedToken, nil]
+          def validate_decoded(token, expected_url, secret_key)
             return unless token
             return unless valid_signature?(token, secret_key)
             return unless token.valid_for_url?(expected_url)

@@ -100,6 +100,41 @@ RSpec.describe Html2rss::Web::FeedToken do
       end
     end
 
+    describe '.validate_decoded' do
+      let(:secret_key) { 'test-secret' }
+      let(:url) { 'https://example.com/feed' }
+      let(:token) do
+        described_class.create(
+          username: 'alice',
+          url:,
+          secret_key:,
+          strategy: 'some_strategy'
+        )
+      end
+
+      it 'returns the token when signature, url, and expiry are valid' do
+        expect(described_class.validate_decoded(token, url, secret_key)).to eq(token)
+      end
+
+      it 'returns nil for wrong url' do
+        expect(described_class.validate_decoded(token, 'https://different.com', secret_key)).to be_nil
+      end
+
+      it 'returns nil for wrong secret' do
+        expect(described_class.validate_decoded(token, url, 'wrong-secret')).to be_nil
+      end
+
+      it 'returns nil for expired tokens' do
+        expired = described_class.create(username: 'alice', url:, secret_key:, expires_in: -10)
+
+        expect(described_class.validate_decoded(expired, url, secret_key)).to be_nil
+      end
+
+      it 'returns nil when token is nil' do
+        expect(described_class.validate_decoded(nil, url, secret_key)).to be_nil
+      end
+    end
+
     describe '.valid_signature?' do
       it 'checks the signature against the payload' do
         token = described_class.create(
