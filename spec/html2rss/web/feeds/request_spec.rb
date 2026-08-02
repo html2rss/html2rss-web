@@ -7,12 +7,12 @@ RSpec.describe Html2rss::Web::Feeds::Request do
   let(:request) { instance_double(Rack::Request, params: { 'page' => '2' }) }
 
   before do
-    allow(Html2rss::Web::FeedResponseFormat).to receive(:for_request).with(request).and_return(
-      Html2rss::Web::FeedResponseFormat::JSON_FEED
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:for_request).with(request).and_return(
+      Html2rss::Web::Feeds::Renderer::JSON_FEED
     )
-    allow(Html2rss::Web::FeedResponseFormat).to receive(:strip_known_extension)
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:strip_known_extension)
       .with('legacy.json').and_return('legacy')
-    allow(Html2rss::Web::FeedResponseFormat).to receive(:strip_known_extension)
+    allow(Html2rss::Web::Feeds::Renderer).to receive(:strip_known_extension)
       .with('token.json').and_return('token')
   end
 
@@ -24,7 +24,7 @@ RSpec.describe Html2rss::Web::Feeds::Request do
     parsed = described_class.call(request:, target_kind: :static, identifier: 'legacy.json')
 
     expect(request_tuple(parsed)).to eq(
-      [:static, Html2rss::Web::FeedResponseFormat::JSON_FEED, 'legacy', nil, { 'page' => '2' }]
+      [:static, Html2rss::Web::Feeds::Renderer::JSON_FEED, 'legacy', nil, { 'page' => '2' }]
     )
   end
 
@@ -32,7 +32,7 @@ RSpec.describe Html2rss::Web::Feeds::Request do
     parsed = described_class.call(request:, target_kind: :token, identifier: 'token.json')
 
     expect(request_tuple(parsed)).to eq(
-      [:token, Html2rss::Web::FeedResponseFormat::JSON_FEED, nil, 'token', { 'page' => '2' }]
+      [:token, Html2rss::Web::Feeds::Renderer::JSON_FEED, nil, 'token', { 'page' => '2' }]
     )
   end
 end

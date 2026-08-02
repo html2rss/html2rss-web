@@ -16,7 +16,7 @@ module Html2rss
             build_request(
               request: request,
               target_kind: target_kind,
-              identifier: normalize_identifier(target_kind, FeedResponseFormat.strip_known_extension(identifier))
+              identifier: normalize_identifier(target_kind, Renderer.strip_known_extension(identifier))
             )
           end
 
@@ -29,7 +29,7 @@ module Html2rss
           def build_request(request:, target_kind:, identifier:)
             Contracts::Request.new(
               target_kind: target_kind,
-              representation: FeedResponseFormat.for_request(request),
+              representation: Renderer.for_request(request),
               feed_name: target_kind == :static ? identifier : nil,
               token: target_kind == :token ? identifier : nil,
               params: request.params.to_h

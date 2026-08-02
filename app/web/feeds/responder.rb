@@ -13,7 +13,7 @@ module Html2rss
           # @return [String] serialized feed body.
           def call(request:, target_kind:, identifier:)
             feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
-            body = write_response(response: request.response, representation: feed_request.representation, result:)
+            body = Renderer.render(result, response: request.response, request: request)
             emit_response_result(target_kind:, identifier:, feed_request:, resolved_source:, result:)
             body
           rescue StandardError => error
@@ -54,34 +54,6 @@ module Html2rss
               resolved_source:,
               result:
             )
-          end
-
-          # @param response [Rack::Response]
-          # @param representation [Symbol]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [String]
-          def write_response(response:, representation:, result:)
-            response.status = status_for(result.status)
-            response['Content-Type'] = FeedResponseFormat.content_type(representation)
-            apply_cache_headers(response, result)
-            ::Html2rss::Web::HttpCache.vary(response, 'Accept')
-            render_result(result, representation)
-          end
-
-          # @param response [Rack::Response]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [void]
-          def apply_cache_headers(response, result)
-            return ::Html2rss::Web::HttpCache.expires_now(response) if result.status == :error
-
-            ::Html2rss::Web::HttpCache.expires(response, result.ttl_seconds, cache_control: 'public')
-          end
-
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @param representation [Symbol]
-          # @return [String]
-          def render_result(result, representation)
-            Renderer.call(result, format: representation)
           end
 
           # @param target_kind [Symbol]
@@ -151,15 +123,6 @@ module Html2rss
             details[:feed_name] = identifier if target_kind == :static
 
             Observability.emit(event_name: 'feed.render', outcome: 'failure', details:, level: :warn)
-          end
-
-          # @param status [Symbol]
-          # @return [Integer]
-          def status_for(status)
-            return 200 if status == :ok
-            return 422 if status == :empty
-
-            500
           end
         end
       end
