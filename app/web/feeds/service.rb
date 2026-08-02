@@ -30,7 +30,8 @@ module Html2rss
             feed = Html2rss.feed(resolved_source.generator_input)
             success_result(feed, resolved_source, cache_key)
           rescue StandardError => error
-            return empty_result(error, resolved_source, cache_key) if extraction_empty_error?(error)
+            decision = ErrorClassifier.classify(error)
+            return empty_result(error, resolved_source, cache_key) if decision
 
             error_result(error, resolved_source, cache_key)
           end
@@ -101,7 +102,7 @@ module Html2rss
             )
           end
 
-          # @param error [Html2rss::NoFeedItemsExtracted]
+          # @param error [StandardError]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -115,30 +116,6 @@ module Html2rss
               error_message: error.message,
               error_kind: :extraction_empty
             )
-          end
-
-          # @param error [StandardError]
-          # @return [Boolean]
-          def extraction_empty_error?(error)
-            return false unless defined?(::Html2rss::NoFeedItemsExtracted)
-
-            error_chain(error).any?(::Html2rss::NoFeedItemsExtracted)
-          end
-
-          # @param error [StandardError, nil]
-          # @return [Array<StandardError>]
-          def error_chain(error)
-            errors = []
-            seen = {}.compare_by_identity
-            current = error
-
-            while current && !seen[current]
-              errors << current
-              seen[current] = true
-              current = current.respond_to?(:cause) ? current.cause : nil
-            end
-
-            errors
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]

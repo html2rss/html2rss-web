@@ -189,8 +189,8 @@ RSpec.describe Html2rss::Web::ErrorResponder do
   # @return [Hash{String=>Object}]
   def extraction_empty_error_fields
     {
-      'code' => Html2rss::Web::ErrorResponder::EXTRACTION_EMPTY_CODE,
-      'message' => Html2rss::Web::ErrorResponder::EXTRACTION_EMPTY_MESSAGE,
+      'code' => Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_CODE,
+      'message' => Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE,
       'kind' => 'input',
       'retryable' => false,
       'next_action' => 'correct_input',

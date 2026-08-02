@@ -152,5 +152,18 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
       expect(Html2rss).to have_received(:feed).once
     end
+
+    it 'maps NoFeedItemsExtracted nested in Exception#cause to empty extraction' do
+      root = no_feed_items_extracted_class.new(
+        attempts: [{ strategy: :faraday, items_count: 0, error_class: nil }]
+      )
+      wrapper = StandardError.new('strategy failed')
+      allow(wrapper).to receive(:cause).and_return(root)
+      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_raise(wrapper)
+
+      expect(result.status).to eq(:empty)
+      expect(result.error_kind).to eq(:extraction_empty)
+    end
   end
 end
+
