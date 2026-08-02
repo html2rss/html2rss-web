@@ -238,10 +238,10 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         strategy: 'faraday'
       )
 
-      allow(Html2rss::Web::FeedToken).to receive(:decode).with(raw_token).and_return(escaped_token_payload)
-      allow(Html2rss::Web::FeedToken).to receive(:decode).with(encoded_token).and_return(nil)
-      allow(Html2rss::Web::FeedToken)
-        .to receive(:validate_and_decode).with(raw_token, feed_url, anything)
+      allow(Html2rss::Web::FeedToken::Codec).to receive(:decode).with(raw_token).and_return(escaped_token_payload)
+      allow(Html2rss::Web::FeedToken::Codec).to receive(:decode).with(encoded_token).and_return(nil)
+      allow(Html2rss::Web::FeedToken::Signer)
+        .to receive(:validate).with(raw_token, feed_url, anything)
         .and_return(escaped_token_payload)
     end
 

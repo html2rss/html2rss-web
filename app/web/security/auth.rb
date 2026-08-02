@@ -28,20 +28,20 @@ module Html2rss
         # @param expires_in [Integer] seconds (default: 10 years)
         # @return [String, nil] signed feed token when generation succeeds.
         def generate_feed_token(username, url, strategy: nil, expires_in: FeedToken::DEFAULT_EXPIRY)
-          token = FeedToken.create_with_validation(
+          token = FeedToken::Signer.create(
             username: username,
             url: url,
             strategy: strategy,
             expires_in: expires_in,
             secret_key: secret_key
           )
-          token&.encode
+          token && FeedToken::Codec.encode(token)
         end
 
         # @param token [String]
         # @return [Html2rss::Web::FeedToken, nil]
         def validate_and_decode_feed_token(token)
-          decoded = FeedToken.decode(token)
+          decoded = FeedToken::Codec.decode(token)
           return unless decoded
 
           with_validated_token(token, decoded.url) { |validated| validated }
@@ -107,7 +107,7 @@ module Html2rss
         def with_validated_token(feed_token, url)
           return nil unless feed_token && url
 
-          token = FeedToken.validate_and_decode(feed_token, url, secret_key)
+          token = FeedToken::Signer.validate(feed_token, url, secret_key)
           assign_request_context_strategy(token&.strategy)
           SecurityLogger.log_token_usage(feed_token, url, !token.nil?)
           return nil unless token

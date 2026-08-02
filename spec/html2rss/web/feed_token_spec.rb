@@ -1,101 +1,122 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../app/web/security/feed_token'
-require_relative '../../../app/web/security/url_validator'
+require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::FeedToken do
-  describe '.create_with_validation' do
-    it 'creates a valid feed token' do
-      token = described_class.create_with_validation(
-        username: 'alice',
-        url: 'https://example.com/feed',
-        secret_key: 'test-secret',
-        strategy: 'some_strategy'
-      )
+  describe Html2rss::Web::FeedToken::Signer do
+    describe '.create' do
+      it 'creates a valid feed token' do
+        token = described_class.create(
+          username: 'alice',
+          url: 'https://example.com/feed',
+          secret_key: 'test-secret',
+          strategy: 'some_strategy'
+        )
 
-      expect(token).to be_a(described_class)
-      expect(token.username).to eq('alice')
+        expect(token).to be_a(Html2rss::Web::FeedToken)
+        expect(token.username).to eq('alice')
+      end
+
+      it 'stores the normalized attributes' do
+        token = described_class.create(
+          username: 'alice',
+          url: 'https://example.com/feed',
+          secret_key: 'test-secret',
+          strategy: 'some_strategy'
+        )
+
+        expect(token.url).to eq('https://example.com/feed')
+        expect(token.strategy).to eq('some_strategy')
+      end
+
+      it 'signs the token' do
+        token = described_class.create(
+          username: 'alice',
+          url: 'https://example.com/feed',
+          secret_key: 'test-secret',
+          strategy: 'some_strategy'
+        )
+
+        expect(token.signature).not_to be_nil
+      end
+
+      it 'returns nil for invalid username' do
+        token = described_class.create(
+          username: '',
+          url: 'https://example.com/feed',
+          secret_key: 'test-secret'
+        )
+
+        expect(token).to be_nil
+      end
+
+      it 'returns nil for invalid url' do
+        token = described_class.create(
+          username: 'alice',
+          url: 'not-a-url',
+          secret_key: 'test-secret'
+        )
+
+        expect(token).to be_nil
+      end
     end
 
-    it 'stores the normalized attributes' do
-      token = described_class.create_with_validation(
-        username: 'alice',
-        url: 'https://example.com/feed',
-        secret_key: 'test-secret',
-        strategy: 'some_strategy'
-      )
+    describe '.validate' do
+      let(:secret_key) { 'test-secret' }
+      let(:url) { 'https://example.com/feed' }
+      let(:token) do
+        described_class.create(
+          username: 'alice',
+          url:,
+          secret_key:,
+          strategy: 'some_strategy'
+        )
+      end
 
-      expect(token.url).to eq('https://example.com/feed')
-      expect(token.strategy).to eq('some_strategy')
+      it 'returns the token when valid' do
+        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
+
+        expect(described_class.validate(encoded, url, secret_key)).to eq(token)
+      end
+
+      it 'returns nil for wrong url' do
+        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
+
+        expect(described_class.validate(encoded, 'https://different.com', secret_key)).to be_nil
+      end
+
+      it 'returns nil for wrong secret' do
+        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
+
+        expect(described_class.validate(encoded, url, 'wrong-secret')).to be_nil
+      end
+
+      it 'returns nil for expired tokens' do
+        expired = described_class.create(username: 'alice', url:, secret_key:, expires_in: -10)
+        encoded = Html2rss::Web::FeedToken::Codec.encode(expired)
+
+        expect(described_class.validate(encoded, url, secret_key)).to be_nil
+      end
     end
 
-    it 'signs the token' do
-      token = described_class.create_with_validation(
-        username: 'alice',
-        url: 'https://example.com/feed',
-        secret_key: 'test-secret',
-        strategy: 'some_strategy'
-      )
+    describe '.valid_signature?' do
+      it 'checks the signature against the payload' do
+        token = described_class.create(
+          username: 'alice',
+          url: 'https://example.com/feed',
+          secret_key: 'test-secret'
+        )
 
-      expect(token.signature).not_to be_nil
-    end
-
-    it 'returns nil for invalid username' do
-      token = described_class.create_with_validation(
-        username: '',
-        url: 'https://example.com/feed',
-        secret_key: 'test-secret'
-      )
-
-      expect(token).to be_nil
-    end
-
-    it 'returns nil for invalid url' do
-      token = described_class.create_with_validation(
-        username: 'alice',
-        url: 'not-a-url',
-        secret_key: 'test-secret'
-      )
-
-      expect(token).to be_nil
+        expect(described_class.valid_signature?(token, 'test-secret')).to be(true)
+        expect(described_class.valid_signature?(token, 'wrong-secret')).to be(false)
+      end
     end
   end
 
-  describe '.validate_and_decode' do
-    let(:secret_key) { 'test-secret' }
-    let(:url) { 'https://example.com/feed' }
+  describe Html2rss::Web::FeedToken::Codec do
     let(:token) do
-      described_class.create_with_validation(
-        username: 'alice',
-        url:,
-        secret_key:,
-        strategy: 'some_strategy'
-      )
-    end
-
-    it 'returns the token when valid' do
-      expect(described_class.validate_and_decode(token.encode, url, secret_key)).to eq(token)
-    end
-
-    it 'returns nil for wrong url' do
-      expect(described_class.validate_and_decode(token.encode, 'https://different.com', secret_key)).to be_nil
-    end
-
-    it 'returns nil for wrong secret' do
-      expect(described_class.validate_and_decode(token.encode, url, 'wrong-secret')).to be_nil
-    end
-
-    it 'returns nil for expired tokens' do
-      expired = described_class.create_with_validation(username: 'alice', url:, secret_key:, expires_in: -10)
-
-      expect(described_class.validate_and_decode(expired.encode, url, secret_key)).to be_nil
-    end
-  end
-
-  describe '.decode' do
-    let(:token) do
-      described_class.create_with_validation(
+      Html2rss::Web::FeedToken::Signer.create(
         username: 'alice',
         url: 'https://example.com/feed',
         secret_key: 'test-secret',
@@ -103,16 +124,31 @@ RSpec.describe Html2rss::Web::FeedToken do
       )
     end
 
-    it 'decodes valid payloads' do
-      expect(described_class.decode(token.encode)).to eq(token)
+    describe '.decode' do
+      it 'decodes valid payloads' do
+        expect(described_class.decode(described_class.encode(token))).to eq(token)
+      end
+
+      it 'rejects invalid strings' do
+        expect(described_class.decode('invalid')).to be_nil
+      end
+
+      it 'rejects nil payloads' do
+        expect(described_class.decode(nil)).to be_nil
+      end
     end
 
-    it 'rejects invalid strings' do
-      expect(described_class.decode('invalid')).to be_nil
-    end
+    describe 'wire format compatibility' do
+      it 'round-trips zlib+base64 JSON with p/s and u/l/e/t keys' do
+        encoded = described_class.encode(token)
+        inflated = Zlib::Inflate.inflate(Base64.urlsafe_decode64(encoded))
+        document = JSON.parse(inflated, symbolize_names: true)
 
-    it 'rejects nil payloads' do
-      expect(described_class.decode(nil)).to be_nil
+        expect(document.keys).to contain_exactly(:p, :s)
+        expect(document[:p]).to include(u: 'alice', l: 'https://example.com/feed', t: 'some_strategy')
+        expect(document[:p]).to have_key(:e)
+        expect(document[:s]).to eq(token.signature)
+      end
     end
   end
 
@@ -127,19 +163,6 @@ RSpec.describe Html2rss::Web::FeedToken do
       token = described_class.new('alice', 'https://example.com/feed', Time.now.to_i + 3600, 'sig', nil)
 
       expect(token.expired?).to be(false)
-    end
-  end
-
-  describe '#valid_signature?' do
-    it 'checks the signature against the payload' do
-      token = described_class.create_with_validation(
-        username: 'alice',
-        url: 'https://example.com/feed',
-        secret_key: 'test-secret'
-      )
-
-      expect(token.valid_signature?('test-secret')).to be(true)
-      expect(token.valid_signature?('wrong-secret')).to be(false)
     end
   end
 end
