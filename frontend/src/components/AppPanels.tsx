@@ -1,7 +1,9 @@
 import { useLayoutEffect, useRef } from 'preact/hooks';
+import type { RefObject } from 'preact';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
+import { getPanelViewState } from '../appViewModel';
 import type { AppViewModel } from '../appViewModel';
 
 export interface FeedFormData {
@@ -32,6 +34,200 @@ interface CreateFeedPanelProperties {
   onRetryCreate: () => void;
 }
 
+interface UrlEntrySectionProperties {
+  url: string;
+  disabled: boolean;
+  error: string;
+  isConverting: boolean;
+  feedCreationEnabled: boolean;
+  featuredFeeds: Array<{ path: string; title: string; description: string }>;
+  inputRef: RefObject<HTMLInputElement>;
+  onInput: (value: string) => void;
+}
+
+function UrlEntrySection({
+  url,
+  disabled,
+  error,
+  isConverting,
+  feedCreationEnabled,
+  featuredFeeds,
+  inputRef,
+  onInput,
+}: UrlEntrySectionProperties) {
+  return (
+    <>
+      <DominantField
+        className="layout-rail-reading"
+        id="url"
+        label="Page URL"
+        type="text"
+        value={url}
+        placeholder="example.com/articles"
+        inputMode="url"
+        autoCapitalize="off"
+        spellcheck={false}
+        autoFocus
+        inputRef={inputRef}
+        actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
+        actionText={isConverting ? '...' : '>'}
+        disabled={disabled}
+        error={error}
+        onInput={(event) => onInput((event.target as HTMLInputElement).value)}
+      />
+
+      {!feedCreationEnabled && (
+        <>
+          <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
+          {featuredFeeds.length > 0 && (
+            <Notice
+              className="layout-rail-reading"
+              role="status"
+              ariaLabel="Included feeds"
+              title="Try a working included feed"
+            >
+              <p class="notice__intro">Start with a ready-made feed from this instance.</p>
+              <div class="featured-feed-list" role="list" aria-label="Featured feeds">
+                {featuredFeeds.map((feed) => (
+                  <div key={feed.path} class="featured-feed-item" role="listitem">
+                    <a href={feed.path} class="featured-feed-item__link" aria-label={feed.title}>
+                      <span class="featured-feed-item__title">{feed.title}</span>
+                      <span class="featured-feed-item__description">{feed.description}</span>
+                    </a>
+                  </div>
+                ))}
+              </div>
+              <p class="notice__meta">
+                <a
+                  href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Learn how included configs work.
+                </a>
+              </p>
+            </Notice>
+          )}
+        </>
+      )}
+    </>
+  );
+}
+
+interface TokenGateSectionProperties {
+  tokenDraft: string;
+  tokenError: string;
+  inputRef: RefObject<HTMLInputElement>;
+  onInput?: (value: string) => void;
+  onTokenDraftChange: (value: string) => void;
+  onSaveToken: () => void;
+  onCancelTokenPrompt: () => void;
+}
+
+function TokenGateSection({
+  tokenDraft,
+  tokenError,
+  inputRef,
+  onTokenDraftChange,
+  onSaveToken,
+  onCancelTokenPrompt,
+}: TokenGateSectionProperties) {
+  return (
+    <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
+      <div class="token-gate__copy">
+        <h2>Enter access token</h2>
+        <p class="token-gate__hint">Required by this instance.</p>
+      </div>
+      <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
+        <span class="field-label field-label--ghost">Access token</span>
+        <input
+          id="access-token"
+          name="access-token"
+          type="password"
+          class="input input--mono input--minimal"
+          aria-label="Access token"
+          placeholder="Paste access token"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellcheck={false}
+          data-1p-ignore="true"
+          data-lpignore="true"
+          ref={inputRef}
+          value={tokenDraft}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return;
+
+            event.preventDefault();
+            void onSaveToken();
+          }}
+          onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
+        />
+        <span class="field-error">{tokenError}</span>
+      </label>
+      <a
+        href="https://html2rss.github.io/web-application/getting-started/"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="token-gate__nudge token-gate__nudge-link"
+      >
+        Set up your own instance with Docker.
+      </a>
+      <div class="token-gate__actions">
+        <button type="button" class="btn btn--primary" onClick={onSaveToken}>
+          Save and continue
+        </button>
+      </div>
+      <div class="token-gate__back">
+        <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
+          Back
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface ActionFeedbackProperties {
+  failureMessage: string;
+  isConverting: boolean;
+  isShowRetryButton: boolean;
+  onRetryCreate: () => void;
+}
+
+function ActionFeedback({
+  failureMessage,
+  isConverting,
+  isShowRetryButton,
+  onRetryCreate,
+}: ActionFeedbackProperties) {
+  return (
+    <>
+      {failureMessage && (
+        <Notice
+          className="layout-rail-reading"
+          tone="error"
+          title="Couldn't create feed yet"
+          actions={
+            isShowRetryButton && (
+              <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
+                Try again
+              </button>
+            )
+          }
+        >
+          <p>{failureMessage}</p>
+        </Notice>
+      )}
+
+      {isConverting && (
+        <Notice className="layout-rail-reading" state="loading" title="Creating feed link">
+          <p>Preparing preview.</p>
+        </Notice>
+      )}
+    </>
+  );
+}
+
 export function CreateFeedPanel({
   focusComposerKey,
   viewModel,
@@ -50,19 +246,9 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProperties) {
   const urlInputReference = useRef<HTMLInputElement>(undefined as never);
   const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
-  const isTokenPrompt = viewModel.kind === 'token_prompt';
-  const isConverting = viewModel.kind === 'submitting';
-  const conversionError =
-    viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
-  const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
-  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
-  const failureMessage =
-    (viewModel.kind === 'error' ? viewModel.message : undefined) ||
-    conversionError?.message ||
-    feedFieldErrors.form;
-  const isShowRetryButton = Boolean(
-    conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
-  );
+
+  const { isTokenPrompt, isConverting, tokenError, errorKind, failureMessage, isShowRetryButton } =
+    getPanelViewState(viewModel, feedFieldErrors);
 
   useLayoutEffect(() => {
     if (!urlInputReference.current || globalThis.window === undefined) return;
@@ -96,137 +282,35 @@ export function CreateFeedPanel({
       data-error-kind={errorKind}
     >
       <div class={`field-stack field-stack--dense${isTokenPrompt ? ' field-stack--inactive' : ''}`}>
-        <DominantField
-          className="layout-rail-reading"
-          id="url"
-          label="Page URL"
-          type="text"
-          value={feedFormData.url}
-          placeholder="example.com/articles"
-          inputMode="url"
-          autoCapitalize="off"
-          spellcheck={false}
-          autoFocus
-          inputRef={urlInputReference}
-          actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
-          actionText={isConverting ? '...' : '>'}
+        <UrlEntrySection
+          url={feedFormData.url}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
-          onInput={(event) => onFeedFieldChange('url', (event.target as HTMLInputElement).value)}
+          isConverting={isConverting}
+          feedCreationEnabled={feedCreationEnabled}
+          featuredFeeds={featuredFeeds}
+          inputRef={urlInputReference}
+          onInput={(value) => onFeedFieldChange('url', value)}
         />
-
-        {!feedCreationEnabled && (
-          <>
-            <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
-            {featuredFeeds.length > 0 && (
-              <Notice
-                className="layout-rail-reading"
-                role="status"
-                ariaLabel="Included feeds"
-                title="Try a working included feed"
-              >
-                <p class="notice__intro">Start with a ready-made feed from this instance.</p>
-                <div class="featured-feed-list" role="list" aria-label="Featured feeds">
-                  {featuredFeeds.map((feed) => (
-                    <div key={feed.path} class="featured-feed-item" role="listitem">
-                      <a href={feed.path} class="featured-feed-item__link" aria-label={feed.title}>
-                        <span class="featured-feed-item__title">{feed.title}</span>
-                        <span class="featured-feed-item__description">{feed.description}</span>
-                      </a>
-                    </div>
-                  ))}
-                </div>
-                <p class="notice__meta">
-                  <a
-                    href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Learn how included configs work.
-                  </a>
-                </p>
-              </Notice>
-            )}
-          </>
-        )}
       </div>
 
       {isTokenPrompt && (
-        <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
-          <div class="token-gate__copy">
-            <h2>Enter access token</h2>
-            <p class="token-gate__hint">Required by this instance.</p>
-          </div>
-          <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
-            <span class="field-label field-label--ghost">Access token</span>
-            <input
-              id="access-token"
-              name="access-token"
-              type="password"
-              class="input input--mono input--minimal"
-              aria-label="Access token"
-              placeholder="Paste access token"
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellcheck={false}
-              data-1p-ignore="true"
-              data-lpignore="true"
-              ref={tokenInputReference}
-              value={tokenDraft}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter') return;
-
-                event.preventDefault();
-                void onSaveToken();
-              }}
-              onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
-            />
-            <span class="field-error">{tokenError}</span>
-          </label>
-          <a
-            href="https://html2rss.github.io/web-application/getting-started/"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="token-gate__nudge token-gate__nudge-link"
-          >
-            Set up your own instance with Docker.
-          </a>
-          <div class="token-gate__actions">
-            <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-              Save and continue
-            </button>
-          </div>
-          <div class="token-gate__back">
-            <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
-              Back
-            </button>
-          </div>
-        </div>
+        <TokenGateSection
+          tokenDraft={tokenDraft}
+          tokenError={tokenError}
+          inputRef={tokenInputReference}
+          onTokenDraftChange={onTokenDraftChange}
+          onSaveToken={onSaveToken}
+          onCancelTokenPrompt={onCancelTokenPrompt}
+        />
       )}
 
-      {failureMessage && (
-        <Notice
-          className="layout-rail-reading"
-          tone="error"
-          title="Couldn't create feed yet"
-          actions={
-            isShowRetryButton && (
-              <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
-                Try again
-              </button>
-            )
-          }
-        >
-          <p>{failureMessage}</p>
-        </Notice>
-      )}
-
-      {isConverting && (
-        <Notice className="layout-rail-reading" state="loading" title="Creating feed link">
-          <p>Preparing preview.</p>
-        </Notice>
-      )}
+      <ActionFeedback
+        failureMessage={failureMessage}
+        isConverting={isConverting}
+        isShowRetryButton={isShowRetryButton}
+        onRetryCreate={onRetryCreate}
+      />
     </form>
   );
 }
