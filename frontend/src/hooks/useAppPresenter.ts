@@ -55,22 +55,14 @@ export function useAppPresenter() {
     navigate,
   });
 
-  const isTokenRoute = route.kind === 'token';
   const activeResult =
     route.kind === 'result' && result?.feed.feed_token === route.feedToken ? result : undefined;
-
-  let visibleRouteKind: 'create' | 'token' | 'result' = 'create';
-  if (activeResult) {
-    visibleRouteKind = 'result';
-  } else if (isTokenRoute) {
-    visibleRouteKind = 'token';
-  }
 
   const viewModel = deriveAppViewModel({
     conversionError,
     feedFieldErrors,
     isConverting,
-    routeKind: visibleRouteKind,
+    route,
     tokenError,
     tokenStateError,
     metadataError,

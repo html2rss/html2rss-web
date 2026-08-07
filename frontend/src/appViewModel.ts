@@ -5,6 +5,7 @@ import type {
   FeedPreviewWarning,
   FeedRecord,
 } from './api/contracts';
+import type { AppRoute } from './routes/appRoute';
 
 export type AppViewModel =
   | { kind: 'create' }
@@ -27,7 +28,7 @@ export function deriveAppViewModel({
   conversionError,
   feedFieldErrors,
   isConverting,
-  routeKind,
+  route,
   tokenError,
   tokenStateError,
   metadataError,
@@ -36,7 +37,7 @@ export function deriveAppViewModel({
   conversionError?: FeedCreationError;
   feedFieldErrors: { url: string; form: string };
   isConverting: boolean;
-  routeKind: 'create' | 'token' | 'result';
+  route: AppRoute;
   tokenError: string;
   tokenStateError?: string;
   metadataError?: string;
@@ -49,7 +50,7 @@ export function deriveAppViewModel({
     };
   }
 
-  if (routeKind === 'result' && result) {
+  if (route.kind === 'result' && result && result.feed.feed_token === route.feedToken) {
     return {
       kind: 'result',
       feed: result.feed,
@@ -60,7 +61,7 @@ export function deriveAppViewModel({
 
   if (isConverting) return { kind: 'submitting' };
 
-  if (routeKind === 'token' || tokenError) {
+  if (route.kind === 'token' || tokenError) {
     return { kind: 'token_prompt', tokenError, error: conversionError };
   }
 
@@ -87,4 +88,43 @@ export function deriveAppViewModel({
   }
 
   return { kind: 'create' };
+}
+
+export interface PanelViewState {
+  isTokenPrompt: boolean;
+  isConverting: boolean;
+  tokenError: string;
+  errorKind?: FeedCreationError['kind'];
+  failureMessage: string;
+  isShowRetryButton: boolean;
+}
+
+export function getPanelViewState(
+  viewModel: AppViewModel,
+  feedFieldErrors: { form: string }
+): PanelViewState {
+  const isTokenPrompt = viewModel.kind === 'token_prompt';
+  const isConverting = viewModel.kind === 'submitting';
+  const conversionError =
+    viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
+  const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
+  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
+
+  const failureMessage =
+    (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+    conversionError?.message ||
+    feedFieldErrors.form;
+
+  const isShowRetryButton = Boolean(
+    conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
+  );
+
+  return {
+    isTokenPrompt,
+    isConverting,
+    tokenError,
+    errorKind,
+    failureMessage,
+    isShowRetryButton,
+  };
 }
