@@ -8,9 +8,7 @@ module Html2rss
       ##
       # Resolves static and token-backed requests into shared generator inputs.
       module SourceResolver
-        # Request budget for token-backed auto-source feeds. Matches the
-        # max_requests default applied by Html2rss.auto_source so that sitemap
-        # sub-fetches are not silently blocked by Policy::DEFAULTS[:max_requests]=1.
+        # Request budget for token-backed auto-source feeds
         AUTO_SOURCE_MAX_REQUESTS = 4
 
         class << self
