@@ -367,7 +367,7 @@ PLATFORMS
 DEPENDENCIES
   climate_control
   concurrent-ruby
-  html2rss (~> 0.20)
+  html2rss (~> 0.23)
   html2rss-configs!
   irb
   parallel
