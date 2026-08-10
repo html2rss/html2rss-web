@@ -8,9 +8,6 @@ module Html2rss
       ##
       # Resolves static and token-backed requests into shared generator inputs.
       module SourceResolver
-        # Request budget for token-backed auto-source feeds
-        AUTO_SOURCE_MAX_REQUESTS = 4
-
         class << self
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -134,8 +131,7 @@ module Html2rss
             base_input.merge(
               channel: { url: url },
               auto_source: {},
-              strategy: strategy.to_sym,
-              request: { max_requests: AUTO_SOURCE_MAX_REQUESTS }
+              strategy: strategy.to_sym
             )
           end
 
