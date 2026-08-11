@@ -82,7 +82,7 @@ jobs:
           bundler-cache: true
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@v6.0.10
         with:
           cache: true
           cache_dependency_path: frontend/pnpm-lock.yaml
