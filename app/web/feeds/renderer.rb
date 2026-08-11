@@ -397,10 +397,10 @@ module Html2rss
           def build_rss(title:, description:, link: nil, items: [], timestamp: nil)
             ::RSS::Maker.make('2.0') do |maker|
               # Apply stylesheets
-              stylesheets = Html2rss.configuration.stylesheets.map do |s|
-                Html2rss::RssBuilder::Stylesheet.new(**s)
+              stylesheets = Html2rss.defaults.stylesheets.map do |s|
+                Html2rss::FeedBuilder::Rss::Stylesheet.new(**s)
               end
-              Html2rss::RssBuilder::Stylesheet.add(maker, stylesheets)
+              Html2rss::FeedBuilder::Rss::Stylesheet.add(maker, stylesheets)
 
               # Channel details
               now = timestamp || Time.now

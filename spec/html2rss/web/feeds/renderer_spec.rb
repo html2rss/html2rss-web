@@ -42,8 +42,8 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
   end
 
   before do
-    config_double = instance_double(Html2rss::Config)
-    allow(Html2rss).to receive(:configuration).and_return(config_double)
+    config_double = instance_double(Html2rss::Defaults)
+    allow(Html2rss).to receive(:defaults).and_return(config_double)
     allow(config_double).to receive(:stylesheets).and_return([{ href: '/custom.xsl', type: 'text/xsl' }])
   end
 
