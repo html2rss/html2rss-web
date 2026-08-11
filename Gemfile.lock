@@ -135,7 +135,7 @@ GEM
       fiber-storage
     fiber-storage (1.0.1)
     hashdiff (1.2.1)
-    html2rss (0.22.2)
+    html2rss (0.23.0)
       addressable (~> 2.7)
       brotli
       dry-validation
@@ -434,7 +434,7 @@ CHECKSUMS
   fiber-local (1.1.0) sha256=c885f94f210fb9b05737de65d511136ea602e00c5105953748aa0f8793489f06
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.22.2) sha256=5236eb3050abf5de426cc114ee91d1608f0d4a241cdcb33f5fdef0cb95ffa0a1
+  html2rss (0.23.0) sha256=d2b411344c25d1aab83030c7bf34d858b984ad529faba030646a81aa1c7bf44c
   html2rss-configs (0.2.0)
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
