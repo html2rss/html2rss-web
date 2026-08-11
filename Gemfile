@@ -12,8 +12,6 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 # gem 'html2rss', path: '../html2rss'
 # gem 'html2rss-configs', path: '../html2rss-configs'
 
-gem 'concurrent-ruby'
-gem 'parallel'
 gem 'rack-cache'
 gem 'rack-timeout'
 gem 'roda'
