@@ -35,9 +35,10 @@ RSpec.describe Html2rss::Web::Flags do
   end
 
   describe '.validate!' do
-    it 'raises for malformed boolean values' do
+    it 'coerces non-true boolean values to false without raising' do
       ClimateControl.modify('AUTO_SOURCE_ENABLED' => 'not-a-bool') do
-        expect { described_class.validate! }.to raise_error(ArgumentError, /Malformed flag 'AUTO_SOURCE_ENABLED'/)
+        expect { described_class.validate! }.not_to raise_error
+        expect(described_class.auto_source_enabled?).to be(false)
       end
     end
 
@@ -56,6 +57,26 @@ RSpec.describe Html2rss::Web::Flags do
     it 'raises for invalid feeds cache max size' do
       ClimateControl.modify('FEEDS_CACHE_MAX_SIZE' => '0') do
         expect { described_class.validate! }.to raise_error(ArgumentError, /failed constraints/)
+      end
+    end
+  end
+
+  describe 'boolean coercion' do
+    it 'treats only "true" as true', :aggregate_failures do
+      ClimateControl.modify('AUTO_SOURCE_ENABLED' => 'true') do
+        expect(described_class.auto_source_enabled?).to be(true)
+      end
+    end
+
+    it 'treats false, 1, 0, yes, and blank as false', :aggregate_failures do
+      %w[false 1 0 yes].each do |raw|
+        ClimateControl.modify('AUTO_SOURCE_ENABLED' => raw) do
+          expect(described_class.auto_source_enabled?).to be(false), "expected #{raw.inspect} → false"
+        end
+      end
+
+      ClimateControl.modify('RACK_ENV' => 'production', 'AUTO_SOURCE_ENABLED' => '') do
+        expect(described_class.auto_source_enabled?).to be(false)
       end
     end
   end

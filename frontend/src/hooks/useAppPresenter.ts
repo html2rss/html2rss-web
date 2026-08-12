@@ -55,9 +55,6 @@ export function useAppPresenter() {
     navigate,
   });
 
-  const activeResult =
-    route.kind === 'result' && result?.feed.feed_token === route.feedToken ? result : undefined;
-
   const viewModel = deriveAppViewModel({
     conversionError,
     feedFieldErrors,
@@ -66,7 +63,7 @@ export function useAppPresenter() {
     tokenError,
     tokenStateError,
     metadataError,
-    result: activeResult,
+    result,
   });
 
   return {

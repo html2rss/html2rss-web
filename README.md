@@ -28,6 +28,10 @@ make dev
 make ready
 ```
 
+### Local html2rss gem coupling
+
+Feature branches that depend on an unreleased `html2rss` API may pin the gem from GitHub in `Gemfile` (for example `gem 'html2rss', github: 'html2rss/html2rss', branch: 'feat/feed-result-api'`). That pin is for CI and branch review until the upstream gem change is published: **revert to the released RubyGems version before merging to `main`**. Do not leave a sibling `path: '../html2rss'` pin active for CI.
+
 ## Development and Contributing
 
 - Contributing guidelines: https://html2rss.github.io/get-involved/contributing

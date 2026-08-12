@@ -38,31 +38,24 @@ module Html2rss
           emit_error_event(error, code, response.status)
           write_internal_error_log(request, error)
 
-          return render_feed_error(request, response, error, decision) if request_target(request) == RequestTarget::FEED
+          return render_plain_error(response, error, decision) if request_target(request) == RequestTarget::FEED
           if request_target(request) == RequestTarget::API || request.path.to_s.start_with?(API_ROOT_PATH)
             return render_api_error(request, response, error, decision)
           end
 
-          render_xml_error(request, response, error, decision)
+          render_plain_error(response, error, decision)
         end
         # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
         private
 
-        def render_feed_error(request, response, error, decision)
-          msg = client_message_for(error, decision)
-          Feeds::Renderer.render_error(msg, response: response, request: request)
+        def render_plain_error(response, error, decision)
+          Feeds::Renderer.render_error(client_message_for(error, decision), response: response)
         end
 
         def render_api_error(_request, response, error, decision)
           response['Content-Type'] = 'application/json'
           JSON.generate({ success: false, error: failure_payload(error, decision) })
-        end
-
-        def render_xml_error(request, response, error, decision)
-          Feeds::Renderer.render_error(
-            client_message_for(error, decision), response: response, request: request, format: :rss
-          )
         end
 
         def resolve_error_code(error, decision)

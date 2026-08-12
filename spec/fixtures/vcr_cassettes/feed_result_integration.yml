@@ -1,0 +1,35 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://example.com/integration-feed
+    body:
+      encoding: US-ASCII
+      string: ''
+    headers:
+      User-Agent:
+      - Faraday v2.14.3
+  response:
+    status:
+      code: 200
+      message: ''
+    headers:
+      content-type:
+      - text/html; charset=utf-8
+    body:
+      encoding: UTF-8
+      string: |
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <title>Integration Feed Fixture</title>
+        </head>
+        <body>
+          <article>
+            <h1><a href="/posts/integration-item">Integration Item</a></h1>
+            <p>Fixture body for FeedResult pipeline specs.</p>
+          </article>
+        </body>
+        </html>
+  recorded_at: Wed, 12 Aug 2026 09:26:24 GMT
+recorded_with: VCR 6.4.0

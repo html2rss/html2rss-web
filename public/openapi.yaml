@@ -298,40 +298,32 @@ paths:
           description: renders feed for a valid token
         '401':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
-              schema:
-                type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns unauthorized for invalid tokens
         '403':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
-              schema:
-                type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns forbidden when auto source is disabled
-        '429':
+        '422':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
+            text/plain:
+              example: |-
+                Content Extraction Issue
+
+                We could not extract entries from https://example.com/articles right now.
               schema:
                 type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+          description: returns 422 for empty extraction feeds in xml representation
+        '429':
+          content:
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns 429 when rate limit is exceeded
@@ -342,27 +334,15 @@ paths:
                 type: integer
         '500':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
-              schema:
-                type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns non-cacheable feed errors when service generation fails
         '503':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
-              schema:
-                type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns 503 when the server times out
@@ -373,14 +353,8 @@ paths:
                 type: integer
         '504':
           content:
-            application/feed+json:
-              example: '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
-              schema:
-                type: string
-            application/xml:
-              example: |-
-                <?xml version="1.0" encoding="UTF-8"?>
-                <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
+            text/plain:
+              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
           description: returns 504 when the gateway times out

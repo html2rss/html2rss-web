@@ -39,11 +39,14 @@ The `Html2rss::Web::Feeds::SourceResolver` determines where feed configuration c
 
 ### 3. Fetching & Rendering
 
-The `Html2rss::Web::Feeds::Service` orchestrates the extraction:
+The `Html2rss::Web::Feeds::Service` orchestrates extraction behind a gem `FeedResult`:
 
 1. Checks the `Html2rss::Web::Feeds::Cache`.
-2. If stale/missing, calls the `html2rss` gem with the resolved strategy.
-3. Renders the output using `RssRenderer` (XML) or `JsonRenderer`.
+2. If stale/missing, calls the `html2rss` gem with the resolved strategy and wraps the gem `FeedResult` in a web `RenderResult`.
+3. Feed HTTP responses are split across render peers:
+   - `Html2rss::Web::Feeds::FormatNegotiation` — Accept/path negotiation, `strip_known_extension`, and format/content-type constants used for negotiation (`FormatNegotiation::MediaRange` for Accept scoring).
+   - `Html2rss::Web::Feeds::EmptyFeedCopy` — empty plain-text assembly.
+   - `Html2rss::Web::Feeds::Renderer` — HTTP envelope + success serialization; orchestrates the peers (including plain-text error bodies).
 
 ## Extension Points
 

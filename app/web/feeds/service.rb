@@ -27,8 +27,8 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def build_result(resolved_source, cache_key)
-            feed = Html2rss.feed(resolved_source.generator_input)
-            success_result(feed, resolved_source, cache_key)
+            feed_result = Html2rss.feed_result(resolved_source.generator_input)
+            success_result(feed_result, resolved_source, cache_key)
           rescue StandardError => error
             decision = ErrorClassifier.classify(error)
             return empty_result(error, resolved_source, cache_key) if decision&.cacheable
@@ -36,54 +36,19 @@ module Html2rss
             error_result(error, resolved_source, cache_key)
           end
 
-          # @param feed [Object]
+          # @param feed_result [Html2rss::FeedResult]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def success_result(feed, resolved_source, cache_key)
-            Contracts::RenderResult.new(
-              status: result_status(feed),
-              payload: payload_for(feed, resolved_source),
-              message: nil,
+          def success_result(feed_result, resolved_source, cache_key)
+            status = feed_result.empty? ? :empty : :ok
+            render_result(
+              status:,
+              payload: payload_for(resolved_source, feed_result:),
               ttl_seconds: resolved_source.ttl_seconds,
-              cache_key: cache_key,
-              error_message: nil,
-              error_kind: nil
+              cache_key:,
+              empty_reason: status == :empty ? 'feed_empty' : nil
             )
-          end
-
-          # @param feed [Object]
-          # @return [Boolean]
-          def feed_has_items?(feed)
-            feed.respond_to?(:items) && !feed.items.empty?
-          end
-
-          # @param feed [Object]
-          # @return [Symbol]
-          def result_status(feed)
-            feed_has_items?(feed) ? :ok : :empty
-          end
-
-          # @param feed [Object]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderPayload]
-          def payload_for(feed, resolved_source)
-            Contracts::RenderPayload.new(
-              feed: feed,
-              site_title: site_title_for(feed, resolved_source.generator_input.dig(:channel, :url)),
-              url: resolved_source.generator_input.dig(:channel, :url),
-              strategy: resolved_source.generator_input[:strategy]&.to_s
-            )
-          end
-
-          # @param feed [Object]
-          # @param url [String, nil]
-          # @return [String]
-          def site_title_for(feed, url)
-            title = feed.respond_to?(:channel) ? feed.channel&.title.to_s.strip : ''
-            return title unless title.empty?
-
-            url.to_s
           end
 
           # @param error [StandardError]
@@ -91,14 +56,12 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def error_result(error, resolved_source, cache_key)
-            Contracts::RenderResult.new(
+            render_result(
               status: :error,
-              payload: nil,
               message: Html2rss::Web::HttpError::DEFAULT_MESSAGE,
               ttl_seconds: resolved_source.ttl_seconds,
-              cache_key: cache_key,
-              error_message: error.message,
-              error_kind: nil
+              cache_key:,
+              error_message: error.message
             )
           end
 
@@ -107,25 +70,50 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def empty_result(error, resolved_source, cache_key)
-            Contracts::RenderResult.new(
+            render_result(
               status: :empty,
-              payload: payload_for_empty_result(resolved_source),
-              message: nil,
+              payload: payload_for(resolved_source),
               ttl_seconds: resolved_source.ttl_seconds,
-              cache_key: cache_key,
+              cache_key:,
               error_message: error.message,
-              error_kind: :extraction_empty
+              empty_reason: 'content_extraction_empty'
             )
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param feed_result [Html2rss::FeedResult, nil]
           # @return [Html2rss::Web::Feeds::Contracts::RenderPayload]
-          def payload_for_empty_result(resolved_source)
+          def payload_for(resolved_source, feed_result: nil)
             Contracts::RenderPayload.new(
-              feed: nil,
-              site_title: resolved_source.generator_input.dig(:channel, :url).to_s,
-              url: resolved_source.generator_input.dig(:channel, :url),
-              strategy: resolved_source.generator_input[:strategy]&.to_s
+              feed: feed_result,
+              site_title: site_title_for(resolved_source, feed_result:),
+              url: resolved_source.url
+            )
+          end
+
+          # Prefers gem channel title, then metadata helper, then the URL string.
+          #
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param feed_result [Html2rss::FeedResult, nil]
+          # @return [String]
+          def site_title_for(resolved_source, feed_result: nil)
+            channel_title = feed_result&.channel_title
+            return channel_title unless channel_title.to_s.empty?
+
+            url = resolved_source.url
+            ChannelTitle.for(url) || url.to_s
+          end
+
+          # @param attrs [Hash{Symbol=>Object}] RenderResult members (`status`, `ttl_seconds`,
+          #   `cache_key` required; `payload`, `message`, `error_message`, `empty_reason` optional)
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def render_result(**attrs)
+            Contracts::RenderResult.new(
+              payload: nil,
+              message: nil,
+              error_message: nil,
+              empty_reason: nil,
+              **attrs
             )
           end
         end

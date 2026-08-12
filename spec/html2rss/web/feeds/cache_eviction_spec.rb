@@ -11,13 +11,17 @@ RSpec.describe 'Cache Eviction' do
     cache.clear!
   end
 
-  def build_result(title)
+  def build_result(title) # rubocop:disable Metrics/MethodLength
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
-        feed: Object.new, site_title: title, url: 'https://example.com', strategy: 'faraday'
+        feed: Object.new, site_title: title, url: 'https://example.com'
       ),
-      message: nil, ttl_seconds: 60, cache_key: "feed_result:#{title}", error_message: nil, error_kind: nil
+      message: nil,
+      ttl_seconds: 60,
+      cache_key: "feed_result:#{title}",
+      error_message: nil,
+      empty_reason: nil
     )
   end
 

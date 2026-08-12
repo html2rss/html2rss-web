@@ -49,6 +49,7 @@ if ENV['OPENAPI']
   # Keep path keys relative to /api/v1 because servers include the versioned base path.
   RSpec::OpenAPI.post_process_hook = lambda do |_path, _records, spec|
     token_feed_error_statuses = %w[401 403 429 500 503 504].freeze
+    token_feed_empty_statuses = %w[422].freeze
 
     stringify = lambda do |value|
       case value
@@ -116,16 +117,30 @@ if ENV['OPENAPI']
     end
 
     token_feed_error_examples = {
-      'application/xml' => {
-        'example' => <<~XML.strip
-          <?xml version="1.0" encoding="UTF-8"?>
-          <rss version="2.0"><channel><title>Error</title><description>Internal Server Error</description></channel></rss>
-        XML
-      },
-      'application/feed+json' => {
-        'example' => '{"version":"https://jsonfeed.org/version/1.1","title":"Error"}'
+      'text/plain' => {
+        'example' => 'Failed to generate feed: Invalid token'
       }
     }
+
+    token_feed_empty_examples = {
+      'text/plain' => {
+        'example' => [
+          'Content Extraction Issue',
+          'We could not extract entries from https://example.com/articles right now.'
+        ].join("\n\n")
+      }
+    }
+
+    token_feed_error_content = {
+      'text/plain' => {
+        'schema' => { 'type' => 'string' }
+      }.merge(token_feed_error_examples.fetch('text/plain'))
+    }.freeze
+    token_feed_empty_content = {
+      'text/plain' => {
+        'schema' => { 'type' => 'string' }
+      }.merge(token_feed_empty_examples.fetch('text/plain'))
+    }.freeze
 
     path_map = spec['paths'] || spec[:paths]
     next unless path_map.is_a?(Hash)
@@ -191,11 +206,14 @@ if ENV['OPENAPI']
           response = normalized_paths[normalized][verb].dig('responses', status)
           next unless response
 
-          response['content'] ||= {}
-          token_feed_error_examples.each do |content_type, example|
-            response['content'][content_type] ||= { 'schema' => { 'type' => 'string' } }
-            response['content'][content_type].merge!(example)
-          end
+          response['content'] = token_feed_error_content
+        end
+
+        token_feed_empty_statuses.each do |status|
+          response = normalized_paths[normalized][verb].dig('responses', status)
+          next unless response
+
+          response['content'] = token_feed_empty_content
         end
       end
     end

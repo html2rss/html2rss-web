@@ -74,7 +74,9 @@ module Html2rss
           validator: ->(value) { value >= 1 }
         )
       }.freeze
-      MANAGED_ENV_PREFIXES = %w[AUTO_SOURCE_ ASYNC_FEED_REFRESH_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_].freeze
+      MANAGED_ENV_PREFIXES = %w[
+        AUTO_SOURCE_ ASYNC_FEED_REFRESH_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
+      ].freeze
 
       class << self
         # @return [Boolean]
@@ -163,12 +165,11 @@ module Html2rss
         # @param definition [Definition]
         # @param raw [String]
         # @return [Boolean]
-        def parse_boolean(definition, raw)
-          normalized = raw.to_s.strip.downcase
-          return true if normalized == 'true'
-          return false if normalized == 'false'
-
-          raise ArgumentError, "Malformed flag '#{definition.env_key}': expected true/false, got '#{raw}'"
+        def parse_boolean(_definition, raw) # rubocop:disable Naming/PredicateMethod -- parser, not a query API
+          case raw.to_s.strip.downcase
+          when 'true' then true
+          else false
+          end
         end
 
         # @param definition [Definition]
