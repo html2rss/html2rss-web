@@ -30,7 +30,7 @@ module Html2rss
             config = LocalConfig.find(feed_request.feed_name)
             generator_input = static_generator_input(config, feed_request.params)
 
-            Contracts::ResolvedSource.new(
+            resolved_source_for(
               source_kind: :static,
               cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
               generator_input: generator_input,
@@ -48,11 +48,27 @@ module Html2rss
             strategy = resolved_strategy(feed_token)
             generator_input = token_generator_input(feed_token.url, strategy)
 
-            Contracts::ResolvedSource.new(
+            resolved_source_for(
               source_kind: :token,
               cache_identity: token_cache_identity(feed_request.token),
               generator_input: generator_input,
               ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300)
+            )
+          end
+
+          # @param source_kind [Symbol]
+          # @param cache_identity [String]
+          # @param generator_input [Hash{Symbol=>Object}]
+          # @param ttl_seconds [Integer]
+          # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          def resolved_source_for(source_kind:, cache_identity:, generator_input:, ttl_seconds:)
+            Contracts::ResolvedSource.new(
+              source_kind:,
+              cache_identity:,
+              generator_input:,
+              ttl_seconds:,
+              url: generator_input.dig(:channel, :url),
+              strategy: generator_input[:strategy]
             )
           end
 
@@ -91,7 +107,7 @@ module Html2rss
 
           # @return [void]
           def ensure_auto_source_enabled!
-            return if AutoSource.enabled?
+            return if Flags.auto_source_enabled?
 
             raise Html2rss::Web::AutoSourceDisabledError
           end

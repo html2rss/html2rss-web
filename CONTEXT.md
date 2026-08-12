@@ -17,4 +17,4 @@ The process of capturing a target page URL, validating it, converting it to an R
 A mechanism that automatically initiates feed creation when a prefilled URL is passed to the application route (e.g. from the bookmarklet).
 
 ### Renderer
-A backend component responsible for format negotiation (RSS or JSON Feed) and serializing the final feed payload or error representation.
+Backend feed HTTP assembly: `Feeds::Renderer` owns the HTTP envelope and success serialization, and orchestrates `Feeds::FormatNegotiation` (Accept/path negotiation; `FormatNegotiation::MediaRange` for Accept scoring) and `Feeds::EmptyFeedCopy` (empty plain-text assembly).

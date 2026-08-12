@@ -12,14 +12,13 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
         feed: Object.new,
         site_title: 'Example',
-        url: 'https://example.com',
-        strategy: 'faraday'
+        url: 'https://example.com'
       ),
       message: nil,
       ttl_seconds: 60,
       cache_key: 'feed_result:test',
       error_message: nil,
-      error_kind: nil
+      empty_reason: nil
     )
   end
 

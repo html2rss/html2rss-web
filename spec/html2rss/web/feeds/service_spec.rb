@@ -14,20 +14,24 @@ RSpec.describe Html2rss::Web::Feeds::Service do
         channel: { url: 'https://example.com/articles' },
         auto_source: {}
       },
-      ttl_seconds: 900
+      ttl_seconds: 900,
+      url: 'https://example.com/articles',
+      strategy: nil
     )
   end
 
   before do
     Html2rss::Web::Feeds::Cache.clear!
+    allow(Html2rss::Web::Feeds::ChannelTitle).to receive(:for)
+      .with('https://example.com/articles')
+      .and_return('Example Feed')
   end
 
   context 'when feed generation succeeds with items' do
-    let(:channel) { Struct.new(:title).new('Example Feed') }
-    let(:feed) { Struct.new(:items, :channel).new([Object.new], channel) }
+    let(:feed_result) { instance_double(Html2rss::FeedResult, empty?: false, channel_title: nil) }
 
     before do
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_return(feed)
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
     end
 
     it 'marks the result as ok' do
@@ -46,36 +50,56 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.payload).to eq(expected_payload)
     end
 
+    it 'prefers FeedResult#channel_title over metadata for site_title' do
+      allow(feed_result).to receive(:channel_title).and_return('Channel From Scrape')
+
+      expect(result.payload.site_title).to eq('Channel From Scrape')
+    end
+
     it 'reuses the cached result for repeated requests' do
       described_class.call(resolved_source)
       described_class.call(resolved_source)
 
-      expect(Html2rss).to have_received(:feed).once
+      expect(Html2rss).to have_received(:feed_result).once
     end
   end
 
   context 'when the generated feed has no items' do
+    let(:feed_result) { instance_double(Html2rss::FeedResult, empty?: true, channel_title: 'Page Title From Head') }
+
     before do
-      feed = Struct.new(:items, :channel).new([], Struct.new(:title).new(nil))
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_return(feed)
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
     end
 
     it 'marks the result as empty' do
       expect(result.status).to eq(:empty)
     end
 
+    it 'sets feed_empty as the empty reason' do
+      expect(result.empty_reason).to eq('feed_empty')
+    end
+
     it 'keeps the result message empty' do
       expect(result.message).to be_nil
     end
 
-    it 'normalizes a fallback site title from the source url' do
+    it 'uses channel_title for empty scrape site_title' do
+      expect(result.payload.site_title).to eq('Page Title From Head')
+    end
+
+    it 'falls back to the source url when channel_title and metadata are blank' do
+      allow(feed_result).to receive(:channel_title).and_return('')
+      allow(Html2rss::Web::Feeds::ChannelTitle).to receive(:for)
+        .with('https://example.com/articles')
+        .and_return(nil)
+
       expect(result.payload.site_title).to eq('https://example.com/articles')
     end
   end
 
   context 'when generation fails' do
     before do
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_raise(StandardError, 'boom')
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(StandardError, 'boom')
     end
 
     it 'marks the result as an error' do
@@ -98,17 +122,16 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       described_class.call(resolved_source)
       described_class.call(resolved_source)
 
-      expect(Html2rss).to have_received(:feed).twice
+      expect(Html2rss).to have_received(:feed_result).twice
     end
   end
 
   # @return [Html2rss::Web::Feeds::Contracts::RenderPayload]
   def expected_payload
     Html2rss::Web::Feeds::Contracts::RenderPayload.new(
-      feed: feed,
+      feed: feed_result,
       site_title: 'Example Feed',
-      url: 'https://example.com/articles',
-      strategy: nil
+      url: 'https://example.com/articles'
     )
   end
 
@@ -125,7 +148,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     end
 
     before do
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_raise(
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(
         no_feed_items_extracted_class.new(
           attempts: [
             { strategy: :faraday, items_count: 0, error_class: nil },
@@ -137,12 +160,11 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do
       expect(result.status).to eq(:empty)
-      expect(result.error_kind).to eq(:extraction_empty)
+      expect(result.empty_reason).to eq('content_extraction_empty')
       expect(result.error_message).to include('No feed items extracted after auto fallback')
       expect(result.payload).to have_attributes(
         url: 'https://example.com/articles',
-        site_title: 'https://example.com/articles',
-        strategy: nil
+        site_title: 'Example Feed'
       )
     end
 
@@ -150,26 +172,26 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       described_class.call(resolved_source)
       described_class.call(resolved_source)
 
-      expect(Html2rss).to have_received(:feed).once
+      expect(Html2rss).to have_received(:feed_result).once
     end
 
-    it 'maps NoFeedItemsExtracted nested in Exception#cause to empty extraction' do
+    it 'maps NoFeedItemsExtracted nested in Exception#cause to empty extraction', :aggregate_failures do
       root = no_feed_items_extracted_class.new(
         attempts: [{ strategy: :faraday, items_count: 0, error_class: nil }]
       )
       wrapper = StandardError.new('strategy failed')
       allow(wrapper).to receive(:cause).and_return(root)
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input).and_raise(wrapper)
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(wrapper)
 
       expect(result.status).to eq(:empty)
-      expect(result.error_kind).to eq(:extraction_empty)
+      expect(result.empty_reason).to eq('content_extraction_empty')
     end
   end
 
   context 'when a classified decision is not cacheable' do
     before do
-      allow(Html2rss).to receive(:feed).with(resolved_source.generator_input)
-                                       .and_raise(StandardError, 'classified boom')
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
+                                              .and_raise(StandardError, 'classified boom')
       allow(Html2rss::Web::ErrorClassifier).to receive(:classify).and_return(
         Html2rss::Web::ErrorClassifier::Decision.new(
           status: 422,
@@ -184,12 +206,9 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       )
     end
 
-    it 'marks the result as an error instead of empty' do
+    it 'marks the result as an error instead of empty', :aggregate_failures do
       expect(result.status).to eq(:error)
-    end
-
-    it 'does not treat the failure as extraction_empty' do
-      expect(result.error_kind).to be_nil
+      expect(result.empty_reason).to be_nil
     end
   end
 end

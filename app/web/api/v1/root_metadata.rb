@@ -46,8 +46,8 @@ module Html2rss
             def instance_payload(_router)
               {
                 feed_creation: {
-                  enabled: AutoSource.enabled?,
-                  access_token_required: AutoSource.enabled?
+                  enabled: Flags.auto_source_enabled?,
+                  access_token_required: Flags.auto_source_enabled?
                 },
                 featured_feeds: FEATURED_FEEDS
               }

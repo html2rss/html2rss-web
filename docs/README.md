@@ -200,7 +200,8 @@ Managed flags and environment keys:
 
 Rules:
 
-- Invalid managed flag values must fail fast at boot.
+- Boolean flags are true only when the env value (trimmed, case-insensitive) is exactly `true`; every other value is `false` (no boot failure).
+- Invalid managed integer flag values must fail fast at boot.
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
 - Add or change flags in code, tests, and this table together.

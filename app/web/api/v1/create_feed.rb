@@ -9,11 +9,9 @@ module Html2rss
       module V1
         ##
         # Creates stable feed records from authenticated API requests.
-        module CreateFeed # rubocop:disable Metrics/ModuleLength
+        module CreateFeed
           FEED_ATTRIBUTE_KEYS =
             %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
-          FEED_METADATA_KEYS =
-            %i[id name url username feed_token public_url json_public_url].freeze
 
           class << self
             # Creates a feed and returns a normalized API success payload.
@@ -124,18 +122,12 @@ module Html2rss
             # @param account [Hash]
             # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
             def create_feed(params, account)
-              raise Html2rss::Web::AutoSourceDisabledError unless AutoSource.enabled?
+              raise Html2rss::Web::AutoSourceDisabledError unless Flags.auto_source_enabled?
 
               feed_data = AutoSource.create_stable_feed(params.name, params.url, account)
               raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_data
 
-              feed_data.is_a?(FeedMetadata::Metadata) ? feed_data : feed_metadata(feed_data)
-            end
-
-            # @param feed_data [Hash]
-            # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
-            def feed_metadata(feed_data)
-              FeedMetadata::Metadata.new(**feed_data.slice(*FEED_METADATA_KEYS))
+              feed_data
             end
 
             # @param feed_data [Html2rss::Web::Api::V1::FeedMetadata::Metadata]

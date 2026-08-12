@@ -48,7 +48,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
       error_message: nil,
-      error_kind: nil
+      empty_reason: nil
     )
   end
 
@@ -60,12 +60,9 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     allow(Html2rss::Web::LocalConfig).to receive_messages(global: config_snapshot.global, snapshot: config_snapshot)
     stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
     stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
-    allow(Html2rss::Web::AutoSource).to receive(:enabled?).and_return(true)
+    allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result,
-                                                                 format: :rss).and_return('<rss version="2.0"></rss>')
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(feed_result, format: :json_feed)
-                                                           .and_return('{"version":"https://jsonfeed.org/version/1.1","items":[]}')
+    stub_feed_renderer
   end
 
   describe 'GET /create, /token, /result/:token' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -106,7 +103,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       get '/api/v1/feeds/invalid-token', {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
       expect(last_response.status).to eq(401)
-      expect(last_response.content_type).to include('application/xml')
+      expect(last_response.content_type).to include('text/plain')
       expect(last_response.body).to include('Invalid token')
     end
 
@@ -144,7 +141,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       get "/api/v1/feeds/#{feed_token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
       expect([last_response.status, last_response.headers['Content-Type']]).to eq([200, 'application/feed+json'])
       expect(last_response.headers['Cache-Control']).to include('max-age=600')
-      expect(last_response.headers['Vary']).to include('Accept')
+      expect(last_response.headers['Vary']).to include('Accept', 'Host')
     end
 
     it 'validates feed tokens after production-style env scrubbing', :aggregate_failures do
@@ -213,8 +210,8 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     it 'returns JSON Feed-shaped errors for invalid json feed tokens' do
       get '/api/v1/feeds/invalid-token.json'
 
-      expect([last_response.status, last_response.headers['Content-Type'], json_feed_error]).to eq(
-        [401, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error' }]
+      expect([last_response.status, last_response.headers['Content-Type'], last_response.body]).to eq(
+        [401, 'text/plain; charset=utf-8', 'Failed to generate feed: Invalid token']
       )
     end
 
@@ -226,8 +223,8 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       get "/api/v1/feeds/#{empty_token}.json"
 
       expect(last_response.status).to eq(422)
-      expect(last_response.headers['Content-Type']).to eq('application/feed+json')
-      expect(JSON.parse(last_response.body).fetch('title')).to eq('Content Extraction Issue')
+      expect(last_response.headers['Content-Type']).to eq('text/plain; charset=utf-8')
+      expect(last_response.body).to include('Content Extraction Issue')
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -255,16 +252,18 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(
         Html2rss::Web::Feeds::Contracts::RenderResult.new(
           status: :empty,
-          payload: nil,
+          payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
+            feed: nil,
+            site_title: feed_url,
+            url: feed_url
+          ),
           message: nil,
           ttl_seconds: 600,
           cache_key: 'feed_result:empty',
           error_message: nil,
-          error_kind: nil
+          empty_reason: 'feed_empty'
         )
       )
-      allow(Html2rss::Web::Feeds::Renderer).to receive(:call)
-        .and_return('{"version":"https://jsonfeed.org/version/1.1","title":"Content Extraction Issue","items":[]}')
     end
     # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
   end
@@ -290,7 +289,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     end
 
     before do
-      allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(created_feed)
+      allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed).and_return(created_feed)
     end
 
     context 'without authentication' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -365,7 +364,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       end
 
       it 'returns error when feed creation fails' do
-        allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed).and_return(nil)
+        allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed).and_return(nil)
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 
@@ -383,7 +382,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
       it 'returns corrective extraction-empty failure when auto fallback exhausts' do
         no_feed_items_extracted = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
-        allow(Html2rss::Web::AutoSource).to receive(:create_stable_feed)
+        allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed)
           .and_raise(no_feed_items_extracted, 'No feed items extracted after auto fallback')
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers

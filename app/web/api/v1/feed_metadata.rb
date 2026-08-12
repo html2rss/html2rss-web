@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'html2rss/url'
-
 module Html2rss
   module Web
     module Api
@@ -13,9 +11,7 @@ module Html2rss
             # @param url [String]
             # @return [String, nil]
             def site_title_for(url)
-              Html2rss::Url.for_channel(url).channel_titleized
-            rescue StandardError
-              nil
+              Feeds::ChannelTitle.for(url)
             end
 
             # @param attributes [Hash{Symbol=>Object}]
@@ -63,29 +59,11 @@ module Html2rss
 
           ##
           # Feed create parameters contract.
-          CreateParams = Data.define(:url, :name) do
-            # @return [Hash{Symbol=>Object}]
-            def to_h
-              { url: url, name: name }
-            end
-          end
+          CreateParams = Data.define(:url, :name)
 
           ##
           # Feed metadata contract used between creation services and API responses.
-          Metadata = Data.define(:id, :name, :url, :username, :feed_token, :public_url, :json_public_url) do
-            # @return [Hash{Symbol=>Object}]
-            def to_h
-              {
-                id: id,
-                name: name,
-                url: url,
-                username: username,
-                feed_token: feed_token,
-                public_url: public_url,
-                json_public_url: json_public_url
-              }
-            end
-          end
+          Metadata = Data.define(:id, :name, :url, :username, :feed_token, :public_url, :json_public_url)
         end
       end
     end

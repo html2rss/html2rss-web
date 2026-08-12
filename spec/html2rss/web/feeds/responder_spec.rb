@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'climate_control'
 require 'rack'
 require_relative '../../../../app'
 
@@ -14,7 +15,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
       error_message: nil,
-      error_kind: nil
+      empty_reason: nil
     )
   end
   let(:static_config) do
@@ -40,7 +41,13 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :rss).and_return('<rss/>')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:render) do |_result, response:, **_kwargs|
+        response.status = 200
+        response['Content-Type'] = 'application/xml'
+        response['Cache-Control'] = 'public, max-age=600'
+        response['Vary'] = 'Accept, Host'
+        '<rss/>'
+      end
     end
 
     it 'writes the expected response tuple' do
@@ -64,6 +71,28 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         level: :info
       )
     end
+
+    it 'includes scraper status telemetry when FeedResult exposes status', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(status_telemetry_result)
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:render) do |_result, response:, **_kwargs|
+        response.status = 200
+        response['Content-Type'] = 'application/xml'
+        '<rss/>'
+      end
+
+      described_class.call(
+        request: request_for(path: '/example', accept: 'application/xml'),
+        target_kind: :static,
+        identifier: 'example'
+      )
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'success',
+        details: include(scraper_status: status_telemetry_feed.status.to_h),
+        level: :info
+      )
+    end
   end
 
   context 'with an error result' do
@@ -83,18 +112,18 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         ttl_seconds: 600,
         cache_key: 'feed_result:error',
         error_message: 'timeout',
-        error_kind: :network
+        empty_reason: nil
       )
     end
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result,
-                                                                   format: :json_feed).and_return('{"title":"Error"}')
     end
 
-    it 'writes the expected response tuple' do
-      expect(response_tuple(write_response)).to eq([500, 'application/feed+json', '{"title":"Error"}'])
+    it 'writes plain text error responses by default' do
+      expect(response_tuple(write_response)).to eq(
+        [500, 'text/plain; charset=utf-8', 'Failed to generate feed: Internal Server Error']
+      )
     end
 
     it 'marks the response as non-cacheable', :aggregate_failures do
@@ -120,29 +149,26 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
           feed: nil,
           site_title: 'https://example.com',
-          url: 'https://example.com',
-          strategy: 'faraday'
+          url: 'https://example.com'
         ),
         message: nil,
         ttl_seconds: 600,
         cache_key: 'feed_result:empty',
         error_message: nil,
-        error_kind: :extraction_empty
+        empty_reason: 'content_extraction_empty'
       )
     end
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::Renderer)
-        .to receive(:call)
-        .with(result, format: :json_feed)
-        .and_return('{"title":"Content Extraction Issue"}')
     end
 
-    it 'returns 422 while preserving warning feed payload' do
-      expect(response_tuple(write_response)).to eq(
-        [422, 'application/feed+json', '{"title":"Content Extraction Issue"}']
-      )
+    it 'returns 422 with plain text guidance by default', :aggregate_failures do
+      body = write_response
+
+      expect(response_tuple(body)).to eq([422, 'text/plain; charset=utf-8', body])
+      expect(body).to include('Content Extraction Issue')
+      expect(body).to include('What you can do')
     end
 
     it 'emits empty extraction as a failure outcome' do
@@ -152,6 +178,47 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         event_name: 'feed.render',
         outcome: 'failure',
         details: include(strategy: :faraday, url: 'https://example.com', reason: 'content_extraction_empty'),
+        level: :warn
+      )
+    end
+  end
+
+  context 'with an empty feed_empty result' do
+    subject(:write_response) do
+      described_class.call(
+        request: request_for(path: '/example.json', accept: 'application/feed+json'),
+        target_kind: :static,
+        identifier: 'example.json'
+      )
+    end
+
+    let(:result) do
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(
+        status: :empty,
+        payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
+          feed: nil,
+          site_title: 'https://example.com',
+          url: 'https://example.com'
+        ),
+        message: nil,
+        ttl_seconds: 600,
+        cache_key: 'feed_result:feed-empty',
+        error_message: nil,
+        empty_reason: 'feed_empty'
+      )
+    end
+
+    before do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
+    end
+
+    it 'emits feed_empty as the failure reason' do
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'failure',
+        details: include(strategy: :faraday, url: 'https://example.com', reason: 'feed_empty'),
         level: :warn
       )
     end
@@ -168,7 +235,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
     before do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-      allow(Html2rss::Web::Feeds::Renderer).to receive(:call).and_raise(StandardError, 'render failed')
+      allow(Html2rss::Web::Feeds::Renderer).to receive(:render).and_raise(StandardError, 'render failed')
     end
 
     it 'emits only the failure event' do
@@ -220,6 +287,32 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   def expect_cache_headers
     expect(response['Cache-Control']).to include('max-age=600')
     expect(response['Cache-Control']).to include('public')
-    expect(response['Vary']).to eq('Accept')
+    expect(response['Vary']).to eq('Accept, Host')
+  end
+
+  # @return [Html2rss::FeedResult]
+  def status_telemetry_feed
+    @status_telemetry_feed ||= instance_double(
+      Html2rss::FeedResult,
+      empty?: false,
+      status: Html2rss::Status.build(articles: [], dedup_dropped: 0)
+    )
+  end
+
+  # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+  def status_telemetry_result # rubocop:disable Metrics/MethodLength
+    Html2rss::Web::Feeds::Contracts::RenderResult.new(
+      status: :ok,
+      payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
+        feed: status_telemetry_feed,
+        site_title: 'Example',
+        url: 'https://example.com'
+      ),
+      message: nil,
+      ttl_seconds: 600,
+      cache_key: 'feed_result:status',
+      error_message: nil,
+      empty_reason: nil
+    )
   end
 end

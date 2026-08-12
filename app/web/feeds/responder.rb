@@ -14,7 +14,7 @@ module Html2rss
           def call(request:, target_kind:, identifier:)
             feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
             body = Renderer.render(result, response: request.response, request: request)
-            emit_response_result(target_kind:, identifier:, feed_request:, resolved_source:, result:)
+            emit_result(target_kind:, identifier: feed_request.feed_name || identifier, resolved_source:, result:)
             body
           rescue StandardError => error
             emit_failure(target_kind:, identifier:, error:)
@@ -34,59 +34,31 @@ module Html2rss
             [feed_request, resolved_source, result]
           end
 
-          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
-          # @param identifier [String]
-          # @return [String]
-          def normalized_identifier(feed_request, identifier)
-            feed_request.feed_name || identifier
-          end
-
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [void]
-          def emit_response_result(target_kind:, identifier:, feed_request:, resolved_source:, result:)
-            emit_result(
-              target_kind:,
-              identifier: normalized_identifier(feed_request, identifier),
-              resolved_source:,
-              result:
-            )
-          end
-
           # @param target_kind [Symbol]
           # @param identifier [String]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def emit_result(target_kind:, identifier:, resolved_source:, result:)
-            return emit_success(target_kind:, identifier:, resolved_source:) if result.status == :ok
+            return emit_success(target_kind:, identifier:, resolved_source:, result:) if result.status == :ok
             return emit_empty(target_kind:, identifier:, resolved_source:, result:) if result.status == :empty
 
-            emit_failure(
-              target_kind:,
-              identifier:,
-              error: Html2rss::Web::InternalServerError.new(
-                result.error_message || result.message || Html2rss::Web::HttpError::DEFAULT_MESSAGE
-              )
-            )
+            message = result.error_message || result.message || Html2rss::Web::HttpError::DEFAULT_MESSAGE
+            emit_failure(target_kind:, identifier:, error: Html2rss::Web::InternalServerError.new(message))
           end
 
           # @param target_kind [Symbol]
           # @param identifier [String]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
-          def emit_success(target_kind:, identifier:, resolved_source:)
-            details = {
-              url: resolved_source.generator_input.dig(:channel, :url)
-            }
-            strategy = resolved_source.generator_input[:strategy]
-            details[:strategy] = strategy if strategy
-            details[:feed_name] = identifier if target_kind == :static
-
-            Observability.emit(event_name: 'feed.render', outcome: 'success', details:, level: :info)
+          def emit_success(target_kind:, identifier:, resolved_source:, result:)
+            Observability.emit(
+              event_name: 'feed.render',
+              outcome: 'success',
+              details: render_details(resolved_source, identifier, target_kind, **feed_status_details(result)),
+              level: :info
+            )
           end
 
           # @param target_kind [Symbol]
@@ -95,23 +67,45 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def emit_empty(target_kind:, identifier:, resolved_source:, result:)
-            details = {
-              url: resolved_source.generator_input.dig(:channel, :url),
-              reason: empty_reason_for(result)
-            }
-            strategy = resolved_source.generator_input[:strategy]
+            Observability.emit(
+              event_name: 'feed.render',
+              outcome: 'failure',
+              details: render_details(
+                resolved_source, identifier, target_kind, reason: empty_reason_for(result)
+              ),
+              level: :warn
+            )
+          end
+
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param identifier [String]
+          # @param target_kind [Symbol]
+          # @param extras [Hash{Symbol=>Object}]
+          # @return [Hash{Symbol=>Object}]
+          def render_details(resolved_source, identifier, target_kind, **extras)
+            details = { url: resolved_source.url, **extras }
+            strategy = resolved_source.strategy
             details[:strategy] = strategy if strategy
             details[:feed_name] = identifier if target_kind == :static
+            details
+          end
 
-            Observability.emit(event_name: 'feed.render', outcome: 'failure', details:, level: :warn)
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [Hash{Symbol=>Object}]
+          def feed_status_details(result)
+            feed = result.payload&.feed
+            return {} unless feed.respond_to?(:status)
+
+            { scraper_status: feed.status.to_h }
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [String]
           def empty_reason_for(result)
-            return 'content_extraction_empty' if result.error_kind == :extraction_empty
+            reason = result.empty_reason
+            raise ArgumentError, 'empty RenderResult requires empty_reason' if reason.to_s.empty?
 
-            'feed_empty'
+            reason
           end
 
           # @param target_kind [Symbol]

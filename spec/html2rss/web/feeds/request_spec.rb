@@ -6,25 +6,15 @@ require_relative '../../../../app'
 RSpec.describe Html2rss::Web::Feeds::Request do
   let(:request) { instance_double(Rack::Request, params: { 'page' => '2' }) }
 
-  before do
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:for_request).with(request).and_return(
-      Html2rss::Web::Feeds::Renderer::JSON_FEED
-    )
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:strip_known_extension)
-      .with('legacy.json').and_return('legacy')
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:strip_known_extension)
-      .with('token.json').and_return('token')
-  end
-
   def request_tuple(parsed)
-    [parsed.target_kind, parsed.representation, parsed.feed_name, parsed.token, parsed.params]
+    [parsed.target_kind, parsed.feed_name, parsed.token, parsed.params]
   end
 
   it 'builds a static request with normalized feed name', :aggregate_failures do
     parsed = described_class.call(request:, target_kind: :static, identifier: 'legacy.json')
 
     expect(request_tuple(parsed)).to eq(
-      [:static, Html2rss::Web::Feeds::Renderer::JSON_FEED, 'legacy', nil, { 'page' => '2' }]
+      [:static, 'legacy', nil, { 'page' => '2' }]
     )
   end
 
@@ -32,7 +22,7 @@ RSpec.describe Html2rss::Web::Feeds::Request do
     parsed = described_class.call(request:, target_kind: :token, identifier: 'token.json')
 
     expect(request_tuple(parsed)).to eq(
-      [:token, Html2rss::Web::Feeds::Renderer::JSON_FEED, nil, 'token', { 'page' => '2' }]
+      [:token, nil, 'token', { 'page' => '2' }]
     )
   end
 end

@@ -144,6 +144,10 @@ export type RenderFeedByTokenErrors = {
      */
     403: string;
     /**
+     * returns 422 for empty extraction feeds in xml representation
+     */
+    422: string;
+    /**
      * returns 429 when rate limit is exceeded
      */
     429: string;

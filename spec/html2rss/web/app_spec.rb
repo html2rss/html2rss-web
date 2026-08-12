@@ -15,7 +15,7 @@ RSpec.describe Html2rss::Web::App do
     [
       last_response.status,
       last_response.headers['Content-Type'],
-      JSON.parse(last_response.body).slice('version', 'title', 'description')
+      last_response.body
     ]
   end
 
@@ -34,17 +34,17 @@ RSpec.describe Html2rss::Web::App do
       status: :ok,
       payload: nil,
       message: nil,
-      ttl_seconds: Html2rss::Web::CacheTtl.seconds_from_minutes(ttl),
+      ttl_seconds: Html2rss::Web::Feeds::CacheTtl.seconds_from_minutes(ttl),
       cache_key: 'feed_result:spec',
       error_message: nil,
-      error_kind: nil
+      empty_reason: nil
     )
   end
 
   def stub_static_renderers(result, rss_body:, json_body:)
+    Html2rss::Web::Feeds::Cache.clear!(reason: 'spec')
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :rss).and_return(rss_body)
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:call).with(result, format: :json_feed).and_return(json_body)
+    stub_feed_renderer(rss_body:, json_body:)
   end
 
   def static_service_error_result
@@ -55,7 +55,7 @@ RSpec.describe Html2rss::Web::App do
       ttl_seconds: 600,
       cache_key: 'feed_result:error',
       error_message: 'upstream timeout',
-      error_kind: :network
+      empty_reason: nil
     )
   end
 
@@ -65,7 +65,6 @@ RSpec.describe Html2rss::Web::App do
       .with(feed_name)
       .and_return({ channel: { ttl: 180 } })
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(static_service_error_result)
-    allow(Html2rss::Web::Feeds::Renderer).to receive(:call_error).and_return('<error/>')
   end
 
   def service_error_response_tuple(path)
@@ -116,7 +115,7 @@ RSpec.describe Html2rss::Web::App do
       end
 
       expect(last_response.status).to eq(404)
-      expect(last_response.headers['Content-Type']).to eq('application/xml')
+      expect(last_response.headers['Content-Type']).to eq('text/plain; charset=utf-8')
     end
 
     it 'does not serve the removed legacy frontend entrypoint' do
@@ -158,8 +157,11 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'serves HEAD requests for static feed routes with negotiated headers only' do
-      stub_static_feed
-      head '/legacy'
+      feed_name = "legacy-head-#{SecureRandom.hex(4)}"
+      allow(Html2rss::Web::LocalConfig).to receive(:find).with(feed_name).and_return({ channel: { ttl: 180 } })
+      stub_static_renderers(static_feed_result(ttl: 180), rss_body: '<rss/>', json_body: static_feed_json)
+
+      head "/#{feed_name}"
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Content-Type']).to eq('application/xml')
@@ -174,38 +176,38 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'coerces string ttl values before cache expiry math' do
-      stub_static_feed(ttl: '180')
+      feed_name = "legacy-ttl-#{SecureRandom.hex(4)}"
+      allow(Html2rss::Web::LocalConfig).to receive(:find).with(feed_name).and_return({ channel: { ttl: '180' } })
+      stub_static_renderers(static_feed_result(ttl: '180'), rss_body: '<rss/>', json_body: static_feed_json)
 
-      get '/legacy'
+      get "/#{feed_name}"
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Cache-Control']).to include('max-age=10800')
     end
 
-    it 'renders XML not found when static feed config is missing' do
-      allow(Html2rss::Web::Feeds::Renderer).to receive(:call_error).and_return('<error/>')
-
+    it 'renders plain text not found when static feed config is missing' do
       get '/missing-feed'
 
       expect(last_response.status).to eq(404)
-      expect(last_response.headers['Content-Type']).to eq('application/xml')
-      expect(last_response.body).to eq('<error/>')
+      expect(last_response.headers['Content-Type']).to eq('text/plain; charset=utf-8')
+      expect(last_response.body).to eq('Failed to generate feed: Not Found')
     end
 
-    it 'renders JSON Feed-shaped not found errors when static json feed config is missing' do
+    it 'renders plain text not found errors when static json feed config is missing' do
       get '/missing-feed.json'
 
       expect(json_feed_error_tuple).to eq(
-        [404, 'application/feed+json', { 'version' => 'https://jsonfeed.org/version/1.1', 'title' => 'Error',
-                                         'description' => 'Failed to generate feed: Not Found' }]
+        [404, 'text/plain; charset=utf-8', 'Failed to generate feed: Not Found']
       )
     end
 
-    it 'renders service failures as non-cacheable xml feed errors' do
+    it 'renders service failures as non-cacheable plain text feed errors' do
       stub_static_service_error('legacy-service-error')
 
       expect(service_error_response_tuple('/legacy-service-error')).to eq(
-        [500, 'application/xml', %w[max-age=0 must-revalidate no-cache no-store private], '<error/>']
+        [500, 'text/plain; charset=utf-8', %w[max-age=0 must-revalidate no-cache no-store private],
+         'Failed to generate feed: Internal Server Error']
       )
     end
 

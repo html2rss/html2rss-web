@@ -2,9 +2,9 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/web/domain/cache_ttl'
+require_relative '../../../../app/web/feeds/cache_ttl'
 
-RSpec.describe Html2rss::Web::CacheTtl do
+RSpec.describe Html2rss::Web::Feeds::CacheTtl do
   describe '.seconds_from_minutes' do
     it 'uses default for nil' do
       expect(described_class.seconds_from_minutes(nil)).to eq(3600)
