@@ -48,7 +48,8 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect_json_render(service_result)
   end
 
-  it 'varies success Link and feed_url by Host', :aggregate_failures do
+  # rubocop:disable RSpec/ExampleLength -- Link host-leak + feed_url Host vary asserted together
+  it 'keeps relative Link targets while varying JSON feed_url by Host', :aggregate_failures do
     expect(service_result.status).to eq(:ok)
 
     other_host_response = Rack::Response.new
@@ -59,11 +60,14 @@ RSpec.describe 'FeedResult pipeline integration' do
       request: other_host_request
     )
     json = JSON.parse(body)
+    base_path = '/api/v1/feeds/integration-token'
 
     expect(other_host_response['Vary']).to include('Accept', 'Host')
-    expect(other_host_response['Link']).to include('http://feeds.other.test/')
+    expect(other_host_response['Link']).to eq(expected_link_header(base_path: base_path))
+    expect(other_host_response['Link']).not_to include('feeds.other.test')
     expect(json['feed_url']).to eq('http://feeds.other.test/api/v1/feeds/integration-token.json')
   end
+  # rubocop:enable RSpec/ExampleLength
 
   # rubocop:disable RSpec/ExampleLength -- asserts empty status, channel title, plain body, and Vary together
   it 'prefers channel_title for empty scrape plain-text bodies', :aggregate_failures do
@@ -108,7 +112,7 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect(
       [response.status, response['Content-Type'], response['Vary'], response['Link'], body.include?('Integration Item')]
     ).to eq(
-      [200, 'application/xml', 'Accept, Host', expected_link_header(host: 'example.test', base_path: base_path), true]
+      [200, 'application/xml', 'Accept, Host', expected_link_header(base_path: base_path), true]
     )
   end
 
@@ -135,13 +139,12 @@ RSpec.describe 'FeedResult pipeline integration' do
     Rack::Request.new(Rack::MockRequest.env_for(path, 'HTTP_HOST' => host))
   end
 
-  # @param host [String]
   # @param base_path [String]
   # @return [String]
-  def expected_link_header(host:, base_path:)
+  def expected_link_header(base_path:)
     [
-      "<http://#{host}#{base_path}.xml>; rel=\"alternate\"; type=\"application/rss+xml\"",
-      "<http://#{host}#{base_path}.json>; rel=\"alternate\"; type=\"application/feed+json\""
+      "<#{base_path}.xml>; rel=\"alternate\"; type=\"application/rss+xml\"",
+      "<#{base_path}.json>; rel=\"alternate\"; type=\"application/feed+json\""
     ].join(', ')
   end
 end
