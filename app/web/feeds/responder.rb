@@ -71,7 +71,9 @@ module Html2rss
               event_name: 'feed.render',
               outcome: 'failure',
               details: render_details(
-                resolved_source, identifier, target_kind, reason: empty_reason_for(result)
+                resolved_source, identifier, target_kind,
+                reason: empty_reason_for(result),
+                **strategy_attempts_details(result)
               ),
               level: :warn
             )
@@ -97,6 +99,13 @@ module Html2rss
             return {} unless feed.respond_to?(:status)
 
             { scraper_status: feed.status.to_h }
+          end
+
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [Hash{Symbol=>Object}]
+          def strategy_attempts_details(result)
+            attempts = result.strategy_attempts
+            attempts.nil? || attempts.empty? ? {} : { strategy_attempts: attempts }
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]

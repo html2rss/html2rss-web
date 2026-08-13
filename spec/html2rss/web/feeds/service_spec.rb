@@ -158,10 +158,16 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       )
     end
 
-    it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do
+    it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
       expect(result.error_message).to include('No feed items extracted after auto fallback')
+      expect(result.strategy_attempts).to eq(
+        [
+          { strategy: :faraday, items_count: 0, error_class: nil },
+          { strategy: :botasaurus, items_count: 0, error_class: nil }
+        ]
+      )
       expect(result.payload).to have_attributes(
         url: 'https://example.com/articles',
         site_title: 'Example Feed'
@@ -185,6 +191,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
+      expect(result.strategy_attempts).to eq([{ strategy: :faraday, items_count: 0, error_class: nil }])
     end
   end
 

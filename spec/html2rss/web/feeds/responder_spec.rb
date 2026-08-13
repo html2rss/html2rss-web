@@ -155,7 +155,11 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         ttl_seconds: 600,
         cache_key: 'feed_result:empty',
         error_message: nil,
-        empty_reason: 'content_extraction_empty'
+        empty_reason: 'content_extraction_empty',
+        strategy_attempts: [
+          { strategy: :faraday, items_count: 0, error_class: nil },
+          { strategy: :botasaurus, items_count: 0, error_class: nil }
+        ]
       )
     end
 
@@ -177,7 +181,12 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'failure',
-        details: include(strategy: :faraday, url: 'https://example.com', reason: 'content_extraction_empty'),
+        details: include(
+          strategy: :faraday,
+          url: 'https://example.com',
+          reason: 'content_extraction_empty',
+          strategy_attempts: result.strategy_attempts
+        ),
         level: :warn
       )
     end
