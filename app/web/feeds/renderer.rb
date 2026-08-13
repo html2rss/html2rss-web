@@ -115,25 +115,15 @@ module Html2rss
           # @param request [Rack::Request]
           # @return [void]
           def apply_alternate_links(response, request)
+            # Path-absolute relative targets (RFC 8288) so reverse-proxy Host/DNS cannot leak.
             base_path = FormatNegotiation.strip_known_extension(FormatNegotiation.request_path(request))
-            base_url = request_base_url(request)
-            rss_url = "#{base_url}#{base_path}.xml"
-            json_url = "#{base_url}#{base_path}.json"
+            rss_url = "#{base_path}.xml"
+            json_url = "#{base_path}.json"
 
             response['Link'] = [
               "<#{rss_url}>; rel=\"alternate\"; type=\"application/rss+xml\"",
               "<#{json_url}>; rel=\"alternate\"; type=\"application/feed+json\""
             ].join(', ')
-          end
-
-          # @param request [Rack::Request]
-          # @return [String]
-          def request_base_url(request)
-            return request.base_url if request.respond_to?(:base_url)
-
-            scheme = request.env['rack.url_scheme']
-            host = request.env['HTTP_HOST']
-            "#{scheme}://#{host}"
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -156,7 +146,7 @@ module Html2rss
           def canonical_feed_url(request)
             return unless request
 
-            "#{request_base_url(request)}#{FormatNegotiation.request_path(request)}"
+            "#{request.base_url}#{FormatNegotiation.request_path(request)}"
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]

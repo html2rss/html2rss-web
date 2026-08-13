@@ -139,6 +139,15 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     ].map { |path, title, description| { 'path' => path, 'title' => title, 'description' => description } }
   end
 
+  # @param token [String]
+  # @return [String]
+  def relative_feed_link_header(token)
+    [
+      "</api/v1/feeds/#{token}.xml>; rel=\"alternate\"; type=\"application/rss+xml\"",
+      "</api/v1/feeds/#{token}.json>; rel=\"alternate\"; type=\"application/feed+json\""
+    ].join(', ')
+  end
+
   around do |example|
     ClimateControl.modify(AUTO_SOURCE_ENABLED: 'true') { example.run }
   end
@@ -394,29 +403,23 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Vary']).to include('Accept', 'Host')
-      expect(last_response.headers['Link']).to eq(
-        '<http://example.test/api/v1/feeds/' \
-        "#{token}.xml>; rel=\"alternate\"; type=\"application/rss+xml\", " \
-        '<http://example.test/api/v1/feeds/' \
-        "#{token}.json>; rel=\"alternate\"; type=\"application/feed+json\""
-      )
+      expect(last_response.headers['Link']).to eq(relative_feed_link_header(token))
     end
 
-    it 'varies absolute Link and JSON feed_url by Host', :aggregate_failures do
+    it 'uses relative Link targets and varies JSON feed_url by Host', :aggregate_failures do
       token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/host-vary", strategy: 'faraday')
       feed = link_header_feed_double
-      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(
-        ok_render_result(feed: feed, cache_key: 'feed_result:host-vary')
-      )
+      allow(Html2rss::Web::Feeds::Service).to receive(:call)
+        .and_return(ok_render_result(feed: feed, cache_key: 'feed_result:host-vary'))
 
       get "/api/v1/feeds/#{token}.json", {}, { 'HTTP_HOST' => 'feeds.example.test' }
 
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Vary']).to include('Accept', 'Host')
-      expect(last_response.headers['Link']).to include('http://feeds.example.test/')
-      expect(feed).to have_received(:to_json_feed).with(
-        feed_url: "http://feeds.example.test/api/v1/feeds/#{token}.json"
-      )
+      expect(last_response.headers['Link']).to eq(relative_feed_link_header(token))
+      expect(last_response.headers['Link']).not_to include('feeds.example.test')
+      expect(feed).to have_received(:to_json_feed)
+        .with(feed_url: "http://feeds.example.test/api/v1/feeds/#{token}.json")
     end
 
     it 'renders json feed for a valid token when requested through Accept', :aggregate_failures do

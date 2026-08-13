@@ -112,11 +112,20 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
       expect(response).to have_received(:[]=).with('Content-Type', 'application/xml')
       expect(response).to have_received(:[]=).with(
         'Link',
-        '<http://example.test/api/v1/feeds/token.xml>; rel="alternate"; type="application/rss+xml", ' \
-        '<http://example.test/api/v1/feeds/token.json>; rel="alternate"; type="application/feed+json"'
+        '</api/v1/feeds/token.xml>; rel="alternate"; type="application/rss+xml", ' \
+        '</api/v1/feeds/token.json>; rel="alternate"; type="application/feed+json"'
       )
       expect(Html2rss::Web::HttpCache).to have_received(:vary).with(response, 'Accept', 'Host')
       expect(Html2rss::Web::HttpCache).to have_received(:expires).with(response, 300, cache_control: 'public')
+    end
+
+    it 'omits reverse-proxy Docker DNS Hosts from Link targets' do
+      env = Rack::MockRequest.env_for('/api/v1/feeds/token.xml', 'HTTP_HOST' => 'html2rss-web-app-1:4000')
+      proxied_response = Rack::Response.new
+
+      described_class.render(ok_result, response: proxied_response, request: Rack::Request.new(env))
+
+      expect(proxied_response['Link']).not_to include('html2rss-web-app-1')
     end
 
     it 'prefers json feed from Accept when path has no format suffix' do
