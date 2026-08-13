@@ -76,7 +76,8 @@ module Html2rss
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
               error_message: error.message,
-              empty_reason: 'content_extraction_empty'
+              empty_reason: 'content_extraction_empty',
+              strategy_attempts: strategy_attempts_for(error)
             )
           end
 
@@ -105,7 +106,8 @@ module Html2rss
           end
 
           # @param attrs [Hash{Symbol=>Object}] RenderResult members (`status`, `ttl_seconds`,
-          #   `cache_key` required; `payload`, `message`, `error_message`, `empty_reason` optional)
+          #   `cache_key` required; `payload`, `message`, `error_message`, `empty_reason`,
+          #   `strategy_attempts` optional)
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def render_result(**attrs)
             Contracts::RenderResult.new(
@@ -113,8 +115,19 @@ module Html2rss
               message: nil,
               error_message: nil,
               empty_reason: nil,
+              strategy_attempts: [],
               **attrs
             )
+          end
+
+          # Pulls gem auto-fallback attempts from the error (or its cause chain).
+          # Emit-site telemetry only — ErrorClassifier stays a decision mapper.
+          #
+          # @param error [Exception]
+          # @return [Array<Hash>]
+          def strategy_attempts_for(error)
+            extracted = ErrorClassifier.error_chain(error).find { |entry| entry.respond_to?(:attempts) }
+            Array(extracted&.attempts)
           end
         end
       end

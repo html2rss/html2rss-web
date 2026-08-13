@@ -27,7 +27,18 @@ module Html2rss
         # Wraps a gem {Html2rss::FeedResult} (when present) with web-owned status, TTL,
         # cache key, and error metadata for responders — not a second gem feed type.
         RenderResult = Data.define(:status, :payload, :message, :ttl_seconds, :cache_key, :error_message,
-                                   :empty_reason)
+                                   :empty_reason, :strategy_attempts) do
+          class << self
+            alias_method :__new, :new
+
+            # Defaults keep existing keyword call sites stable when attempts are absent.
+            #
+            # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+            def new(**)
+              __new(strategy_attempts: [], **)
+            end
+          end
+        end
       end
     end
   end
