@@ -2,7 +2,7 @@
 openapi: 3.2.0
 info:
   title: html2rss-web API
-  version: 1.6.1
+  version: 1.6.2
   description: RESTful API for converting websites to RSS feeds.
   contact:
     name: html2rss-web Support
