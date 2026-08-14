@@ -126,8 +126,7 @@ module Html2rss
           # @param error [Exception]
           # @return [Array<Hash>]
           def strategy_attempts_for(error)
-            extracted = ErrorClassifier.error_chain(error).find { |entry| entry.respond_to?(:attempts) }
-            Array(extracted&.attempts)
+            ErrorClassifier.extract_diagnostics(error)[:strategy_attempts] || []
           end
         end
       end

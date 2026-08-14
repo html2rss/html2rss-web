@@ -37,6 +37,20 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     expect { fetch_with_counter }.to change { fetch_calls }.from(1).to(2)
   end
 
+  describe '.seconds_from_minutes' do
+    it 'converts positive minute values to seconds', :aggregate_failures do
+      expect(described_class.seconds_from_minutes(5)).to eq(300)
+      expect(described_class.seconds_from_minutes('10')).to eq(600)
+    end
+
+    it 'falls back to default for nil or non-positive values', :aggregate_failures do
+      expect(described_class.seconds_from_minutes(nil)).to eq(3600)
+      expect(described_class.seconds_from_minutes(0)).to eq(3600)
+      expect(described_class.seconds_from_minutes(-5)).to eq(3600)
+      expect(described_class.seconds_from_minutes('invalid', default: 300)).to eq(300)
+    end
+  end
+
   private
 
   # @return [Array<Html2rss::Web::Feeds::Contracts::RenderResult>]

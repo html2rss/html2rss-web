@@ -34,7 +34,7 @@ RSpec.describe Html2rss::Web::App do
       status: :ok,
       payload: nil,
       message: nil,
-      ttl_seconds: Html2rss::Web::Feeds::CacheTtl.seconds_from_minutes(ttl),
+      ttl_seconds: Html2rss::Web::Feeds::Cache.seconds_from_minutes(ttl),
       cache_key: 'feed_result:spec',
       error_message: nil,
       empty_reason: nil

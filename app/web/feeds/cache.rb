@@ -18,8 +18,21 @@ module Html2rss
         private_class_method :entries
 
         Entry = Data.define(:result, :expires_at)
+        DEFAULT_TTL_SECONDS = 3600
 
         class << self
+          # Converts feed-provided minutes to seconds with a safe fallback.
+          #
+          # @param value [Object] TTL in minutes-like form.
+          # @param default [Integer] seconds used when value is missing or non-positive.
+          # @return [Integer] positive cache TTL in seconds.
+          def seconds_from_minutes(value, default: DEFAULT_TTL_SECONDS)
+            minutes = value.to_i
+            return default unless minutes.positive?
+
+            minutes * 60
+          end
+
           # @param key [String]
           # @param ttl_seconds [Integer]
           # @param cacheable [Boolean, Proc]
@@ -104,7 +117,7 @@ module Html2rss
           # @param ttl_seconds [Integer]
           # @return [Integer]
           def normalize_ttl(ttl_seconds)
-            ttl_seconds.to_i.positive? ? ttl_seconds.to_i : CacheTtl::DEFAULT_SECONDS
+            ttl_seconds.to_i.positive? ? ttl_seconds.to_i : DEFAULT_TTL_SECONDS
           end
 
           # @param key [String]

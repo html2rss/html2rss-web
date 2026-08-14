@@ -34,7 +34,7 @@ module Html2rss
               source_kind: :static,
               cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
               generator_input: generator_input,
-              ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl))
+              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
           rescue Html2rss::Web::LocalConfig::NotFound
             raise Html2rss::Web::NotFoundError
@@ -52,7 +52,7 @@ module Html2rss
               source_kind: :token,
               cache_identity: token_cache_identity(feed_request.token),
               generator_input: generator_input,
-              ttl_seconds: CacheTtl.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300)
+              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300)
             )
           end
 
