@@ -23,28 +23,54 @@ export interface RawApiResponse {
   error?: unknown;
 }
 
+const STATUS_KINDS: Record<number, FeedErrorKind> = {
+  400: 'input',
+  401: 'auth',
+  403: 'auth',
+  404: 'input',
+  422: 'input',
+  429: 'client',
+};
+
+const STATUS_FALLBACK_CODES: Record<number, FeedCreationErrorCode> = {
+  400: 'INVALID_INPUT',
+  401: 'AUTH_REQUIRED',
+  403: 'AUTH_FORBIDDEN',
+  404: 'NOT_FOUND',
+  422: 'UNPROCESSABLE_INPUT',
+};
+
+const DEFAULT_NEXT_ACTIONS: Record<FeedErrorKind, FeedNextAction> = {
+  auth: 'enter_token',
+  input: 'correct_input',
+  network: 'retry',
+  server: 'none',
+  client: 'none',
+};
+
+const DEFAULT_KIND_MESSAGES: Record<FeedErrorKind, string> = {
+  auth: 'Access token is required.',
+  input: 'Check the URL and try again.',
+  network: 'Unable to reach the server. Try again.',
+  server: 'Unable to complete feed creation.',
+  client: 'Unable to complete feed creation.',
+};
+
+const VALID_KINDS = new Set<FeedErrorKind>(['auth', 'input', 'network', 'server', 'client']);
+const VALID_NEXT_ACTIONS = new Set<FeedNextAction>(['enter_token', 'correct_input', 'retry', 'wait', 'none']);
+const VALID_RETRY_ACTIONS = new Set<FeedRetryAction>(['alternate', 'primary', 'none']);
+
 export function normalizeFeedCreationError(error: unknown): FeedCreationError {
   if (isFeedCreationError(error)) return error;
 
-  if (error instanceof Error) {
-    return buildStructuredError(
-      'network',
-      'NETWORK_ERROR',
-      true,
-      'retry',
-      'primary',
-      error.message || 'Unable to reach the server.'
-    );
-  }
+  const isError = error instanceof Error;
+  const message =
+    (isError && error.message) ||
+    (isError ? 'Unable to reach the server.' : 'Unable to complete feed creation.');
+  const kind: FeedErrorKind = isError ? 'network' : 'server';
+  const code: FeedCreationErrorCode = isError ? 'NETWORK_ERROR' : 'UNKNOWN_ERROR';
 
-  return buildStructuredError(
-    'server',
-    'UNKNOWN_ERROR',
-    true,
-    'retry',
-    'primary',
-    'Unable to complete feed creation.'
-  );
+  return buildStructuredError(kind, code, true, 'retry', 'primary', message);
 }
 
 export function normalizeFeedCreationErrorFromResponse(
@@ -127,14 +153,11 @@ export function normalizeNextAction(
   // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean
 ): FeedNextAction {
-  if ((['enter_token', 'correct_input', 'retry', 'wait', 'none'] as unknown[]).includes(value)) {
+  if (typeof value === 'string' && VALID_NEXT_ACTIONS.has(value as FeedNextAction)) {
     return value as FeedNextAction;
   }
-
-  if (kind === 'auth') return 'enter_token';
-  if (kind === 'input') return 'correct_input';
-  if (retryable) return 'retry';
-  return 'none';
+  if (kind === 'auth' || kind === 'input') return DEFAULT_NEXT_ACTIONS[kind];
+  return retryable ? 'retry' : 'none';
 }
 
 export function normalizeRetryAction(
@@ -143,24 +166,17 @@ export function normalizeRetryAction(
   // eslint-disable-next-line unicorn/consistent-boolean-name
   retryable: boolean
 ): FeedRetryAction {
-  if ((['alternate', 'primary', 'none'] as unknown[]).includes(value)) {
+  if (typeof value === 'string' && VALID_RETRY_ACTIONS.has(value as FeedRetryAction)) {
     return value as FeedRetryAction;
   }
-
-  if (!retryable || nextAction !== 'retry') return 'none';
-  return 'primary';
+  return retryable && nextAction === 'retry' ? 'primary' : 'none';
 }
 
 export function normalizeErrorKind(value: unknown, status: number): FeedErrorKind {
-  if ((['auth', 'input', 'network', 'server', 'client'] as unknown[]).includes(value)) {
+  if (typeof value === 'string' && VALID_KINDS.has(value as FeedErrorKind)) {
     return value as FeedErrorKind;
   }
-
-  if (status === 401 || status === 403) return 'auth';
-  if ([400, 404, 422].includes(status)) return 'input';
-  if (status === 429) return 'client';
-  if (isTransientStatus(status)) return 'network';
-  return 'server';
+  return STATUS_KINDS[status] || (isTransientStatus(status) ? 'network' : 'server');
 }
 
 // eslint-disable-next-line unicorn/consistent-boolean-name
@@ -171,11 +187,8 @@ export function defaultRetryableFromStatus(status: number, kind: FeedErrorKind):
 }
 
 export function fallbackErrorCode(status: number, kind: FeedErrorKind): FeedCreationErrorCode {
-  if (status === 401) return 'AUTH_REQUIRED';
-  if (status === 403) return 'AUTH_FORBIDDEN';
-  if (status === 400) return 'INVALID_INPUT';
-  if (status === 404) return 'NOT_FOUND';
-  if (status === 422) return 'UNPROCESSABLE_INPUT';
+  const mapped = STATUS_FALLBACK_CODES[status];
+  if (mapped) return mapped;
   if (isTransientStatus(status)) return 'TRANSIENT_ERROR';
   if (status >= 500) return 'SERVER_ERROR';
   return `${kind.toUpperCase()}_ERROR`;
@@ -186,11 +199,9 @@ export function fallbackErrorMessage(
   kind: FeedErrorKind,
   nextAction: FeedNextAction
 ): string {
-  if (kind === 'auth') return 'Access token is required.';
-  if (kind === 'input') return 'Check the URL and try again.';
   if (nextAction === 'wait') return 'The server is still processing the request.';
   if (isTransientStatus(status) || kind === 'network') return 'Unable to reach the server. Try again.';
-  return 'Unable to complete feed creation.';
+  return DEFAULT_KIND_MESSAGES[kind];
 }
 
 export function localErrorCode(kind: FeedErrorKind, nextAction: FeedNextAction): FeedCreationErrorCode {
@@ -204,11 +215,14 @@ export function isFeedCreationError(value: unknown): value is FeedCreationError 
 
   const candidate = value as Partial<FeedCreationError>;
   return (
-    (['auth', 'input', 'network', 'server', 'client'] as unknown[]).includes(candidate.kind) &&
+    typeof candidate.kind === 'string' &&
+    VALID_KINDS.has(candidate.kind as FeedErrorKind) &&
     typeof candidate.code === 'string' &&
     typeof candidate.retryable === 'boolean' &&
     typeof candidate.nextAction === 'string' &&
+    VALID_NEXT_ACTIONS.has(candidate.nextAction as FeedNextAction) &&
     typeof candidate.retryAction === 'string' &&
+    VALID_RETRY_ACTIONS.has(candidate.retryAction as FeedRetryAction) &&
     typeof candidate.message === 'string'
   );
 }
