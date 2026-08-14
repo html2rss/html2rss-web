@@ -29,6 +29,34 @@ module Html2rss
         retry_action: 'none'
       ).freeze
 
+      BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
+      BLOCKED_SURFACE_MESSAGE = 'The target website is protected by an anti-bot challenge or Cloudflare block.'
+
+      BLOCKED_SURFACE = Decision.new(
+        status: 422,
+        code: BLOCKED_SURFACE_CODE,
+        message: BLOCKED_SURFACE_MESSAGE,
+        kind: 'input',
+        cacheable: true,
+        retryable: false,
+        next_action: 'correct_input',
+        retry_action: 'none'
+      ).freeze
+
+      SCRAPER_UNAVAILABLE_CODE = 'SCRAPER_UNAVAILABLE'
+      SCRAPER_UNAVAILABLE_MESSAGE = 'The scraping backend is temporarily unavailable. Please try again later.'
+
+      SCRAPER_UNAVAILABLE = Decision.new(
+        status: 503,
+        code: SCRAPER_UNAVAILABLE_CODE,
+        message: SCRAPER_UNAVAILABLE_MESSAGE,
+        kind: 'server',
+        cacheable: false,
+        retryable: true,
+        next_action: 'retry',
+        retry_action: 'primary'
+      ).freeze
+
       class << self
         # Returns a decision when +error+ (or a cause) is a known classified
         # failure. Ignores gem-specific payload fields such as +attempts+.
@@ -37,6 +65,8 @@ module Html2rss
         # @return [Html2rss::Web::ErrorClassifier::Decision, nil]
         def classify(error)
           return EXTRACTION_EMPTY if extraction_empty?(error)
+          return BLOCKED_SURFACE if blocked_surface?(error)
+          return SCRAPER_UNAVAILABLE if scraper_unavailable?(error)
 
           nil
         end
@@ -67,6 +97,30 @@ module Html2rss
           return false unless defined?(::Html2rss::NoFeedItemsExtracted)
 
           error_chain(error).any?(::Html2rss::NoFeedItemsExtracted)
+        end
+
+        # @param error [Exception]
+        # @return [Boolean]
+        def blocked_surface?(error)
+          return false unless defined?(::Html2rss::RequestService::BlockedSurfaceDetected)
+
+          error_chain(error).any?(::Html2rss::RequestService::BlockedSurfaceDetected)
+        end
+
+        # @param error [Exception]
+        # @return [Boolean]
+        def scraper_unavailable?(error)
+          chain = error_chain(error)
+          if defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
+             chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
+            return true
+          end
+          if defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
+             chain.any?(::Html2rss::RequestService::BrowserlessConnectionFailed)
+            return true
+          end
+
+          false
         end
       end
     end

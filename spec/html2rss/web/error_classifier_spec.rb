@@ -53,6 +53,27 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       )
     end
 
+    it 'returns the blocked-surface decision for BlockedSurfaceDetected' do
+      stub_const('Html2rss::RequestService::BlockedSurfaceDetected', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::BlockedSurfaceDetected.new('challenge')
+
+      expect(described_class.classify(error)).to eq(described_class::BLOCKED_SURFACE)
+    end
+
+    it 'returns the scraper-unavailable decision for BotasaurusConnectionFailed' do
+      stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::BotasaurusConnectionFailed.new('connection refused')
+
+      expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
+    end
+
+    it 'returns the scraper-unavailable decision for BrowserlessConnectionFailed' do
+      stub_const('Html2rss::RequestService::BrowserlessConnectionFailed', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::BrowserlessConnectionFailed.new('ws closed')
+
+      expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
+    end
+
     it 'returns nil for unrelated errors' do
       expect(described_class.classify(StandardError.new('boom'))).to be_nil
     end
