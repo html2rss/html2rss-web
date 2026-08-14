@@ -144,6 +144,23 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
       expect(body).to eq('<rss-serialized/>')
     end
 
+    it 'sets diagnostic headers when telemetry is available in feed status', :aggregate_failures do
+      status_double = instance_double(
+        Html2rss::Status,
+        selected_strategy: :faraday,
+        strategy_attempts: [
+          { strategy: :faraday, items_count: 5, transport_meta: { 'render_ms' => 120, 'request_id' => 'req-abc' } }
+        ]
+      )
+      allow(mock_feed_result).to receive(:status).and_return(status_double)
+      resp = Rack::Response.new
+      described_class.render(ok_result, response: resp, request: request)
+
+      expect(resp['X-Html2rss-Strategy']).to eq('faraday')
+      expect(resp['X-Html2rss-Render-Ms']).to eq('120')
+      expect(resp['X-Html2rss-Request-Id']).to eq('req-abc')
+    end
+
     it 'returns json feed when rss is refused by Accept' do
       body = render_body(
         ok_result,

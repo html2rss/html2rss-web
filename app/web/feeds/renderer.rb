@@ -8,8 +8,8 @@ module Html2rss
     module Feeds
       ##
       # Builds feed HTTP envelopes: status, headers, and serialized bodies.
-      module Renderer
-        class << self
+      module Renderer # rubocop:disable Metrics/ModuleLength
+        class << self # rubocop:disable Metrics/ClassLength
           # Renders a RenderResult and configures the HTTP response headers and status.
           #
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -47,6 +47,43 @@ module Html2rss
             response['Content-Type'] = response_content_type(result, format)
             apply_cache_headers(response, result)
             apply_vary_and_links(response, result, request)
+            apply_diagnostic_headers(response, result)
+          end
+
+          # @param response [Rack::Response]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [void]
+          def apply_diagnostic_headers(response, result)
+            status_obj = result.payload&.feed&.status if result.payload&.feed.respond_to?(:status)
+            apply_strategy_header(response, status_obj)
+            apply_telemetry_headers(response, status_obj, result)
+          end
+
+          def apply_strategy_header(response, status_obj)
+            strategy = status_obj&.selected_strategy
+            response['X-Html2rss-Strategy'] = strategy.to_s if strategy
+          end
+
+          def apply_telemetry_headers(response, status_obj, result)
+            attempts = if status_obj.respond_to?(:strategy_attempts)
+                         status_obj.strategy_attempts
+                       else
+                         result.strategy_attempts
+                       end
+            meta = transport_meta_for(attempts)
+            return unless meta
+
+            set_header_if_present(response, 'X-Html2rss-Render-Ms', meta['render_ms'] || meta[:render_ms])
+            set_header_if_present(response, 'X-Html2rss-Request-Id', meta['request_id'] || meta[:request_id])
+          end
+
+          def transport_meta_for(attempts)
+            last = Array(attempts).last
+            last.is_a?(Hash) ? (last[:transport_meta] || last['transport_meta']) : nil
+          end
+
+          def set_header_if_present(response, header_name, value)
+            response[header_name] = value.to_s if value
           end
 
           # @param response [Rack::Response]

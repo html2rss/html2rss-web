@@ -122,7 +122,11 @@ module Html2rss
           # @param error [StandardError]
           # @return [void]
           def emit_failure(target_kind:, identifier:, error:)
-            details = { error_class: error.class.name, error_message: error.message }
+            details = {
+              error_class: error.class.name,
+              error_message: error.message,
+              **ErrorClassifier.extract_diagnostics(error)
+            }
             details[:feed_name] = identifier if target_kind == :static
 
             Observability.emit(event_name: 'feed.render', outcome: 'failure', details:, level: :warn)
