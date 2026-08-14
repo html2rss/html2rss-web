@@ -155,4 +155,50 @@ describe('ResultDisplay', () => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
     });
   });
+
+  it('renders tailored guidance for BLOCKED_SURFACE preview warnings', () => {
+    render(
+      <ResultDisplay
+        viewModel={{
+          ...mockViewModel,
+          preview: { status: 'preview_failed', items: [], isLoading: false },
+          warnings: [
+            {
+              code: 'BLOCKED_SURFACE',
+              message: 'Blocked by Cloudflare',
+              retryable: false,
+              nextAction: 'none',
+            },
+          ],
+        }}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryPreview={mockOnRetryPreview}
+      />
+    );
+
+    expect(screen.getByText(/target website is protected by an anti-bot challenge/i)).toBeInTheDocument();
+  });
+
+  it('renders tailored guidance for SCRAPER_UNAVAILABLE preview warnings', () => {
+    render(
+      <ResultDisplay
+        viewModel={{
+          ...mockViewModel,
+          preview: { status: 'preview_failed', items: [], isLoading: false },
+          warnings: [
+            {
+              code: 'SCRAPER_UNAVAILABLE',
+              message: 'Service down',
+              retryable: true,
+              nextAction: 'retry',
+            },
+          ],
+        }}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryPreview={mockOnRetryPreview}
+      />
+    );
+
+    expect(screen.getByText(/scraping backend is temporarily unavailable/i)).toBeInTheDocument();
+  });
 });

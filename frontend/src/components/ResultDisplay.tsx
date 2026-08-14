@@ -1,5 +1,6 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
+import type { FeedPreviewWarning } from '../api/contracts';
 import type { AppViewModel } from '../appViewModel';
 import { DominantField } from './DominantField';
 
@@ -13,6 +14,17 @@ interface PreviewSectionProperties {
   ariaLabel: string;
   intro?: string;
   children: ComponentChildren;
+}
+
+function getTailoredPreviewMessage(warning?: FeedPreviewWarning): string {
+  if (!warning) return '';
+  if (warning.code === 'BLOCKED_SURFACE') {
+    return 'The target website is protected by an anti-bot challenge or Cloudflare block. Try providing a direct RSS feed URL.';
+  }
+  if (warning.code === 'SCRAPER_UNAVAILABLE') {
+    return 'The scraping backend is temporarily unavailable. Please try again in a few moments.';
+  }
+  return warning.message;
 }
 
 function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties) {
@@ -30,6 +42,7 @@ function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties
 export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: ResultDisplayProperties) {
   const [copied, setCopied] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
+  const inputReference = useRef<HTMLInputElement>(null);
   const { feed, preview, warnings } = viewModel;
 
   const fullUrl = feed.public_url.startsWith('http')
@@ -48,12 +61,13 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
     preview_ready: 'Feed ready',
     preview_failed: 'Feed link created',
   }[preview.status];
-  const previewMessage = warnings[0]?.message ?? '';
+  const previewMessage = getTailoredPreviewMessage(warnings[0]);
   const hasPreviewItems = preview.items.length > 0;
   const isShowPreviewError =
     preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
 
   useEffect(() => {
+    inputReference.current?.focus();
     return () => {
       if (copyResetReference.current) clearTimeout(copyResetReference.current);
     };
@@ -83,6 +97,8 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
         label="Feed URL"
         value={fullUrl}
         readOnly
+        autoFocus
+        inputRef={inputReference}
         actionLabel="Copy feed URL"
         actionText={copied ? 'Copied!' : 'Copy'}
         actionVariant={copied ? 'default' : 'soft'}
