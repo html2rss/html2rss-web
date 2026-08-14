@@ -113,6 +113,26 @@ module Html2rss
         retry_action: 'primary'
       ).freeze
 
+      SPECIAL_DECISIONS = [
+        [lambda { |c, _|
+           defined?(::Html2rss::NoFeedItemsExtracted) && c.any?(::Html2rss::NoFeedItemsExtracted)
+         }, EXTRACTION_EMPTY],
+        [lambda { |c, _|
+           defined?(::Html2rss::RequestService::BlockedSurfaceDetected) &&
+             c.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
+         }, BLOCKED_SURFACE],
+        [lambda { |c, _|
+           (defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
+             c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)) ||
+             (defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
+               c.any?(::Html2rss::RequestService::BrowserlessConnectionFailed))
+         }, SCRAPER_UNAVAILABLE],
+        [lambda { |_, err|
+           defined?(::Rack::Timeout::RequestTimeoutException) && err.is_a?(::Rack::Timeout::RequestTimeoutException)
+         }, SERVICE_UNAVAILABLE],
+        [->(_, err) { err.is_a?(Timeout::Error) || err.is_a?(Errno::ETIMEDOUT) }, GATEWAY_TIMEOUT]
+      ].freeze
+
       class << self
         # Returns an immutable HTTP decision for any error.
         #
@@ -171,33 +191,7 @@ module Html2rss
 
         def classify_special_error(error)
           chain = error_chain(error)
-          classify_scraper_special(chain) || classify_timeout_special(error)
-        end
-
-        def classify_scraper_special(chain)
-          if defined?(::Html2rss::NoFeedItemsExtracted) && chain.any?(::Html2rss::NoFeedItemsExtracted)
-            EXTRACTION_EMPTY
-          elsif defined?(::Html2rss::RequestService::BlockedSurfaceDetected) &&
-                chain.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
-            BLOCKED_SURFACE
-          elsif scraper_unavailable_in_chain?(chain)
-            SCRAPER_UNAVAILABLE
-          end
-        end
-
-        def classify_timeout_special(error)
-          if defined?(::Rack::Timeout::RequestTimeoutException) && error.is_a?(::Rack::Timeout::RequestTimeoutException)
-            SERVICE_UNAVAILABLE
-          elsif error.is_a?(Timeout::Error) || error.is_a?(Errno::ETIMEDOUT)
-            GATEWAY_TIMEOUT
-          end
-        end
-
-        def scraper_unavailable_in_chain?(chain)
-          (defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
-            chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)) ||
-            (defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
-              chain.any?(::Html2rss::RequestService::BrowserlessConnectionFailed))
+          SPECIAL_DECISIONS.find { |match, _| match.call(chain, error) }&.last
         end
 
         def append_meta_fields(diagnostics, meta)
