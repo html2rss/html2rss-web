@@ -183,8 +183,8 @@ paths:
                       retryable:
                         type: boolean
                     required:
-                    - message
                     - code
+                    - message
                     - kind
                     - retryable
                     - next_action
@@ -217,8 +217,8 @@ paths:
                       retryable:
                         type: boolean
                     required:
-                    - message
                     - code
+                    - message
                     - kind
                     - retryable
                     - next_action
@@ -252,12 +252,12 @@ paths:
                       retryable:
                         type: boolean
                     required:
-                    - message
                     - code
+                    - message
+                    - kind
                     - retryable
                     - next_action
                     - retry_action
-                    - kind
                     type: object
                   success:
                     type: boolean
@@ -437,8 +437,8 @@ paths:
                       retryable:
                         type: boolean
                     required:
-                    - message
                     - code
+                    - message
                     - kind
                     - retryable
                     - next_action
@@ -471,8 +471,8 @@ paths:
                       retryable:
                         type: boolean
                     required:
-                    - message
                     - code
+                    - message
                     - kind
                     - retryable
                     - next_action
