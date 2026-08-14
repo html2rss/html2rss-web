@@ -79,31 +79,31 @@ module Html2rss
           # Prunes expired entries first. If still over the max limit, prunes entries expiring soonest.
           #
           # @return [void]
-          # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
           def prune_if_needed
             max = Flags.feeds_cache_max_size
             return if entries.size < max
 
-            now = Time.now.utc
-            entries.each_pair do |key, entry|
-              entries.delete(key) if entry && now >= entry.expires_at
-            end
-
-            return if entries.size < max
-
-            candidates = []
-            entries.each_pair do |key, entry|
-              candidates << [key, entry.expires_at] if entry&.expires_at
-            end
-            candidates.sort_by! { |_, exp| exp }
-
-            target_size = (max * 0.9).to_i
-            num_to_delete = entries.size - target_size
-            return if num_to_delete <= 0
-
-            candidates.first(num_to_delete).each { |item| entries.delete(item[0]) }
+            prune_expired
+            prune_excess(max) if entries.size >= max
           end
-          # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+
+          def prune_expired
+            now = Time.now.utc
+            entries.each_pair { |k, v| entries.delete(k) if v && now >= v.expires_at }
+          end
+
+          def prune_excess(max)
+            excess = entries.size - (max * 0.9).to_i
+            return if excess <= 0
+
+            entries_by_expiration.first(excess).each { entries.delete(it.first) }
+          end
+
+          def entries_by_expiration
+            candidates = []
+            entries.each_pair { |k, v| candidates << [k, v.expires_at] if v&.expires_at }
+            candidates.sort_by!(&:last)
+          end
 
           # @param cacheable [Boolean, Proc]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]

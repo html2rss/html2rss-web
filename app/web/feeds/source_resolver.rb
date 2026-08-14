@@ -76,7 +76,7 @@ module Html2rss
           # @param params [Hash{Object=>Object}]
           # @return [String]
           def static_cache_identity(feed_name, params)
-            normalized_params = params.to_h.sort_by { |key, _| key.to_s }
+            normalized_params = params.to_h.sort_by(&:to_s)
             digest = Digest::SHA256.hexdigest(Marshal.dump(normalized_params))
             "static:#{feed_name}:#{digest}"
           end
@@ -85,18 +85,7 @@ module Html2rss
           # @param params [Hash{Object=>Object}]
           # @return [Hash{Symbol=>Object}]
           def static_generator_input(config, params)
-            generator_input = config.dup
-            generator_input[:params] = merged_static_params(config, params)
-            generator_input
-          end
-
-          # @param config [Hash{Symbol=>Object}]
-          # @param params [Hash{Object=>Object}]
-          # @return [Hash{Object=>Object}]
-          def merged_static_params(config, params)
-            return (config[:params] || {}).dup if params.empty?
-
-            (config[:params] || {}).merge(params)
+            config.merge(params: (config[:params] || {}).merge(params))
           end
 
           # @param token [String]
@@ -142,10 +131,8 @@ module Html2rss
           # @param strategy [String]
           # @return [Hash{Symbol=>Object}]
           def token_generator_input(url, strategy)
-            global_config = LocalConfig.global
-            base_input = global_config.slice(:stylesheets, :headers)
-            base_input.merge(
-              channel: { url: url },
+            LocalConfig.global.slice(:stylesheets, :headers).merge(
+              channel: { url: },
               auto_source: {},
               strategy: strategy.to_sym
             )

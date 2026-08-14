@@ -17,10 +17,10 @@ module Html2rss
               username = account[:username]
               Metadata.new(
                 id: stable_id(username, url, account[:token]),
-                name: name,
-                url: url,
-                username: username,
-                feed_token: feed_token,
+                name:,
+                url:,
+                username:,
+                feed_token:,
                 public_url: public_url(feed_token),
                 json_public_url: json_public_url(feed_token)
               )

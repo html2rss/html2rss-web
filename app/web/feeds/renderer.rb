@@ -169,13 +169,9 @@ module Html2rss
           # @return [String]
           def render_success(result, format, request: nil)
             feed_result = result.payload.feed
-            feed_url = canonical_feed_url(request)
+            return feed_result.to_rss.to_s unless format == FormatNegotiation::JSON_FEED
 
-            if format == FormatNegotiation::JSON_FEED
-              JSON.generate(feed_result.to_json_feed(feed_url: feed_url))
-            else
-              feed_result.to_rss.to_s
-            end
+            JSON.generate(feed_result.to_json_feed(feed_url: canonical_feed_url(request)))
           end
 
           # @param request [Rack::Request, nil]
@@ -201,10 +197,7 @@ module Html2rss
           # @param status [Symbol]
           # @return [Integer]
           def status_for(status)
-            return 200 if status == :ok
-            return 422 if status == :empty
-
-            500
+            { ok: 200, empty: 422 }.fetch(status, 500)
           end
         end
       end
