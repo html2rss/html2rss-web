@@ -162,7 +162,7 @@ module Html2rss
           raise ArgumentError, "Unknown flag type '#{definition.type}' for '#{definition.name}'"
         end
 
-        # @param definition [Definition]
+        # @param _definition [Definition]
         # @param raw [String]
         # @return [Boolean]
         def parse_boolean(_definition, raw) # rubocop:disable Naming/PredicateMethod -- parser, not a query API

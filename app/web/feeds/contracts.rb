@@ -29,7 +29,10 @@ module Html2rss
         RenderResult = Data.define(:status, :payload, :message, :ttl_seconds, :cache_key, :error_message,
                                    :empty_reason, :strategy_attempts) do
           class << self
+            ##
+            # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             alias_method :__new, :new
+            private :__new
 
             # Defaults keep existing keyword call sites stable when attempts are absent.
             #
