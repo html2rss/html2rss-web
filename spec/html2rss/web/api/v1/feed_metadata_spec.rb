@@ -6,16 +6,10 @@ require 'digest'
 require_relative '../../../../../app'
 
 RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
-  let(:attributes) do
-    {
-      name: 'Example Feed',
-      url: 'https://example.com/articles',
-      username: 'alice',
-      strategy: 'faraday',
-      feed_token: 'generated-token',
-      identity_token: 'account-token'
-    }
-  end
+  let(:account) { { username: 'alice', token: 'account-token' } }
+  let(:name) { 'Example Feed' }
+  let(:url) { 'https://example.com/articles' }
+  let(:feed_token) { 'generated-token' }
 
   let(:expected_hash) do
     {
@@ -31,7 +25,7 @@ RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
 
   describe '.build' do
     it 'builds stable feed metadata from creation attributes' do
-      expect(described_class.build(attributes).to_h).to eq(expected_hash)
+      expect(described_class.build(account:, name:, url:, feed_token:).to_h).to eq(expected_hash)
     end
   end
 end
