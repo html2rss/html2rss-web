@@ -102,6 +102,17 @@ module Html2rss
         retry_action: 'primary'
       ).freeze
 
+      INTERNAL_NETWORK_ERROR = Decision.new(
+        status: 500,
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Internal Server Error',
+        kind: 'network',
+        cacheable: false,
+        retryable: true,
+        next_action: 'retry',
+        retry_action: 'primary'
+      ).freeze
+
       class << self
         # Returns an immutable HTTP decision for any error.
         #
@@ -135,13 +146,12 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def extract_diagnostics(error)
           chain = error_chain(error)
-          with_attempts = chain.find { |e| e.respond_to?(:attempts) }
+          with_attempts = chain.find { it.respond_to?(:attempts) }
           attempts = with_attempts ? Array(with_attempts.attempts) : []
+          meta = attempts.filter_map { it[:transport_meta] || it['transport_meta'] }.last
+          return attempts.empty? ? {} : { strategy_attempts: attempts } unless meta
 
           diagnostics = attempts.empty? ? {} : { strategy_attempts: attempts }
-          meta = find_transport_meta(attempts)
-          return diagnostics unless meta
-
           append_meta_fields(diagnostics, meta)
         end
 
@@ -160,13 +170,34 @@ module Html2rss
         end
 
         def classify_special_error(error)
-          return EXTRACTION_EMPTY if extraction_empty?(error)
-          return BLOCKED_SURFACE if blocked_surface?(error)
-          return SCRAPER_UNAVAILABLE if scraper_unavailable?(error)
-          return SERVICE_UNAVAILABLE if server_timeout?(error)
-          return GATEWAY_TIMEOUT if gateway_timeout?(error)
+          chain = error_chain(error)
+          classify_scraper_special(chain) || classify_timeout_special(error)
+        end
 
-          nil
+        def classify_scraper_special(chain)
+          if defined?(::Html2rss::NoFeedItemsExtracted) && chain.any?(::Html2rss::NoFeedItemsExtracted)
+            EXTRACTION_EMPTY
+          elsif defined?(::Html2rss::RequestService::BlockedSurfaceDetected) &&
+                chain.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
+            BLOCKED_SURFACE
+          elsif scraper_unavailable_in_chain?(chain)
+            SCRAPER_UNAVAILABLE
+          end
+        end
+
+        def classify_timeout_special(error)
+          if defined?(::Rack::Timeout::RequestTimeoutException) && error.is_a?(::Rack::Timeout::RequestTimeoutException)
+            SERVICE_UNAVAILABLE
+          elsif error.is_a?(Timeout::Error) || error.is_a?(Errno::ETIMEDOUT)
+            GATEWAY_TIMEOUT
+          end
+        end
+
+        def scraper_unavailable_in_chain?(chain)
+          (defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
+            chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)) ||
+            (defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
+              chain.any?(::Html2rss::RequestService::BrowserlessConnectionFailed))
         end
 
         def append_meta_fields(diagnostics, meta)
@@ -184,12 +215,7 @@ module Html2rss
         end
 
         def classify_unhandled_error(error)
-          return INTERNAL_SERVER_ERROR unless network_error?(error)
-
-          Decision.new(
-            status: 500, code: 'INTERNAL_SERVER_ERROR', message: 'Internal Server Error',
-            kind: 'network', cacheable: false, retryable: true, next_action: 'retry', retry_action: 'primary'
-          )
+          network_error?(error) ? INTERNAL_NETWORK_ERROR : INTERNAL_SERVER_ERROR
         end
 
         def decision_for_http_error(error, meta, default_message: nil)
@@ -199,43 +225,11 @@ module Html2rss
                       default_message || error.class::DEFAULT_MESSAGE
                     end
 
-          Decision.new(status: error.status, code: error.code, message: message, cacheable: false, **meta)
-        end
-
-        def extraction_empty?(error)
-          return false unless defined?(::Html2rss::NoFeedItemsExtracted)
-
-          error_chain(error).any?(::Html2rss::NoFeedItemsExtracted)
-        end
-
-        def blocked_surface?(error)
-          return false unless defined?(::Html2rss::RequestService::BlockedSurfaceDetected)
-
-          error_chain(error).any?(::Html2rss::RequestService::BlockedSurfaceDetected)
-        end
-
-        def scraper_unavailable?(error)
-          chain = error_chain(error)
-          (defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
-            chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)) ||
-            (defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
-              chain.any?(::Html2rss::RequestService::BrowserlessConnectionFailed))
-        end
-
-        def server_timeout?(error)
-          defined?(::Rack::Timeout::RequestTimeoutException) && error.is_a?(::Rack::Timeout::RequestTimeoutException)
-        end
-
-        def gateway_timeout?(error)
-          error.is_a?(Timeout::Error) || error.is_a?(Errno::ETIMEDOUT)
+          Decision.new(status: error.status, code: error.code, message:, cacheable: false, **meta)
         end
 
         def network_error?(error)
-          error_chain(error).any? { |e| NETWORK_ERRORS.include?(e.class) }
-        end
-
-        def find_transport_meta(attempts)
-          attempts.filter_map { |att| att[:transport_meta] || att['transport_meta'] }.last
+          error_chain(error).any? { NETWORK_ERRORS.include?(it.class) }
         end
       end
     end

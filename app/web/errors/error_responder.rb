@@ -35,10 +35,9 @@ module Html2rss
         private
 
         def apply_retry_after(response, status)
-          if status == 429
-            response['Retry-After'] ||= Flags.rate_limit_window_seconds.to_s
-          elsif [503, 504].include?(status)
-            response['Retry-After'] ||= Flags.retry_after_timeout_seconds.to_s
+          case status
+          when 429 then response['Retry-After'] ||= Flags.rate_limit_window_seconds.to_s
+          when 503, 504 then response['Retry-After'] ||= Flags.retry_after_timeout_seconds.to_s
           end
         end
 
@@ -52,14 +51,7 @@ module Html2rss
         end
 
         def failure_payload(decision)
-          {
-            code: decision.code,
-            message: decision.message,
-            kind: decision.kind,
-            retryable: decision.retryable,
-            next_action: decision.next_action,
-            retry_action: decision.retry_action
-          }
+          decision.to_h.slice(:code, :message, :kind, :retryable, :next_action, :retry_action)
         end
 
         def write_internal_error_log(request, error)
