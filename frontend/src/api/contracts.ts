@@ -14,6 +14,23 @@ export interface FeedRecord {
 export type FeedPreviewStatus = 'created' | 'preview_loading' | 'preview_ready' | 'preview_failed';
 export type FeedRetryAction = 'alternate' | 'primary' | 'none';
 export type FeedNextAction = 'enter_token' | 'correct_input' | 'retry' | 'wait' | 'none';
+export type FeedErrorKind = 'auth' | 'input' | 'network' | 'server' | 'client';
+
+export type FeedCreationErrorCode =
+  | 'EXTRACTION_EMPTY'
+  | 'BLOCKED_SURFACE'
+  | 'SCRAPER_UNAVAILABLE'
+  | 'UNAUTHORIZED'
+  | 'BAD_REQUEST'
+  | 'FORBIDDEN'
+  | 'TOO_MANY_REQUESTS'
+  | 'SERVICE_UNAVAILABLE'
+  | 'GATEWAY_TIMEOUT'
+  | 'INTERNAL_SERVER_ERROR'
+  | 'INVALID_RESPONSE'
+  | 'NETWORK_ERROR'
+  | 'UNKNOWN_ERROR'
+  | (string & {});
 
 export interface FeedPreviewItem {
   title: string;
@@ -23,7 +40,7 @@ export interface FeedPreviewItem {
 }
 
 export interface FeedPreviewWarning {
-  code: string;
+  code: FeedCreationErrorCode;
   message: string;
   retryable: boolean;
   nextAction: FeedNextAction;
@@ -42,8 +59,8 @@ export interface CreatedFeedResult {
 }
 
 export interface FeedCreationError {
-  kind: 'auth' | 'input' | 'network' | 'server';
-  code: string;
+  kind: FeedErrorKind;
+  code: FeedCreationErrorCode;
   retryable: boolean;
   nextAction: FeedNextAction;
   retryAction: FeedRetryAction;
