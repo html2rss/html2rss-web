@@ -103,8 +103,8 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
     it 'sets status, content-type, link alternates, vary, and cache control on the response', :aggregate_failures do
       allow(response).to receive(:status=)
       allow(response).to receive(:[]=)
-      allow(Html2rss::Web::HttpCache).to receive(:vary)
-      allow(Html2rss::Web::HttpCache).to receive(:expires)
+      allow(Html2rss::Web::Feeds::HttpCache).to receive(:vary)
+      allow(Html2rss::Web::Feeds::HttpCache).to receive(:expires)
 
       described_class.render(ok_result, response: response, request: request)
 
@@ -115,8 +115,8 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
         '</api/v1/feeds/token.xml>; rel="alternate"; type="application/rss+xml", ' \
         '</api/v1/feeds/token.json>; rel="alternate"; type="application/feed+json"'
       )
-      expect(Html2rss::Web::HttpCache).to have_received(:vary).with(response, 'Accept', 'Host')
-      expect(Html2rss::Web::HttpCache).to have_received(:expires).with(response, 300, cache_control: 'public')
+      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:vary).with(response, 'Accept', 'Host')
+      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:expires).with(response, 300, cache_control: 'public')
     end
 
     it 'omits reverse-proxy Docker DNS Hosts from Link targets' do
@@ -160,13 +160,13 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
 
     it 'sets plain text content-type and disables cache on the response', :aggregate_failures do
       allow(response).to receive(:[]=)
-      allow(Html2rss::Web::HttpCache).to receive(:expires_now)
+      allow(Html2rss::Web::Feeds::HttpCache).to receive(:expires_now)
 
       body = described_class.render_error('Test Error', response: response)
 
       expect(body).to eq('Failed to generate feed: Test Error')
       expect(response).to have_received(:[]=).with('Content-Type', 'text/plain; charset=utf-8')
-      expect(Html2rss::Web::HttpCache).to have_received(:expires_now).with(response)
+      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:expires_now).with(response)
     end
   end
   # rubocop:enable RSpec/ExampleLength

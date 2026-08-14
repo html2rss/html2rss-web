@@ -30,7 +30,7 @@ module Html2rss
           # @return [String] plain-text error body
           def render_error(message, response:)
             response['Content-Type'] = FormatNegotiation::TEXT_PLAIN_CONTENT_TYPE
-            ::Html2rss::Web::HttpCache.expires_now(response)
+            HttpCache.expires_now(response)
 
             call_error(message: message)
           end
@@ -56,9 +56,9 @@ module Html2rss
           def apply_vary_and_links(response, result, request)
             if result.status == :ok
               apply_alternate_links(response, request)
-              ::Html2rss::Web::HttpCache.vary(response, 'Accept', 'Host')
+              HttpCache.vary(response, 'Accept', 'Host')
             else
-              ::Html2rss::Web::HttpCache.vary(response, 'Accept')
+              HttpCache.vary(response, 'Accept')
             end
           end
 
@@ -106,9 +106,9 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def apply_cache_headers(response, result)
-            return ::Html2rss::Web::HttpCache.expires_now(response) if result.status == :error
+            return HttpCache.expires_now(response) if result.status == :error
 
-            ::Html2rss::Web::HttpCache.expires(response, result.ttl_seconds, cache_control: 'public')
+            HttpCache.expires(response, result.ttl_seconds, cache_control: 'public')
           end
 
           # @param response [Rack::Response]
