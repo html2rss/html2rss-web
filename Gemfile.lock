@@ -134,7 +134,7 @@ GEM
       fiber-storage
     fiber-storage (1.0.1)
     hashdiff (1.2.1)
-    html2rss (0.24.0)
+    html2rss (0.25.0)
       addressable (~> 2.7)
       brotli
       dry-validation
@@ -264,7 +264,7 @@ GEM
     reverse_markdown (3.0.2)
       nokogiri
     rexml (3.4.4)
-    roda (3.106.0)
+    roda (3.107.0)
       rack
     rspec (3.13.2)
       rspec-core (~> 3.13.0)
@@ -327,7 +327,7 @@ GEM
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
-    simplecov (1.1.0)
+    simplecov (1.1.1)
     stackprof (0.2.28)
     thor (1.5.0)
     traces (0.18.2)
@@ -425,7 +425,7 @@ CHECKSUMS
   fiber-local (1.1.0) sha256=c885f94f210fb9b05737de65d511136ea602e00c5105953748aa0f8793489f06
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.24.0) sha256=d73c98c155aaf8332eab0357caf58ce3269d10f36adfff54f5576bce80db3bc1
+  html2rss (0.25.0) sha256=5d9f198f5a2a68ff9b0f12599bd8522ec8103ec08e750bd4ff09fd2e9d382b22
   html2rss-configs (0.2.0)
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.8.2) sha256=d6e3ae7a7cc7574f4b8893b4fca2162e57a825b223a177b7afa236c5ef9814cc
@@ -484,7 +484,7 @@ CHECKSUMS
   reline (0.6.3) sha256=1198b04973565b36ec0f11542ab3f5cfeeec34823f4e54cebde90968092b1835
   reverse_markdown (3.0.2) sha256=818ebb92ce39dbb1a291690dd1ec9a6d62530d4725296b17e9c8f668f9a5b8af
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
-  roda (3.106.0) sha256=1a1cfb13c6690db158a3929e9c9ece88e697fb23b05baae63f07b0773e3bbade
+  roda (3.107.0) sha256=bf40c7a0f1fcd037ec10589a1dc98fc52ced1aece803670194ec7af0f0c77c06
   rspec (3.13.2) sha256=206284a08ad798e61f86d7ca3e376718d52c0bc944626b2349266f239f820587
   rspec-core (3.13.6) sha256=a8823c6411667b60a8bca135364351dda34cd55e44ff94c4be4633b37d828b2d
   rspec-expectations (3.13.5) sha256=33a4d3a1d95060aea4c94e9f237030a8f9eae5615e9bd85718fe3a09e4b58836
@@ -503,7 +503,7 @@ CHECKSUMS
   sanitize (7.0.0) sha256=269d1b9d7326e69307723af5643ec032ff86ad616e72a3b36d301ac75a273984
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1
   sentry-ruby (6.7.0) sha256=b4b915d79a0395ad02106d4012aa1914641456e042ce36393f15bd1630d8db42
-  simplecov (1.1.0) sha256=30f12f31a659c377ef402d5463a50eaf9037035fe1fac3d263cb389682cae1b4
+  simplecov (1.1.1) sha256=25825ef13f0b2e74694d769817dad6ab8e90131dabdaa666e522fea105521e78
   stackprof (0.2.28) sha256=4ec2ace02f386012b40ca20ef80c030ad711831f59511da12e83b34efb0f9a04
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   traces (0.18.2) sha256=80f1649cb4daace1d7174b81f3b3b7427af0b93047759ba349960cb8f315e214
