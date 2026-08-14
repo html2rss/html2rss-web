@@ -65,7 +65,7 @@ module Html2rss
 
         # @return [Array<String>]
         def collapsed_web_dirs
-          %w[config errors http request security telemetry].map do |dir|
+          %w[config errors request security telemetry].map do |dir|
             File.join(app_root, 'web', dir)
           end
         end
