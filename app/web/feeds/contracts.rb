@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'cgi'
+
 module Html2rss
   module Web
     module Feeds
@@ -8,7 +10,27 @@ module Html2rss
       module Contracts
         ##
         # Request-edge contract for feed rendering.
-        Request = Data.define(:target_kind, :feed_name, :token, :params)
+        Request = Data.define(:target_kind, :feed_name, :token, :params) do
+          class << self
+            # Builds a normalized feed request from Rack request and route parameters.
+            #
+            # @param request [Rack::Request]
+            # @param target_kind [Symbol]
+            # @param identifier [String]
+            # @return [Html2rss::Web::Feeds::Contracts::Request]
+            def from_rack_request(request, target_kind:, identifier:)
+              clean = FormatNegotiation.strip_known_extension(identifier)
+              normalized = target_kind == :token ? CGI.unescape(clean) : clean
+
+              new(
+                target_kind:,
+                feed_name: target_kind == :static ? normalized : nil,
+                token: target_kind == :token ? normalized : nil,
+                params: request.params.to_h
+              )
+            end
+          end
+        end
 
         ##
         # Normalized source inputs for shared feed generation.

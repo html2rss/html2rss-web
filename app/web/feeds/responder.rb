@@ -28,7 +28,7 @@ module Html2rss
           # @param identifier [String]
           # @return [Array<(Html2rss::Web::Feeds::Contracts::Request, Html2rss::Web::Feeds::Contracts::ResolvedSource, Html2rss::Web::Feeds::Contracts::RenderResult)>]
           def resolve_request(request:, target_kind:, identifier:)
-            feed_request = Request.call(request:, target_kind:, identifier:)
+            feed_request = Contracts::Request.from_rack_request(request, target_kind:, identifier:)
             resolved_source = SourceResolver.call(feed_request)
             result = Service.call(resolved_source)
             [feed_request, resolved_source, result]
