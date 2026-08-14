@@ -153,10 +153,8 @@ module Html2rss
 
           # @return [String]
           def default_strategy_name
-            if Html2rss::Config.respond_to?(:default_strategy_name)
-              configured = Html2rss::Config.default_strategy_name.to_s
-            end
-            return configured unless configured.to_s.strip.empty?
+            configured = Html2rss::Config.default_strategy_name.to_s
+            return configured unless configured.strip.empty?
 
             'auto'
           end
