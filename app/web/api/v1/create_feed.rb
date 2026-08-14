@@ -10,32 +10,30 @@ module Html2rss
         ##
         # Creates stable feed records from authenticated API requests.
         module CreateFeed
-          FEED_ATTRIBUTE_KEYS =
-            %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
+          FEED_ATTRIBUTE_KEYS = %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
+          ABSOLUTE_URL_REGEXP = %r{\A[a-z][a-z0-9+\-.]*://}i
+          HOSTNAME_INPUT_REGEXP = %r{
+            \A(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
+            (?:[/?#].*)?\z
+          }ix
 
           class << self
             # Creates a feed and returns a normalized API success payload.
             #
             # @param request [Rack::Request] HTTP request with auth context.
             # @return [Hash{Symbol=>Object}] API response payload.
-            # rubocop:disable Metrics/MethodLength
             def call(request)
               account = require_account(request)
               params = build_create_params(request, account)
               feed_data = create_feed(params, account)
 
-              emit_create_success(params)
-              Response.success(response: request.response,
-                               status: 201,
-                               data: {
-                                 feed: feed_attributes(feed_data)
-                               },
-                               meta: { created: true })
+              emit_create(status: :success, details: { url: params.url })
+              Response.success(response: request.response, status: 201,
+                               data: { feed: feed_attributes(feed_data) }, meta: { created: true })
             rescue StandardError => error
-              emit_create_failure(error)
+              emit_create(status: :failure, details: { error_class: error.class.name, error_message: error.message })
               raise
             end
-            # rubocop:enable Metrics/MethodLength
 
             private
 
@@ -48,7 +46,7 @@ module Html2rss
 
             def build_create_params(request, account)
               url = validated_url(request_params(request)['url'], account)
-              FeedMetadata::CreateParams.new(url:, name: FeedMetadata.site_title_for(url))
+              FeedMetadata::CreateParams.new(url:, name: Feeds::ChannelTitle.for(url))
             end
 
             def request_params(request)
@@ -83,9 +81,9 @@ module Html2rss
 
               url = UrlValidator.canonical_url(url)
               raise Html2rss::Web::BadRequestError, 'Invalid URL format' unless url
-              unless UrlValidator.url_allowed?(account, url)
-                raise Html2rss::Web::ForbiddenError, 'URL not allowed for this account'
-              end
+              raise Html2rss::Web::ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(
+                account, url
+              )
 
               url
             end
@@ -94,28 +92,10 @@ module Html2rss
             # @return [String]
             def normalized_input_url(raw_url)
               url = raw_url.to_s.strip
-              return url if url.empty?
+              return url if url.empty? || ABSOLUTE_URL_REGEXP.match?(url)
               return "https:#{url}" if url.start_with?('//')
-              return url if absolute_url?(url)
 
-              hostname_input?(url) ? "https://#{url}" : url
-            end
-
-            # @param url [String]
-            # @return [Boolean]
-            def absolute_url?(url)
-              url.match?(%r{\A[a-z][a-z0-9+\-.]*://}i)
-            end
-
-            # @param url [String]
-            # @return [Boolean]
-            def hostname_input?(url)
-              %r{
-                \A
-                (localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
-                (?:[/?#].*)?
-                \z
-              }ix.match?(url)
+              HOSTNAME_INPUT_REGEXP.match?(url) ? "https://#{url}" : url
             end
 
             # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
@@ -124,10 +104,10 @@ module Html2rss
             def create_feed(params, account)
               raise Html2rss::Web::AutoSourceDisabledError unless Flags.auto_source_enabled?
 
-              feed_data = AutoSource.create_stable_feed(params.name, params.url, account)
-              raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_data
+              feed_token = Auth.generate_feed_token(account[:username], params.url)
+              raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_token
 
-              feed_data
+              FeedMetadata.build(account:, name: params.name, url: params.url, feed_token:)
             end
 
             # @param feed_data [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
@@ -137,26 +117,12 @@ module Html2rss
               feed_data.to_h.merge(created_at: timestamp, updated_at: timestamp).slice(*FEED_ATTRIBUTE_KEYS)
             end
 
-            # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
+            # @param status [Symbol]
+            # @param details [Hash{Symbol=>Object}]
             # @return [void]
-            def emit_create_success(params)
-              Observability.emit(
-                event_name: 'feed.create',
-                outcome: 'success',
-                details: { url: params.url },
-                level: :info
-              )
-            end
-
-            # @param error [StandardError]
-            # @return [void]
-            def emit_create_failure(error)
-              Observability.emit(
-                event_name: 'feed.create',
-                outcome: 'failure',
-                details: { error_class: error.class.name, error_message: error.message },
-                level: :warn
-              )
+            def emit_create(status:, details:)
+              level = status == :success ? :info : :warn
+              Observability.emit(event_name: 'feed.create', outcome: status.to_s, details:, level:)
             end
           end
         end

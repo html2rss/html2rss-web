@@ -275,21 +275,20 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       }
     end
 
-    let(:created_feed) do
-      {
+    let(:created_metadata) do
+      Html2rss::Web::Api::V1::FeedMetadata::Metadata.new(
         id: 'feed-123',
         name: 'Example Feed',
         url: feed_url,
-        strategy: 'faraday',
+        username: account[:username],
         feed_token: feed_token,
         public_url: "/api/v1/feeds/#{feed_token}",
-        json_public_url: "/api/v1/feeds/#{feed_token}.json",
-        username: account[:username]
-      }
+        json_public_url: "/api/v1/feeds/#{feed_token}.json"
+      )
     end
 
     before do
-      allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed).and_return(created_feed)
+      allow(Html2rss::Web::Api::V1::FeedMetadata).to receive(:build).and_return(created_metadata)
     end
 
     context 'without authentication' do # rubocop:disable RSpec/MultipleMemoizedHelpers
@@ -312,7 +311,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
     context 'with authenticated account' do # rubocop:disable RSpec/MultipleMemoizedHelpers
       before do
-        allow(Html2rss::Web::Api::V1::FeedMetadata).to receive(:site_title_for).and_return('Example Feed')
+        allow(Html2rss::Web::Feeds::ChannelTitle).to receive(:for).and_return('Example Feed')
       end
 
       it 'returns bad request when JSON payload is invalid' do
@@ -364,7 +363,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       end
 
       it 'returns error when feed creation fails' do
-        allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed).and_return(nil)
+        allow(Html2rss::Web::Auth).to receive(:generate_feed_token).and_return(nil)
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 
@@ -382,7 +381,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
       it 'returns corrective extraction-empty failure when auto fallback exhausts' do
         no_feed_items_extracted = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
-        allow(Html2rss::Web::Api::V1::AutoSource).to receive(:create_stable_feed)
+        allow(Html2rss::Web::Auth).to receive(:generate_feed_token)
           .and_raise(no_feed_items_extracted, 'No feed items extracted after auto fallback')
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
