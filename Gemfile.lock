@@ -219,13 +219,12 @@ GEM
     public_suffix (7.0.5)
     puma (8.0.2)
       nio4r (~> 2.0)
-    puppeteer-ruby (0.53.0)
+    puppeteer-ruby (0.52.1)
       async (>= 2.35.1, < 3.0)
       async-http (>= 0.60, < 1.0)
       async-websocket (>= 0.27, < 1.0)
       base64
       mime-types (>= 3.0)
-      urlpattern (~> 0.1.1)
     racc (1.8.1)
     rack (3.2.7)
     rack-cache (1.17.0)
@@ -245,9 +244,6 @@ GEM
       nokogiri (>= 1.15.7, != 1.16.7, != 1.16.6, != 1.16.5, != 1.16.4, != 1.16.3, != 1.16.2, != 1.16.1, != 1.16.0.rc1, != 1.16.0)
     rainbow (3.1.1)
     rake (13.4.2)
-    rake-compiler-dock (1.12.0)
-    rb_sys (0.9.128)
-      rake-compiler-dock (= 1.12.0)
     rbs (4.1.3)
       logger
       prism (>= 1.6.0)
@@ -336,12 +332,6 @@ GEM
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
     uri (1.1.1)
-    urlpattern (0.1.1)
-      rb_sys (~> 0.9.127)
-    urlpattern (0.1.1-aarch64-linux)
-    urlpattern (0.1.1-arm64-darwin)
-    urlpattern (0.1.1-x86_64-darwin)
-    urlpattern (0.1.1-x86_64-linux)
     useragent (0.16.11)
     vcr (6.4.0)
     webmock (3.26.2)
@@ -369,6 +359,7 @@ DEPENDENCIES
   io-stream (!= 0.14.2, != 0.14.1, != 0.14.0, != 0.13.2)
   irb
   puma
+  puppeteer-ruby (~> 0.52.0, != 0.53.0)
   rack-cache
   rack-test
   rack-timeout
@@ -471,7 +462,7 @@ CHECKSUMS
   protocol-websocket (0.21.1) sha256=34325e4325697f0956877e67784bcc838cfd51ebbf4f8e9e5201be292041ee61
   public_suffix (7.0.5) sha256=1a8bb08f1bbea19228d3bed6e5ed908d1cb4f7c2726d18bd9cadf60bc676f623
   puma (8.0.2) sha256=c8ed871dfbbe66448ea9ffd46692342d9804d4071522b52b5331b7b6e7b686fb
-  puppeteer-ruby (0.53.0) sha256=a6e57b7924ef89d912d74d4f2114a516e503304ced465ffb9268a06b55a0295c
+  puppeteer-ruby (0.52.1) sha256=69852e4172bc0cdfcc615125421d5a959e0d8b882155ebe9ff515c7c3920e204
   racc (1.8.1) sha256=4a7f6929691dbec8b5209a0b373bc2614882b55fc5d2e447a21aaa691303d62f
   rack (3.2.7) sha256=93e13e1c24f93556671d85d2d79fa228c3485815c50d7e2f265b5330c6528fb7
   rack-cache (1.17.0) sha256=49592f3ef2173b0f5524df98bb801fb411e839869e7ce84ac428dc492bf0eb90
@@ -482,8 +473,6 @@ CHECKSUMS
   rails-html-sanitizer (1.7.1) sha256=e797a7c9b01e567307e317c576b49ab4168017e63eea4dba9ce3cb587e2f22c2
   rainbow (3.1.1) sha256=039491aa3a89f42efa1d6dec2fc4e62ede96eb6acd95e52f1ad581182b79bc6a
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
-  rake-compiler-dock (1.12.0) sha256=f13205c2738f3d2053afcd03491a9e4541b22a59a0bfc53fc8bc883bd8188023
-  rb_sys (0.9.128) sha256=9ab81f4d6d4e1895de18762232362d1264475aa7035756b50441e442130538fd
   rbs (4.1.3) sha256=0c4474a9751cdc14364bfad0b3e53678323bbdc2c31683b0445932867dbab8c4
   rdoc (8.0.0) sha256=03bf8c08a9639658855a0cfd77c0abca8325c227693f7f33f82957811348c469
   regexp_parser (2.12.0) sha256=35a916a1d63190ab5c9009457136ae5f3c0c7512d60291d0d1378ba18ce08ebb
@@ -517,11 +506,6 @@ CHECKSUMS
   unicode-display_width (3.2.0) sha256=0cdd96b5681a5949cdbc2c55e7b420facae74c4aaf9a9815eee1087cb1853c42
   unicode-emoji (4.2.0) sha256=519e69150f75652e40bf736106cfbc8f0f73aa3fb6a65afe62fefa7f80b0f80f
   uri (1.1.1) sha256=379fa58d27ffb1387eaada68c749d1426738bd0f654d812fcc07e7568f5c57c6
-  urlpattern (0.1.1) sha256=1bc87c1ceb728874fcec71dade2470034291f527f0c9ba5807e7754ca4f2fe8b
-  urlpattern (0.1.1-aarch64-linux) sha256=64363452ce5c00bbbff502b71582d07dd9939aee78248a3c1c2809581fd73518
-  urlpattern (0.1.1-arm64-darwin) sha256=b967c410810542d8b3d4677fa08997606817a30a2db4b4bbc069585f992f2eb5
-  urlpattern (0.1.1-x86_64-darwin) sha256=c52ca9a40ec60c5098a2075712d05ac95e77cf8ecbc454effb2f90a20c602bae
-  urlpattern (0.1.1-x86_64-linux) sha256=c1a4b4fcdaafbffd5e94680c7b5d2e380f0a8941666405d1310a4c33a5f3dbdc
   useragent (0.16.11) sha256=700e6413ad4bb954bb63547fa098dddf7b0ebe75b40cc6f93b8d54255b173844
   vcr (6.4.0) sha256=077ac92cc16efc5904eb90492a18153b5e6ca5398046d8a249a7c96a9ea24ae6
   webmock (3.26.2) sha256=774556f2ea6371846cca68c01769b2eac0d134492d21f6d0ab5dd643965a4c90

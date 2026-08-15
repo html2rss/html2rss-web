@@ -20,6 +20,7 @@ gem 'zeitwerk'
 gem 'puma', require: false
 
 gem 'io-stream', '!= 0.13.2', '!= 0.14.0', '!= 0.14.1', '!= 0.14.2' # NOTE: remove once gems build in docker w/ openssl4
+gem 'puppeteer-ruby', '~> 0.52.0', '!= 0.53.0' # NOTE: 0.53.0 breaks docker smoke e to urlpattern
 
 group :development do
   gem 'irb', require: false
