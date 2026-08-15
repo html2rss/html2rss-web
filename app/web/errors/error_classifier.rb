@@ -122,10 +122,8 @@ module Html2rss
              c.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
          }, BLOCKED_SURFACE],
         [lambda { |c, _|
-           (defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
-             c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)) ||
-             (defined?(::Html2rss::RequestService::BrowserlessConnectionFailed) &&
-               c.any?(::Html2rss::RequestService::BrowserlessConnectionFailed))
+           defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
+             c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
          }, SCRAPER_UNAVAILABLE],
         [lambda { |_, err|
            defined?(::Rack::Timeout::RequestTimeoutException) && err.is_a?(::Rack::Timeout::RequestTimeoutException)

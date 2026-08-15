@@ -105,7 +105,7 @@ RSpec.describe Html2rss::Web::SentryLogs do
       request_id: 'req-123',
       route_group: 'api_v1',
       strategy: 'faraday',
-      details: { url: 'https://example.com/articles', fallback: 'browserless' }
+      details: { url: 'https://example.com/articles', fallback: 'botasaurus' }
     }
   end
 
@@ -132,7 +132,7 @@ RSpec.describe Html2rss::Web::SentryLogs do
   def breadcrumb_details_matcher
     include(
       url: include(host: 'example.com', scheme: 'https'),
-      fallback: 'browserless'
+      fallback: 'botasaurus'
     )
   end
 

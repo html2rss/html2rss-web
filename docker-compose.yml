@@ -21,8 +21,7 @@ services:
       SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
       HTML2RSS_TOTAL_TIMEOUT_SECONDS: 25
       RACK_TIMEOUT_SERVICE_TIMEOUT: 30
-      BROWSERLESS_IO_WEBSOCKET_URL: ws://browserless:4002
-      BROWSERLESS_IO_API_TOKEN: ${BROWSERLESS_IO_API_TOKEN:?set BROWSERLESS_IO_API_TOKEN}
+      BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
     # Trial runs use the image's bundled config/feeds.yml.
     # Uncomment the block below when you want to replace it with your own file.
     # volumes:
@@ -39,12 +38,8 @@ services:
       - "${HOME}/.docker/config.json:/config.json"
     command: --cleanup --interval 7200
 
-  browserless:
-    image: "ghcr.io/browserless/chromium"
+  botasaurus:
+    image: html2rss/botasaurus-scrape-api:latest
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4002:4002"
-    environment:
-      PORT: 4002
-      CONCURRENT: 10
-      TOKEN: ${BROWSERLESS_IO_API_TOKEN:?set BROWSERLESS_IO_API_TOKEN}
+      - "127.0.0.1:4010:4010"

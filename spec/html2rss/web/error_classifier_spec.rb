@@ -67,13 +67,6 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
     end
 
-    it 'returns the scraper-unavailable decision for BrowserlessConnectionFailed' do
-      stub_const('Html2rss::RequestService::BrowserlessConnectionFailed', Class.new(Html2rss::Error))
-      error = Html2rss::RequestService::BrowserlessConnectionFailed.new('ws closed')
-
-      expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
-    end
-
     it 'returns internal server error decision for unrelated errors' do
       expect(described_class.classify(StandardError.new('boom'))).to eq(described_class::INTERNAL_SERVER_ERROR)
     end
