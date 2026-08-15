@@ -43,7 +43,7 @@ module Html2rss
             return emit_success(target_kind:, identifier:, resolved_source:, result:) if result.status == :ok
             return emit_empty(target_kind:, identifier:, resolved_source:, result:) if result.status == :empty
 
-            message = result.error_message || result.message || Html2rss::Web::HttpError::DEFAULT_MESSAGE
+            message = result.error_message || result.client_message
             emit_failure(target_kind:, identifier:, error: Html2rss::Web::InternalServerError.new(message))
           end
 

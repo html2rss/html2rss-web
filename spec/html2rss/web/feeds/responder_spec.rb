@@ -11,7 +11,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: nil,
-      message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
       error_message: nil,
@@ -108,7 +107,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       Html2rss::Web::Feeds::Contracts::RenderResult.new(
         status: :error,
         payload: nil,
-        message: 'Internal Server Error',
         ttl_seconds: 600,
         cache_key: 'feed_result:error',
         error_message: 'timeout',
@@ -151,10 +149,9 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           site_title: 'https://example.com',
           url: 'https://example.com'
         ),
-        message: nil,
         ttl_seconds: 600,
         cache_key: 'feed_result:empty',
-        error_message: nil,
+        decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
         empty_reason: 'content_extraction_empty',
         strategy_attempts: [
           { strategy: :faraday, items_count: 0, error_class: nil },
@@ -167,12 +164,11 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
     end
 
-    it 'returns 422 with plain text guidance by default', :aggregate_failures do
+    it 'returns 422 with the Decision message by default', :aggregate_failures do
       body = write_response
 
       expect(response_tuple(body)).to eq([422, 'text/plain; charset=utf-8', body])
-      expect(body).to include('Content Extraction Issue')
-      expect(body).to include('What you can do')
+      expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
     it 'emits empty extraction as a failure outcome' do
@@ -209,7 +205,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           site_title: 'https://example.com',
           url: 'https://example.com'
         ),
-        message: nil,
         ttl_seconds: 600,
         cache_key: 'feed_result:feed-empty',
         error_message: nil,
@@ -317,7 +312,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         site_title: 'Example',
         url: 'https://example.com'
       ),
-      message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:status',
       error_message: nil,

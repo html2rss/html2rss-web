@@ -14,7 +14,6 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: nil,
-      message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
       error_message: nil,
@@ -25,12 +24,10 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   def service_error_result
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :error,
-      payload: nil,
-      message: 'Internal Server Error',
       ttl_seconds: 600,
       cache_key: 'feed_result:error',
-      error_message: 'upstream timeout',
-      empty_reason: nil
+      decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
+      error_message: 'upstream timeout'
     )
   end
 
@@ -54,9 +51,9 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :empty,
       payload: empty_feed_payload,
-      message: nil,
       ttl_seconds: 600,
       cache_key:,
+      decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
       error_message:,
       empty_reason:
     )
@@ -540,7 +537,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(422)
       expect(last_response.content_type).to include('text/plain')
       expect(last_response.headers['Cache-Control']).to include('max-age=600')
-      expect(last_response.body).to include('Content Extraction Issue')
+      expect(last_response.body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
     it 'returns 422 for empty extraction feeds in json feed representation', :aggregate_failures do
@@ -552,7 +549,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(422)
       expect(last_response.content_type).to eq('text/plain; charset=utf-8')
       expect(last_response.headers['Cache-Control']).to include('max-age=600')
-      expect(last_response.body).to include('Content Extraction Issue')
+      expect(last_response.body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
     # rubocop:disable RSpec/ExampleLength
@@ -618,6 +615,10 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         header 'Content-Type', 'application/json'
         post '/api/v1/feeds', request_params.to_json
       end
+    end
+
+    before do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
     end
 
     after do

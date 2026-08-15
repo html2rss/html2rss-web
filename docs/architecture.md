@@ -45,7 +45,7 @@ The `Html2rss::Web::Feeds::Service` orchestrates extraction behind a gem `FeedRe
 2. If stale/missing, calls the `html2rss` gem with the resolved strategy and wraps the gem `FeedResult` in a web `RenderResult`.
 3. Feed HTTP responses are split across render peers:
    - `Html2rss::Web::Feeds::FormatNegotiation` — Accept/path negotiation, `strip_known_extension`, and format/content-type constants used for negotiation (`FormatNegotiation::MediaRange` for Accept scoring).
-   - `Html2rss::Web::Feeds::EmptyFeedCopy` — empty plain-text assembly.
+   - `Html2rss::Web::Feeds::Renderer` — empty FEED bodies dump `ErrorClassifier::Decision#message`.
    - `Html2rss::Web::Feeds::Renderer` — HTTP envelope + success serialization; orchestrates the peers (including plain-text error bodies).
 
 ## Extension Points

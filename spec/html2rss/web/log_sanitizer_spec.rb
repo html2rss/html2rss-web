@@ -90,7 +90,9 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   end
 
   it 'sanitizes security logger fallback output when structured logging fails' do
-    allow(Html2rss::Web::LogEvent).to receive(:emit).and_raise(JSON::GeneratorError, 'boom')
+    failing_logger = instance_double(Logger)
+    allow(failing_logger).to receive(:info).and_raise(JSON::GeneratorError, 'boom')
+    allow(Html2rss::Web::AppLogger).to receive(:logger).and_return(failing_logger)
     allow(Kernel).to receive(:warn)
     emit_failing_token_usage_log
 
@@ -172,7 +174,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   # @return [String]
   def fallback_warning_line
     warning_messages = RSpec::Mocks.space.proxy_for(Kernel).messages_arg_list.map(&:first)
-    warning_messages.find { |message| message.include?('component=security_logger') }
+    warning_messages.find { |message| message.include?('payload=') }
   end
 
   # @return [Hash{Symbol=>String}]
@@ -182,7 +184,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
 
   # @return [String]
   def expected_fallback_warning_line
-    'component=security_logger security_event=token_usage ' \
-      "details={success: true, url: #{sanitized_fallback_url.inspect}, token_hash: \"01cadf39\"}"
+    'payload={security_event: "token_usage", details: {success: true, ' \
+      "url: #{sanitized_fallback_url.inspect}, token_hash: \"01cadf39\"}}"
   end
 end

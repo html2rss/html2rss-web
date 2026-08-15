@@ -8,8 +8,8 @@ module Html2rss
     module Feeds
       ##
       # Builds feed HTTP envelopes: status, headers, and serialized bodies.
-      module Renderer # rubocop:disable Metrics/ModuleLength
-        class << self # rubocop:disable Metrics/ClassLength
+      module Renderer
+        class << self
           # Renders a RenderResult and configures the HTTP response headers and status.
           #
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -43,7 +43,7 @@ module Html2rss
           # @param request [Rack::Request]
           # @return [void]
           def apply_response_envelope(response, result, format, request)
-            response.status = status_for(result.status)
+            response.status = result.http_status
             response['Content-Type'] = response_content_type(result, format)
             apply_cache_headers(response, result)
             apply_vary_and_links(response, result, request)
@@ -110,9 +110,9 @@ module Html2rss
             when :ok
               render_success(result, format, request: request)
             when :empty
-              render_empty(result)
+              plain_text_body(result.client_message)
             else
-              call_error(message: result.message || HttpError::DEFAULT_MESSAGE)
+              call_error(message: result.client_message)
             end
           end
 
@@ -182,22 +182,10 @@ module Html2rss
             "#{request.base_url}#{FormatNegotiation.request_path(request)}"
           end
 
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [String]
-          def render_empty(result)
-            plain_text_body(EmptyFeedCopy.plain_text(result.payload.url, result.payload.site_title))
-          end
-
           # @param message [String]
           # @return [String]
           def plain_text_body(message)
             message.to_s.gsub(/[\x00-\x08\x0B\x0C\x0E-\x1F]/, '').strip
-          end
-
-          # @param status [Symbol]
-          # @return [Integer]
-          def status_for(status)
-            { ok: 200, empty: 422 }.fetch(status, 500)
           end
         end
       end

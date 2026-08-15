@@ -94,7 +94,11 @@ module Html2rss
         # @return [nil]
         def reload!(reason: 'manual')
           @mutex.synchronize { @snapshot = nil }
-          SecurityLogger.log_cache_lifecycle('local_config', 'reload', reason: reason)
+          Observability.emit(
+            event_name: 'cache.lifecycle',
+            outcome: 'success',
+            details: { component: 'local_config', event: 'reload', reason: }
+          )
           nil
         end
 

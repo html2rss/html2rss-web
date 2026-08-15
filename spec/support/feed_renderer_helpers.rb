@@ -30,7 +30,6 @@ module FeedRendererHelpers
         site_title: 'Example Feed',
         url: url
       ),
-      message: nil,
       ttl_seconds: 600,
       cache_key: cache_key,
       error_message: nil,

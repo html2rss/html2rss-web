@@ -98,6 +98,8 @@ module Html2rss
               HOSTNAME_INPUT_REGEXP.match?(url) ? "https://#{url}" : url
             end
 
+            # Extracts via {Feeds::Service} before minting so create and serve share one expansion path.
+            #
             # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
             # @param account [Hash]
             # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
@@ -107,7 +109,31 @@ module Html2rss
               feed_token = Auth.generate_feed_token(account[:username], params.url)
               raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_token
 
+              ensure_extractable!(Feeds::Service.call(resolved_source_for(feed_token)))
               FeedMetadata.build(account:, name: params.name, url: params.url, feed_token:)
+            end
+
+            # @param feed_token [String]
+            # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+            def resolved_source_for(feed_token)
+              Feeds::SourceResolver.call(
+                Feeds::Contracts::Request.new(target_kind: :token, feed_name: nil, token: feed_token, params: {})
+              )
+            end
+
+            # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+            # @return [void]
+            def ensure_extractable!(result)
+              return if result.status == :ok
+
+              decision = result.decision || fallback_decision(result)
+              raise ErrorClassifier::DecidedError, decision
+            end
+
+            # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+            # @return [Html2rss::Web::ErrorClassifier::Decision]
+            def fallback_decision(result)
+              result.status == :empty ? ErrorClassifier::EXTRACTION_EMPTY : ErrorClassifier::INTERNAL_SERVER_ERROR
             end
 
             # @param feed_data [Html2rss::Web::Api::V1::FeedMetadata::Metadata]

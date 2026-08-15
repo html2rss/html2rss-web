@@ -87,7 +87,7 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect(empty_result.status).to eq(:empty)
     expect(empty_result.payload.site_title).to eq('Integration Feed Fixture')
     expect([response.status, response['Content-Type']]).to eq([422, 'text/plain; charset=utf-8'])
-    expect(body).to include('Integration Feed Fixture - Content Extraction Issue')
+    expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     expect(response['Vary']).to eq('Accept')
   end
   # rubocop:enable RSpec/ExampleLength

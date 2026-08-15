@@ -79,8 +79,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.empty_reason).to eq('feed_empty')
     end
 
-    it 'keeps the result message empty' do
-      expect(result.message).to be_nil
+    it 'attaches the extraction-empty Decision' do
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY)
     end
 
     it 'uses channel_title for empty scrape site_title' do
@@ -106,8 +106,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.status).to eq(:error)
     end
 
-    it 'returns a generic client error message' do
-      expect(result.message).to eq('Internal Server Error')
+    it 'exposes the internal Decision message to clients' do
+      expect(result.client_message).to eq('Internal Server Error')
     end
 
     it 'retains the internal error details for observability' do
@@ -161,6 +161,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY)
       expect(result.error_message).to include('No feed items extracted after auto fallback')
       expect(result.strategy_attempts).to eq(
         [
@@ -215,6 +216,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     it 'marks the result as an error instead of empty', :aggregate_failures do
       expect(result.status).to eq(:error)
+      expect(result.decision.code).to eq('NON_CACHEABLE')
       expect(result.empty_reason).to be_nil
     end
   end
