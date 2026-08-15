@@ -52,6 +52,7 @@ end
 config = compose_config
 services = config.fetch('services') { abort('quickstart verify failed: missing top-level services map') }
 web = fetch_service!(services, 'html2rss-web')
+caddy = fetch_service!(services, 'caddy')
 fetch_service!(services, 'botasaurus')
 
 assert_equal!(web['image'], EXPECTED_WEB_IMAGE, 'html2rss-web image')
@@ -59,6 +60,6 @@ environment = web.fetch('environment') { abort('quickstart verify failed: html2r
 assert_equal!(environment['RACK_ENV'], EXPECTED_RACK_ENV, 'html2rss-web RACK_ENV')
 assert_equal!(environment['HTML2RSS_ACCESS_TOKEN'], EXPECTED_ACCESS_TOKEN, 'html2rss-web HTML2RSS_ACCESS_TOKEN')
 assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], EXPECTED_SCRAPER_URL, 'html2rss-web BOTASAURUS_SCRAPER_URL')
-assert_port_mapping!(web['ports'])
+assert_port_mapping!(caddy['ports'])
 
 puts 'quickstart verify passed'
