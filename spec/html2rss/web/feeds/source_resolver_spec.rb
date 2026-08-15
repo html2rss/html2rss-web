@@ -56,12 +56,12 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       it 'preserves an explicit static strategy when configured' do
-        config[:strategy] = :browserless
+        config[:strategy] = :botasaurus
 
         resolved = described_class.call(feed_request)
 
-        expect(resolved.generator_input[:strategy]).to eq(:browserless)
-        expect(resolved).to have_attributes(url: 'https://example.com/feed', strategy: :browserless)
+        expect(resolved.generator_input[:strategy]).to eq(:botasaurus)
+        expect(resolved).to have_attributes(url: 'https://example.com/feed', strategy: :botasaurus)
       end
     end
 

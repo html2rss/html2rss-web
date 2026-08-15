@@ -34,7 +34,7 @@ module Html2rss
             def display_name_for(name)
               case name.to_s
               when 'faraday' then 'Default'
-              when 'browserless' then 'JavaScript pages (recommended)'
+              when 'botasaurus' then 'Browser (Botasaurus)'
               else name.to_s.split('_').map(&:capitalize).join(' ')
               end
             end

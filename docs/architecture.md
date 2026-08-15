@@ -11,7 +11,7 @@ flowchart TD
     routes --> feeds["Feeds Service (app/web/feeds)"]
     cache["Cache (app/web/feeds/cache.rb)"] --> feeds
     feeds --> gem["html2rss Gem"]
-    strategies["Request Strategies (Faraday / Browserless)"] --> gem
+    strategies["Request Strategies (Faraday / Botasaurus)"] --> gem
     gem --> target["Target Website"]
 ```
 
@@ -55,6 +55,6 @@ The `Html2rss::Web::Feeds::Service` orchestrates extraction behind a gem `FeedRe
 Strategies are defined by the `html2rss` gem but can be configured here.
 
 - **Faraday**: Default HTTP client for static HTML.
-- **Browserless**: Used for JavaScript-heavy websites.
+- **Botasaurus**: Used for JavaScript-heavy websites or anti-bot protected pages (`BOTASAURUS_SCRAPER_URL`).
 
 To add or configure strategies, see `app/web/feeds/source_resolver.rb` and the `html2rss` gem documentation.
