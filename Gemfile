@@ -19,6 +19,8 @@ gem 'zeitwerk'
 
 gem 'puma', require: false
 
+gem 'io-stream', '!= 0.13.2', '!= 0.14.0', '!= 0.14.1', '!= 0.14.2' # NOTE: remove once gems build in docker w/ openssl4
+
 group :development do
   gem 'irb', require: false
   gem 'rake', require: false
