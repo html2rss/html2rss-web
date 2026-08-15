@@ -18,7 +18,11 @@ module Html2rss
         # @return [nil]
         def reload!(reason: 'manual')
           @mutex.synchronize { @snapshot = nil }
-          SecurityLogger.log_cache_lifecycle('account_manager', 'reload', reason: reason)
+          Observability.emit(
+            event_name: 'cache.lifecycle',
+            outcome: 'success',
+            details: { component: 'account_manager', event: 'reload', reason: }
+          )
           nil
         end
 
@@ -55,7 +59,11 @@ module Html2rss
           token_index = index_accounts(accounts, :token)
           username_index = index_accounts(accounts, :username)
 
-          SecurityLogger.log_cache_lifecycle('account_manager', 'build', accounts_count: accounts.length)
+          Observability.emit(
+            event_name: 'cache.lifecycle',
+            outcome: 'success',
+            details: { component: 'account_manager', event: 'build', accounts_count: accounts.length }
+          )
           { accounts: accounts, token_index: token_index, username_index: username_index }.freeze
         end
 

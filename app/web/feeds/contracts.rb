@@ -44,11 +44,11 @@ module Html2rss
         RenderPayload = Data.define(:feed, :site_title, :url)
 
         ##
-        # Shared feed-serving HTTP/cache result wrapper.
+        # Shared feed-serving result: gem payload plus web status / {ErrorClassifier::Decision}.
         #
-        # Wraps a gem {Html2rss::FeedResult} (when present) with web-owned status, TTL,
-        # cache key, and error metadata for responders — not a second gem feed type.
-        RenderResult = Data.define(:status, :payload, :message, :ttl_seconds, :cache_key, :error_message,
+        # +decision+ owns HTTP status and client message for empty/classified outcomes.
+        # +error_message+ is internal observability only.
+        RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
                                    :empty_reason, :strategy_attempts) do
           class << self
             ##
@@ -56,12 +56,24 @@ module Html2rss
             alias_method :__new, :new
             private :__new
 
-            # Defaults keep existing keyword call sites stable when attempts are absent.
+            # Defaults keep existing keyword call sites stable when optional fields are absent.
             #
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             def new(**)
-              __new(strategy_attempts: [], **)
+              __new(payload: nil, decision: nil, error_message: nil, empty_reason: nil, strategy_attempts: [], **)
             end
+          end
+
+          # @return [Integer]
+          def http_status
+            return decision.status if decision
+
+            { ok: 200, empty: 422 }.fetch(status, 500)
+          end
+
+          # @return [String]
+          def client_message
+            decision&.message || Html2rss::Web::HttpError::DEFAULT_MESSAGE
           end
         end
       end

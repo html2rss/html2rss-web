@@ -59,7 +59,7 @@ module Html2rss
         end
 
         def show_production_error
-          SecurityLogger.log_config_validation_failure('secret_key', 'Missing required secret key')
+          emit_config_validation('secret_key', 'Missing required secret key')
           warn_lines(*production_error_message.lines(chomp: true))
           exit 1
         end
@@ -84,7 +84,7 @@ module Html2rss
           secret = ENV.fetch('HTML2RSS_SECRET_KEY', nil)
           return unless secret == 'your-generated-secret-key-here' || secret.length < 32
 
-          SecurityLogger.log_config_validation_failure('secret_key', 'Invalid or weak secret key')
+          emit_config_validation('secret_key', 'Invalid or weak secret key')
           warn_lines(
             'CRITICAL: Invalid secret key for production deployment!',
             'Secret key must be at least 32 characters and not the default placeholder.',
@@ -118,7 +118,7 @@ module Html2rss
         def validate_create_feed_token!(accounts)
           return unless invalid_placeholder_create_feed_token?(accounts)
 
-          SecurityLogger.log_config_validation_failure(
+          emit_config_validation(
             'access_token',
             'Placeholder create-feed token is not allowed when auto source is enabled'
           )
@@ -134,7 +134,7 @@ module Html2rss
         def validate_health_check_token!(accounts)
           return unless placeholder_health_check_token?(accounts)
 
-          SecurityLogger.log_config_validation_failure(
+          emit_config_validation(
             'health_check_token',
             'Placeholder health-check token is not allowed in production'
           )
@@ -175,18 +175,14 @@ module Html2rss
 
         # @return [void]
         def log_development_default_secret_key_warning
-          SecurityLogger.log_config_validation_failure(
-            'secret_key',
-            'Using development default secret key',
-            severity: :warn
-          )
+          emit_config_validation('secret_key', 'Using development default secret key', level: :warn)
         end
 
         # @param weak_tokens [Array<Hash{Symbol=>String}>]
         # @return [void]
         def handle_weak_account_tokens!(weak_tokens)
           weak_usernames = weak_tokens.map { |acc| acc[:username] }.join(', ')
-          SecurityLogger.log_config_validation_failure('account_tokens', "Weak tokens for users: #{weak_usernames}")
+          emit_config_validation('account_tokens', "Weak tokens for users: #{weak_usernames}")
           warn_lines(
             'CRITICAL: Weak authentication tokens detected in production!',
             'All tokens must be at least 16 characters long.',
@@ -199,14 +195,27 @@ module Html2rss
         # @return [void]
         def handle_malformed_account_tokens!(malformed_accounts)
           malformed_usernames = malformed_accounts.map { |acc| acc[:username] || '(unknown)' }.join(', ')
-          SecurityLogger.log_config_validation_failure('account_tokens',
-                                                       "Invalid token configuration for users: #{malformed_usernames}")
+          emit_config_validation('account_tokens',
+                                 "Invalid token configuration for users: #{malformed_usernames}")
           warn_lines(
             'CRITICAL: Invalid account token configuration detected in production!',
             'Each account token must be a non-empty string.',
             "Invalid token configuration found for users: #{malformed_usernames}"
           )
           exit 1
+        end
+
+        # @param component [String]
+        # @param details [String]
+        # @param level [Symbol]
+        # @return [void]
+        def emit_config_validation(component, details, level: :error)
+          Observability.emit(
+            event_name: 'config.validation',
+            outcome: 'failure',
+            details: { component:, details: },
+            level:
+          )
         end
       end
       # rubocop:enable Metrics/ClassLength

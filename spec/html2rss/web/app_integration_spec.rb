@@ -44,7 +44,6 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: nil,
-      message: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:test',
       error_message: nil,
@@ -224,7 +223,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
       expect(last_response.status).to eq(422)
       expect(last_response.headers['Content-Type']).to eq('text/plain; charset=utf-8')
-      expect(last_response.body).to include('Content Extraction Issue')
+      expect(last_response.body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
     # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
@@ -257,10 +256,9 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
             site_title: feed_url,
             url: feed_url
           ),
-          message: nil,
           ttl_seconds: 600,
           cache_key: 'feed_result:empty',
-          error_message: nil,
+          decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
           empty_reason: 'feed_empty'
         )
       )
@@ -379,15 +377,46 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         )
       end
 
-      it 'returns corrective extraction-empty failure when auto fallback exhausts' do
-        no_feed_items_extracted = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
-        allow(Html2rss::Web::Auth).to receive(:generate_feed_token)
-          .and_raise(no_feed_items_extracted, 'No feed items extracted after auto fallback')
+      it 'returns corrective extraction-empty failure when extraction is empty', :aggregate_failures do
+        stub_create_service_result(
+          status: :empty,
+          decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
+          cache_key: 'feed_result:create-empty',
+          empty_reason: 'content_extraction_empty'
+        )
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 
         expect(last_response.status).to eq(422)
         expect(json_body).to include('error' => include(extraction_empty_error_fields))
+      end
+
+      it 'preserves blocked-surface Decision on create fail-closed', :aggregate_failures do
+        stub_create_service_result(
+          status: :empty,
+          decision: Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE,
+          cache_key: 'feed_result:create-blocked',
+          empty_reason: 'content_extraction_empty'
+        )
+
+        post '/api/v1/feeds', request_payload.to_json, auth_headers
+
+        expect_blocked_surface_create_error
+      end
+
+      it 'does not leak internal error_message on create hard failure', :aggregate_failures do
+        stub_create_service_result(
+          status: :error,
+          decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
+          cache_key: 'feed_result:create-error',
+          error_message: 'upstream secret details'
+        )
+
+        post '/api/v1/feeds', request_payload.to_json, auth_headers
+
+        expect(last_response.status).to eq(500)
+        expect(json_body.dig('error', 'message')).to eq('Internal Server Error')
+        expect(last_response.body).not_to include('upstream secret details')
       end
 
       it 'returns created feed metadata' do
@@ -418,5 +447,24 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       'next_action' => 'correct_input',
       'retry_action' => 'none'
     }
+  end
+
+  # @param attrs [Hash{Symbol=>Object}]
+  # @return [void]
+  def stub_create_service_result(**attrs)
+    allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(
+      Html2rss::Web::Feeds::Contracts::RenderResult.new(ttl_seconds: 600, **attrs)
+    )
+  end
+
+  # @return [void]
+  def expect_blocked_surface_create_error
+    expect(last_response.status).to eq(422)
+    expect(json_body).to include(
+      'error' => include(
+        'code' => Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE_CODE,
+        'message' => Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE_MESSAGE
+      )
+    )
   end
 end

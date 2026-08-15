@@ -33,7 +33,6 @@ RSpec.describe Html2rss::Web::App do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: nil,
-      message: nil,
       ttl_seconds: Html2rss::Web::Feeds::Cache.seconds_from_minutes(ttl),
       cache_key: 'feed_result:spec',
       error_message: nil,
@@ -51,7 +50,6 @@ RSpec.describe Html2rss::Web::App do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :error,
       payload: nil,
-      message: 'Internal Server Error',
       ttl_seconds: 600,
       cache_key: 'feed_result:error',
       error_message: 'upstream timeout',

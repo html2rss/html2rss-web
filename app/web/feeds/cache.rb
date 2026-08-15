@@ -54,7 +54,11 @@ module Html2rss
           # @return [nil]
           def clear!(reason: 'manual')
             entries.clear
-            SecurityLogger.log_cache_lifecycle('feeds_cache', 'clear', reason: reason)
+            Observability.emit(
+              event_name: 'cache.lifecycle',
+              outcome: 'success',
+              details: { component: 'feeds_cache', event: 'clear', reason: }
+            )
             nil
           end
 
@@ -73,7 +77,11 @@ module Html2rss
           def write_entry(key, ttl_seconds, result)
             prune_if_needed
             entries[key] = Entry.new(result: result, expires_at: Time.now.utc + normalize_ttl(ttl_seconds))
-            SecurityLogger.log_cache_lifecycle('feeds_cache', 'write', key_hash: key_hash(key))
+            Observability.emit(
+              event_name: 'cache.lifecycle',
+              outcome: 'success',
+              details: { component: 'feeds_cache', event: 'write', key_hash: key_hash(key) }
+            )
           end
 
           # Prunes expired entries first. If still over the max limit, prunes entries expiring soonest.

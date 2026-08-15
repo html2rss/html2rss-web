@@ -47,7 +47,6 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :ok,
       payload: ok_payload,
-      message: nil,
       ttl_seconds: 300,
       cache_key: 'key',
       error_message: nil,
@@ -59,9 +58,9 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :empty,
       payload: empty_payload,
-      message: nil,
       ttl_seconds: 300,
       cache_key: 'key',
+      decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
       error_message: 'empty page',
       empty_reason: 'content_extraction_empty'
     )
@@ -93,11 +92,10 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
       )
     end
 
-    it 'renders plain text warnings for empty results', :aggregate_failures do
+    it 'renders the Decision message for empty results' do
       body = render_body(empty_result, path: '/api/v1/feeds/token.xml')
 
-      expect(body).to include('Content Extraction Issue')
-      expect(body).to include('What you can do')
+      expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
     it 'sets status, content-type, link alternates, vary, and cache control on the response', :aggregate_failures do

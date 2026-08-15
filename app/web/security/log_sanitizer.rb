@@ -36,6 +36,7 @@ module Html2rss
           return sanitize_details(value) if value.is_a?(Hash)
           return value.map { |entry| sanitize_value(key, entry) } if value.is_a?(Array)
           return sanitize_url(value) if url_key?(key)
+          return sanitize_path(value) if path_key?(key)
 
           value
         end
@@ -45,6 +46,12 @@ module Html2rss
         def url_key?(key)
           key_name = key.to_s
           key_name == 'url' || key_name.end_with?('_url', '_urls')
+        end
+
+        # @param key [Object]
+        # @return [Boolean]
+        def path_key?(key)
+          %w[endpoint path].include?(key.to_s)
         end
 
         # @param value [Object]

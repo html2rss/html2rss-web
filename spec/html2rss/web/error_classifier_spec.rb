@@ -20,6 +20,12 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
   end
 
   describe '.classify' do
+    it 'returns a carried Decision without remapping' do
+      decided = described_class::DecidedError.new(described_class::BLOCKED_SURFACE)
+
+      expect(described_class.classify(decided)).to eq(described_class::BLOCKED_SURFACE)
+    end
+
     it 'returns the extraction-empty decision for NoFeedItemsExtracted' do
       klass = stub_no_feed_items_extracted
 

@@ -31,9 +31,9 @@ module Html2rss
             success_result(feed_result, resolved_source, cache_key)
           rescue StandardError => error
             decision = ErrorClassifier.classify(error)
-            return empty_result(error, resolved_source, cache_key) if decision&.cacheable
+            return classified_empty_result(error, decision, resolved_source, cache_key) if decision.cacheable
 
-            error_result(error, resolved_source, cache_key)
+            error_result(error, decision, resolved_source, cache_key)
           end
 
           # @param feed_result [Html2rss::FeedResult]
@@ -41,43 +41,61 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def success_result(feed_result, resolved_source, cache_key)
-            status = feed_result.empty? ? :empty : :ok
+            return empty_feed_result(feed_result, resolved_source, cache_key) if feed_result.empty?
+
             render_result(
-              status:,
+              status: :ok,
+              payload: payload_for(resolved_source, feed_result:),
+              ttl_seconds: resolved_source.ttl_seconds,
+              cache_key:
+            )
+          end
+
+          # @param feed_result [Html2rss::FeedResult]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param cache_key [String]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def empty_feed_result(feed_result, resolved_source, cache_key)
+            render_result(
+              status: :empty,
+              decision: ErrorClassifier::EXTRACTION_EMPTY,
               payload: payload_for(resolved_source, feed_result:),
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
-              empty_reason: status == :empty ? 'feed_empty' : nil
+              empty_reason: 'feed_empty'
             )
           end
 
           # @param error [StandardError]
+          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def error_result(error, resolved_source, cache_key)
-            render_result(
-              status: :error,
-              message: Html2rss::Web::HttpError::DEFAULT_MESSAGE,
-              ttl_seconds: resolved_source.ttl_seconds,
-              cache_key:,
-              error_message: error.message
-            )
-          end
-
-          # @param error [StandardError]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param cache_key [String]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def empty_result(error, resolved_source, cache_key)
+          def classified_empty_result(error, decision, resolved_source, cache_key)
             render_result(
               status: :empty,
+              decision:,
               payload: payload_for(resolved_source),
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
               error_message: error.message,
               empty_reason: 'content_extraction_empty',
               strategy_attempts: strategy_attempts_for(error)
+            )
+          end
+
+          # @param error [StandardError]
+          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param cache_key [String]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def error_result(error, decision, resolved_source, cache_key)
+            render_result(
+              status: :error,
+              decision:,
+              ttl_seconds: resolved_source.ttl_seconds,
+              cache_key:,
+              error_message: error.message
             )
           end
 
@@ -105,24 +123,17 @@ module Html2rss
             ChannelTitle.for(url) || url.to_s
           end
 
-          # @param attrs [Hash{Symbol=>Object}] RenderResult members (`status`, `ttl_seconds`,
-          #   `cache_key` required; `payload`, `message`, `error_message`, `empty_reason`,
-          #   `strategy_attempts` optional)
+          # @param attrs [Hash{Symbol=>Object}]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def render_result(**attrs)
             Contracts::RenderResult.new(
               payload: nil,
-              message: nil,
               error_message: nil,
               empty_reason: nil,
-              strategy_attempts: [],
               **attrs
             )
           end
 
-          # Pulls gem auto-fallback attempts from the error (or its cause chain).
-          # Emit-site telemetry only — ErrorClassifier stays a decision mapper.
-          #
           # @param error [Exception]
           # @return [Array<Hash>]
           def strategy_attempts_for(error)

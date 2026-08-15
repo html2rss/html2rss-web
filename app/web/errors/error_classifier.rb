@@ -16,6 +16,19 @@ module Html2rss
         :status, :code, :message, :kind, :cacheable, :retryable, :next_action, :retry_action
       )
 
+      ##
+      # Carries an already-computed {Decision} through raise → {ErrorResponder}.
+      class DecidedError < StandardError
+        # @return [Html2rss::Web::ErrorClassifier::Decision]
+        attr_reader :decision
+
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        def initialize(decision)
+          @decision = decision
+          super(decision.message)
+        end
+      end
+
       NETWORK_ERRORS = Set[
         Timeout::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError,
         EOFError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT
@@ -137,6 +150,8 @@ module Html2rss
         # @param error [Exception]
         # @return [Html2rss::Web::ErrorClassifier::Decision]
         def classify(error)
+          return error.decision if error.is_a?(DecidedError)
+
           classify_special_error(error) || classify_http_error(error) || classify_unhandled_error(error)
         end
 

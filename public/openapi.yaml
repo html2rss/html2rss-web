@@ -313,10 +313,8 @@ paths:
         '422':
           content:
             text/plain:
-              example: |-
-                Content Extraction Issue
-
-                We could not extract entries from https://example.com/articles right now.
+              example: We could not extract feed items from this page yet. Try a more
+                specific listing URL or explicit selectors.
               schema:
                 type: string
           description: returns 422 for empty extraction feeds in xml representation

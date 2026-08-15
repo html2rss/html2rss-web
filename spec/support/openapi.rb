@@ -124,10 +124,7 @@ if ENV['OPENAPI']
 
     token_feed_empty_examples = {
       'text/plain' => {
-        'example' => [
-          'Content Extraction Issue',
-          'We could not extract entries from https://example.com/articles right now.'
-        ].join("\n\n")
+        'example' => Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE
       }
     }
 
