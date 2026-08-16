@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-gem 'html2rss', '~> 0.24'
+gem 'html2rss', '~> 0.26'
 # gem 'html2rss', github: 'html2rss/html2rss', branch: 'master'
 gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
@@ -12,15 +12,13 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 # gem 'html2rss', path: '../html2rss'
 # gem 'html2rss-configs', path: '../html2rss-configs'
 
+gem 'base64'
 gem 'rack-cache'
 gem 'rack-timeout'
 gem 'roda'
 gem 'zeitwerk'
 
 gem 'puma', require: false
-
-gem 'io-stream', '!= 0.13.2', '!= 0.14.0', '!= 0.14.1', '!= 0.14.2' # NOTE: remove once gems build in docker w/ openssl4
-gem 'puppeteer-ruby', '~> 0.52.0', '!= 0.53.0' # NOTE: 0.53.0 breaks docker smoke e to urlpattern
 
 group :development do
   gem 'irb', require: false
