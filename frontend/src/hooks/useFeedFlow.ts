@@ -179,8 +179,9 @@ export function useFeedFlow({
     const isMatched = Boolean(result && result.feed.feed_token === route.feedToken);
     if (isMatched) return;
 
-    navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined }, { replace: true });
-  }, [feedFormData.url, navigate, result, route]);
+    // Do not carry a prefill URL — that would re-trigger auto-submit and bounce back to result.
+    navigate({ kind: 'create' }, { replace: true });
+  }, [navigate, result, route]);
 
   return {
     isConverting,
