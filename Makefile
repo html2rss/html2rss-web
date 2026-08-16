@@ -83,19 +83,7 @@ lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Stylelint + P
 
 lint-css-primitives: ## Fail if app CSS redefines shared primitives or reintroduces banned tokens
 	@echo "Checking CSS primitive ownership..."
-	@if rg -n '^\.(btn|input|ui-card|ui-eyebrow|ui-item|layout-stack|brand-lockup)(--|__|\b)' frontend/src/styles/main.css; then \
-		echo "main.css must not redefine shared primitives; move them to public/shared-ui.css"; \
-		exit 1; \
-	fi
-	@if rg -n '--state-frame-' frontend/src/styles/main.css public/rss.xsl public/shared-ui.css; then \
-		echo "Banned --state-frame-* tokens detected"; \
-		exit 1; \
-	fi
-	@if rg -n 'letter-spacing:\s*[0-9]' frontend/src/styles/main.css; then \
-		echo "Use letter-spacing tokens instead of raw values in main.css"; \
-		exit 1; \
-	fi
-	@echo "CSS primitive ownership checks passed!"
+	@bundle exec ruby bin/lint-css-primitives
 
 lintfix: lintfix-ruby lintfix-js ## Auto-fix all linting issues (Ruby + Frontend)
 	@echo "All lintfix complete!"

@@ -156,14 +156,15 @@ a {
   text-decoration: none;
 }
 
-a:hover,
-a:focus-visible {
+a:hover {
   text-decoration: underline;
   text-underline-offset: 0.16em;
 }
 
 a:focus-visible {
   outline: none;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
   box-shadow: var(--focus-ring);
   border-color: var(--border-strong);
 }
@@ -417,18 +418,6 @@ textarea {
   padding-inline: var(--control-input-lg-padding-inline, 1.25rem 5rem);
   font-size: var(--control-input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
   letter-spacing: var(--control-input-lg-letter-spacing, var(--letter-spacing-display));
-}
-
-.input--minimal {
-  width: auto;
-  min-width: min(100%, 18rem);
-  background: transparent;
-  border-color: transparent;
-  color: var(--text-muted);
-  text-align: center;
-  font-size: var(--font-size-0);
-  font-weight: var(--font-weight-medium);
-  padding: 0;
 }
 
 .input:disabled {

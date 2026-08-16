@@ -144,7 +144,6 @@ Prefer composing these primitives before inventing new classes:
 - `brand-lockup`
 - `input`
 - `input--lg`
-- `input--minimal`
 - `input--mono`
 - `btn`
 - `btn--primary`
@@ -225,9 +224,9 @@ If you add `display: grid`, be able to explain why an existing stack or rail pri
 
 `make lint-css-primitives` (wired into `make lint-js`) fails when:
 
-- `frontend/src/styles/main.css` redefines shared primitive selectors
+- `frontend/src/styles/main.css` or `public/rss.xsl` redefine shared primitive selectors (including indented rules)
 - `--state-frame-*` tokens reappear
-- raw off-scale letter-spacing or font-size literals appear in app/feed composition CSS
+- raw off-scale `letter-spacing` or `font-size` literals appear in app/feed composition CSS (use tokens; override shared controls via host CSS vars such as `--control-input-lg-*`)
 
 Stylelint continues to enforce selector naming on CSS files.
 
