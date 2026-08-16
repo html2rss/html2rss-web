@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
 import { Notice } from './Notice';
+import { COPY } from '../copy';
 import { useAppPresenter } from '../hooks/useAppPresenter';
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
@@ -103,7 +104,7 @@ export function App() {
           <div class="workspace-content">
             {bookmarkletNotice && (
               <Notice
-                title="How to use the Bookmarklet"
+                title={COPY.bookmarkletTitle}
                 actions={
                   <button
                     type="button"
@@ -114,11 +115,7 @@ export function App() {
                   </button>
                 }
               >
-                <p style="margin: 0; line-height: 1.5;">
-                  Drag the "Bookmarklet" link from the footer to your browser's bookmarks bar. When viewing
-                  any website you want to convert to RSS, click the bookmark to automatically prefill its URL
-                  here.
-                </p>
+                <p>{COPY.bookmarkletHelp}</p>
               </Notice>
             )}
 

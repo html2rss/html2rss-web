@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ResultDisplay } from '../components/ResultDisplay';
+import { COPY } from '../copy';
 import type { AppViewModel } from '../appViewModel';
 
 describe('ResultDisplay', () => {
@@ -37,7 +38,7 @@ describe('ResultDisplay', () => {
     vi.clearAllMocks();
   });
 
-  it('renders ready feed actions and preview cards', async () => {
+  it('renders ready feed with Copy as primary CTA and demoted open links', async () => {
     const viewModelWithMultiplePreviewItems = {
       ...mockViewModel,
       preview: {
@@ -81,22 +82,23 @@ describe('ResultDisplay', () => {
     );
 
     expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'result');
-    expect(screen.getByText('Feed ready')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open feed' })).toHaveClass('btn--primary');
-    expect(screen.getByRole('link', { name: 'Open JSON Feed' })).toHaveAttribute(
+    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.openFeed })).toHaveClass('btn--ghost');
+    expect(screen.getByRole('link', { name: COPY.openJsonFeed })).toHaveAttribute(
       'href',
       'https://example.com/feed.json'
     );
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText('Item Four')).toBeInTheDocument();
-      expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
+      expect(screen.getByText(COPY.previewLatest)).toBeInTheDocument();
     });
     expect(screen.queryByRole('button', { name: /show all .* items/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show fewer items' })).not.toBeInTheDocument();
   });
 
-  it('renders preview loading as frontend-owned progress', () => {
+  it('keeps Copy and open actions available while preview loads', () => {
     render(
       <ResultDisplay
         viewModel={{
@@ -108,9 +110,10 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText('Checking preview')).toBeInTheDocument();
-    expect(screen.getByText('Checking preview...')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Open feed' })).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewChecking)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.openFeed })).toBeInTheDocument();
   });
 
   it('lets retryable preview failures retry preview only', () => {
@@ -133,7 +136,7 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText('Feed link created')).toBeInTheDocument();
+    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
     expect(mockOnRetryPreview).toHaveBeenCalled();
   });
@@ -147,10 +150,10 @@ describe('ResultDisplay', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createAnother }));
     expect(mockOnCreateAnother).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.copyFeedUrl }));
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
     });

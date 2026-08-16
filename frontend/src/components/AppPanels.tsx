@@ -5,6 +5,7 @@ import { DominantField } from './DominantField';
 import { Notice } from './Notice';
 import { getPanelViewState } from '../appViewModel';
 import type { AppViewModel } from '../appViewModel';
+import { COPY } from '../copy';
 
 export interface FeedFormData {
   url: string;
@@ -69,30 +70,34 @@ function UrlEntrySection({
         spellcheck={false}
         autoFocus
         inputRef={inputRef}
-        actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
+        actionLabel={isConverting ? COPY.creating : COPY.generateFeed}
         actionText={isConverting ? '...' : '>'}
         disabled={disabled}
         error={error}
-        onInput={(event) => onInput((event.target as HTMLInputElement).value)}
+        onInput={(event) => onInput(event.currentTarget.value)}
       />
 
       {!feedCreationEnabled && (
         <>
-          <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
+          <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
           {featuredFeeds.length > 0 && (
             <Notice
               className="layout-rail-reading"
               role="status"
-              ariaLabel="Included feeds"
-              title="Try a working included feed"
+              ariaLabel={COPY.includedFeedsTitle}
+              title={COPY.includedFeedsTitle}
             >
-              <p class="notice__intro">Start with a ready-made feed from this instance.</p>
-              <div class="featured-feed-list" role="list" aria-label="Featured feeds">
+              <p class="notice__intro">{COPY.includedFeedsIntro}</p>
+              <div class="layout-stack layout-stack--tight" role="list" aria-label={COPY.includedFeedsTitle}>
                 {featuredFeeds.map((feed) => (
-                  <div key={feed.path} class="featured-feed-item" role="listitem">
-                    <a href={feed.path} class="featured-feed-item__link" aria-label={feed.title}>
-                      <span class="featured-feed-item__title">{feed.title}</span>
-                      <span class="featured-feed-item__description">{feed.description}</span>
+                  <div key={feed.path} role="listitem">
+                    <a
+                      href={feed.path}
+                      class="ui-card ui-card--padded ui-item--card layout-stack layout-stack--tight"
+                      aria-label={feed.title}
+                    >
+                      <span class="ui-item__title">{feed.title}</span>
+                      <span class="ui-item__excerpt">{feed.description}</span>
                     </a>
                   </div>
                 ))}
@@ -118,7 +123,6 @@ interface TokenGateSectionProperties {
   tokenDraft: string;
   tokenError: string;
   inputRef: RefObject<HTMLInputElement>;
-  onInput?: (value: string) => void;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
@@ -133,19 +137,23 @@ function TokenGateSection({
   onCancelTokenPrompt,
 }: TokenGateSectionProperties) {
   return (
-    <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
+    <div
+      class="token-gate ui-card ui-card--padded ui-card--framed layout-rail-reading"
+      role="group"
+      aria-label={COPY.tokenTitle}
+    >
       <div class="token-gate__copy">
-        <h2>Enter access token</h2>
-        <p class="token-gate__hint">Required by this instance.</p>
+        <h2>{COPY.tokenTitle}</h2>
+        <p class="ui-eyebrow">{COPY.tokenHint}</p>
       </div>
       <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
-        <span class="field-label field-label--ghost">Access token</span>
+        <span class="ui-eyebrow ui-eyebrow--ghost">{COPY.tokenTitle}</span>
         <input
           id="access-token"
           name="access-token"
           type="password"
           class="input input--mono input--minimal"
-          aria-label="Access token"
+          aria-label={COPY.tokenTitle}
           placeholder="Paste access token"
           autoComplete="off"
           autoCapitalize="off"
@@ -161,9 +169,9 @@ function TokenGateSection({
             event.preventDefault();
             void onSaveToken();
           }}
-          onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
+          onInput={(event) => onTokenDraftChange(event.currentTarget.value)}
         />
-        <span class="field-error">{tokenError}</span>
+        {tokenError ? <span class="field-error">{tokenError}</span> : undefined}
       </label>
       <a
         href="https://html2rss.github.io/web-application/getting-started/"
@@ -171,16 +179,16 @@ function TokenGateSection({
         rel="noopener noreferrer"
         class="token-gate__nudge token-gate__nudge-link"
       >
-        Set up your own instance with Docker.
+        {COPY.dockerSetup}
       </a>
       <div class="token-gate__actions">
         <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-          Save and continue
+          {COPY.saveAndContinue}
         </button>
       </div>
       <div class="token-gate__back">
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
-          Back
+          {COPY.back}
         </button>
       </div>
     </div>
@@ -220,8 +228,8 @@ function ActionFeedback({
       )}
 
       {isConverting && (
-        <Notice className="layout-rail-reading" state="loading" title="Creating feed link">
-          <p>Preparing preview.</p>
+        <Notice className="layout-rail-reading" state="loading" title={COPY.creating}>
+          <p>{COPY.previewChecking}</p>
         </Notice>
       )}
     </>
@@ -244,14 +252,14 @@ export function CreateFeedPanel({
   onCancelTokenPrompt,
   onRetryCreate,
 }: CreateFeedPanelProperties) {
-  const urlInputReference = useRef<HTMLInputElement>(undefined as never);
-  const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
+  const urlInputReference = useRef<HTMLInputElement>(null);
+  const tokenInputReference = useRef<HTMLInputElement>(null);
 
   const { isTokenPrompt, isConverting, tokenError, errorKind, failureMessage, isShowRetryButton } =
     getPanelViewState(viewModel, feedFieldErrors);
 
   useLayoutEffect(() => {
-    if (!urlInputReference.current || globalThis.window === undefined) return;
+    if (isTokenPrompt || !urlInputReference.current || globalThis.window === undefined) return;
 
     const focusHandle = requestAnimationFrame(() => {
       const input = urlInputReference.current;
@@ -262,7 +270,7 @@ export function CreateFeedPanel({
     });
 
     return () => cancelAnimationFrame(focusHandle);
-  }, [focusComposerKey]);
+  }, [focusComposerKey, isTokenPrompt]);
 
   useLayoutEffect(() => {
     if (!isTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
@@ -281,20 +289,7 @@ export function CreateFeedPanel({
       data-state={viewModel.kind}
       data-error-kind={errorKind}
     >
-      <div class={`field-stack field-stack--dense${isTokenPrompt ? ' field-stack--inactive' : ''}`}>
-        <UrlEntrySection
-          url={feedFormData.url}
-          disabled={submitDisabled}
-          error={feedFieldErrors.url}
-          isConverting={isConverting}
-          feedCreationEnabled={feedCreationEnabled}
-          featuredFeeds={featuredFeeds}
-          inputRef={urlInputReference}
-          onInput={(value) => onFeedFieldChange('url', value)}
-        />
-      </div>
-
-      {isTokenPrompt && (
+      {isTokenPrompt ? (
         <TokenGateSection
           tokenDraft={tokenDraft}
           tokenError={tokenError}
@@ -303,6 +298,19 @@ export function CreateFeedPanel({
           onSaveToken={onSaveToken}
           onCancelTokenPrompt={onCancelTokenPrompt}
         />
+      ) : (
+        <div class="field-stack">
+          <UrlEntrySection
+            url={feedFormData.url}
+            disabled={submitDisabled}
+            error={feedFieldErrors.url}
+            isConverting={isConverting}
+            feedCreationEnabled={feedCreationEnabled}
+            featuredFeeds={featuredFeeds}
+            inputRef={urlInputReference}
+            onInput={(value) => onFeedFieldChange('url', value)}
+          />
+        </div>
       )}
 
       <ActionFeedback
@@ -356,7 +364,7 @@ export function UtilityStrip({
           rel="noopener noreferrer"
           class="utility-link"
         >
-          Install from Docker Hub
+          {COPY.dockerInstall}
         </a>
         {openapiUrl && (
           <a

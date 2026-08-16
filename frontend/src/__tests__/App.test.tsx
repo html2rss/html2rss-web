@@ -167,6 +167,9 @@ describe('App', () => {
 
     render(<App />);
 
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
     expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
   });
@@ -179,10 +182,10 @@ describe('App', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
-    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.getByLabelText('Page URL')).toBeDisabled();
+    expect(screen.queryByLabelText('Page URL')).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
@@ -222,7 +225,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Try a working included feed')).toBeInTheDocument();
+    expect(screen.getByText('Included feeds')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
       'href',
       '/microsoft.com/azure-products.rss'
@@ -271,7 +274,7 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();
-    expect(screen.getByText('Feed link created')).toBeInTheDocument();
+    expect(screen.getByText('Feed ready')).toBeInTheDocument();
     expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
@@ -326,7 +329,7 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
@@ -433,7 +436,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Enter access token')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
       expect(
         screen.getByText('Access token was rejected. Paste a valid token to continue.')
       ).toBeInTheDocument();
@@ -507,9 +510,9 @@ describe('App', () => {
 
     render(<App />);
 
-    await screen.findByText('Enter access token');
+    await screen.findByRole('heading', { name: 'Access token' });
     expect(location.hash).toMatch(/^#\/token/);
-    expect(screen.getByLabelText('Page URL')).toHaveValue('https://example.com/articles');
+    expect(screen.queryByLabelText('Page URL')).not.toBeInTheDocument();
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
@@ -621,7 +624,7 @@ describe('App', () => {
 
     await screen.findByText('URL not allowed for this account');
     expect(mockClearToken).not.toHaveBeenCalled();
-    expect(screen.queryByText('Enter access token')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Access token' })).not.toBeInTheDocument();
     expect(
       screen.queryByText('Access token was rejected. Paste a valid token to continue.')
     ).not.toBeInTheDocument();
@@ -660,7 +663,7 @@ describe('App', () => {
     await screen.findByText(
       'Could not extract feed items. Try a more specific listing URL or explicit selectors.'
     );
-    expect(screen.queryByText('Enter access token')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Access token' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
   });

@@ -109,7 +109,7 @@ describe('App contract', () => {
       expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-      expect(screen.getByText('Latest items from this feed')).toBeInTheDocument();
+      expect(screen.getByText('Latest items')).toBeInTheDocument();
     });
     fetchSpy.mockRestore();
   });
@@ -144,7 +144,7 @@ describe('App contract', () => {
 
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
 
-    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
     expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });

@@ -3,10 +3,15 @@ import { useFeedConversion } from './useFeedConversion';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { normalizeUserUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
+import { COPY } from '../copy';
 import type { AppRoute } from '../routes/appRoute';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
+
+interface RouteNavigationOptions {
+  replace?: boolean;
+}
 
 export interface FeedFlowDependencies {
   token: string | undefined;
@@ -15,7 +20,7 @@ export interface FeedFlowDependencies {
   saveToken: (token: string) => Promise<void>;
   clearToken: () => void;
   route: AppRoute;
-  navigate: (route: AppRoute) => void;
+  navigate: (route: AppRoute, options?: RouteNavigationOptions) => void;
 }
 
 export function useFeedFlow({
@@ -84,7 +89,7 @@ export function useFeedFlow({
     if (!feedCreation.enabled) {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
-        form: 'Feed creation is disabled on this instance.',
+        form: COPY.creationDisabled,
       });
       return false;
     }
@@ -166,6 +171,16 @@ export function useFeedFlow({
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     void attemptFeedCreation(token ?? '');
   }, [feedCreation.access_token_required, feedFormData.url, isLoading, navigate, route.kind, token]);
+
+  // Fail-closed result route: only valid with matching in-memory result.
+  useEffect(() => {
+    if (route.kind !== 'result') return;
+
+    const isMatched = Boolean(result && result.feed.feed_token === route.feedToken);
+    if (isMatched) return;
+
+    navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined }, { replace: true });
+  }, [feedFormData.url, navigate, result, route]);
 
   return {
     isConverting,

@@ -34,10 +34,11 @@ test.describe('frontend smoke', () => {
     await page.getByLabel('Page URL').fill('https://example.com/articles');
     await page.getByRole('button', { name: 'Generate feed URL' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Enter access token' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save and continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByLabel('Page URL')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
@@ -121,6 +122,7 @@ test.describe('frontend smoke', () => {
     await expect(page.getByText('Feed ready')).toBeVisible();
     await expect(page.locator('.result-shell')).toHaveAttribute('data-state', 'result');
     await expect(page.getByText('Example Feed')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy feed URL' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open feed' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open JSON Feed' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open in feed reader' })).toBeVisible();
@@ -130,6 +132,7 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/#/result/missing-token');
 
+    await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
     await expect(page.getByLabel('Page URL')).toBeVisible();
     await expect(page.getByText('Saved result unavailable')).toHaveCount(0);
     await expect(page.locator('.result-recovery')).toHaveCount(0);

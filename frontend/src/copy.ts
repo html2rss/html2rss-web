@@ -1,0 +1,25 @@
+/** Single-source UI copy for create / token / result journey states. */
+export const COPY = {
+  creating: 'Creating feed link',
+  previewChecking: 'Checking preview',
+  feedReady: 'Feed ready',
+  tokenTitle: 'Access token',
+  tokenHint: 'Required by this instance.',
+  creationDisabled: 'Feed creation is disabled on this instance.',
+  includedFeedsTitle: 'Included feeds',
+  includedFeedsIntro: 'Start with a ready-made feed from this instance.',
+  dockerSetup: 'Set up your own instance with Docker.',
+  dockerInstall: 'Install from Docker Hub',
+  bookmarkletTitle: 'Bookmarklet',
+  bookmarkletHelp:
+    'Drag the Bookmarklet link from the footer to your bookmarks bar. On any page, click it to prefill the URL here.',
+  copyFeedUrl: 'Copy feed URL',
+  openFeed: 'Open feed',
+  openJsonFeed: 'Open JSON Feed',
+  openInFeedReader: 'Open in feed reader',
+  createAnother: 'Create another feed',
+  previewLatest: 'Latest items',
+  generateFeed: 'Generate feed URL',
+  saveAndContinue: 'Save and continue',
+  back: 'Back',
+} as const;
