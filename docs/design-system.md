@@ -11,8 +11,9 @@ There is one shared design language and one shared primitive layer.
 - Shared primitives live in [public/shared-ui.css](../public/shared-ui.css).
 - App-specific composition lives in [frontend/src/styles/main.css](../frontend/src/styles/main.css).
 - Feed-specific composition lives in [public/rss.xsl](../public/rss.xsl).
+- Journey copy lives in [frontend/src/copy.ts](../frontend/src/copy.ts) (one string per job).
 
-Do not duplicate tokens, base canvas rules, card shells, rails, stack primitives, or brand-lockup styling in `main.css` or `rss.xsl`. If app and feed both need it, it belongs in `shared-ui.css`.
+Do not duplicate tokens, element resets, base canvas rules, card shells, inputs, item list grammar, rails, stack primitives, or brand-lockup styling in `main.css` or `rss.xsl`. If app and feed both need it, it belongs in `shared-ui.css`.
 
 ## Visual Thesis
 
@@ -23,33 +24,45 @@ The UI is not a generic SaaS dashboard. It should read as:
 - quiet but deliberate
 - dark, with restrained light accents
 - compact, not crowded
+- gap-only vertical rhythm (no dual gaps, negative margins, or empty reserved error rows)
 
 The experience should feel like one product across:
 
-- `/`
+- `/` create
 - the token gate
 - the result page
 - `/example.rss` and all XSL-rendered feeds
 
 If a page looks like it came from a different product, the change is wrong even if the CSS is technically valid.
 
+## Journey Grammar (enforced)
+
+- **Create:** URL field is the task.
+- **Token gate:** replaces the URL task in the same frame (do not dim-and-stack competing tasks).
+- **Result:** primary CTA is **Copy feed URL**. Open feed / JSON / feed-reader are demoted secondary actions and stay available while preview loads. Preview is non-blocking confirmation only.
+- **Result route fail-closed:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens hard-navigate to `#/create` (no API rehydrate, no durable shareable result page).
+- **Status eyebrow:** one vocabulary (`Feed ready`) on the result header; preview progress lives in the preview section.
+- **Focus:** create autofocuses the URL field; token autofocuses the token field; result focuses the Copy control.
+
 ## Non-Negotiable Surface Rules
 
 - Background must use the same dark canvas and top-light treatment defined in `shared-ui.css`.
-- Shared cards must use the same border, radius, and surface treatment.
-- Serif display typography is reserved for major titles and the wordmark.
+- Shared cards must use the same border, radius, and surface treatment via `.ui-card` (plus modifiers). No page-local framed-surface forks.
+- Shared feed/preview items must use `.ui-item-list` / `.ui-item` / `.ui-item__*` grammar.
+- Serif display typography is reserved for major titles (`.ui-display-title`) and the wordmark.
 - Sans UI typography is the default for controls, supporting copy, and metadata.
 - Mono is reserved for URLs, tokens, and machine-like values.
-- Eyebrow text is uppercase, compact, and low-noise.
-- Spacing should come from the token scale only.
+- Eyebrow text uses `.ui-eyebrow` (including `.ui-eyebrow--ghost` for visually hidden labels). Do not invent a parallel `.field-label` system.
+- Spacing must come from the token scale only. Letter-spacing uses `--eyebrow-letter-spacing`, `--letter-spacing-meta`, `--letter-spacing-display`, and `--letter-spacing-title`.
 
 Do not introduce:
 
-- ad hoc colors
+- ad hoc colors or off-scale spacing
 - page-local shadows that fight the shared card elevation
 - one-off radii
 - extra spacing scales
 - component-specific typography systems
+- dual-name shims or husk classes after a cutover
 
 ## Architecture
 
@@ -62,13 +75,16 @@ Owned by [public/shared-ui.css](../public/shared-ui.css).
 This file owns:
 
 - tokens
+- element reset (`h1`–`h6`, `p`, lists, `figure`, etc.)
 - global box sizing and canvas behavior
 - global typography baseline
 - link behavior
-- rails
-- stack primitives
-- card primitives
-- eyebrow primitive
+- rails and stack primitives
+- card primitives (`.ui-card*`)
+- item list primitives (`.ui-item*`)
+- eyebrow primitive (`.ui-eyebrow*`)
+- input primitives (`.input*`)
+- button primitives (`.btn*`)
 - brand lockup
 
 This file should stay small, boring, and reusable.
@@ -79,17 +95,14 @@ Owned by [frontend/src/styles/main.css](../frontend/src/styles/main.css).
 
 This file owns:
 
-- page-shell composition
-- workspace layout
-- form behavior
-- dominant-field behavior
-- button behavior
-- notice state behavior
-- token-gate composition
+- page-shell / workspace composition
+- form and dominant-field composition
+- notice state composition
+- token-gate layout composition (must compose `.ui-card`, not redefine a card)
 - result-page composition
-- utility strip behavior
+- utility strip / footer composition
 
-This file should not redefine shared primitives.
+This file must not redefine shared primitives (`.btn`, `.input`, `.ui-card`, `.ui-eyebrow`, `.ui-item*`, `.layout-stack`, `.brand-lockup`).
 
 ### 3. Feed Composition Layer
 
@@ -99,10 +112,10 @@ This file owns only feed-page specifics:
 
 - feed hero composition
 - feed metadata rows
-- feed list/card content styling
-- feed empty/error presentation
+- feed signal chips
+- empty/error presentation
 
-This file should compose shared classes rather than restyle them.
+Item title / meta / excerpt / actions must reuse the shared `.ui-item__*` classes.
 
 ## Approved Primitive API
 
@@ -117,7 +130,17 @@ Prefer composing these primitives before inventing new classes:
 - `ui-card--padded`
 - `ui-card--roomy`
 - `ui-card--notice`
+- `ui-card--framed`
 - `ui-eyebrow`
+- `ui-eyebrow--ghost`
+- `ui-item-list`
+- `ui-item`
+- `ui-item--card`
+- `ui-item__meta`
+- `ui-item__title`
+- `ui-item__excerpt`
+- `ui-item__actions`
+- `ui-display-title`
 - `brand-lockup`
 - `input`
 - `input--lg`
@@ -158,7 +181,9 @@ Avoid returning to patterns like:
 - `input--hero`
 - `input--select`
 - `status-card`
-- multiple near-identical surface tokens
+- `--state-frame-*` surface forks
+- `field-label` parallel to `ui-eyebrow`
+- featured-feed tile systems that re-own card chrome
 
 Those create variant creep.
 
@@ -180,7 +205,7 @@ If you think you need another surface token, the burden of proof is high.
 - `--font-family-display` is for primary titles and the wordmark only.
 - `--font-family-ui` is the default everywhere else.
 - `--font-family-mono` is for feed URLs, tokens, and similarly mechanical strings.
-- `ui-eyebrow` is the preferred pattern for small uppercase metadata labels.
+- `ui-eyebrow` is the only pattern for small uppercase metadata labels.
 
 Do not create alternate display systems per page.
 
@@ -189,11 +214,22 @@ Do not create alternate display systems per page.
 The layout language is narrow on purpose.
 
 - Use rails to control readable width.
-- Use stack primitives for vertical rhythm.
+- Use stack primitives for vertical rhythm (`gap` only).
 - Keep shells centered and calm.
 - Prefer composition over custom grid declarations.
+- Hide empty field errors (`.field-error:empty { display: none }`) instead of reserving min-height.
 
 If you add `display: grid`, be able to explain why an existing stack or rail primitive was insufficient.
+
+## Enforcement
+
+`make lint-css-primitives` (wired into `make lint-js`) fails when:
+
+- `frontend/src/styles/main.css` redefines shared primitive selectors
+- `--state-frame-*` tokens reappear
+- raw off-scale letter-spacing or font-size literals appear in app/feed composition CSS
+
+Stylelint continues to enforce selector naming on CSS files.
 
 ## Agent Checklist
 
@@ -204,17 +240,21 @@ When changing UI, an agent must verify:
 3. Does the app still match the RSS/XSL rendering in overall tone and framing?
 4. Did I avoid inventing a page-local variant for something that should be a modifier or attribute?
 5. If I added a token, modifier, or primitive, did I justify it in this file?
+6. Did journey copy go through `frontend/src/copy.ts` instead of a one-off string?
+7. Did create / token / result keep one primary task and matching focus?
 
 ## Drift Triggers
 
 These are common signs that the system is drifting:
 
 - app and RSS page use different canvas/background treatment
-- same content type gets different card shells
+- same content type gets different card shells or item title styles
 - page-local spacing values appear outside the token scale
 - headings start mixing unrelated type styles
 - new input or card variants appear with overlapping purpose
 - semantic states are encoded as a growing list of presentational classes
+- result actions gated on preview loading
+- token gate stacked under a dimmed URL field
 
 If you see one of these, consolidate instead of layering more CSS.
 
