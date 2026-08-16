@@ -317,6 +317,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  base64
   climate_control
   html2rss (~> 0.26)
   html2rss-configs!
