@@ -11,6 +11,7 @@ import {
   PREVIEW_UNAVAILABLE_MESSAGE,
   isAbortError,
 } from '../feeds/feedsService';
+import { COPY } from '../copy';
 import { isNormalizedHttpUrl, normalizeUserUrl } from '../utils/url';
 
 interface ConversionState {
@@ -40,9 +41,9 @@ export function useFeedConversion() {
   async function convertFeed(url: string, token: string) {
     const normalizedUrl = normalizeUserUrl(url);
 
-    if (!normalizedUrl) throw buildLocalError('Source URL is required.', 'input', 'correct_input');
+    if (!normalizedUrl) throw buildLocalError(COPY.sourceUrlRequired, 'input', 'correct_input');
     if (!isNormalizedHttpUrl(normalizedUrl))
-      throw buildLocalError('Invalid URL format.', 'input', 'correct_input');
+      throw buildLocalError(COPY.invalidUrlFormat, 'input', 'correct_input');
 
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;

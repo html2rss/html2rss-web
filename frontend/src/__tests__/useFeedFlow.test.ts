@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
-import { renderHook, act } from '@testing-library/preact';
+import { renderHook, act, waitFor } from '@testing-library/preact';
 import { useFeedFlow } from '../hooks/useFeedFlow';
 
 const mockFeed = {
@@ -110,5 +110,29 @@ describe('useFeedFlow', () => {
       kind: 'token',
       prefillUrl: 'https://example.com/private-articles',
     });
+  });
+
+  it('fail-closes unmatched result routes to create without prefillUrl', async () => {
+    renderHook(() =>
+      useFeedFlow({
+        token: undefined,
+        metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
+        isLoading: false,
+        saveToken: mockSaveToken,
+        clearToken: mockClearToken,
+        route: { kind: 'result', feedToken: 'missing-token' },
+        navigate: mockNavigate,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ kind: 'create' }, { replace: true });
+    });
+
+    for (const [route] of mockNavigate.mock.calls) {
+      if (route.kind !== 'create') continue;
+      expect(route).toEqual({ kind: 'create' });
+      expect(route).not.toHaveProperty('prefillUrl');
+    }
   });
 });

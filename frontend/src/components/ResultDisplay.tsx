@@ -84,13 +84,13 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       <DominantField
         className="layout-rail-reading"
         id="feed-url"
-        label="Feed URL"
+        label={COPY.feedUrl}
         value={fullUrl}
         readOnly
         actionRef={copyButtonReference}
         actionLabel={COPY.copyFeedUrl}
-        actionText={copied ? 'Copied!' : 'Copy'}
-        actionVariant={copied ? 'default' : 'soft'}
+        actionText={copied ? COPY.copied : COPY.copy}
+        actionVariant={copied ? 'soft' : 'default'}
         onAction={() => void copyToClipboard(fullUrl)}
       />
 
@@ -136,7 +136,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
                   {item.url && (
                     <p class="ui-item__actions">
                       <a href={item.url} target="_blank" rel="noopener noreferrer">
-                        Open original
+                        {COPY.openOriginal}
                       </a>
                     </p>
                   )}
@@ -153,7 +153,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
             <span>{previewMessage}</span>
             {canManuallyRetryPreview && (
               <button type="button" class="btn btn--quiet btn--linkish" onClick={onRetryPreview}>
-                Check again
+                {COPY.checkAgain}
               </button>
             )}
           </div>

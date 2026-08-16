@@ -162,14 +162,15 @@ describe('App', () => {
     });
   });
 
-  it('shows the create flow when opening a stale result deep link', async () => {
+  it('fail-closes unmatched result deep links to bare create without url prefill', async () => {
     history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
 
     render(<App />);
 
     await waitFor(() => {
-      expect(location.hash).toMatch(/^#\/create/);
+      expect(location.hash).toBe('#/create');
     });
+    expect(location.hash).not.toContain('url=');
     expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
   });
@@ -445,7 +446,7 @@ describe('App', () => {
     });
   });
 
-  it('clears stale conversion error when backing out of token recovery', async () => {
+  it('clears stale conversion error when backing out of the token gate', async () => {
     mockUseAccessToken.mockReturnValue({
       token: 'saved-token',
       hasToken: true,
@@ -594,7 +595,7 @@ describe('App', () => {
     });
   });
 
-  it('does not treat non-token forbidden failures as token rejection or strategy-recovery UX', async () => {
+  it('does not treat non-token forbidden failures as token rejection', async () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: false,
       result: undefined,

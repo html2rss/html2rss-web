@@ -12,7 +12,6 @@ export type AppRoute =
   | {
       kind: 'result';
       feedToken: string;
-      prefillUrl?: string;
     };
 
 interface RouteNavigationOptions {

@@ -49,17 +49,18 @@ export function useFeedFlow({
   const [bookmarkletNotice, setBookmarkletNotice] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
 
-  const autoSubmitUrlReference = useRef<string | undefined>(route.prefillUrl);
+  const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
+  const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
   const hasAutoSubmittedReference = useRef(false);
 
   // Prefill URL effect
   useEffect(() => {
-    if (!route.prefillUrl) return;
-    autoSubmitUrlReference.current = route.prefillUrl;
+    if (!routePrefillUrl) return;
+    autoSubmitUrlReference.current = routePrefillUrl;
     if (feedFormData.url) return;
 
-    setFeedFormData((previous) => ({ ...previous, url: route.prefillUrl ?? previous.url }));
-  }, [feedFormData.url, route.prefillUrl]);
+    setFeedFormData((previous) => ({ ...previous, url: routePrefillUrl }));
+  }, [feedFormData.url, routePrefillUrl]);
 
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const submitDisabled = isConverting || !feedCreation.enabled;
@@ -82,7 +83,7 @@ export function useFeedFlow({
     const normalizedUrl = normalizeUserUrl(feedFormData.url);
 
     if (!normalizedUrl) {
-      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
+      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: COPY.sourceUrlRequired });
       return false;
     }
 
@@ -117,7 +118,7 @@ export function useFeedFlow({
         clearError();
         setTokenDraft('');
         if (route.kind !== 'token') navigate({ kind: 'token', prefillUrl: normalizedUrl });
-        setTokenError('Access token was rejected. Paste a valid token to continue.');
+        setTokenError(COPY.tokenRejected);
         setFeedFieldErrors(EMPTY_FEED_ERRORS);
         return false;
       }
@@ -146,7 +147,7 @@ export function useFeedFlow({
       const created = await attemptFeedCreation(normalizedToken);
       if (created) setTokenDraft('');
     } catch (error) {
-      setTokenError(error instanceof Error ? error.message : 'Unable to save access token.');
+      setTokenError(error instanceof Error ? error.message : COPY.unableToSaveToken);
     }
   };
 

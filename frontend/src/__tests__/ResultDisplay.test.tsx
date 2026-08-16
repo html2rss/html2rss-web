@@ -137,7 +137,7 @@ describe('ResultDisplay', () => {
     );
 
     expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.checkAgain }));
     expect(mockOnRetryPreview).toHaveBeenCalled();
   });
 

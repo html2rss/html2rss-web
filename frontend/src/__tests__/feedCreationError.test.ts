@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { COPY } from '../copy';
 import {
   buildLocalError,
   normalizeFeedCreationError,
@@ -60,7 +61,7 @@ describe('feedCreationError', () => {
   });
 
   it('passes through FeedCreationError instances and wraps unknown errors', () => {
-    const local = buildLocalError('Invalid URL format.', 'input', 'correct_input');
+    const local = buildLocalError(COPY.invalidUrlFormat, 'input', 'correct_input');
     expect(normalizeFeedCreationError(local)).toBe(local);
 
     expect(normalizeFeedCreationError(new Error('offline'))).toMatchObject({

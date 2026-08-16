@@ -47,7 +47,9 @@ test.describe('frontend smoke', () => {
     await expect(page.getByLabel('Utilities')).toBeVisible();
   });
 
-  test('shows result after successful feed creation without snapshot recovery', async ({ page }) => {
+  test('shows result after successful feed creation and fail-closes unmatched result routes', async ({
+    page,
+  }) => {
     await page.route(/\/api\/v1$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -132,7 +134,7 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/#/result/missing-token');
 
-    await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
+    await expect(page).toHaveURL(/\/#\/create$/);
     await expect(page.getByLabel('Page URL')).toBeVisible();
     await expect(page.getByText('Saved result unavailable')).toHaveCount(0);
     await expect(page.locator('.result-recovery')).toHaveCount(0);

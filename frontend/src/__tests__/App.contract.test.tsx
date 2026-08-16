@@ -114,7 +114,7 @@ describe('App contract', () => {
     fetchSpy.mockRestore();
   });
 
-  it('reopens token recovery when a saved token is rejected by structured auth metadata', async () => {
+  it('reopens the token gate when a saved token is rejected by structured auth metadata', async () => {
     server.use(
       http.post('/api/v1/feeds', async () =>
         HttpResponse.json(

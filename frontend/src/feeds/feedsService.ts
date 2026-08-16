@@ -7,7 +7,6 @@ import {
 import { normalizeString } from './feedParsers';
 import { readJsonResponse } from './feedPreviewClient';
 
-// Re-export public APIs from submodules for 100% backward compatibility
 export * from './feedErrors';
 export * from './feedParsers';
 export * from './feedPreviewClient';

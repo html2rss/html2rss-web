@@ -111,7 +111,7 @@ export function App() {
                     class="btn btn--quiet btn--linkish"
                     onClick={() => setBookmarkletNotice('')}
                   >
-                    Dismiss
+                    {COPY.dismiss}
                   </button>
                 }
               >
@@ -120,7 +120,7 @@ export function App() {
             )}
 
             {(metadataError || tokenStateError) && (
-              <Notice tone="error" title="Instance metadata unavailable">
+              <Notice tone="error" title={COPY.instanceMetadataUnavailable}>
                 <p>{metadataError ?? tokenStateError}</p>
               </Notice>
             )}

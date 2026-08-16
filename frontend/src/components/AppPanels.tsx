@@ -61,10 +61,10 @@ function UrlEntrySection({
       <DominantField
         className="layout-rail-reading"
         id="url"
-        label="Page URL"
+        label={COPY.pageUrl}
         type="text"
         value={url}
-        placeholder="example.com/articles"
+        placeholder={COPY.pageUrlPlaceholder}
         inputMode="url"
         autoCapitalize="off"
         spellcheck={false}
@@ -93,7 +93,7 @@ function UrlEntrySection({
                   <div key={feed.path} role="listitem">
                     <a
                       href={feed.path}
-                      class="ui-card ui-card--padded ui-item--card layout-stack layout-stack--tight"
+                      class="ui-card ui-item--card layout-stack layout-stack--tight"
                       aria-label={feed.title}
                     >
                       <span class="ui-item__title">{feed.title}</span>
@@ -108,7 +108,7 @@ function UrlEntrySection({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Learn how included configs work.
+                  {COPY.includedFeedsLearnMore}
                 </a>
               </p>
             </Notice>
@@ -143,7 +143,7 @@ function TokenGateSection({
       aria-label={COPY.tokenTitle}
     >
       <div class="token-gate__copy">
-        <h2>{COPY.tokenTitle}</h2>
+        <h2 class="ui-display-title">{COPY.tokenTitle}</h2>
         <p class="ui-eyebrow">{COPY.tokenHint}</p>
       </div>
       <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
@@ -152,9 +152,9 @@ function TokenGateSection({
           id="access-token"
           name="access-token"
           type="password"
-          class="input input--mono input--minimal"
+          class="input input--mono"
           aria-label={COPY.tokenTitle}
-          placeholder="Paste access token"
+          placeholder={COPY.tokenPlaceholder}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -214,11 +214,11 @@ function ActionFeedback({
         <Notice
           className="layout-rail-reading"
           tone="error"
-          title="Couldn't create feed yet"
+          title={COPY.createFailedTitle}
           actions={
             isShowRetryButton && (
               <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
-                Try again
+                {COPY.tryAgain}
               </button>
             )
           }
@@ -347,15 +347,15 @@ export function UtilityStrip({
   })();
 
   return (
-    <section class="utility-strip" aria-label="Utilities">
+    <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
         <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
-          Try included feeds
+          {COPY.tryIncludedFeeds}
         </a>
         <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>
-            Logout
+            {COPY.logout}
           </button>
         )}
         <a
@@ -373,7 +373,7 @@ export function UtilityStrip({
             rel="noopener noreferrer"
             class="utility-link"
           >
-            OpenAPI spec
+            {COPY.openapiSpec}
           </a>
         )}
         <a
@@ -382,7 +382,7 @@ export function UtilityStrip({
           rel="noopener noreferrer"
           class="utility-link"
         >
-          Source code
+          {COPY.sourceCode}
         </a>
       </div>
     </section>
