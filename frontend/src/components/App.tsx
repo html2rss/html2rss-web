@@ -3,7 +3,9 @@ import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
 import { Notice } from './Notice';
 import { COPY } from '../copy';
-import { useAppPresenter } from '../hooks/useAppPresenter';
+import { useSession } from '../session';
+import { useFeedFlow } from '../feed';
+import { useAppRoute } from '../routes/appRoute';
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
@@ -27,39 +29,71 @@ function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
 }
 
 export function App() {
+  const { route, navigate, createEntryKey } = useAppRoute();
+
+  const {
+    token,
+    hasToken,
+    metadata,
+    featuredFeeds,
+    isLoading: sessionLoading,
+    metadataError,
+    tokenStateError,
+    saveToken,
+    clearToken,
+    feedCreationEnabled,
+    mayCreate,
+  } = useSession();
+
   const {
     viewModel,
+    isConverting,
+    clearError,
     feedFormData,
     feedFieldErrors,
     tokenDraft,
     bookmarkletNotice,
     focusCreateComposerKey,
-    metadata,
-    hasToken,
-    isConverting,
-    submitDisabled,
-    feedCreationEnabled,
-    featuredFeeds,
-    metadataLoading,
-    tokenLoading,
-    metadataError,
-    tokenStateError,
-    onFeedSubmit,
+    submitDisabled: flowSubmitDisabled,
     onFeedFieldChange,
-    onTokenDraftChange,
+    onFeedSubmit,
     onSaveToken,
     onCancelTokenPrompt,
     onRetryCreate,
     onCreateAnother,
     onRetryPreview,
-    onClearToken,
-    onShowBookmarkletHelp,
     setBookmarkletNotice,
+    setTokenDraft,
+    setTokenError,
+  } = useFeedFlow({
+    token,
+    isLoading: sessionLoading,
+    feedCreationEnabled,
+    mayCreate,
+    saveToken,
+    clearToken,
+    route,
     navigate,
-  } = useAppPresenter();
+    createEntryKey,
+    tokenStateError,
+    metadataError,
+  });
+
+  const submitDisabled = flowSubmitDisabled || viewModel.kind === 'token_prompt';
+  const onTokenDraftChange = (value: string) => {
+    setTokenDraft(value);
+    setTokenError('');
+    clearError();
+  };
+  const onClearToken = () => {
+    clearToken();
+    clearError();
+    navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
+  };
+  const onShowBookmarkletHelp = () => setBookmarkletNotice('show');
 
   let bodyContent: JSX.Element;
-  if (metadataLoading || tokenLoading) {
+  if (sessionLoading) {
     bodyContent = (
       <Notice title="Loading instance" state="loading" ariaLive="polite">
         <p>Reading feed-generation capabilities.</p>

@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { FeedPreviewWarning } from '../api/contracts';
-import type { AppViewModel } from '../appViewModel';
+import type { AppViewModel } from '../feed';
 import { COPY } from '../copy';
 import { DominantField } from './DominantField';
 

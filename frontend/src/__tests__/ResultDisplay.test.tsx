@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ResultDisplay } from '../components/ResultDisplay';
 import { COPY } from '../copy';
-import type { AppViewModel } from '../appViewModel';
+import type { AppViewModel } from '../feed';
 
 describe('ResultDisplay', () => {
   const mockOnCreateAnother = vi.fn();

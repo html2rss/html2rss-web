@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { decideJourney } from '../feed/decideJourney';
-import { getPanelViewState } from '../appViewModel';
 
 const emptyErrors = { url: '', form: '' };
 
@@ -115,84 +114,5 @@ describe('decideJourney', () => {
         tokenError: '',
       })
     ).toEqual({ kind: 'token_prompt', tokenError: '' });
-  });
-});
-
-describe('getPanelViewState', () => {
-  it('derives values for create state', () => {
-    const state = getPanelViewState({ kind: 'create' }, emptyErrors);
-    expect(state).toEqual({
-      isTokenPrompt: false,
-      isConverting: false,
-      tokenError: '',
-      errorKind: undefined,
-      failureMessage: '',
-      isShowRetryButton: false,
-    });
-  });
-
-  it('derives values for submitting state', () => {
-    const state = getPanelViewState({ kind: 'submitting' }, emptyErrors);
-    expect(state).toEqual({
-      isTokenPrompt: false,
-      isConverting: true,
-      tokenError: '',
-      errorKind: undefined,
-      failureMessage: '',
-      isShowRetryButton: false,
-    });
-  });
-
-  it('derives values for token_prompt state', () => {
-    const state = getPanelViewState(
-      {
-        kind: 'token_prompt',
-        tokenError: 'Invalid token',
-        error: {
-          kind: 'auth',
-          code: 'UNAUTHORIZED',
-          retryable: false,
-          nextAction: 'enter_token',
-          retryAction: 'none',
-          message: 'Access denied',
-        },
-      },
-      emptyErrors
-    );
-    expect(state).toEqual({
-      isTokenPrompt: true,
-      isConverting: false,
-      tokenError: 'Invalid token',
-      errorKind: 'auth',
-      failureMessage: '',
-      isShowRetryButton: false,
-    });
-  });
-
-  it('derives values for error state', () => {
-    const state = getPanelViewState(
-      {
-        kind: 'error',
-        message: 'Something went wrong',
-        errorKind: 'network',
-        error: {
-          kind: 'network',
-          code: 'TIMEOUT',
-          retryable: true,
-          nextAction: 'retry',
-          retryAction: 'recreate',
-          message: 'Something went wrong',
-        },
-      },
-      emptyErrors
-    );
-    expect(state).toEqual({
-      isTokenPrompt: false,
-      isConverting: false,
-      tokenError: '',
-      errorKind: 'network',
-      failureMessage: 'Something went wrong',
-      isShowRetryButton: true,
-    });
   });
 });

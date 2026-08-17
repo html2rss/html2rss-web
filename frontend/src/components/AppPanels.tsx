@@ -3,8 +3,7 @@ import type { RefObject } from 'preact';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
-import { getPanelViewState } from '../appViewModel';
-import type { AppViewModel } from '../appViewModel';
+import type { AppViewModel } from '../feed';
 import { COPY } from '../copy';
 
 export interface FeedFormData {
@@ -261,14 +260,20 @@ export function CreateFeedPanel({
   const tokenInputReference = useRef<HTMLInputElement>(null);
   const tokenDialogReference = useRef<HTMLDialogElement>(null);
 
-  const {
-    isTokenPrompt,
-    isConverting: submitting,
-    tokenError,
-    errorKind,
-    failureMessage,
-    isShowRetryButton,
-  } = getPanelViewState(viewModel, feedFieldErrors);
+  const isTokenPrompt = viewModel.kind === 'token_prompt';
+  const submitting = viewModel.kind === 'submitting';
+  const conversionError =
+    viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
+  const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
+  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
+  const failureMessage = isTokenPrompt
+    ? ''
+    : (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+      conversionError?.message ||
+      feedFieldErrors.form;
+  const isShowRetryButton = Boolean(
+    conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
+  );
   const createConverting = !isTokenPrompt && submitting;
   const tokenConverting = isTokenPrompt && flowConverting;
 
