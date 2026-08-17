@@ -54,7 +54,6 @@ export function decideJourney({
     return {
       kind: 'error',
       message: metadataError ?? tokenStateError ?? COPY.instanceUnavailable,
-
     };
   }
 

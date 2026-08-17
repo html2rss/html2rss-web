@@ -13,6 +13,25 @@ const mockFeed = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
+async function stubFeedCreationFailure(message = 'Upstream failed') {
+  const { server, buildStructuredErrorResponse } = await import('./mocks/server');
+  const { http, HttpResponse } = await import('msw');
+  server.use(
+    http.post('/api/v1/feeds', () =>
+      HttpResponse.json(
+        buildStructuredErrorResponse({
+          message,
+          kind: 'server',
+          retryable: true,
+          next_action: 'retry',
+          retry_action: 'primary',
+        }),
+        { status: 500 }
+      )
+    )
+  );
+}
+
 describe('useFeedFlow', () => {
   let fetchMock: SpyInstance;
   const mockNavigate = vi.fn();
@@ -32,24 +51,6 @@ describe('useFeedFlow', () => {
     ...overrides,
   });
 
-  async function stubFeedCreationFailure(message = 'Upstream failed') {
-    const { server, buildStructuredErrorResponse } = await import('./mocks/server');
-    const { http, HttpResponse } = await import('msw');
-    server.use(
-      http.post('/api/v1/feeds', () =>
-        HttpResponse.json(
-          buildStructuredErrorResponse({
-            message,
-            kind: 'server',
-            retryable: true,
-            next_action: 'retry',
-            retry_action: 'primary',
-          }),
-          { status: 500 }
-        )
-      )
-    );
-  }
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -139,7 +140,8 @@ describe('useFeedFlow', () => {
     );
 
     const { result, rerender } = renderHook(
-      ({ route }) => useFeedFlow(feedFlowProperties({ route, mayCreate: () => 'proceed', token: 'bad-token' })),
+      ({ route }) =>
+        useFeedFlow(feedFlowProperties({ route, mayCreate: () => 'proceed', token: 'bad-token' })),
       { initialProps: { route: { kind: 'create' as const } } }
     );
 

@@ -26,7 +26,7 @@ describe('url', () => {
 
   it('expandCreateUrl maps empty and invalid inputs', () => {
     expect(expandCreateUrl('')).toEqual({ error: 'empty' });
-    expect(expandCreateUrl('   ')).toEqual({ error: 'empty' });
+    expect(expandCreateUrl(' '.repeat(3))).toEqual({ error: 'empty' });
     expect(expandCreateUrl('ftp://example.com')).toEqual({ error: 'invalid' });
     expect(expandCreateUrl('not a url')).toEqual({ error: 'invalid' });
   });

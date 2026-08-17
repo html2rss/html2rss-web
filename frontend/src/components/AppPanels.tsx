@@ -261,7 +261,7 @@ export function CreateFeedPanel({
   const tokenDialogReference = useRef<HTMLDialogElement>(null);
 
   const isTokenPrompt = viewModel.kind === 'token_prompt';
-  const submitting = viewModel.kind === 'submitting';
+  const isSubmitting = viewModel.kind === 'submitting';
   const conversionError =
     viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
   const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
@@ -274,7 +274,7 @@ export function CreateFeedPanel({
   const isShowRetryButton = Boolean(
     conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
   );
-  const createConverting = !isTokenPrompt && submitting;
+  const isCreateConverting = !isTokenPrompt && isSubmitting;
   const tokenConverting = isTokenPrompt && flowConverting;
 
   useLayoutEffect(() => {
@@ -334,7 +334,7 @@ export function CreateFeedPanel({
           url={feedFormData.url}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
-          isConverting={createConverting}
+          isConverting={isCreateConverting}
           feedCreationEnabled={feedCreationEnabled}
           featuredFeeds={featuredFeeds}
           inputRef={urlInputReference}
@@ -342,7 +342,7 @@ export function CreateFeedPanel({
         />
         <ActionFeedback
           failureMessage={failureMessage}
-          isConverting={createConverting}
+          isConverting={isCreateConverting}
           isShowRetryButton={isShowRetryButton}
           onRetryCreate={onRetryCreate}
         />
