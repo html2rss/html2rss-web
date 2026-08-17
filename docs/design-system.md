@@ -37,10 +37,10 @@ If a page looks like it came from a different product, the change is wrong even 
 
 ## Journey Grammar (enforced)
 
-- **Create:** URL field is the task.
-- **Token gate:** replaces the URL task in the same frame (do not dim-and-stack competing tasks).
+- **Create:** URL field is the task. Visiting `#/create` or `#!/create` remounts create; hashbang aliases canonicalize to `#/create`. Bare create does not auto-submit.
+- **Token gate:** a native `<dialog>` over the still-mounted, inert URL task (one interactive task). Auth copy is in-field (`tokenError`); ActionFeedback stays on create. Access Token persists until Logout with no storage UI.
 - **Result:** primary CTA is **Copy feed URL**. Open feed / JSON / feed-reader are demoted secondary actions and stay available while preview loads. Preview is non-blocking confirmation only.
-- **Result route fail-closed:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens hard-navigate to `#/create` (no API rehydrate, no durable shareable result page).
+- **Unmatched result:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens recover onto remounted `#/create` (no API rehydrate, no failure chrome, no durable shareable result page).
 - **Status eyebrow:** one vocabulary (`Feed ready`) on the result header; preview progress lives in the preview section.
 - **Focus:** create autofocuses the URL field; token autofocuses the token field; result focuses the Copy control.
 
@@ -98,7 +98,7 @@ This file owns:
 - page-shell / workspace composition
 - form and dominant-field composition
 - notice state composition
-- token-gate layout composition (must compose `.ui-card`, not redefine a card)
+- token dialog host (transparent) plus inner `.ui-card` token-gate; `::backdrop` uses `--overlay-scrim`
 - result-page composition
 - utility strip / footer composition
 
@@ -253,7 +253,8 @@ These are common signs that the system is drifting:
 - new input or card variants appear with overlapping purpose
 - semantic states are encoded as a growing list of presentational classes
 - result actions gated on preview loading
-- token gate stacked under a dimmed URL field
+- ActionFeedback stacked under the token dialog
+- token gate replacing the URL composer instead of a dialog over inert create
 
 If you see one of these, consolidate instead of layering more CSS.
 
