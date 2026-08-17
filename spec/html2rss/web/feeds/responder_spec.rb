@@ -109,6 +109,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         payload: nil,
         ttl_seconds: 600,
         cache_key: 'feed_result:error',
+        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
         error_message: 'timeout',
         empty_reason: nil
       )
@@ -207,6 +208,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         ),
         ttl_seconds: 600,
         cache_key: 'feed_result:feed-empty',
+        decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
         error_message: nil,
         empty_reason: 'feed_empty'
       )

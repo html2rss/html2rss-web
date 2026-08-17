@@ -46,7 +46,7 @@ module Html2rss
         ##
         # Shared feed-serving result: gem payload plus web status / {ErrorClassifier::Decision}.
         #
-        # +decision+ owns HTTP status and client message for empty/classified outcomes.
+        # Non-ok results require +decision+ (sole owner of HTTP status and client message).
         # +error_message+ is internal observability only.
         RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
                                    :empty_reason, :strategy_attempts) do
@@ -57,23 +57,28 @@ module Html2rss
             private :__new
 
             # Defaults keep existing keyword call sites stable when optional fields are absent.
+            # Non-ok status requires +decision+ or raises ArgumentError.
             #
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             def new(**)
-              __new(payload: nil, decision: nil, error_message: nil, empty_reason: nil, strategy_attempts: [], **)
+              result = __new(payload: nil, decision: nil, error_message: nil, empty_reason: nil,
+                             strategy_attempts: [], **)
+              return result if result.status == :ok || result.decision
+
+              raise ArgumentError, 'non-ok RenderResult requires decision'
             end
           end
 
           # @return [Integer]
           def http_status
-            return decision.status if decision
+            return 200 if status == :ok
 
-            { ok: 200, empty: 422 }.fetch(status, 500)
+            decision.status
           end
 
           # @return [String]
           def client_message
-            decision&.message || Html2rss::Web::HttpError::DEFAULT_MESSAGE
+            decision.message
           end
         end
       end
