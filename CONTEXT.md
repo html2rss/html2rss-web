@@ -8,7 +8,7 @@ This documents the ubiquitous language and domain concepts of the `html2rss-web`
 Frontend owner of Access Token persistence (rehydrate / save / clear until Logout) and feed-creation gate predicates derived from API Metadata (`feed_creation.enabled`, `access_token_required`). Session exposes `mayCreate` / `feedCreationEnabled`; it does not own route transitions. Logout clear is Session; navigate-to-create after logout is App.
 
 ### Access Token
-A persistent secret token used to authenticate feed creation requests against the instance's security gate. Lives only in Session storage and the Authorization header adapter — never in COPY, logs, or view-model dumps.
+A persistent secret token used to authenticate feed creation requests against the instance's security gate. Durable copy lives only in Session storage; Authorization header adapter sends it on create. Ephemeral gate draft must clear on cancel, logout, and create remount — never in COPY, logs, or view-model dumps.
 
 ### Feed Flow
 Sole frontend journey owner for create → submit → token prompt → result / error. Owns the closed UI kind set and journey `navigate(...)` transitions (auth rejection → token route, unmatched result → create without prefill). Distinct from backend `ErrorClassifier::Decision`.
@@ -23,7 +23,7 @@ Single frontend path (`expandCreateUrl`) that normalizes the create URL before c
 Visiting create (including hashbang `#!/…` → `#/…`) bumps `createEntryKey` so the create surface remounts. Remount alone does not auto-submit; auto-submit requires `prefillUrl`.
 
 ### Unmatched result
-A result route whose in-memory token does not match the current Session token. Feed Flow replaces to create without prefill (no second journey decide elsewhere).
+A result route whose in-memory created feed token does not match the route `feedToken`. Feed Flow replaces to create without prefill (no second journey decide elsewhere).
 
 ### Renderer
 Backend feed HTTP assembly: `Feeds::Renderer` owns the HTTP envelope and success serialization, and orchestrates `Feeds::FormatNegotiation` (Accept/path negotiation; `FormatNegotiation::MediaRange` for Accept scoring). Empty FEED bodies dump `ErrorClassifier::Decision#message`.

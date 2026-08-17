@@ -216,6 +216,7 @@ export function useFeedFlow({
     clearError();
     clearResult();
     setTokenError('');
+    setTokenDraft('');
     if (isSameKindCreateEntry) setFeedFieldErrors(EMPTY_FEED_ERRORS);
     if (!route.prefillUrl) autoSubmitUrlReference.current = undefined;
     setFocusCreateComposerKey((current) => current + 1);
@@ -253,6 +254,7 @@ export function useFeedFlow({
     onSaveToken,
     onCancelTokenPrompt: () => {
       setTokenError('');
+      setTokenDraft('');
       clearError();
       navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
     },

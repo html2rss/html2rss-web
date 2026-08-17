@@ -794,6 +794,8 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
 
     expect(document.querySelector('dialog')).toHaveAttribute('open');
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'secret-draft' } });
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
 
     await waitFor(() => {
@@ -804,6 +806,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
     const dialog = document.querySelector('dialog');
     expect(dialog).toHaveAttribute('open');
+    expect((document.querySelector('#access-token') as HTMLInputElement).value).toBe('');
     fireEvent(dialog as HTMLDialogElement, new Event('cancel', { bubbles: true }));
 
     await waitFor(() => {

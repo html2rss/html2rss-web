@@ -87,6 +87,8 @@ export function App() {
   };
   const onClearToken = () => {
     clearToken();
+    setTokenDraft('');
+    setTokenError('');
     clearError();
     navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
   };

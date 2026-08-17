@@ -244,7 +244,32 @@ describe('useFeedFlow', () => {
     expect(result.current.conversionError).toBeUndefined();
     expect(result.current.feedFieldErrors.form).toBe('');
     expect(result.current.tokenError).toBe('');
+    expect(result.current.tokenDraft).toBe('');
     expect(result.current.focusCreateComposerKey).toBeGreaterThan(previousFocusKey);
     expect(fetchMock).toHaveBeenCalledTimes(fetchCallsAfterSubmit);
+  });
+
+  it('clears token draft on cancel and create remount', async () => {
+    const { result, rerender } = renderHook(
+      ({ createEntryKey, route }) => useFeedFlow(feedFlowProperties({ createEntryKey, route })),
+      { initialProps: { createEntryKey: 0, route: { kind: 'token' as const, prefillUrl: 'https://example.com' } } }
+    );
+
+    act(() => {
+      result.current.setTokenDraft('secret-draft');
+    });
+    expect(result.current.tokenDraft).toBe('secret-draft');
+
+    act(() => {
+      result.current.onCancelTokenPrompt();
+    });
+    expect(result.current.tokenDraft).toBe('');
+    expect(mockNavigate).toHaveBeenCalledWith({ kind: 'create', prefillUrl: expect.any(String) });
+
+    act(() => {
+      result.current.setTokenDraft('another-secret');
+    });
+    rerender({ createEntryKey: 1, route: { kind: 'create' } });
+    expect(result.current.tokenDraft).toBe('');
   });
 });
