@@ -85,11 +85,9 @@ describe('useFeedCreation contract', () => {
     const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          message: 'Authentication required',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        message: 'Authentication required',
+      });
     });
 
     expect(result.current.result).toBeUndefined();
@@ -123,16 +121,14 @@ describe('useFeedCreation contract', () => {
     const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          kind: 'input',
-          code: 'NO_FEED_ITEMS_EXTRACTED',
-          nextAction: 'correct_input',
-          retryAction: 'none',
-          retryable: false,
-          message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        kind: 'input',
+        code: 'NO_FEED_ITEMS_EXTRACTED',
+        nextAction: 'correct_input',
+        retryAction: 'none',
+        retryable: false,
+        message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
+      });
     });
   });
 
@@ -209,12 +205,10 @@ describe('useFeedCreation contract', () => {
     const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          kind: 'server',
-          code: 'INVALID_RESPONSE',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        kind: 'server',
+        code: 'INVALID_RESPONSE',
+      });
     });
   });
 });

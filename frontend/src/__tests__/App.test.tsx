@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { App } from '../components/App';
+import { COPY } from '../journey/copy';
 
 vi.mock('../session/accessToken', () => ({
   useAccessToken: vi.fn(),
@@ -41,11 +42,11 @@ const mockCreatedFeedResult = {
 
 async function expectCreateRemountedWithoutErrorChrome() {
   await waitFor(() => {
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
   });
   expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   await waitFor(() => {
-    expect(document.activeElement).toBe(screen.getByLabelText('URL'));
+    expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
   });
 }
 
@@ -134,13 +135,13 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+      expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
     });
   }
 
@@ -149,17 +150,17 @@ describe('App', () => {
 
     expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'html2rss' }).getAttribute('href')).toMatch(/#\/create$/);
-    expect(screen.getByLabelText('URL')).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   });
 
   it('keeps the URL field permissive enough for hostname-only input', () => {
     render(<App />);
 
-    const urlInput = screen.getByLabelText('URL');
+    const urlInput = screen.getByLabelText(COPY.urlLabel);
 
     expect(urlInput).toHaveAttribute('type', 'text');
     expect(urlInput).toHaveAttribute('inputmode', 'url');
@@ -170,7 +171,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(screen.getByLabelText('URL'));
+      expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
     });
   });
 
@@ -186,10 +187,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
       expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
@@ -224,10 +225,10 @@ describe('App', () => {
       expect(location.hash).toBe('#/create');
     });
     expect(location.hash).not.toContain('url=');
-    expect(screen.getByLabelText('URL')).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
   });
 
   it('remounts create from BrandLockup and clears creation chrome', async () => {
@@ -267,22 +268,22 @@ describe('App', () => {
   it('shows inline token prompt when submitting without a token', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
-    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.tokenTitle })).toBeInTheDocument();
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByLabelText('URL')).toBeInTheDocument();
-    expect(screen.getByLabelText('URL').closest('[inert]')).not.toBeNull();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel).closest('[inert]')).not.toBeNull();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
-    expect(screen.getByText('Required by this instance.')).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.dockerSetup })).toBeInTheDocument();
+    expect(screen.getByText(COPY.tokenHint)).toBeInTheDocument();
     expect(screen.queryByText('Paste an access token to keep going.')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(document.activeElement).toBe(document.querySelector('#access-token'));
@@ -318,12 +319,12 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Included feeds')).toBeInTheDocument();
+    expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
       'href',
       '/microsoft.com/azure-products.rss'
     );
-    expect(screen.getByText('Feed creation is disabled on this instance.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
   });
 
   it('renders the result panel when a feed is available', async () => {
@@ -363,14 +364,14 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'result');
-    expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.openFeed })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();
-    expect(screen.getByText('Feed ready')).toBeInTheDocument();
-    expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewUnavailable)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createAnother }));
     return waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
@@ -397,7 +398,7 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
-    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
@@ -421,7 +422,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewBlockedSurface)).toBeInTheDocument();
     expect(screen.queryByText('Blocked by Cloudflare')).not.toBeInTheDocument();
   });
 
@@ -434,9 +435,9 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Instance metadata unavailable')).toBeInTheDocument();
-    expect(screen.getByText('Instance unavailable.')).toBeInTheDocument();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.instanceMetadataUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(COPY.instanceUnavailable)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   });
 
@@ -453,8 +454,8 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Creating feed')).toBeInTheDocument();
-    expect(screen.queryByText('Checking preview')).not.toBeInTheDocument();
+    expect(screen.getByText(COPY.creating)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.previewChecking)).not.toBeInTheDocument();
   });
 
   it('keeps the token dialog open while creating', () => {
@@ -472,8 +473,8 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByRole('button', { name: 'Creating feed' })).toBeInTheDocument();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.creating })).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
   });
 
   it('clears stored token from instance info', () => {
@@ -488,7 +489,7 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.logout }));
 
     expect(mockClearToken).toHaveBeenCalled();
   });
@@ -507,30 +508,30 @@ describe('App', () => {
 
     const utilityItems = [
       ...screen
-        .getByLabelText('Utilities')
+        .getByLabelText(COPY.utilities)
         .querySelectorAll(':scope .utility-strip__items > a, :scope .utility-strip__items > button'),
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
-      'Try included feeds',
-      'Bookmarklet',
-      'Logout',
-      'Install from Docker Hub',
-      'OpenAPI spec',
-      'Source code',
+      COPY.tryIncludedFeeds,
+      COPY.bookmarkletTitle,
+      COPY.logout,
+      COPY.dockerInstall,
+      COPY.openapiSpec,
+      COPY.sourceCode,
     ]);
   });
 
   it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.saveAndContinue }));
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
@@ -557,16 +558,14 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
-      expect(
-        screen.getByText('Access token was rejected. Paste a valid token to continue.')
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: COPY.tokenTitle })).toBeInTheDocument();
+      expect(screen.getByText(COPY.tokenRejected)).toBeInTheDocument();
       expect(mockClearToken).toHaveBeenCalled();
       expect(mockClearCreationError).toHaveBeenCalled();
     });
@@ -591,28 +590,28 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
-    await screen.findByText('Access token was rejected. Paste a valid token to continue.');
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await screen.findByText(COPY.tokenRejected);
+    fireEvent.click(screen.getByRole('button', { name: COPY.back }));
 
     await waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
   });
 
   it('submits the token prompt with Enter', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
@@ -627,7 +626,7 @@ describe('App', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
-    const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
+    const bookmarklet = screen.getByRole('link', { name: COPY.bookmarkletTitle });
     expect(bookmarklet.getAttribute('href')).toContain('/#/create?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
@@ -637,10 +636,10 @@ describe('App', () => {
 
     render(<App />);
 
-    await screen.findByRole('heading', { name: 'Access token' });
+    await screen.findByRole('heading', { name: COPY.tokenTitle });
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByLabelText('URL')).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
@@ -672,10 +671,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.tryAgain }));
 
     expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
 
@@ -712,10 +711,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.tryAgain }));
 
     await waitFor(() => {
       expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
@@ -752,11 +751,9 @@ describe('App', () => {
 
     await screen.findByText('URL not allowed for this account');
     expect(mockClearToken).not.toHaveBeenCalled();
-    expect(screen.queryByRole('heading', { name: 'Access token' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Access token was rejected. Paste a valid token to continue.')
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.tokenRejected)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
   });
 
@@ -791,8 +788,8 @@ describe('App', () => {
     await screen.findByText(
       'Could not extract feed items. Try a more specific listing URL or explicit selectors.'
     );
-    expect(screen.queryByRole('heading', { name: 'Access token' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
   });
 
@@ -808,42 +805,42 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.saveAndContinue }));
 
     await waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
     expect(document.querySelector('dialog')).toBeNull();
-    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
     expect(screen.getByText('Upstream failed')).toBeInTheDocument();
   });
 
   it('cancels the token dialog with Back, Escape, and backdrop', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     expect(document.querySelector('dialog')).toHaveAttribute('open');
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'secret-draft' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.back }));
 
     await waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
     expect(document.querySelector('dialog')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     const dialog = document.querySelector('dialog');
     expect(dialog).toHaveAttribute('open');
     expect((document.querySelector('#access-token') as HTMLInputElement).value).toBe('');
@@ -853,7 +850,7 @@ describe('App', () => {
       expect(location.hash).toMatch(/^#\/create/);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     const openDialog = document.querySelector('dialog') as HTMLDialogElement;
     expect(openDialog).toHaveAttribute('open');
     fireEvent.click(openDialog);
@@ -869,25 +866,25 @@ describe('App', () => {
     render(<App />);
 
     const utilityLinks = [
-      ...screen.getByLabelText('Utilities').querySelectorAll(':scope .utility-strip__items > a'),
+      ...screen.getByLabelText(COPY.utilities).querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
-      'Try included feeds',
-      'Bookmarklet',
-      'Install from Docker Hub',
-      'OpenAPI spec',
-      'Source code',
+      COPY.tryIncludedFeeds,
+      COPY.bookmarkletTitle,
+      COPY.dockerInstall,
+      COPY.openapiSpec,
+      COPY.sourceCode,
     ]);
 
-    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.openapiSpec })).toHaveAttribute(
       'href',
       'https://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.tryIncludedFeeds })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );
-    expect(screen.getByRole('link', { name: 'Install from Docker Hub' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.dockerInstall })).toHaveAttribute(
       'href',
       'https://hub.docker.com/r/html2rss/web'
     );
@@ -916,7 +913,7 @@ describe('App', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
-    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.openapiSpec })).toHaveAttribute(
       'href',
       'http://localhost:3000/openapi.yaml'
     );
@@ -927,7 +924,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
+      expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
     });
   });
 });

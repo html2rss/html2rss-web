@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse, buildStructuredErrorResponse } from './mocks/server';
 import { App } from '../components/App';
+import { COPY } from '../journey/copy';
 
 describe('App contract', () => {
   const token = 'contract-token';
@@ -94,22 +95,22 @@ describe('App contract', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('URL')).toBeInTheDocument();
+      expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     });
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
 
-    const urlInput = screen.getByLabelText('URL') as HTMLInputElement;
+    const urlInput = screen.getByLabelText(COPY.urlLabel) as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByText('Feed ready')).toBeInTheDocument();
+      expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
       expect(screen.getByText('Example Feed')).toBeInTheDocument();
       expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'result');
-      expect(screen.getByLabelText('Feed URL')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Copy feed URL' })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-      expect(screen.getByText('Latest items')).toBeInTheDocument();
+      expect(screen.getByLabelText(COPY.feedUrl)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
+      expect(screen.getByText(COPY.previewLatest)).toBeInTheDocument();
     });
     fetchSpy.mockRestore();
   });
@@ -134,18 +135,18 @@ describe('App contract', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('URL')).toBeInTheDocument();
+      expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     });
 
-    fireEvent.input(screen.getByLabelText('URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
-    await screen.findByText('Access token was rejected. Paste a valid token to continue.');
+    await screen.findByText(COPY.tokenRejected);
 
-    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.tokenTitle })).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(localStorage.getItem('html2rss_access_token')).toBeNull();
     expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });

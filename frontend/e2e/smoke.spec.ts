@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { COPY } from '../src/journey/copy';
 
 test.describe('frontend smoke', () => {
   test('loads create flow and inline access-token gate', async ({ page }) => {
@@ -28,25 +29,25 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByLabel('URL')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create feed' })).toBeVisible();
+    await expect(page.getByLabel(COPY.urlLabel)).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.createFeed })).toBeVisible();
 
-    await page.getByLabel('URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Create feed' }).click();
+    await page.getByLabel(COPY.urlLabel).fill('https://example.com/articles');
+    await page.getByRole('button', { name: COPY.createFeed }).click();
 
-    await expect(page.getByRole('heading', { name: 'Access token' })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Access token' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Save and continue' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: COPY.tokenTitle })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: COPY.tokenTitle })).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.saveAndContinue })).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.back })).toBeVisible();
     await expect(page.locator('dialog')).toHaveAttribute('open');
-    await expect(page.getByLabel('URL')).toHaveCount(1);
-    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+    await expect(page.getByLabel(COPY.urlLabel)).toHaveCount(1);
+    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Back' }).click();
+    await page.getByRole('button', { name: COPY.back }).click();
     await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
-    await expect(page.getByRole('button', { name: 'Create feed' })).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.createFeed })).toBeVisible();
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
-    await expect(page.getByLabel('Utilities')).toBeVisible();
+    await expect(page.getByLabel(COPY.utilities)).toBeVisible();
   });
 
   test('remounts create from BrandLockup and hashbang and clears creation chrome', async ({ page }) => {
@@ -93,25 +94,25 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/#/create');
 
-    await page.getByLabel('URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Create feed' }).click();
-    await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
+    await page.getByLabel(COPY.urlLabel).fill('https://example.com/articles');
+    await page.getByRole('button', { name: COPY.createFeed }).click();
+    await expect(page.getByText(COPY.createFailedTitle)).toBeVisible();
 
     await page.getByRole('link', { name: 'html2rss' }).click();
-    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
-    await expect(page.getByLabel('URL')).toBeFocused();
+    await expect(page.getByLabel(COPY.urlLabel)).toBeFocused();
 
-    await page.getByRole('button', { name: 'Create feed' }).click();
-    await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
+    await page.getByRole('button', { name: COPY.createFeed }).click();
+    await expect(page.getByText(COPY.createFailedTitle)).toBeVisible();
 
     await page.evaluate(() => {
       location.hash = '#!/create';
     });
     await expect(page).toHaveURL(/\/#\/create$/);
-    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
-    await expect(page.getByLabel('URL')).toBeFocused();
+    await expect(page.getByLabel(COPY.urlLabel)).toBeFocused();
   });
 
   test('shows result after successful feed creation and recovers unmatched result routes onto create', async ({
@@ -185,24 +186,24 @@ test.describe('frontend smoke', () => {
     });
 
     await page.goto('/');
-    await page.getByLabel('URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Create feed' }).click();
+    await page.getByLabel(COPY.urlLabel).fill('https://example.com/articles');
+    await page.getByRole('button', { name: COPY.createFeed }).click();
 
-    await expect(page.getByText('Feed ready')).toBeVisible();
+    await expect(page.getByText(COPY.feedReady)).toBeVisible();
     await expect(page.locator('.result-shell')).toHaveAttribute('data-state', 'result');
     await expect(page.getByText('Example Feed')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Copy feed URL' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open feed' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open JSON Feed' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open in feed reader' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create another feed' })).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.copyFeedUrl })).toBeVisible();
+    await expect(page.getByRole('link', { name: COPY.openFeed })).toBeVisible();
+    await expect(page.getByRole('link', { name: COPY.openJsonFeed })).toBeVisible();
+    await expect(page.getByRole('link', { name: COPY.openInFeedReader })).toBeVisible();
+    await expect(page.getByRole('button', { name: COPY.createAnother })).toBeVisible();
     await expect(page.getByText('Sample preview item')).toBeVisible();
     await expect(page.getByText('Current preview fetch includes rendered content.')).toBeVisible();
 
     await page.goto('/#/result/missing-token');
 
     await expect(page).toHaveURL(/\/#\/create$/);
-    await expect(page.getByLabel('URL')).toBeVisible();
+    await expect(page.getByLabel(COPY.urlLabel)).toBeVisible();
     await expect(page.getByText('Saved result unavailable')).toHaveCount(0);
     await expect(page.locator('.result-recovery')).toHaveCount(0);
   });

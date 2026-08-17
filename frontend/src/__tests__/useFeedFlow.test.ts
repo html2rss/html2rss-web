@@ -252,7 +252,12 @@ describe('useFeedFlow', () => {
   it('clears token draft on cancel and create remount', async () => {
     const { result, rerender } = renderHook(
       ({ createEntryKey, route }) => useFeedFlow(feedFlowProperties({ createEntryKey, route })),
-      { initialProps: { createEntryKey: 0, route: { kind: 'token' as const, prefillUrl: 'https://example.com' } } }
+      {
+        initialProps: {
+          createEntryKey: 0,
+          route: { kind: 'token' as const, prefillUrl: 'https://example.com' },
+        },
+      }
     );
 
     act(() => {
