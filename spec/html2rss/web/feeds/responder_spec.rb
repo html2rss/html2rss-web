@@ -154,10 +154,12 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         cache_key: 'feed_result:empty',
         decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
         empty_reason: 'content_extraction_empty',
-        strategy_attempts: [
-          { strategy: :faraday, items_count: 0, error_class: nil },
-          { strategy: :botasaurus, items_count: 0, error_class: nil }
-        ]
+        diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.from_attempts(
+          [
+            { strategy: :faraday, items_count: 0, error_class: nil },
+            { strategy: :botasaurus, items_count: 0, error_class: nil }
+          ]
+        )
       )
     end
 
@@ -182,7 +184,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           strategy: :faraday,
           url: 'https://example.com',
           reason: 'content_extraction_empty',
-          strategy_attempts: result.strategy_attempts
+          strategy_attempts: result.diagnostics.strategy_attempts
         ),
         level: :warn
       )

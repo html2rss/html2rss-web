@@ -47,9 +47,10 @@ module Html2rss
         # Shared feed-serving result: gem payload plus web status / {ErrorClassifier::Decision}.
         #
         # Non-ok results require +decision+ (sole owner of HTTP status and client message).
+        # +diagnostics+ owns strategy attempts / transport telemetry.
         # +error_message+ is internal observability only.
         RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
-                                   :empty_reason, :strategy_attempts) do
+                                   :empty_reason, :diagnostics) do
           class << self
             ##
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -61,8 +62,14 @@ module Html2rss
             #
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             def new(**)
-              result = __new(payload: nil, decision: nil, error_message: nil, empty_reason: nil,
-                             strategy_attempts: [], **)
+              result = __new(
+                payload: nil,
+                decision: nil,
+                error_message: nil,
+                empty_reason: nil,
+                diagnostics: ErrorClassifier::Diagnostics.empty,
+                **
+              )
               return result if result.status == :ok || result.decision
 
               raise ArgumentError, 'non-ok RenderResult requires decision'

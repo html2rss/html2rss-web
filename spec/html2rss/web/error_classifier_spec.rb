@@ -144,7 +144,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
   end
 
-  describe '.extract_diagnostics' do
+  describe 'Diagnostics' do
     let(:diagnostic_error) do
       klass = stub_no_feed_items_extracted_with_attempts
       klass.new(
@@ -159,15 +159,23 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'extracts strategy attempts and transport meta when present', :aggregate_failures do
-      diagnostics = described_class.extract_diagnostics(diagnostic_error)
-      expect(diagnostics[:strategy_attempts].size).to eq(1)
-      expect(diagnostics[:request_id]).to eq('req-123')
-      expect(diagnostics[:render_ms]).to eq(45)
-      expect(diagnostics[:strategy_used]).to eq('faraday')
+      diagnostics = described_class::Diagnostics.from_error(diagnostic_error)
+      expect(diagnostics.strategy_attempts.size).to eq(1)
+      expect(diagnostics.request_id).to eq('req-123')
+      expect(diagnostics.render_ms).to eq(45)
+      expect(diagnostics.strategy_used).to eq('faraday')
+      expect(diagnostics.to_h).to include(
+        strategy_attempts: diagnostics.strategy_attempts,
+        request_id: 'req-123',
+        render_ms: 45,
+        strategy_used: 'faraday'
+      )
     end
 
-    it 'returns empty hash when no diagnostics are present' do
-      expect(described_class.extract_diagnostics(StandardError.new('boom'))).to eq({})
+    it 'returns empty diagnostics when no attempts are present' do
+      expect(described_class::Diagnostics.from_error(StandardError.new('boom'))).to eq(
+        described_class::Diagnostics.empty
+      )
     end
   end
 

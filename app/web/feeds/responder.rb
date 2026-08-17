@@ -104,8 +104,7 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Hash{Symbol=>Object}]
           def strategy_attempts_details(result)
-            attempts = result.strategy_attempts
-            attempts.nil? || attempts.empty? ? {} : { strategy_attempts: attempts }
+            result.diagnostics.to_h
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -125,7 +124,7 @@ module Html2rss
             details = {
               error_class: error.class.name,
               error_message: error.message,
-              **ErrorClassifier.extract_diagnostics(error)
+              **ErrorClassifier::Diagnostics.from_error(error).to_h
             }
             details[:feed_name] = identifier if target_kind == :static
 

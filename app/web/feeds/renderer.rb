@@ -56,7 +56,10 @@ module Html2rss
           def apply_diagnostic_headers(response, result)
             status_obj = result.payload&.feed&.status if result.payload&.feed.respond_to?(:status)
             apply_strategy_header(response, status_obj)
-            apply_telemetry_headers(response, status_obj, result)
+
+            diagnostics = diagnostics_for(result, status_obj)
+            set_header_if_present(response, 'X-Html2rss-Render-Ms', diagnostics.render_ms)
+            set_header_if_present(response, 'X-Html2rss-Request-Id', diagnostics.request_id)
           end
 
           def apply_strategy_header(response, status_obj)
@@ -64,22 +67,17 @@ module Html2rss
             response['X-Html2rss-Strategy'] = strategy.to_s if strategy
           end
 
-          def apply_telemetry_headers(response, status_obj, result)
-            attempts = if status_obj.respond_to?(:strategy_attempts)
-                         status_obj.strategy_attempts
-                       else
-                         result.strategy_attempts
-                       end
-            meta = transport_meta_for(attempts)
-            return unless meta
+          # Prefers gem feed status attempts on success; otherwise RenderResult diagnostics.
+          #
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @param status_obj [Object, nil]
+          # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
+          def diagnostics_for(result, status_obj)
+            if status_obj.respond_to?(:strategy_attempts)
+              return ErrorClassifier::Diagnostics.from_attempts(status_obj.strategy_attempts)
+            end
 
-            set_header_if_present(response, 'X-Html2rss-Render-Ms', meta['render_ms'] || meta[:render_ms])
-            set_header_if_present(response, 'X-Html2rss-Request-Id', meta['request_id'] || meta[:request_id])
-          end
-
-          def transport_meta_for(attempts)
-            last = Array(attempts).last
-            last.is_a?(Hash) ? (last[:transport_meta] || last['transport_meta']) : nil
+            result.diagnostics
           end
 
           def set_header_if_present(response, header_name, value)

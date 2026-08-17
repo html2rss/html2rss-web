@@ -73,7 +73,7 @@ module Html2rss
             error_class: error.class.name,
             error_code: decision.code,
             status: decision.status,
-            **ErrorClassifier.extract_diagnostics(error)
+            **ErrorClassifier::Diagnostics.from_error(error).to_h
           }
           Observability.emit(event_name: 'request.error', outcome: 'failure', level: :error, details: details)
         end
