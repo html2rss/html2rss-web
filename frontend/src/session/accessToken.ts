@@ -37,10 +37,15 @@ const writePersistedToken = (token: string) => {
   }
 };
 
+/** Clears in-memory token fallback for test isolation. */
 export function resetAccessTokenMemory() {
   writePersistedToken('');
 }
 
+/**
+ * Private Session primitive: rehydrate / persist / clear the Access Token.
+ * Not a public app seam — prefer `useSession`.
+ */
 export function useAccessToken() {
   const [state, setState] = useState<AccessTokenState>({
     isLoading: true,

@@ -13,15 +13,6 @@ const mockFeed = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
-const conversionFailure = {
-  kind: 'server' as const,
-  code: 'INTERNAL_SERVER_ERROR' as const,
-  retryable: true,
-  nextAction: 'retry' as const,
-  retryAction: 'primary' as const,
-  message: 'Upstream failed',
-};
-
 describe('useFeedFlow', () => {
   let fetchMock: SpyInstance;
   const mockNavigate = vi.fn();
@@ -30,8 +21,9 @@ describe('useFeedFlow', () => {
 
   const feedFlowProperties = (overrides: Partial<FeedFlowDependencies> = {}): FeedFlowDependencies => ({
     token: undefined,
-    metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
     isLoading: false,
+    feedCreationEnabled: true,
+    mayCreate: () => 'proceed',
     saveToken: mockSaveToken,
     clearToken: mockClearToken,
     route: { kind: 'create' },
@@ -40,6 +32,24 @@ describe('useFeedFlow', () => {
     ...overrides,
   });
 
+  async function stubFeedCreationFailure(message = 'Upstream failed') {
+    const { server, buildStructuredErrorResponse } = await import('./mocks/server');
+    const { http, HttpResponse } = await import('msw');
+    server.use(
+      http.post('/api/v1/feeds', () =>
+        HttpResponse.json(
+          buildStructuredErrorResponse({
+            message,
+            kind: 'server',
+            retryable: true,
+            next_action: 'retry',
+            retry_action: 'primary',
+          }),
+          { status: 500 }
+        )
+      )
+    );
+  }
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
@@ -88,7 +98,7 @@ describe('useFeedFlow', () => {
     const { result } = renderHook(() =>
       useFeedFlow(
         feedFlowProperties({
-          metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
+          mayCreate: () => 'needToken',
         })
       )
     );
@@ -110,12 +120,12 @@ describe('useFeedFlow', () => {
   });
 
   it('returns non-auth conversion failures from token onto create', async () => {
-    fetchMock.mockRejectedValueOnce(conversionFailure);
+    await stubFeedCreationFailure();
 
     const { result } = renderHook(() =>
       useFeedFlow(
         feedFlowProperties({
-          metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
+          mayCreate: () => 'proceed',
           route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' },
         })
       )
@@ -163,7 +173,7 @@ describe('useFeedFlow', () => {
   });
 
   it('remounts create on a later create-entry visit and clears conversion chrome', async () => {
-    fetchMock.mockRejectedValueOnce(conversionFailure);
+    await stubFeedCreationFailure();
 
     const { result, rerender } = renderHook(
       ({ createEntryKey }) => useFeedFlow(feedFlowProperties({ createEntryKey })),

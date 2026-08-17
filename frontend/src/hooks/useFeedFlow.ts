@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useFeedConversion } from './useFeedConversion';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { normalizeUserUrl } from '../utils/url';
-import type { ApiMetadataRecord, FeedCreationError } from '../api/contracts';
+import type { FeedCreationError } from '../api/contracts';
 import { COPY } from '../copy';
 import type { AppRoute } from '../routes/appRoute';
+import type { MayCreateResult } from '../session';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
-const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
 
 interface RouteNavigationOptions {
   replace?: boolean;
@@ -15,8 +15,9 @@ interface RouteNavigationOptions {
 
 export interface FeedFlowDependencies {
   token: string | undefined;
-  metadata?: Pick<ApiMetadataRecord, 'instance'>;
   isLoading: boolean;
+  feedCreationEnabled: boolean;
+  mayCreate: (accessToken?: string) => MayCreateResult;
   saveToken: (token: string) => Promise<void>;
   clearToken: () => void;
   route: AppRoute;
@@ -26,8 +27,9 @@ export interface FeedFlowDependencies {
 
 export function useFeedFlow({
   token,
-  metadata,
   isLoading,
+  feedCreationEnabled,
+  mayCreate,
   saveToken,
   clearToken,
   route,
@@ -66,8 +68,7 @@ export function useFeedFlow({
     setFeedFormData((previous) => ({ ...previous, url: routePrefillUrl }));
   }, [feedFormData.url, routePrefillUrl]);
 
-  const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
-  const submitDisabled = isConverting || !feedCreation.enabled;
+  const submitDisabled = isConverting || !feedCreationEnabled;
 
   const onFeedFieldChange = (key: 'url', value: string) => {
     setFeedFormData((previous) => {
@@ -91,7 +92,8 @@ export function useFeedFlow({
       return false;
     }
 
-    if (!feedCreation.enabled) {
+    const gate = mayCreate(accessToken);
+    if (gate === 'disabled') {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
         form: COPY.creationDisabled,
@@ -99,7 +101,7 @@ export function useFeedFlow({
       return false;
     }
 
-    if (feedCreation.access_token_required && !accessToken) {
+    if (gate === 'needToken') {
       setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
       clearError();
       setTokenError('');
@@ -160,7 +162,7 @@ export function useFeedFlow({
     if (isLoading) return;
     if (feedFormData.url !== autoSubmitUrl) return;
 
-    if (feedCreation.access_token_required && !token) {
+    if (mayCreate(token) === 'needToken') {
       hasAutoSubmittedReference.current = true;
       setFeedFormData((previous) => ({ ...previous, url: normalizeUserUrl(autoSubmitUrl) }));
       setTokenError('');
@@ -173,7 +175,7 @@ export function useFeedFlow({
     hasAutoSubmittedReference.current = true;
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     void attemptFeedCreation(token ?? '');
-  }, [feedCreation.access_token_required, feedFormData.url, isLoading, navigate, route.kind, token]);
+  }, [feedFormData.url, isLoading, mayCreate, navigate, route.kind, token]);
 
   // Recover unmatched result routes onto a remounted create view.
   useEffect(() => {
@@ -220,7 +222,7 @@ export function useFeedFlow({
     bookmarkletNotice,
     focusCreateComposerKey,
     submitDisabled,
-    feedCreationEnabled: feedCreation.enabled,
+    feedCreationEnabled,
     onFeedFieldChange,
     onFeedSubmit,
     onSaveToken,

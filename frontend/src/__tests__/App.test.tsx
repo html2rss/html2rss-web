@@ -2,8 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { App } from '../components/App';
 
-vi.mock('../hooks/useAccessToken', () => ({
+vi.mock('../session/accessToken', () => ({
   useAccessToken: vi.fn(),
+  resetAccessTokenMemory: vi.fn(),
 }));
 
 vi.mock('../hooks/useFeedConversion', () => ({
@@ -14,7 +15,7 @@ vi.mock('../hooks/useApiMetadata', () => ({
   useApiMetadata: vi.fn(),
 }));
 
-import { useAccessToken } from '../hooks/useAccessToken';
+import { useAccessToken } from '../session/accessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedConversion } from '../hooks/useFeedConversion';
 

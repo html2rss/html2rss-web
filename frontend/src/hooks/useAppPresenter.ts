@@ -1,4 +1,4 @@
-import { useSession } from './useSession';
+import { useSession } from '../session';
 import { useFeedFlow } from './useFeedFlow';
 import { useAppRoute } from '../routes/appRoute';
 import { deriveAppViewModel } from '../appViewModel';
@@ -20,6 +20,8 @@ export function useAppPresenter() {
     tokenStateError,
     saveToken,
     clearToken,
+    feedCreationEnabled,
+    mayCreate,
   } = useSession();
 
   const {
@@ -34,7 +36,6 @@ export function useAppPresenter() {
     bookmarkletNotice,
     focusCreateComposerKey,
     submitDisabled,
-    feedCreationEnabled,
     onFeedFieldChange,
     onFeedSubmit,
     onSaveToken,
@@ -47,8 +48,9 @@ export function useAppPresenter() {
     setTokenError,
   } = useFeedFlow({
     token,
-    metadata,
     isLoading: sessionLoading,
+    feedCreationEnabled,
+    mayCreate,
     saveToken,
     clearToken,
     route,
