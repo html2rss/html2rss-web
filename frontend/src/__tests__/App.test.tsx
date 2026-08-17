@@ -346,7 +346,8 @@ describe('App', () => {
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
     expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
-    expect(screen.getByText('Access denied')).toBeInTheDocument();
+    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
   it('shows an explicit loading notice while feed creation is still resolving preview state', () => {

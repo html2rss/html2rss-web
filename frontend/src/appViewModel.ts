@@ -59,8 +59,6 @@ export function deriveAppViewModel({
     };
   }
 
-  if (isConverting) return { kind: 'submitting' };
-
   if (route.kind === 'token' || tokenError) {
     return { kind: 'token_prompt', tokenError, error: conversionError };
   }
@@ -68,6 +66,8 @@ export function deriveAppViewModel({
   if (conversionError?.nextAction === 'enter_token' || conversionError?.kind === 'auth') {
     return { kind: 'token_prompt', tokenError, error: conversionError };
   }
+
+  if (isConverting) return { kind: 'submitting' };
 
   if (feedFieldErrors.url || feedFieldErrors.form || conversionError?.nextAction === 'correct_input') {
     return {
@@ -110,10 +110,11 @@ export function getPanelViewState(
   const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
   const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
 
-  const failureMessage =
-    (viewModel.kind === 'error' ? viewModel.message : undefined) ||
-    conversionError?.message ||
-    feedFieldErrors.form;
+  const failureMessage = isTokenPrompt
+    ? ''
+    : (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+      conversionError?.message ||
+      feedFieldErrors.form;
 
   const isShowRetryButton = Boolean(
     conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'

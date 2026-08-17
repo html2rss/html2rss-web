@@ -129,7 +129,7 @@ describe('deriveAppViewModel', () => {
     ).toMatchObject({ kind: 'error', message: 'Bad url', errorKind: 'input' });
   });
 
-  it('returns submitting on token route while converting', () => {
+  it('keeps token_prompt while converting on the token route', () => {
     expect(
       deriveAppViewModel({
         feedFieldErrors: emptyErrors,
@@ -137,7 +137,7 @@ describe('deriveAppViewModel', () => {
         route: { kind: 'token' },
         tokenError: '',
       })
-    ).toEqual({ kind: 'submitting' });
+    ).toEqual({ kind: 'token_prompt', tokenError: '' });
   });
 });
 
@@ -187,7 +187,7 @@ describe('getPanelViewState', () => {
       isConverting: false,
       tokenError: 'Invalid token',
       errorKind: 'auth',
-      failureMessage: 'Access denied',
+      failureMessage: '',
       isShowRetryButton: false,
     });
   });
