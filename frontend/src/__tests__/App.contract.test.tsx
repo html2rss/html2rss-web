@@ -11,7 +11,7 @@ describe('App contract', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
     sessionStorage.clear();
-    sessionStorage.setItem('html2rss_access_token', token);
+    localStorage.setItem('html2rss_access_token', token);
   });
 
   it('shows feed result when the API returns structured create payload and preview feed', async () => {
@@ -146,6 +146,7 @@ describe('App contract', () => {
 
     expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(localStorage.getItem('html2rss_access_token')).toBeNull();
     expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });

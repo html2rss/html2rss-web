@@ -1,14 +1,18 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/preact';
 import { useAccessToken } from '../hooks/useAccessToken';
+import { getPersistentStorage } from '../utils/persistentStorage';
+
+const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 
 describe('useAccessToken', () => {
   beforeEach(() => {
+    getPersistentStorage().clear();
     sessionStorage.clear();
   });
 
-  it('loads the persisted token from sessionStorage', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'persisted-token');
+  it('loads the persisted token from persistent storage', async () => {
+    getPersistentStorage().setItem(ACCESS_TOKEN_KEY, 'persisted-token');
 
     const { result } = renderHook(() => useAccessToken());
 
@@ -16,9 +20,10 @@ describe('useAccessToken', () => {
     expect(result.current.token).toBe('persisted-token');
     expect(result.current.hasToken).toBe(true);
     expect(result.current.error).toBeUndefined();
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
 
-  it('saves new tokens to sessionStorage only', async () => {
+  it('saves new tokens to persistent storage and does not write sessionStorage', async () => {
     const { result } = renderHook(() => useAccessToken());
 
     await act(async () => {
@@ -27,11 +32,13 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBe('new-token');
     expect(result.current.hasToken).toBe(true);
-    expect(sessionStorage.getItem('html2rss_access_token')).toBe('new-token');
+    expect(getPersistentStorage().getItem(ACCESS_TOKEN_KEY)).toBe('new-token');
+    expect(localStorage.getItem(ACCESS_TOKEN_KEY)).toBe('new-token');
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
 
-  it('clears the canonical session token copy', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'persisted-token');
+  it('clears the canonical persistent token copy', async () => {
+    getPersistentStorage().setItem(ACCESS_TOKEN_KEY, 'persisted-token');
 
     const { result } = renderHook(() => useAccessToken());
 
@@ -41,11 +48,12 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBeUndefined();
     expect(result.current.hasToken).toBe(false);
-    expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(getPersistentStorage().getItem(ACCESS_TOKEN_KEY)).toBeNull();
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
 
-  it('falls back to in-memory token when sessionStorage write is unavailable', async () => {
-    sessionStorage.setItem.mockImplementationOnce(() => {
+  it('falls back to in-memory token when persistent storage write is unavailable', async () => {
+    localStorage.setItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 
@@ -57,10 +65,11 @@ describe('useAccessToken', () => {
 
     expect(result.current.token).toBe('memory-token');
     expect(result.current.hasToken).toBe(true);
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
 
-  it('loads from in-memory fallback when sessionStorage read is unavailable', async () => {
-    sessionStorage.setItem.mockImplementationOnce(() => {
+  it('loads from in-memory fallback when persistent storage read is unavailable', async () => {
+    localStorage.setItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 
@@ -70,7 +79,7 @@ describe('useAccessToken', () => {
     });
     seeded.unmount();
 
-    sessionStorage.getItem.mockImplementationOnce(() => {
+    localStorage.getItem.mockImplementationOnce(() => {
       throw new Error('blocked');
     });
 
@@ -80,6 +89,7 @@ describe('useAccessToken', () => {
     expect(result.current.token).toBe('memory-only');
     expect(result.current.hasToken).toBe(true);
     expect(result.current.error).toBeUndefined();
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
     act(() => {
       result.current.clearToken();
     });

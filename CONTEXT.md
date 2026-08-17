@@ -5,7 +5,7 @@ This documents the ubiquitous language and domain concepts of the `html2rss-web`
 ## Glossary
 
 ### Session
-The user's active session context containing the Access Token (for authentication/privileges) and the API Metadata (defining instance config, features, and featured feeds).
+The user's active session context containing the Access Token (for authentication/privileges) and the API Metadata (defining instance config, features, and featured feeds). Session rehydrates the Access Token from persistent storage until Logout.
 
 ### Access Token
 A persistent secret token used to authenticate feed creation requests against the instance's security gate.

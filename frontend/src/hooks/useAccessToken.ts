@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { getPersistentStorage } from '../utils/persistentStorage';
 
 const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 let inMemoryToken = '';
@@ -9,29 +10,30 @@ interface AccessTokenState {
   error?: string;
 }
 
-const readSessionToken = (): string => {
+const readPersistedToken = (): string => {
   if (globalThis.window === undefined) return inMemoryToken;
 
   try {
-    return globalThis.sessionStorage?.getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
+    return getPersistentStorage().getItem(ACCESS_TOKEN_KEY)?.trim() ?? '';
   } catch {
     return inMemoryToken;
   }
 };
 
-const writeSessionToken = (token: string) => {
+const writePersistedToken = (token: string) => {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
   inMemoryToken = token;
   if (globalThis.window === undefined) return;
 
   try {
+    const storage = getPersistentStorage();
     if (token) {
-      globalThis.sessionStorage?.setItem(ACCESS_TOKEN_KEY, token);
+      storage.setItem(ACCESS_TOKEN_KEY, token);
     } else {
-      globalThis.sessionStorage?.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(ACCESS_TOKEN_KEY);
     }
   } catch {
-    // Keep in-memory fallback only when sessionStorage is unavailable.
+    // Keep in-memory fallback only when persistent storage is unavailable.
   }
 };
 
@@ -42,7 +44,7 @@ export function useAccessToken() {
 
   useEffect(() => {
     try {
-      const token = readSessionToken();
+      const token = readPersistedToken();
 
       setState({
         token: token || undefined,
@@ -60,7 +62,7 @@ export function useAccessToken() {
     const normalized = token.trim();
     if (!normalized) throw new Error('Access token is required');
 
-    writeSessionToken(normalized);
+    writePersistedToken(normalized);
 
     setState({
       token: normalized,
@@ -69,7 +71,7 @@ export function useAccessToken() {
   };
 
   const clearToken = () => {
-    writeSessionToken('');
+    writePersistedToken('');
 
     setState({
       isLoading: false,

@@ -114,7 +114,7 @@ test.describe('frontend smoke', () => {
     });
 
     await page.addInitScript(() => {
-      sessionStorage.setItem('html2rss_access_token', 'token-123');
+      localStorage.setItem('html2rss_access_token', 'token-123');
     });
 
     await page.goto('/');

@@ -15,6 +15,7 @@ describe('useSession', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     sessionStorage.clear();
     fetchMock = vi.spyOn(globalThis, 'fetch');
   });
@@ -24,7 +25,7 @@ describe('useSession', () => {
   });
 
   it('coordinates api metadata load and token loading', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'session-token');
+    localStorage.setItem('html2rss_access_token', 'session-token');
     fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
 
     const { result } = renderHook(() => useSession());
@@ -55,11 +56,12 @@ describe('useSession', () => {
 
     expect(result.current.token).toBe('brand-new-token');
     expect(result.current.hasToken).toBe(true);
-    expect(sessionStorage.getItem('html2rss_access_token')).toBe('brand-new-token');
+    expect(localStorage.getItem('html2rss_access_token')).toBe('brand-new-token');
+    expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 
   it('clears token state', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'old-token');
+    localStorage.setItem('html2rss_access_token', 'old-token');
     fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
 
     const { result } = renderHook(() => useSession());
@@ -71,6 +73,7 @@ describe('useSession', () => {
 
     expect(result.current.token).toBeUndefined();
     expect(result.current.hasToken).toBe(false);
+    expect(localStorage.getItem('html2rss_access_token')).toBeNull();
     expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
   });
 });
