@@ -11,7 +11,8 @@ There is one shared design language and one shared primitive layer.
 - Shared primitives live in [public/shared-ui.css](../public/shared-ui.css).
 - App-specific composition lives in [frontend/src/styles/main.css](../frontend/src/styles/main.css).
 - Feed-specific composition lives in [public/rss.xsl](../public/rss.xsl).
-- Journey copy lives in [frontend/src/journey/copy.ts](../frontend/src/journey/copy.ts) (one string per job).
+- Journey **chrome** copy lives in [frontend/src/journey/copy.ts](../frontend/src/journey/copy.ts): titles, buttons, local validation, loading labels, and aria (one string per chrome job).
+- Classified API/feed **outcomes** show `Decision#message` from the wire (`error.message` / `warning.message`). Do not remap those codes through COPY.
 
 Do not duplicate tokens, element resets, base canvas rules, card shells, inputs, item list grammar, rails, stack primitives, or brand-lockup styling in `main.css` or `rss.xsl`. If app and feed both need it, it belongs in `shared-ui.css`.
 
@@ -252,7 +253,7 @@ When changing UI, an agent must verify:
 3. Does the app still match the RSS/XSL rendering in overall tone and framing?
 4. Did I avoid inventing a page-local variant for something that should be a modifier or attribute?
 5. If I added a token, modifier, or primitive, did I justify it in this file?
-6. Did journey copy go through `frontend/src/journey/copy.ts` instead of a one-off string?
+6. Did journey chrome go through `frontend/src/journey/copy.ts`? Classified outcome bodies are wire text (`error.message` / `warning.message`), not a COPY remap.
 7. Did create / token / result keep one primary task and matching focus?
 
 ## Drift Triggers

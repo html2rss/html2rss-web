@@ -159,7 +159,7 @@ describe('ResultDisplay', () => {
     });
   });
 
-  it('renders BLOCKED_SURFACE preview warnings from the wire message', () => {
+  it('renders PREVIEW_HTTP warning messages from the loader', () => {
     render(
       <ResultDisplay
         viewModel={{
@@ -167,10 +167,10 @@ describe('ResultDisplay', () => {
           preview: { status: 'preview_failed', items: [], isLoading: false },
           warnings: [
             {
-              code: 'BLOCKED_SURFACE',
+              code: 'PREVIEW_HTTP_422',
               message: 'This website blocked automated access.',
               retryable: false,
-              nextAction: 'none',
+              nextAction: 'wait',
             },
           ],
         }}
@@ -180,9 +180,10 @@ describe('ResultDisplay', () => {
     );
 
     expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.checkAgain })).not.toBeInTheDocument();
   });
 
-  it('renders SCRAPER_UNAVAILABLE preview warnings from the wire message', () => {
+  it('renders retryable PREVIEW_HTTP warnings with Check again', () => {
     render(
       <ResultDisplay
         viewModel={{
@@ -190,7 +191,7 @@ describe('ResultDisplay', () => {
           preview: { status: 'preview_failed', items: [], isLoading: false },
           warnings: [
             {
-              code: 'SCRAPER_UNAVAILABLE',
+              code: 'PREVIEW_HTTP_503',
               message: 'Feed fetching is temporarily unavailable.',
               retryable: true,
               nextAction: 'retry',
@@ -203,5 +204,6 @@ describe('ResultDisplay', () => {
     );
 
     expect(screen.getByText('Feed fetching is temporarily unavailable.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.checkAgain })).toBeInTheDocument();
   });
 });

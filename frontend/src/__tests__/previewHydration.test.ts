@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type SpyInstance } from 'vitest';
+import { COPY } from '../journey/copy';
 import {
   buildCreatedFeedResult,
   loadPreviewItems,
   loadPreviewItemsWithRetry,
   normalizePreviewItems,
+  PREVIEW_ERROR_BODY_MAX_CHARS,
+  PREVIEW_UNAVAILABLE_MESSAGE,
+  resolvePreviewHttpWarningMessage,
 } from '../feeds/feedsService';
 
 const feed = {
@@ -63,8 +67,59 @@ describe('previewHydration', () => {
 
     await expect(loadPreviewItems('/api/v1/feeds/feed-token-1.json')).resolves.toMatchObject({
       status: 'preview_failed',
-      warnings: [{ code: 'PREVIEW_HTTP_422', retryable: false, nextAction: 'wait' }],
+      warnings: [
+        {
+          code: 'PREVIEW_HTTP_422',
+          message: PREVIEW_UNAVAILABLE_MESSAGE,
+          retryable: false,
+          nextAction: 'wait',
+        },
+      ],
     });
+  });
+
+  it('passes short text/plain HTTP error bodies through as warning.message', async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response('This website blocked automated access.', {
+        status: 422,
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+      })
+    );
+
+    await expect(loadPreviewItems('/api/v1/feeds/feed-token-1.json')).resolves.toMatchObject({
+      status: 'preview_failed',
+      warnings: [
+        {
+          code: 'PREVIEW_HTTP_422',
+          message: 'This website blocked automated access.',
+          retryable: false,
+          nextAction: 'wait',
+        },
+      ],
+    });
+  });
+
+  it('falls back to COPY when preview HTTP error bodies are HTML or huge', async () => {
+    const htmlMessage = await resolvePreviewHttpWarningMessage(
+      new Response('<!DOCTYPE html><html><body>error</body></html>', {
+        status: 502,
+        headers: { 'Content-Type': 'text/html' },
+      })
+    );
+    expect(htmlMessage).toBe(COPY.previewUnavailable);
+
+    const hugeMessage = await resolvePreviewHttpWarningMessage(
+      new Response('x'.repeat(PREVIEW_ERROR_BODY_MAX_CHARS + 1), {
+        status: 503,
+        headers: { 'Content-Type': 'text/plain' },
+      })
+    );
+    expect(hugeMessage).toBe(COPY.previewUnavailable);
+
+    const jsonMessage = await resolvePreviewHttpWarningMessage(
+      Response.json({ items: [] }, { status: 500, headers: { 'Content-Type': 'application/feed+json' } })
+    );
+    expect(jsonMessage).toBe(COPY.previewUnavailable);
   });
 
   it('retries only transient preview failures', async () => {
