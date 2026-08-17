@@ -61,11 +61,7 @@ describe('appRoute', () => {
   });
 
   it('canonicalizes hashbang create hashes with a url query', () => {
-    history.replaceState(
-      {},
-      '',
-      'http://localhost:3000/#!/create?url=https%3A%2F%2Fexample.com%2Farticles'
-    );
+    history.replaceState({}, '', 'http://localhost:3000/#!/create?url=https%3A%2F%2Fexample.com%2Farticles');
 
     const { result, unmount } = renderHook(() => useAppRoute());
 

@@ -140,7 +140,11 @@ function TokenGateSection({
   onCancelTokenPrompt,
 }: TokenGateSectionProperties) {
   return (
-    <div class="token-gate ui-card ui-card--padded ui-card--framed" role="group" aria-labelledby="access-token-title">
+    <div
+      class="token-gate ui-card ui-card--padded ui-card--framed"
+      role="group"
+      aria-labelledby="access-token-title"
+    >
       <div class="token-gate__copy">
         <h2 id="access-token-title" class="ui-display-title">
           {COPY.tokenTitle}
@@ -257,8 +261,14 @@ export function CreateFeedPanel({
   const tokenInputReference = useRef<HTMLInputElement>(null);
   const tokenDialogReference = useRef<HTMLDialogElement>(null);
 
-  const { isTokenPrompt, isConverting: submitting, tokenError, errorKind, failureMessage, isShowRetryButton } =
-    getPanelViewState(viewModel, feedFieldErrors);
+  const {
+    isTokenPrompt,
+    isConverting: submitting,
+    tokenError,
+    errorKind,
+    failureMessage,
+    isShowRetryButton,
+  } = getPanelViewState(viewModel, feedFieldErrors);
   const createConverting = !isTokenPrompt && submitting;
   const tokenConverting = isTokenPrompt && flowConverting;
 
