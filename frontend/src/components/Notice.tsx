@@ -2,7 +2,7 @@ import type { ComponentChildren, JSX } from 'preact';
 
 interface NoticeProperties {
   title?: string;
-  children: ComponentChildren;
+  children?: ComponentChildren;
   tone?: 'error' | 'success' | 'neutral';
   state?: 'loading';
   actions?: ComponentChildren;

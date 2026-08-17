@@ -401,7 +401,22 @@ describe('App', () => {
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
-  it('shows an explicit loading notice while feed creation is still resolving preview state', () => {
+  it('shows instance metadata failure as a banner without create-error chrome', () => {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: undefined,
+      isLoading: false,
+      error: 'Instance unavailable.',
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('Instance metadata unavailable')).toBeInTheDocument();
+    expect(screen.getByText('Instance unavailable.')).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+  });
+
+  it('shows title-only creating notice without preview copy', () => {
     mockUseFeedConversion.mockReturnValue({
       isConverting: true,
       result: undefined,
@@ -415,6 +430,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText('Creating feed')).toBeInTheDocument();
+    expect(screen.queryByText('Checking preview')).not.toBeInTheDocument();
   });
 
   it('keeps the token dialog open while converting', () => {

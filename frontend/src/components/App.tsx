@@ -75,8 +75,6 @@ export function App() {
     route,
     navigate,
     createEntryKey,
-    tokenStateError,
-    metadataError,
   });
 
   const submitDisabled = flowSubmitDisabled || viewModel.kind === 'token_prompt';

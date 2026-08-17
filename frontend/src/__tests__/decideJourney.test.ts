@@ -4,7 +4,7 @@ import { decideJourney } from '../feed/decideJourney';
 const emptyErrors = { url: '', form: '' };
 
 describe('decideJourney', () => {
-  it('returns create by default', () => {
+  it('keeps create idle when there is no conversion failure', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,

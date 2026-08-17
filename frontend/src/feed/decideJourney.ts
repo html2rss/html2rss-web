@@ -6,7 +6,6 @@ import type {
   FeedRecord,
 } from '../api/contracts';
 import type { AppRoute } from '../routes/appRoute';
-import { COPY } from '../journey/copy';
 
 /** Closed UI journey kinds owned by Feed Flow. */
 export type AppViewModel =
@@ -37,8 +36,6 @@ export function decideJourney({
   isConverting,
   route,
   tokenError,
-  tokenStateError,
-  metadataError,
   result,
 }: {
   conversionError?: FeedCreationError;
@@ -46,17 +43,8 @@ export function decideJourney({
   isConverting: boolean;
   route: AppRoute;
   tokenError: string;
-  tokenStateError?: string;
-  metadataError?: string;
   result?: CreatedFeedResult;
 }): AppViewModel {
-  if (tokenStateError || metadataError) {
-    return {
-      kind: 'error',
-      message: metadataError ?? tokenStateError ?? COPY.instanceUnavailable,
-    };
-  }
-
   if (route.kind === 'result' && result && result.feed.feed_token === route.feedToken) {
     return {
       kind: 'result',

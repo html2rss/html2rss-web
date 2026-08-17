@@ -24,8 +24,6 @@ export interface FeedFlowDependencies {
   route: AppRoute;
   navigate: (route: AppRoute, options?: RouteNavigationOptions) => void;
   createEntryKey: number;
-  tokenStateError?: string;
-  metadataError?: string;
 }
 
 /**
@@ -41,8 +39,6 @@ export function useFeedFlow({
   route,
   navigate,
   createEntryKey,
-  tokenStateError,
-  metadataError,
 }: FeedFlowDependencies) {
   const {
     isConverting,
@@ -228,8 +224,6 @@ export function useFeedFlow({
     isConverting,
     route,
     tokenError,
-    tokenStateError,
-    metadataError,
     result,
   });
 

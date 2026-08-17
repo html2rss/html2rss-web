@@ -230,11 +230,7 @@ function ActionFeedback({
         </Notice>
       )}
 
-      {isConverting && (
-        <Notice className="layout-rail-reading" state="loading" title={COPY.creating}>
-          <p>{COPY.previewChecking}</p>
-        </Notice>
-      )}
+      {isConverting && <Notice className="layout-rail-reading" state="loading" title={COPY.creating} />}
     </>
   );
 }
