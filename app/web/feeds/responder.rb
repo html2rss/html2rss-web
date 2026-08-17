@@ -4,7 +4,10 @@ module Html2rss
   module Web
     module Feeds
       ##
-      # Resolves, renders, and writes feed responses for both token and legacy routes.
+      # Resolves, renders, and emits feed responses for both token and legacy routes.
+      #
+      # +feed.render+ Observability for completed Service outcomes is emitted only from
+      # {Contracts::RenderResult} fields. +emit_failure+ covers exceptions outside that path.
       module Responder
         class << self
           # @param request [Rack::Request]
@@ -43,8 +46,7 @@ module Html2rss
             return emit_success(target_kind:, identifier:, resolved_source:, result:) if result.status == :ok
             return emit_empty(target_kind:, identifier:, resolved_source:, result:) if result.status == :empty
 
-            message = result.error_message || result.client_message
-            emit_failure(target_kind:, identifier:, error: Html2rss::Web::InternalServerError.new(message))
+            emit_error(target_kind:, identifier:, resolved_source:, result:)
           end
 
           # @param target_kind [Symbol]
@@ -67,14 +69,37 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def emit_empty(target_kind:, identifier:, resolved_source:, result:)
+            emit_render_failure(
+              target_kind:, identifier:, resolved_source:,
+              reason: empty_reason_for(result),
+              **result.diagnostics.to_h
+            )
+          end
+
+          # @param target_kind [Symbol]
+          # @param identifier [String]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [void]
+          def emit_error(target_kind:, identifier:, resolved_source:, result:)
+            emit_render_failure(
+              target_kind:, identifier:, resolved_source:,
+              error_code: result.decision.code,
+              error_message: result.error_message || result.client_message,
+              **result.diagnostics.to_h
+            )
+          end
+
+          # @param target_kind [Symbol]
+          # @param identifier [String]
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param extras [Hash{Symbol=>Object}]
+          # @return [void]
+          def emit_render_failure(target_kind:, identifier:, resolved_source:, **extras)
             Observability.emit(
               event_name: 'feed.render',
               outcome: 'failure',
-              details: render_details(
-                resolved_source, identifier, target_kind,
-                reason: empty_reason_for(result),
-                **strategy_attempts_details(result)
-              ),
+              details: render_details(resolved_source, identifier, target_kind, **extras),
               level: :warn
             )
           end
@@ -102,12 +127,6 @@ module Html2rss
           end
 
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [Hash{Symbol=>Object}]
-          def strategy_attempts_details(result)
-            result.diagnostics.to_h
-          end
-
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [String]
           def empty_reason_for(result)
             reason = result.empty_reason
@@ -116,6 +135,8 @@ module Html2rss
             reason
           end
 
+          # Emits for exceptions outside a completed RenderResult emit path.
+          #
           # @param target_kind [Symbol]
           # @param identifier [String]
           # @param error [StandardError]

@@ -31,6 +31,9 @@ A result route whose in-memory created feed token does not match the route `feed
 ### Renderer
 Backend feed HTTP assembly: `Feeds::Renderer` owns the HTTP envelope and success serialization, and orchestrates `Feeds::FormatNegotiation` (Accept/path negotiation; `FormatNegotiation::MediaRange` for Accept scoring). Empty FEED bodies dump `ErrorClassifier::Decision#message`.
 
+### Responder
+Backend feed route orchestration: resolve → render → emit `feed.render` from `RenderResult` fields only (Decision + Diagnostics). Exception `emit_failure` is for failures outside a completed Service result.
+
 ### Decision
 Backend only: `ErrorClassifier::Decision` owns HTTP status, code, client message, kind, cacheability, and retry metadata for classified outcomes. Required on every non-ok `Feeds::Contracts::RenderResult` (construction fails closed). Feed serve and API create/error paths share it; serializers and CreateFeed only apply it (JSON via `ErrorResponder`, plain text via `Feeds::Renderer`). Not the frontend journey closed set (see Feed Flow).
 
