@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { useFeedConversion } from './useFeedConversion';
+import { useFeedCreation } from './useFeedCreation';
 import { decideJourney } from './decideJourney';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { expandCreateUrl } from '../utils/url';
@@ -41,14 +41,14 @@ export function useFeedFlow({
   createEntryKey,
 }: FeedFlowDependencies) {
   const {
-    isConverting,
+    isCreating,
     result,
-    error: conversionError,
-    convertFeed,
+    error: creationError,
+    createFeed,
     clearError,
     clearResult,
     retryPreviewFetch,
-  } = useFeedConversion();
+  } = useFeedCreation();
 
   const [feedFormData, setFeedFormData] = useState(() => loadFeedDraftState() ?? { url: '' });
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
@@ -72,7 +72,7 @@ export function useFeedFlow({
     setFeedFormData((previous) => ({ ...previous, url: routePrefillUrl }));
   }, [feedFormData.url, routePrefillUrl]);
 
-  const submitDisabled = isConverting || !feedCreationEnabled;
+  const submitDisabled = isCreating || !feedCreationEnabled;
 
   const onFeedFieldChange = (key: 'url', value: string) => {
     setFeedFormData((previous) => {
@@ -93,7 +93,7 @@ export function useFeedFlow({
     if ('error' in expanded) {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
-        url: expanded.error === 'empty' ? COPY.sourceUrlRequired : COPY.invalidUrlFormat,
+        url: expanded.error === 'empty' ? COPY.urlRequired : COPY.invalidUrlFormat,
       });
       return false;
     }
@@ -118,7 +118,7 @@ export function useFeedFlow({
 
     try {
       setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
-      const createdResult = await convertFeed(normalizedUrl, accessToken);
+      const createdResult = await createFeed(normalizedUrl, accessToken);
       clearFeedDraftState();
       navigate({ kind: 'result', feedToken: createdResult.feed.feed_token });
       setTokenError('');
@@ -219,9 +219,9 @@ export function useFeedFlow({
   }, [createEntryKey, route]);
 
   const viewModel = decideJourney({
-    conversionError,
+    creationError,
     feedFieldErrors,
-    isConverting,
+    isCreating,
     route,
     tokenError,
     result,
@@ -229,9 +229,9 @@ export function useFeedFlow({
 
   return {
     viewModel,
-    isConverting,
+    isCreating,
     result,
-    conversionError,
+    creationError,
     clearError,
     clearResult,
     retryPreviewFetch,

@@ -107,7 +107,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       </div>
 
       {preview.isLoading && (
-        <PreviewSection ariaLabel="Feed preview status">
+        <PreviewSection ariaLabel={COPY.previewStatus}>
           <div class="preview-feedback preview-feedback--loading">
             <span class="preview-feedback__spinner" aria-hidden="true" />
             <span>{COPY.previewChecking}</span>
@@ -116,7 +116,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       )}
 
       {!preview.isLoading && hasPreviewItems && (
-        <PreviewSection ariaLabel="Feed preview">
+        <PreviewSection ariaLabel={COPY.previewRegion}>
           <ul class="ui-item-list" role="list">
             {preview.items.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
@@ -143,7 +143,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       )}
 
       {isShowPreviewError && (
-        <PreviewSection ariaLabel="Feed preview status">
+        <PreviewSection ariaLabel={COPY.previewStatus}>
           <div class="preview-feedback preview-feedback--error">
             <span>{previewMessage}</span>
             {canManuallyRetryPreview && (

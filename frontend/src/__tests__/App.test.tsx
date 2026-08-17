@@ -7,8 +7,8 @@ vi.mock('../session/accessToken', () => ({
   resetAccessTokenMemory: vi.fn(),
 }));
 
-vi.mock('../feed/useFeedConversion', () => ({
-  useFeedConversion: vi.fn(),
+vi.mock('../feed/useFeedCreation', () => ({
+  useFeedCreation: vi.fn(),
 }));
 
 vi.mock('../hooks/useApiMetadata', () => ({
@@ -17,11 +17,11 @@ vi.mock('../hooks/useApiMetadata', () => ({
 
 import { useAccessToken } from '../session/accessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
-import { useFeedConversion } from '../feed/useFeedConversion';
+import { useFeedCreation } from '../feed/useFeedCreation';
 
 const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
-const mockUseFeedConversion = useFeedConversion as any;
+const mockUseFeedCreation = useFeedCreation as any;
 const mockCreatedFeedResult = {
   feed: {
     id: 'feed-123',
@@ -52,8 +52,8 @@ async function expectCreateRemountedWithoutErrorChrome() {
 describe('App', () => {
   const mockSaveToken = vi.fn();
   const mockClearToken = vi.fn();
-  const mockConvertFeed = vi.fn();
-  const mockClearConversionError = vi.fn();
+  const mockCreateFeed = vi.fn();
+  const mockClearCreationError = vi.fn();
   const mockClearResult = vi.fn();
   const mockRetryPreviewFetch = vi.fn();
 
@@ -61,7 +61,7 @@ describe('App', () => {
     vi.clearAllMocks();
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
-    mockConvertFeed.mockResolvedValue(mockCreatedFeedResult);
+    mockCreateFeed.mockResolvedValue(mockCreatedFeedResult);
 
     mockUseAccessToken.mockReturnValue({
       token: undefined,
@@ -91,18 +91,18 @@ describe('App', () => {
       error: undefined,
     });
 
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
   });
 
-  const conversionFailure = {
+  const creationFailure = {
     kind: 'server' as const,
     code: 'INTERNAL_SERVER_ERROR' as const,
     retryable: true,
@@ -130,7 +130,7 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    mockConvertFeed.mockRejectedValue(conversionFailure);
+    mockCreateFeed.mockRejectedValue(creationFailure);
 
     render(<App />);
 
@@ -156,7 +156,7 @@ describe('App', () => {
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   });
 
-  it('keeps the page url field permissive enough for hostname-only input', () => {
+  it('keeps the URL field permissive enough for hostname-only input', () => {
     render(<App />);
 
     const urlInput = screen.getByLabelText('URL');
@@ -166,7 +166,7 @@ describe('App', () => {
     expect(urlInput).toHaveAttribute('autocapitalize', 'off');
   });
 
-  it('autofocuses the source url field', async () => {
+  it('autofocuses the URL field', async () => {
     render(<App />);
 
     await waitFor(() => {
@@ -192,7 +192,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
   });
 
@@ -210,7 +210,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
       expect(location.hash).toBe('#/result/generated-token');
     });
   });
@@ -230,30 +230,30 @@ describe('App', () => {
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
-  it('remounts create from BrandLockup and clears conversion chrome', async () => {
+  it('remounts create from BrandLockup and clears creation chrome', async () => {
     await renderCreateWithConversionError();
-    const convertCalls = mockConvertFeed.mock.calls.length;
+    const createCalls = mockCreateFeed.mock.calls.length;
 
     fireEvent.click(screen.getByRole('link', { name: 'html2rss' }));
 
     await expectCreateRemountedWithoutErrorChrome();
-    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
   });
 
-  it('remounts create from a #/create visit and clears conversion chrome', async () => {
+  it('remounts create from a #/create visit and clears creation chrome', async () => {
     await renderCreateWithConversionError();
-    const convertCalls = mockConvertFeed.mock.calls.length;
+    const createCalls = mockCreateFeed.mock.calls.length;
 
     dispatchEvent(new HashChangeEvent('hashchange'));
 
     await expectCreateRemountedWithoutErrorChrome();
     expect(location.hash).toBe('#/create');
-    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
   });
 
-  it('remounts create from a hashbang entry and clears conversion chrome', async () => {
+  it('remounts create from a hashbang entry and clears creation chrome', async () => {
     await renderCreateWithConversionError();
-    const convertCalls = mockConvertFeed.mock.calls.length;
+    const createCalls = mockCreateFeed.mock.calls.length;
 
     location.hash = '#!/create';
 
@@ -261,7 +261,7 @@ describe('App', () => {
       expect(location.hash).toBe('#/create');
     });
     await expectCreateRemountedWithoutErrorChrome();
-    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
   });
 
   it('shows inline token prompt when submitting without a token', async () => {
@@ -287,7 +287,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(document.querySelector('#access-token'));
     });
-    expect(mockConvertFeed).not.toHaveBeenCalled();
+    expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
   it('promotes included feeds when feed creation is disabled', () => {
@@ -328,8 +328,8 @@ describe('App', () => {
 
   it('renders the result panel when a feed is available', async () => {
     history.replaceState({}, '', 'http://localhost:3000/#/result/example-token');
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: {
         feed: {
           id: 'feed-123',
@@ -354,8 +354,8 @@ describe('App', () => {
         ],
       },
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -376,9 +376,9 @@ describe('App', () => {
     });
   });
 
-  it('surfaces conversion errors to the user', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+  it('surfaces creation errors to the user', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -388,8 +388,8 @@ describe('App', () => {
         retryAction: 'primary',
         message: 'Access denied',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -402,8 +402,8 @@ describe('App', () => {
   });
 
   it('presents classified create errors with COPY instead of the wire sentence', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'input',
@@ -413,8 +413,8 @@ describe('App', () => {
         retryAction: 'none',
         message: 'Blocked by Cloudflare',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -441,12 +441,12 @@ describe('App', () => {
   });
 
   it('shows title-only creating notice without preview copy', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: true,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: true,
       result: undefined,
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -457,13 +457,13 @@ describe('App', () => {
     expect(screen.queryByText('Checking preview')).not.toBeInTheDocument();
   });
 
-  it('keeps the token dialog open while converting', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: true,
+  it('keeps the token dialog open while creating', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: true,
       result: undefined,
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -534,7 +534,7 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'token-123');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'token-123');
     });
   });
 
@@ -547,7 +547,7 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    mockConvertFeed.mockRejectedValueOnce(
+    mockCreateFeed.mockRejectedValueOnce(
       Object.assign(new Error('Unauthorized'), {
         code: 'UNAUTHORIZED',
         status: 401,
@@ -568,11 +568,11 @@ describe('App', () => {
         screen.getByText('Access token was rejected. Paste a valid token to continue.')
       ).toBeInTheDocument();
       expect(mockClearToken).toHaveBeenCalled();
-      expect(mockClearConversionError).toHaveBeenCalled();
+      expect(mockClearCreationError).toHaveBeenCalled();
     });
   });
 
-  it('clears stale conversion error when backing out of the token gate', async () => {
+  it('clears stale creation error when backing out of the token gate', async () => {
     mockUseAccessToken.mockReturnValue({
       token: 'saved-token',
       hasToken: true,
@@ -581,7 +581,7 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    mockConvertFeed.mockRejectedValueOnce(
+    mockCreateFeed.mockRejectedValueOnce(
       Object.assign(new Error('Unauthorized'), {
         code: 'UNAUTHORIZED',
         status: 401,
@@ -641,12 +641,12 @@ describe('App', () => {
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('dialog')).toHaveAttribute('open');
     expect(screen.getByLabelText('URL')).toBeInTheDocument();
-    expect(mockConvertFeed).not.toHaveBeenCalled();
+    expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
   it('shows generic retry action for alternate retry metadata and reruns create', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -656,8 +656,8 @@ describe('App', () => {
         retryAction: 'alternate',
         message: 'Browserless failed.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -680,13 +680,13 @@ describe('App', () => {
     expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
   });
 
   it('shows Try again for primary retry metadata and reruns the create flow', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -696,8 +696,8 @@ describe('App', () => {
         retryAction: 'primary',
         message: 'Browserless failed.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -718,13 +718,13 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
   });
 
   it('does not treat non-token forbidden failures as token rejection', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -734,8 +734,8 @@ describe('App', () => {
         retryAction: 'none',
         message: 'URL not allowed for this account',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -761,8 +761,8 @@ describe('App', () => {
   });
 
   it('keeps extraction-empty failures generic and input-corrective', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'input',
@@ -772,8 +772,8 @@ describe('App', () => {
         retryAction: 'none',
         message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -797,7 +797,7 @@ describe('App', () => {
   });
 
   it('returns non-auth token save failures onto create with notice', async () => {
-    mockConvertFeed.mockRejectedValueOnce({
+    mockCreateFeed.mockRejectedValueOnce({
       kind: 'server',
       code: 'INTERNAL_SERVER_ERROR',
       retryable: true,

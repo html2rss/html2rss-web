@@ -4,11 +4,11 @@ import { decideJourney } from '../feed/decideJourney';
 const emptyErrors = { url: '', form: '' };
 
 describe('decideJourney', () => {
-  it('keeps create idle when there is no conversion failure', () => {
+  it('keeps create idle when there is no creation failure', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,
-        isConverting: false,
+        isCreating: false,
         route: { kind: 'create' },
         tokenError: '',
       })
@@ -18,7 +18,7 @@ describe('decideJourney', () => {
   it('nests preview under the result variant when tokens match', () => {
     const viewModel = decideJourney({
       feedFieldErrors: emptyErrors,
-      isConverting: false,
+      isCreating: false,
       route: { kind: 'result', feedToken: 'token' },
       tokenError: '',
       result: {
@@ -47,7 +47,7 @@ describe('decideJourney', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,
-        isConverting: false,
+        isCreating: false,
         route: { kind: 'result', feedToken: 'route-token' },
         tokenError: '',
         result: {
@@ -70,7 +70,7 @@ describe('decideJourney', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,
-        isConverting: false,
+        isCreating: false,
         route: { kind: 'result', feedToken: 'route-token' },
         tokenError: '',
       })
@@ -81,7 +81,7 @@ describe('decideJourney', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,
-        isConverting: true,
+        isCreating: true,
         route: { kind: 'create' },
         tokenError: '',
       })
@@ -90,10 +90,10 @@ describe('decideJourney', () => {
     expect(
       decideJourney({
         feedFieldErrors: { url: '', form: 'Bad url' },
-        isConverting: false,
+        isCreating: false,
         route: { kind: 'create' },
         tokenError: '',
-        conversionError: {
+        creationError: {
           kind: 'input',
           code: 'INVALID_INPUT',
           retryable: false,
@@ -105,11 +105,11 @@ describe('decideJourney', () => {
     ).toMatchObject({ kind: 'error', message: 'Bad url', errorKind: 'input' });
   });
 
-  it('keeps token_prompt while converting on the token route', () => {
+  it('keeps token_prompt while creating on the token route', () => {
     expect(
       decideJourney({
         feedFieldErrors: emptyErrors,
-        isConverting: true,
+        isCreating: true,
         route: { kind: 'token' },
         tokenError: '',
       })

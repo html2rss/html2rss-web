@@ -75,7 +75,7 @@ describe('useFeedFlow', () => {
     );
   });
 
-  it('performs validation and converts feed on submit when no token is required', async () => {
+  it('performs validation and creates feed on submit when no token is required', async () => {
     fetchMock
       .mockResolvedValueOnce(Response.json({ success: true, data: { feed: mockFeed } }))
       .mockResolvedValueOnce(Response.json({ items: [] }));
@@ -120,7 +120,7 @@ describe('useFeedFlow', () => {
     });
   });
 
-  it('navigates to token and projects token_prompt on auth conversion failure', async () => {
+  it('navigates to token and projects token_prompt on auth creation failure', async () => {
     const { server, buildStructuredErrorResponse } = await import('./mocks/server');
     const { http, HttpResponse } = await import('msw');
     server.use(
@@ -165,7 +165,7 @@ describe('useFeedFlow', () => {
     expect(result.current.tokenError).toBeTruthy();
   });
 
-  it('returns non-auth conversion failures from token onto create', async () => {
+  it('returns non-auth creation failures from token onto create', async () => {
     await stubFeedCreationFailure();
 
     const { result } = renderHook(() =>
@@ -215,10 +215,10 @@ describe('useFeedFlow', () => {
     rerender({ route: { kind: 'create' }, createEntryKey: 0 });
 
     expect(result.current.focusCreateComposerKey).toBeGreaterThan(0);
-    expect(result.current.conversionError).toBeUndefined();
+    expect(result.current.creationError).toBeUndefined();
   });
 
-  it('remounts create on a later create-entry visit and clears conversion chrome', async () => {
+  it('remounts create on a later create-entry visit and clears creation chrome', async () => {
     await stubFeedCreationFailure();
 
     const { result, rerender } = renderHook(
@@ -234,14 +234,14 @@ describe('useFeedFlow', () => {
       await result.current.onFeedSubmit({ preventDefault: vi.fn() } as any);
     });
 
-    expect(result.current.conversionError).toMatchObject({ message: 'Upstream failed' });
+    expect(result.current.creationError).toMatchObject({ message: 'Upstream failed' });
     expect(result.current.feedFieldErrors.form).toBe('Upstream failed');
     const previousFocusKey = result.current.focusCreateComposerKey;
     const fetchCallsAfterSubmit = fetchMock.mock.calls.length;
 
     rerender({ createEntryKey: 1 });
 
-    expect(result.current.conversionError).toBeUndefined();
+    expect(result.current.creationError).toBeUndefined();
     expect(result.current.feedFieldErrors.form).toBe('');
     expect(result.current.tokenError).toBe('');
     expect(result.current.tokenDraft).toBe('');

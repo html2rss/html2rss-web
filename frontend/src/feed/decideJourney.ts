@@ -31,16 +31,16 @@ export type AppViewModel =
  * Auth → token_prompt is driven by route/tokenError after Feed Flow navigates.
  */
 export function decideJourney({
-  conversionError,
+  creationError,
   feedFieldErrors,
-  isConverting,
+  isCreating,
   route,
   tokenError,
   result,
 }: {
-  conversionError?: FeedCreationError;
+  creationError?: FeedCreationError;
   feedFieldErrors: { url: string; form: string };
-  isConverting: boolean;
+  isCreating: boolean;
   route: AppRoute;
   tokenError: string;
   result?: CreatedFeedResult;
@@ -56,26 +56,26 @@ export function decideJourney({
 
   // Token prompt: URL adapter kind and/or in-field token error after Feed Flow navigates.
   if (route.kind === 'token' || tokenError) {
-    return { kind: 'token_prompt', tokenError, error: conversionError };
+    return { kind: 'token_prompt', tokenError, error: creationError };
   }
 
-  if (isConverting) return { kind: 'submitting' };
+  if (isCreating) return { kind: 'submitting' };
 
-  if (feedFieldErrors.url || feedFieldErrors.form || conversionError?.nextAction === 'correct_input') {
+  if (feedFieldErrors.url || feedFieldErrors.form || creationError?.nextAction === 'correct_input') {
     return {
       kind: 'error',
-      message: conversionError?.message || feedFieldErrors.form,
-      error: conversionError,
-      errorKind: conversionError?.kind,
+      message: creationError?.message || feedFieldErrors.form,
+      error: creationError,
+      errorKind: creationError?.kind,
     };
   }
 
-  if (conversionError) {
+  if (creationError) {
     return {
       kind: 'error',
-      message: conversionError.message,
-      error: conversionError,
-      errorKind: conversionError.kind,
+      message: creationError.message,
+      error: creationError,
+      errorKind: creationError.kind,
     };
   }
 

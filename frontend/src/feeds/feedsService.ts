@@ -1,4 +1,5 @@
 import type { FeedRecord } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import {
   buildStructuredError,
   normalizeFeedCreationErrorFromResponse,
@@ -51,7 +52,7 @@ export async function requestFeedCreation(url: string, token: string): Promise<F
       true,
       'retry',
       'primary',
-      'Unable to start feed generation.',
+      COPY.unableToStartCreation,
       response.status
     );
   }

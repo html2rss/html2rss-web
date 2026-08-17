@@ -47,7 +47,7 @@ export function App() {
 
   const {
     viewModel,
-    isConverting,
+    isCreating,
     clearError,
     feedFormData,
     feedFieldErrors,
@@ -112,7 +112,7 @@ export function App() {
       <CreateFeedPanel
         focusComposerKey={focusCreateComposerKey}
         viewModel={viewModel}
-        isConverting={isConverting}
+        isCreating={isCreating}
         feedFormData={feedFormData}
         feedFieldErrors={feedFieldErrors}
         submitDisabled={submitDisabled}
@@ -166,7 +166,7 @@ export function App() {
         </section>
       </main>
 
-      <footer class="app-footer" aria-label="Footer navigation">
+      <footer class="app-footer" aria-label={COPY.footerNav}>
         <div class="app-footer__inner">
           <UtilityStrip
             hasAccessToken={hasToken}

@@ -14,7 +14,7 @@ A persistent secret token used to authenticate feed creation requests against th
 Sole frontend journey owner for create → submit → token prompt → result / error. Owns the closed UI kind set and journey `navigate(...)` transitions (auth rejection → token route, unmatched result → create without prefill). Distinct from backend `ErrorClassifier::Decision` and from Creation IO.
 
 ### Creation IO
-Network-only feed create (`requestFeedCreation` / `useFeedConversion`). Accepts an already-normalized URL. Does not own journey kind, navigation, or user-facing sentences.
+Network-only feed create (`requestFeedCreation` / `useFeedCreation`). Accepts an already-normalized URL. Does not own journey kind, navigation, or user-facing sentences.
 
 ### Auto-Submit
 A mechanism that automatically initiates feed creation when a prefilled URL is passed to the application route (e.g. from the bookmarklet). Bare create remount without `prefillUrl` does not auto-submit.

@@ -125,7 +125,7 @@ describe('ResultDisplay', () => {
           warnings: [
             {
               code: 'PREVIEW_HTTP_503',
-              message: 'Preview content is partially degraded right now.',
+              message: COPY.previewUnavailable,
               retryable: true,
               nextAction: 'retry',
             },

@@ -49,7 +49,7 @@ test.describe('frontend smoke', () => {
     await expect(page.getByLabel('Utilities')).toBeVisible();
   });
 
-  test('remounts create from BrandLockup and hashbang and clears conversion chrome', async ({ page }) => {
+  test('remounts create from BrandLockup and hashbang and clears creation chrome', async ({ page }) => {
     await page.route(/\/api\/v1$/, async (route) => {
       await route.fulfill({
         status: 200,

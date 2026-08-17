@@ -11,20 +11,20 @@ import {
   isAbortError,
 } from '../feeds/feedsService';
 
-interface ConversionState {
-  isConverting: boolean;
+interface CreationState {
+  isCreating: boolean;
   result?: CreatedFeedResult;
   error?: FeedCreationError;
 }
 
 /**
- * Feed conversion IO only. Callers must pass an already-expanded http(s) URL
+ * Feed creation IO only. Callers must pass an already-expanded http(s) URL
  * from `expandCreateUrl` — this module does not re-normalize or validate emptiness.
  */
-export function useFeedConversion() {
+export function useFeedCreation() {
   const requestIdReference = useRef(0);
   const previewAbortControllerReference = useRef<AbortController | undefined>(undefined);
-  const [state, setState] = useState<ConversionState>({ isConverting: false });
+  const [state, setState] = useState<CreationState>({ isCreating: false });
 
   const cancelPreview = () => {
     previewAbortControllerReference.current?.abort();
@@ -39,11 +39,11 @@ export function useFeedConversion() {
     []
   );
 
-  async function convertFeed(normalizedUrl: string, token: string) {
+  async function createFeed(normalizedUrl: string, token: string) {
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
     cancelPreview();
-    setState((previous) => ({ ...previous, isConverting: true, error: undefined }));
+    setState((previous) => ({ ...previous, isCreating: true, error: undefined }));
 
     try {
       const feed = await requestFeedCreation(normalizedUrl, token);
@@ -53,7 +53,7 @@ export function useFeedConversion() {
       return result;
     } catch (error) {
       const structuredError = normalizeFeedCreationError(error);
-      failConversion(setState, structuredError);
+      failCreation(setState, structuredError);
       throw structuredError;
     }
   }
@@ -62,7 +62,7 @@ export function useFeedConversion() {
     globalThis.document?.body?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     requestIdReference.current += 1;
     cancelPreview();
-    setState({ isConverting: false });
+    setState({ isCreating: false });
   };
 
   const clearError = () => {
@@ -87,10 +87,10 @@ export function useFeedConversion() {
   };
 
   return {
-    isConverting: state.isConverting,
+    isCreating: state.isCreating,
     result: state.result,
     error: state.error,
-    convertFeed,
+    createFeed,
     clearError,
     clearResult,
     retryPreviewFetch,
@@ -100,7 +100,7 @@ export function useFeedConversion() {
 async function hydrateFeedPreview(
   feed: CreatedFeedResult['feed'],
   requestId: number,
-  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  setState: (value: CreationState | ((previous: CreationState) => CreationState)) => void,
   requestIdReference: { current: number },
   previewAbortControllerReference: { current: AbortController | undefined }
 ) {
@@ -155,7 +155,7 @@ async function hydrateFeedPreview(
 function commitResult(
   result: CreatedFeedResult,
   requestId: number,
-  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+  setState: (value: CreationState | ((previous: CreationState) => CreationState)) => void,
   requestIdReference: { current: number }
 ) {
   setState((previous) => {
@@ -165,20 +165,20 @@ function commitResult(
 
     return {
       ...previous,
-      isConverting: false,
+      isCreating: false,
       error: undefined,
       result,
     };
   });
 }
 
-function failConversion(
-  setState: (value: ConversionState | ((previous: ConversionState) => ConversionState)) => void,
+function failCreation(
+  setState: (value: CreationState | ((previous: CreationState) => CreationState)) => void,
   error: FeedCreationError
 ) {
   setState((previous) => ({
     ...previous,
-    isConverting: false,
+    isCreating: false,
     error,
   }));
 }

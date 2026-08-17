@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
-import { useFeedConversion } from '../feed';
+import { useFeedCreation } from '../feed';
 
 const mockFeed = {
   id: 'feed-1',
@@ -32,7 +32,7 @@ function previewResponse(status = 200) {
   );
 }
 
-describe('useFeedConversion', () => {
+describe('useFeedCreation', () => {
   let fetchMock: SpyInstance;
 
   beforeEach(() => {
@@ -49,9 +49,9 @@ describe('useFeedConversion', () => {
   it('creates a feed from metadata and hydrates preview from json_public_url', async () => {
     fetchMock.mockResolvedValueOnce(createResponse()).mockResolvedValueOnce(previewResponse());
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'token-123');
+      await result.current.createFeed('https://example.com/articles', 'token-123');
     });
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/v1/feeds');
@@ -71,9 +71,9 @@ describe('useFeedConversion', () => {
       .mockResolvedValueOnce(new Response('', { status: 503 }))
       .mockResolvedValueOnce(previewResponse());
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'token-123');
+      await result.current.createFeed('https://example.com/articles', 'token-123');
     });
 
     await act(async () => {
@@ -97,9 +97,9 @@ describe('useFeedConversion', () => {
       .mockResolvedValueOnce(createResponse())
       .mockResolvedValueOnce(new Response('', { status: 422 }));
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'token-123');
+      await result.current.createFeed('https://example.com/articles', 'token-123');
     });
 
     await waitFor(() => {
@@ -117,9 +117,9 @@ describe('useFeedConversion', () => {
       .mockResolvedValueOnce(createResponse())
       .mockResolvedValueOnce(new Response('', { status: 422 }));
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'token-123');
+      await result.current.createFeed('https://example.com/articles', 'token-123');
     });
     await waitFor(() => expect(result.current.result?.preview.status).toBe('preview_failed'));
 

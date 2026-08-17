@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ApiMetadataRecord } from '../api/contracts';
+import { COPY } from '../journey/copy';
 
 interface ApiMetadataState {
   metadata?: ApiMetadataRecord;
@@ -31,7 +32,7 @@ export function useApiMetadata() {
         const metadata = payload.data as ApiMetadataRecord | undefined;
 
         if (!response.ok || !payload.success || !metadata?.instance) {
-          throw new Error('Invalid response format from API metadata');
+          throw new Error(COPY.instanceUnavailable);
         }
         if (isCancelled) return;
 
@@ -44,7 +45,7 @@ export function useApiMetadata() {
 
         setState({
           isLoading: false,
-          error: error instanceof Error ? error.message : 'Failed to load API metadata',
+          error: error instanceof Error ? error.message : COPY.instanceUnavailable,
         });
       }
     };

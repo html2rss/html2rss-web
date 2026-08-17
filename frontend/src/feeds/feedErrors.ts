@@ -66,7 +66,7 @@ export function normalizeFeedCreationError(error: unknown): FeedCreationError {
 
   const isError = error instanceof Error;
   const message =
-    (isError && error.message) || (isError ? COPY.unableToReachServerShort : COPY.unableToCompleteCreation);
+    (isError && error.message) || (isError ? COPY.unableToReachServer : COPY.unableToCompleteCreation);
   const kind: FeedErrorKind = isError ? 'network' : 'server';
   const code: FeedCreationErrorCode = isError ? 'NETWORK_ERROR' : 'UNKNOWN_ERROR';
 

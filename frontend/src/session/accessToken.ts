@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
+import { COPY } from '../journey/copy';
 import { getPersistentStorage } from '../utils/persistentStorage';
 
 const ACCESS_TOKEN_KEY = 'html2rss_access_token';
@@ -62,14 +63,14 @@ export function useAccessToken() {
     } catch {
       setState({
         isLoading: false,
-        error: 'Failed to load access token state',
+        error: COPY.unableToLoadToken,
       });
     }
   }, []);
 
   const saveToken = async (token: string) => {
     const normalized = token.trim();
-    if (!normalized) throw new Error('Access token is required');
+    if (!normalized) throw new Error(COPY.authRequired);
 
     writePersistedToken(normalized);
 

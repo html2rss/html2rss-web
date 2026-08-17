@@ -11,7 +11,6 @@ import { normalizePreviewItems } from './feedParsers';
 
 export const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
 export const PREVIEW_UNAVAILABLE_MESSAGE = COPY.previewUnavailable;
-export const PREVIEW_DEGRADED_MESSAGE = COPY.previewDegraded;
 
 export interface PreviewLoadResult {
   items: FeedPreviewItem[];
@@ -152,7 +151,7 @@ export async function loadPreviewItems(previewUrl: string, signal?: AbortSignal)
       warnings: [
         buildPreviewWarning(
           `PREVIEW_HTTP_${response.status}`,
-          isTransientHttpStatus(response.status) ? PREVIEW_DEGRADED_MESSAGE : PREVIEW_UNAVAILABLE_MESSAGE,
+          COPY.previewUnavailable,
           isTransientHttpStatus(response.status),
           isTransientHttpStatus(response.status) ? 'retry' : 'wait'
         ),

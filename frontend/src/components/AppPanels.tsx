@@ -21,7 +21,7 @@ type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' }>;
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
   viewModel: CreatePanelViewModel;
-  isConverting: boolean;
+  isCreating: boolean;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   submitDisabled: boolean;
@@ -40,7 +40,7 @@ interface UrlEntrySectionProperties {
   url: string;
   disabled: boolean;
   error: string;
-  isConverting: boolean;
+  isCreating: boolean;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
   inputRef: RefObject<HTMLInputElement>;
@@ -51,7 +51,7 @@ function UrlEntrySection({
   url,
   disabled,
   error,
-  isConverting,
+  isCreating,
   feedCreationEnabled,
   featuredFeeds,
   inputRef,
@@ -62,17 +62,17 @@ function UrlEntrySection({
       <DominantField
         className="layout-rail-reading"
         id="url"
-        label={COPY.pageUrl}
+        label={COPY.urlLabel}
         type="text"
         value={url}
-        placeholder={COPY.pageUrlPlaceholder}
+        placeholder={COPY.urlPlaceholder}
         inputMode="url"
         autoCapitalize="off"
         spellcheck={false}
         autoFocus
         inputRef={inputRef}
-        actionLabel={isConverting ? COPY.creating : COPY.generateFeed}
-        actionText={isConverting ? '...' : '>'}
+        actionLabel={isCreating ? COPY.creating : COPY.createFeed}
+        actionText={isCreating ? '...' : '>'}
         disabled={disabled}
         error={error}
         onInput={(event) => onInput(event.currentTarget.value)}
@@ -123,7 +123,7 @@ function UrlEntrySection({
 interface TokenGateSectionProperties {
   tokenDraft: string;
   tokenError: string;
-  isConverting: boolean;
+  isCreating: boolean;
   inputRef: RefObject<HTMLInputElement>;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
@@ -133,7 +133,7 @@ interface TokenGateSectionProperties {
 function TokenGateSection({
   tokenDraft,
   tokenError,
-  isConverting,
+  isCreating,
   inputRef,
   onTokenDraftChange,
   onSaveToken,
@@ -186,8 +186,8 @@ function TokenGateSection({
         {COPY.dockerSetup}
       </a>
       <div class="token-gate__actions">
-        <button type="button" class="btn btn--primary" disabled={isConverting} onClick={onSaveToken}>
-          {isConverting ? COPY.creating : COPY.saveAndContinue}
+        <button type="button" class="btn btn--primary" disabled={isCreating} onClick={onSaveToken}>
+          {isCreating ? COPY.creating : COPY.saveAndContinue}
         </button>
       </div>
       <div class="token-gate__back">
@@ -201,14 +201,14 @@ function TokenGateSection({
 
 interface ActionFeedbackProperties {
   failureMessage: string;
-  isConverting: boolean;
+  isCreating: boolean;
   isShowRetryButton: boolean;
   onRetryCreate: () => void;
 }
 
 function ActionFeedback({
   failureMessage,
-  isConverting,
+  isCreating,
   isShowRetryButton,
   onRetryCreate,
 }: ActionFeedbackProperties) {
@@ -231,7 +231,7 @@ function ActionFeedback({
         </Notice>
       )}
 
-      {isConverting && <Notice className="layout-rail-reading" state="loading" title={COPY.creating} />}
+      {isCreating && <Notice className="layout-rail-reading" state="loading" title={COPY.creating} />}
     </>
   );
 }
@@ -239,7 +239,7 @@ function ActionFeedback({
 export function CreateFeedPanel({
   focusComposerKey,
   viewModel,
-  isConverting: flowConverting,
+  isCreating: flowCreating,
   feedFormData,
   feedFieldErrors,
   submitDisabled,
@@ -259,23 +259,23 @@ export function CreateFeedPanel({
 
   const isTokenPrompt = viewModel.kind === 'token_prompt';
   const isSubmitting = viewModel.kind === 'submitting';
-  const conversionError =
+  const creationError =
     viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
   const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
-  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : conversionError?.kind;
+  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : creationError?.kind;
   const failureMessage = isTokenPrompt
     ? ''
     : presentErrorMessage(
-        conversionError?.code,
+        creationError?.code,
         (viewModel.kind === 'error' ? viewModel.message : undefined) ||
-          conversionError?.message ||
+          creationError?.message ||
           feedFieldErrors.form
       );
   const isShowRetryButton = Boolean(
-    conversionError && conversionError.nextAction === 'retry' && conversionError.retryAction !== 'none'
+    creationError && creationError.nextAction === 'retry' && creationError.retryAction !== 'none'
   );
-  const isCreateConverting = !isTokenPrompt && isSubmitting;
-  const tokenConverting = isTokenPrompt && flowConverting;
+  const isCreatingFeed = !isTokenPrompt && isSubmitting;
+  const tokenCreating = isTokenPrompt && flowCreating;
 
   useLayoutEffect(() => {
     if (isTokenPrompt || !urlInputReference.current || globalThis.window === undefined) return;
@@ -334,7 +334,7 @@ export function CreateFeedPanel({
           url={feedFormData.url}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
-          isConverting={isCreateConverting}
+          isCreating={isCreatingFeed}
           feedCreationEnabled={feedCreationEnabled}
           featuredFeeds={featuredFeeds}
           inputRef={urlInputReference}
@@ -342,7 +342,7 @@ export function CreateFeedPanel({
         />
         <ActionFeedback
           failureMessage={failureMessage}
-          isConverting={isCreateConverting}
+          isCreating={isCreatingFeed}
           isShowRetryButton={isShowRetryButton}
           onRetryCreate={onRetryCreate}
         />
@@ -363,7 +363,7 @@ export function CreateFeedPanel({
           <TokenGateSection
             tokenDraft={tokenDraft}
             tokenError={tokenError}
-            isConverting={tokenConverting}
+            isCreating={tokenCreating}
             inputRef={tokenInputReference}
             onTokenDraftChange={onTokenDraftChange}
             onSaveToken={onSaveToken}

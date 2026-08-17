@@ -1,3 +1,3 @@
 export { useFeedFlow, type FeedFlowDependencies } from './useFeedFlow';
-export { useFeedConversion } from './useFeedConversion';
+export { useFeedCreation } from './useFeedCreation';
 export { decideJourney, type AppViewModel } from './decideJourney';
