@@ -2,7 +2,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { FeedPreviewWarning } from '../api/contracts';
 import type { AppViewModel } from '../feed';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 import { DominantField } from './DominantField';
 
 interface ResultDisplayProperties {
@@ -19,10 +19,10 @@ interface PreviewSectionProperties {
 function getTailoredPreviewMessage(warning?: FeedPreviewWarning): string {
   if (!warning) return '';
   if (warning.code === 'BLOCKED_SURFACE') {
-    return 'The target website is protected by an anti-bot challenge or Cloudflare block. Try providing a direct RSS feed URL.';
+    return COPY.previewBlockedSurface;
   }
   if (warning.code === 'SCRAPER_UNAVAILABLE') {
-    return 'The scraping backend is temporarily unavailable. Please try again in a few moments.';
+    return COPY.previewScraperUnavailable;
   }
   return warning.message;
 }

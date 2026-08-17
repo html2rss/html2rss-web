@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { ResultDisplay } from '../components/ResultDisplay';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 import type { AppViewModel } from '../feed';
 
 describe('ResultDisplay', () => {

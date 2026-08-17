@@ -4,7 +4,7 @@ import { decideJourney } from './decideJourney';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { expandCreateUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 import type { AppRoute } from '../routes/appRoute';
 import type { MayCreateResult } from '../session';
 

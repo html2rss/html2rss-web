@@ -6,6 +6,7 @@ import type {
   FeedRecord,
 } from '../api/contracts';
 import type { AppRoute } from '../routes/appRoute';
+import { COPY } from '../journey/copy';
 
 /** Closed UI journey kinds owned by Feed Flow. */
 export type AppViewModel =
@@ -52,7 +53,8 @@ export function decideJourney({
   if (tokenStateError || metadataError) {
     return {
       kind: 'error',
-      message: metadataError ?? tokenStateError ?? 'Instance unavailable.',
+      message: metadataError ?? tokenStateError ?? COPY.instanceUnavailable,
+
     };
   }
 

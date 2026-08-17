@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 import {
   buildLocalError,
   normalizeFeedCreationError,

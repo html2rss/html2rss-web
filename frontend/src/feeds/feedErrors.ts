@@ -6,6 +6,7 @@ import type {
   FeedPreviewWarning,
   FeedRetryAction,
 } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import { normalizeBoolean, normalizeString } from './feedParsers';
 
 export interface RawErrorEnvelope {
@@ -49,11 +50,11 @@ const DEFAULT_NEXT_ACTIONS: Record<FeedErrorKind, FeedNextAction> = {
 };
 
 const DEFAULT_KIND_MESSAGES: Record<FeedErrorKind, string> = {
-  auth: 'Access token is required.',
-  input: 'Check the URL and try again.',
-  network: 'Unable to reach the server. Try again.',
-  server: 'Unable to complete feed creation.',
-  client: 'Unable to complete feed creation.',
+  auth: COPY.authRequired,
+  input: COPY.checkUrlAndRetry,
+  network: COPY.unableToReachServer,
+  server: COPY.unableToCompleteCreation,
+  client: COPY.unableToCompleteCreation,
 };
 
 const VALID_KINDS = new Set<FeedErrorKind>(['auth', 'input', 'network', 'server', 'client']);
@@ -66,7 +67,7 @@ export function normalizeFeedCreationError(error: unknown): FeedCreationError {
   const isError = error instanceof Error;
   const message =
     (isError && error.message) ||
-    (isError ? 'Unable to reach the server.' : 'Unable to complete feed creation.');
+    (isError ? COPY.unableToReachServerShort : COPY.unableToCompleteCreation);
   const kind: FeedErrorKind = isError ? 'network' : 'server';
   const code: FeedCreationErrorCode = isError ? 'NETWORK_ERROR' : 'UNKNOWN_ERROR';
 
@@ -199,8 +200,8 @@ export function fallbackErrorMessage(
   kind: FeedErrorKind,
   nextAction: FeedNextAction
 ): string {
-  if (nextAction === 'wait') return 'The server is still processing the request.';
-  if (isTransientStatus(status) || kind === 'network') return 'Unable to reach the server. Try again.';
+  if (nextAction === 'wait') return COPY.serverStillProcessing;
+  if (isTransientStatus(status) || kind === 'network') return COPY.unableToReachServer;
   return DEFAULT_KIND_MESSAGES[kind];
 }
 

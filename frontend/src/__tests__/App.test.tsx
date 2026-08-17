@@ -148,7 +148,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'html2rss' })).toHaveAttribute('href', '/#/create');
+    expect(screen.getByRole('link', { name: 'html2rss' }).getAttribute('href')).toMatch(/#\/create$/);
     expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Utilities')).toBeInTheDocument();

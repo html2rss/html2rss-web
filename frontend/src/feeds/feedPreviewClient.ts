@@ -5,12 +5,13 @@ import type {
   FeedPreviewWarning,
   FeedRecord,
 } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import { buildPreviewWarning } from './feedErrors';
 import { normalizePreviewItems } from './feedParsers';
 
 export const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
-export const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
-export const PREVIEW_DEGRADED_MESSAGE = 'Preview content is partially degraded right now.';
+export const PREVIEW_UNAVAILABLE_MESSAGE = COPY.previewUnavailable;
+export const PREVIEW_DEGRADED_MESSAGE = COPY.previewDegraded;
 
 export interface PreviewLoadResult {
   items: FeedPreviewItem[];

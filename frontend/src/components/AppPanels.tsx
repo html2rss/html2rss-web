@@ -4,7 +4,7 @@ import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
 import type { AppViewModel } from '../feed';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 
 export interface FeedFormData {
   url: string;

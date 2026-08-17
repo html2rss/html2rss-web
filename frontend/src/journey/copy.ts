@@ -1,4 +1,4 @@
-/** Single-source UI copy for create / token / result journey states. */
+/** Sole UI copy owner for create / token / result journey states. */
 export const COPY = {
   creating: 'Creating feed link',
   previewChecking: 'Checking preview',
@@ -25,6 +25,7 @@ export const COPY = {
   bookmarkletTitle: 'Bookmarklet',
   bookmarkletHelp:
     'Drag the Bookmarklet link from the footer to your bookmarks bar. On any page, click it to prefill the URL here.',
+  bookmarkletDragHint: 'Drag this bookmarklet to your bookmarks bar',
   copyFeedUrl: 'Copy feed URL',
   openFeed: 'Open feed',
   openJsonFeed: 'Open JSON Feed',
@@ -43,5 +44,20 @@ export const COPY = {
   invalidUrlFormat: 'Invalid URL format.',
   unableToSaveToken: 'Unable to save access token.',
   instanceMetadataUnavailable: 'Instance metadata unavailable',
+  instanceUnavailable: 'Instance unavailable.',
+  loadingInstance: 'Loading instance',
+  loadingInstanceBody: 'Reading feed-generation capabilities.',
   dismiss: 'Dismiss',
+  authRequired: 'Access token is required.',
+  checkUrlAndRetry: 'Check the URL and try again.',
+  unableToReachServer: 'Unable to reach the server. Try again.',
+  unableToReachServerShort: 'Unable to reach the server.',
+  unableToCompleteCreation: 'Unable to complete feed creation.',
+  serverStillProcessing: 'The server is still processing the request.',
+  previewUnavailable: 'Preview unavailable right now.',
+  previewDegraded: 'Preview content is partially degraded right now.',
+  previewBlockedSurface:
+    'The target website is protected by an anti-bot challenge or Cloudflare block. Try providing a direct RSS feed URL.',
+  previewScraperUnavailable:
+    'The scraping backend is temporarily unavailable. Please try again in a few moments.',
 } as const;

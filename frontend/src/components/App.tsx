@@ -2,16 +2,16 @@ import type { JSX } from 'preact';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
 import { Notice } from './Notice';
-import { COPY } from '../copy';
+import { COPY } from '../journey/copy';
 import { useSession } from '../session';
 import { useFeedFlow } from '../feed';
-import { useAppRoute } from '../routes/appRoute';
+import { buildAppRouteHref, useAppRoute } from '../routes/appRoute';
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
     <a
       class="brand-lockup"
-      href="/#/create"
+      href={buildAppRouteHref({ kind: 'create' })}
       aria-label="html2rss"
       onClick={(event) => {
         event.preventDefault();
@@ -95,8 +95,8 @@ export function App() {
   let bodyContent: JSX.Element;
   if (sessionLoading) {
     bodyContent = (
-      <Notice title="Loading instance" state="loading" ariaLive="polite">
-        <p>Reading feed-generation capabilities.</p>
+      <Notice title={COPY.loadingInstance} state="loading" ariaLive="polite">
+        <p>{COPY.loadingInstanceBody}</p>
       </Notice>
     );
   } else if (viewModel.kind === 'result') {
