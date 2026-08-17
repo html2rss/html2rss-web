@@ -49,7 +49,7 @@ test.describe('frontend smoke', () => {
     await expect(page.getByLabel('Utilities')).toBeVisible();
   });
 
-  test('remounts create from a hashbang entry without error chrome', async ({ page }) => {
+  test('remounts create from BrandLockup and hashbang and clears conversion chrome', async ({ page }) => {
     await page.route(/\/api\/v1$/, async (route) => {
       await route.fulfill({
         status: 200,
@@ -65,7 +65,7 @@ test.describe('frontend smoke', () => {
             instance: {
               feed_creation: {
                 enabled: true,
-                access_token_required: true,
+                access_token_required: false,
               },
               featured_feeds: [],
             },
@@ -73,13 +73,45 @@ test.describe('frontend smoke', () => {
         }),
       });
     });
+    await page.route(/\/api\/v1\/feeds$/, async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: {
+            kind: 'server',
+            code: 'INTERNAL_SERVER_ERROR',
+            retryable: true,
+            next_action: 'retry',
+            retry_action: 'primary',
+            message: 'Access denied',
+          },
+        }),
+      });
+    });
 
-    await page.goto('/#!/create');
+    await page.goto('/#/create');
 
-    await expect(page).toHaveURL(/\/#\/create$/);
-    await expect(page.getByLabel('Page URL')).toBeVisible();
-    await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
+    await page.getByLabel('Page URL').fill('https://example.com/articles');
+    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
+
+    await page.getByRole('link', { name: 'html2rss' }).click();
     await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+    await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
+    await expect(page.getByLabel('Page URL')).toBeFocused();
+
+    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
+
+    await page.evaluate(() => {
+      location.hash = '#!/create';
+    });
+    await expect(page).toHaveURL(/\/#\/create$/);
+    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+    await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
+    await expect(page.getByLabel('Page URL')).toBeFocused();
   });
 
   test('shows result after successful feed creation and recovers unmatched result routes onto create', async ({

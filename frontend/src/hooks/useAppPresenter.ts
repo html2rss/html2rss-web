@@ -8,7 +8,7 @@ import { deriveAppViewModel } from '../appViewModel';
  * deriving the active ViewModel for the main application shell.
  */
 export function useAppPresenter() {
-  const { route, navigate } = useAppRoute();
+  const { route, navigate, createEntryKey } = useAppRoute();
 
   const {
     token,
@@ -53,6 +53,7 @@ export function useAppPresenter() {
     clearToken,
     route,
     navigate,
+    createEntryKey,
   });
 
   const viewModel = deriveAppViewModel({

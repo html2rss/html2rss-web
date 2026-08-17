@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { useFeedConversion } from './useFeedConversion';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { normalizeUserUrl } from '../utils/url';
-import type { FeedCreationError } from '../api/contracts';
+import type { ApiMetadataRecord, FeedCreationError } from '../api/contracts';
 import { COPY } from '../copy';
 import type { AppRoute } from '../routes/appRoute';
 
@@ -15,12 +15,13 @@ interface RouteNavigationOptions {
 
 export interface FeedFlowDependencies {
   token: string | undefined;
-  metadata: any;
+  metadata?: Pick<ApiMetadataRecord, 'instance'>;
   isLoading: boolean;
   saveToken: (token: string) => Promise<void>;
   clearToken: () => void;
   route: AppRoute;
   navigate: (route: AppRoute, options?: RouteNavigationOptions) => void;
+  createEntryKey: number;
 }
 
 export function useFeedFlow({
@@ -31,6 +32,7 @@ export function useFeedFlow({
   clearToken,
   route,
   navigate,
+  createEntryKey,
 }: FeedFlowDependencies) {
   const {
     isConverting,
@@ -53,6 +55,7 @@ export function useFeedFlow({
   const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
   const hasAutoSubmittedReference = useRef(false);
   const previousRouteKindReference = useRef(route.kind);
+  const previousCreateEntryKeyReference = useRef(createEntryKey);
 
   // Prefill URL effect
   useEffect(() => {
@@ -185,13 +188,23 @@ export function useFeedFlow({
 
   useEffect(() => {
     const previousKind = previousRouteKindReference.current;
+    const previousCreateEntryKey = previousCreateEntryKeyReference.current;
     previousRouteKindReference.current = route.kind;
-    if (route.kind !== 'create' || previousKind === 'create') return;
+    previousCreateEntryKeyReference.current = createEntryKey;
+
+    if (route.kind !== 'create') return;
+
+    const didKindChangeToCreate = previousKind !== 'create';
+    const isSameKindCreateEntry = previousKind === 'create' && previousCreateEntryKey !== createEntryKey;
+    if (!didKindChangeToCreate && !isSameKindCreateEntry) return;
 
     clearError();
     clearResult();
+    setTokenError('');
+    if (isSameKindCreateEntry) setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    if (!route.prefillUrl) autoSubmitUrlReference.current = undefined;
     setFocusCreateComposerKey((current) => current + 1);
-  }, [clearError, clearResult, route.kind]);
+  }, [createEntryKey, route]);
 
   return {
     isConverting,

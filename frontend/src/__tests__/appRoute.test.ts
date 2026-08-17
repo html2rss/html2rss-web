@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderHook } from '@testing-library/preact';
+import { act, renderHook } from '@testing-library/preact';
 import { buildAppRouteHref, readAppRoute, useAppRoute } from '../routes/appRoute';
 
 describe('appRoute', () => {
@@ -51,12 +51,28 @@ describe('appRoute', () => {
     ).toEqual({ kind: 'create', prefillUrl: 'https://example.com/articles' });
   });
 
-  it('canonicalizes hashbang create hashes to #/create', () => {
+  it('canonicalizes hashbang create hashes to #/create and bumps createEntryKey', () => {
     history.replaceState({}, '', 'http://localhost:3000/#!/create');
 
-    const { unmount } = renderHook(() => useAppRoute());
+    const { result, unmount } = renderHook(() => useAppRoute());
 
     expect(location.hash).toBe('#/create');
+    expect(result.current.createEntryKey).toBeGreaterThan(0);
+    unmount();
+  });
+
+  it('bumps createEntryKey when navigating to create while already on create', () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+
+    const { result, unmount } = renderHook(() => useAppRoute());
+
+    expect(result.current.createEntryKey).toBe(0);
+
+    act(() => {
+      result.current.navigate({ kind: 'create' });
+    });
+
+    expect(result.current.createEntryKey).toBeGreaterThan(0);
     unmount();
   });
 

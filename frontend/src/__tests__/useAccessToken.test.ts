@@ -1,12 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/preact';
-import { useAccessToken } from '../hooks/useAccessToken';
+import { resetAccessTokenMemory, useAccessToken } from '../hooks/useAccessToken';
 import { getPersistentStorage } from '../utils/persistentStorage';
 
 const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 
 describe('useAccessToken', () => {
   beforeEach(() => {
+    getPersistentStorage().clear();
+    sessionStorage.clear();
+    resetAccessTokenMemory();
+  });
+
+  afterEach(() => {
+    resetAccessTokenMemory();
     getPersistentStorage().clear();
     sessionStorage.clear();
   });

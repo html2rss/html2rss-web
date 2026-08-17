@@ -79,26 +79,33 @@ export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()):
 
 export function useAppRoute() {
   const [route, setRoute] = useState<AppRoute>(() => readAppRoute());
+  const [createEntryKey, setCreateEntryKey] = useState(0);
+
+  const publishCreateEntry = (nextRoute: AppRoute) => {
+    if (nextRoute.kind !== 'create') return;
+    setCreateEntryKey((current) => current + 1);
+  };
 
   useEffect(() => {
     if (globalThis.window === undefined) return;
 
-    const canonicalize = () => {
+    const canonicalize = (source: 'mount' | 'navigation') => {
       const nextRoute = readAppRoute();
-      setRoute(nextRoute);
+      const needsReplace = !location.hash || location.pathname !== '/' || location.hash.startsWith('#!');
 
-      if (!location.hash || location.pathname !== '/' || location.hash.startsWith('#!')) {
-        replaceRoute(nextRoute);
-      }
+      if (needsReplace) replaceRoute(nextRoute);
+      setRoute(nextRoute);
+      if (source === 'navigation' || needsReplace) publishCreateEntry(nextRoute);
     };
 
-    canonicalize();
-    addEventListener('popstate', canonicalize);
-    addEventListener('hashchange', canonicalize);
+    canonicalize('mount');
+    const onNavigation = () => canonicalize('navigation');
+    addEventListener('popstate', onNavigation);
+    addEventListener('hashchange', onNavigation);
 
     return () => {
-      removeEventListener('popstate', canonicalize);
-      removeEventListener('hashchange', canonicalize);
+      removeEventListener('popstate', onNavigation);
+      removeEventListener('hashchange', onNavigation);
     };
   }, []);
 
@@ -113,11 +120,13 @@ export function useAppRoute() {
     }
 
     setRoute(readAppRoute());
+    publishCreateEntry(nextRoute);
   }, []);
 
   return {
     route,
     navigate,
+    createEntryKey,
   };
 }
 

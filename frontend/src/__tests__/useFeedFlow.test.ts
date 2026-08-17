@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
-import { useFeedFlow } from '../hooks/useFeedFlow';
+import { useFeedFlow, type FeedFlowDependencies } from '../hooks/useFeedFlow';
 
 const mockFeed = {
   id: 'feed-1',
@@ -13,11 +13,32 @@ const mockFeed = {
   updated_at: '2024-01-01T00:00:00Z',
 };
 
+const conversionFailure = {
+  kind: 'server' as const,
+  code: 'INTERNAL_SERVER_ERROR' as const,
+  retryable: true,
+  nextAction: 'retry' as const,
+  retryAction: 'primary' as const,
+  message: 'Upstream failed',
+};
+
 describe('useFeedFlow', () => {
   let fetchMock: SpyInstance;
   const mockNavigate = vi.fn();
   const mockSaveToken = vi.fn();
   const mockClearToken = vi.fn();
+
+  const feedFlowProperties = (overrides: Partial<FeedFlowDependencies> = {}): FeedFlowDependencies => ({
+    token: undefined,
+    metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
+    isLoading: false,
+    saveToken: mockSaveToken,
+    clearToken: mockClearToken,
+    route: { kind: 'create' },
+    navigate: mockNavigate,
+    createEntryKey: 0,
+    ...overrides,
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,17 +52,7 @@ describe('useFeedFlow', () => {
   });
 
   it('manages form input field changes and draft state', async () => {
-    const { result } = renderHook(() =>
-      useFeedFlow({
-        token: undefined,
-        metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
-        isLoading: false,
-        saveToken: mockSaveToken,
-        clearToken: mockClearToken,
-        route: { kind: 'create' },
-        navigate: mockNavigate,
-      })
-    );
+    const { result } = renderHook(() => useFeedFlow(feedFlowProperties()));
 
     act(() => {
       result.current.onFeedFieldChange('url', 'https://example.com/new-articles');
@@ -58,17 +69,7 @@ describe('useFeedFlow', () => {
       .mockResolvedValueOnce(Response.json({ success: true, data: { feed: mockFeed } }))
       .mockResolvedValueOnce(Response.json({ items: [] }));
 
-    const { result } = renderHook(() =>
-      useFeedFlow({
-        token: undefined,
-        metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
-        isLoading: false,
-        saveToken: mockSaveToken,
-        clearToken: mockClearToken,
-        route: { kind: 'create' },
-        navigate: mockNavigate,
-      })
-    );
+    const { result } = renderHook(() => useFeedFlow(feedFlowProperties()));
 
     act(() => {
       result.current.onFeedFieldChange('url', 'https://example.com/new-articles');
@@ -85,15 +86,11 @@ describe('useFeedFlow', () => {
 
   it('redirects to token route when token is required but missing', async () => {
     const { result } = renderHook(() =>
-      useFeedFlow({
-        token: undefined,
-        metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
-        isLoading: false,
-        saveToken: mockSaveToken,
-        clearToken: mockClearToken,
-        route: { kind: 'create' },
-        navigate: mockNavigate,
-      })
+      useFeedFlow(
+        feedFlowProperties({
+          metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
+        })
+      )
     );
 
     act(() => {
@@ -113,25 +110,15 @@ describe('useFeedFlow', () => {
   });
 
   it('returns non-auth conversion failures from token onto create', async () => {
-    fetchMock.mockRejectedValueOnce({
-      kind: 'server',
-      code: 'INTERNAL_SERVER_ERROR',
-      retryable: true,
-      nextAction: 'retry',
-      retryAction: 'primary',
-      message: 'Upstream failed',
-    });
+    fetchMock.mockRejectedValueOnce(conversionFailure);
 
     const { result } = renderHook(() =>
-      useFeedFlow({
-        token: undefined,
-        metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
-        isLoading: false,
-        saveToken: mockSaveToken,
-        clearToken: mockClearToken,
-        route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' },
-        navigate: mockNavigate,
-      })
+      useFeedFlow(
+        feedFlowProperties({
+          metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
+          route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' },
+        })
+      )
     );
 
     act(() => {
@@ -150,21 +137,13 @@ describe('useFeedFlow', () => {
       prefillUrl: 'https://example.com/private-articles',
     });
     expect(result.current.tokenError).toBe('');
+    expect(result.current.feedFieldErrors.form).toBe('Upstream failed');
   });
 
   it('recovers unmatched result routes onto remounted create without prefillUrl', async () => {
     const { result, rerender } = renderHook(
-      ({ route }) =>
-        useFeedFlow({
-          token: undefined,
-          metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
-          isLoading: false,
-          saveToken: mockSaveToken,
-          clearToken: mockClearToken,
-          route,
-          navigate: mockNavigate,
-        }),
-      { initialProps: { route: { kind: 'result' as const, feedToken: 'missing-token' } } }
+      ({ route, createEntryKey }) => useFeedFlow(feedFlowProperties({ route, createEntryKey })),
+      { initialProps: { route: { kind: 'result' as const, feedToken: 'missing-token' }, createEntryKey: 0 } }
     );
 
     await waitFor(() => {
@@ -177,9 +156,39 @@ describe('useFeedFlow', () => {
       expect(route).not.toHaveProperty('prefillUrl');
     }
 
-    rerender({ route: { kind: 'create' } });
+    rerender({ route: { kind: 'create' }, createEntryKey: 0 });
 
     expect(result.current.focusCreateComposerKey).toBeGreaterThan(0);
     expect(result.current.conversionError).toBeUndefined();
+  });
+
+  it('remounts create on a later create-entry visit and clears conversion chrome', async () => {
+    fetchMock.mockRejectedValueOnce(conversionFailure);
+
+    const { result, rerender } = renderHook(
+      ({ createEntryKey }) => useFeedFlow(feedFlowProperties({ createEntryKey })),
+      { initialProps: { createEntryKey: 0 } }
+    );
+
+    act(() => {
+      result.current.onFeedFieldChange('url', 'https://example.com/articles');
+    });
+
+    await act(async () => {
+      await result.current.onFeedSubmit({ preventDefault: vi.fn() } as any);
+    });
+
+    expect(result.current.conversionError).toMatchObject({ message: 'Upstream failed' });
+    expect(result.current.feedFieldErrors.form).toBe('Upstream failed');
+    const previousFocusKey = result.current.focusCreateComposerKey;
+    const fetchCallsAfterSubmit = fetchMock.mock.calls.length;
+
+    rerender({ createEntryKey: 1 });
+
+    expect(result.current.conversionError).toBeUndefined();
+    expect(result.current.feedFieldErrors.form).toBe('');
+    expect(result.current.tokenError).toBe('');
+    expect(result.current.focusCreateComposerKey).toBeGreaterThan(previousFocusKey);
+    expect(fetchMock).toHaveBeenCalledTimes(fetchCallsAfterSubmit);
   });
 });

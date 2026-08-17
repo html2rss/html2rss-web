@@ -37,6 +37,10 @@ const writePersistedToken = (token: string) => {
   }
 };
 
+export function resetAccessTokenMemory() {
+  writePersistedToken('');
+}
+
 export function useAccessToken() {
   const [state, setState] = useState<AccessTokenState>({
     isLoading: true,

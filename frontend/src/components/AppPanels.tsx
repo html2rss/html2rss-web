@@ -307,6 +307,14 @@ export function CreateFeedPanel({
     }
 
     if (!dialog.open) dialog.setAttribute('open', '');
+
+    return () => {
+      try {
+        if (dialog.open) dialog.close();
+      } catch {
+        dialog.removeAttribute('open');
+      }
+    };
   }, [isTokenPrompt]);
 
   return (

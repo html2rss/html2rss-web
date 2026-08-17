@@ -38,6 +38,16 @@ const mockCreatedFeedResult = {
   warnings: [],
 };
 
+async function expectCreateRemountedWithoutErrorChrome() {
+  await waitFor(() => {
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+  });
+  expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+  await waitFor(() => {
+    expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+  });
+}
+
 describe('App', () => {
   const mockSaveToken = vi.fn();
   const mockClearToken = vi.fn();
@@ -90,6 +100,48 @@ describe('App', () => {
       retryPreviewFetch: mockRetryPreviewFetch,
     });
   });
+
+  const conversionFailure = {
+    kind: 'server' as const,
+    code: 'INTERNAL_SERVER_ERROR' as const,
+    retryable: true,
+    nextAction: 'retry' as const,
+    retryAction: 'primary' as const,
+    message: 'Access denied',
+  };
+
+  async function renderCreateWithConversionError() {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'https://example.test/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: true,
+            access_token_required: false,
+          },
+          featured_feeds: [],
+        },
+      },
+      isLoading: false,
+      error: undefined,
+    });
+    mockConvertFeed.mockRejectedValue(conversionFailure);
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    });
+  }
 
   it('renders the radical-simple create flow', () => {
     render(<App />);
@@ -177,17 +229,38 @@ describe('App', () => {
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
-  it('remounts create from a hashbang entry without error chrome', async () => {
-    history.replaceState({}, '', 'http://localhost:3000/#!/create');
+  it('remounts create from BrandLockup and clears conversion chrome', async () => {
+    await renderCreateWithConversionError();
+    const convertCalls = mockConvertFeed.mock.calls.length;
 
-    render(<App />);
+    fireEvent.click(screen.getByRole('link', { name: 'html2rss' }));
+
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
+  });
+
+  it('remounts create from a #/create visit and clears conversion chrome', async () => {
+    await renderCreateWithConversionError();
+    const convertCalls = mockConvertFeed.mock.calls.length;
+
+    dispatchEvent(new HashChangeEvent('hashchange'));
+
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(location.hash).toBe('#/create');
+    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
+  });
+
+  it('remounts create from a hashbang entry and clears conversion chrome', async () => {
+    await renderCreateWithConversionError();
+    const convertCalls = mockConvertFeed.mock.calls.length;
+
+    location.hash = '#!/create';
 
     await waitFor(() => {
       expect(location.hash).toBe('#/create');
     });
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
-    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(mockConvertFeed).toHaveBeenCalledTimes(convertCalls);
   });
 
   it('shows inline token prompt when submitting without a token', async () => {

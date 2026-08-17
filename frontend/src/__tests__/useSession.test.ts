@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
+import { resetAccessTokenMemory } from '../hooks/useAccessToken';
 import { useSession } from '../hooks/useSession';
 
 const mockMetadata = {
@@ -17,10 +18,12 @@ describe('useSession', () => {
     vi.clearAllMocks();
     localStorage.clear();
     sessionStorage.clear();
+    resetAccessTokenMemory();
     fetchMock = vi.spyOn(globalThis, 'fetch');
   });
 
   afterEach(() => {
+    resetAccessTokenMemory();
     fetchMock.mockRestore();
   });
 
