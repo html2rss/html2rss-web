@@ -87,20 +87,6 @@ Object.assign(navigator, {
 // Ensure scrollIntoView exists for components relying on it
 Element.prototype.scrollIntoView = vi.fn();
 
-if (typeof HTMLDialogElement !== 'undefined') {
-  const dialogPrototype = HTMLDialogElement.prototype;
-  if (typeof dialogPrototype.showModal !== 'function') {
-    dialogPrototype.showModal = function showModal() {
-      this.setAttribute('open', '');
-    };
-  }
-  if (typeof dialogPrototype.close !== 'function') {
-    dialogPrototype.close = function close() {
-      this.removeAttribute('open');
-    };
-  }
-}
-
 // Wire up MSW in node environment
 beforeAll(async () => {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
