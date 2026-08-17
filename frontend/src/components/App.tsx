@@ -156,7 +156,10 @@ export function App() {
             )}
 
             {(metadataError || tokenStateError) && (
-              <Notice tone="error" title={COPY.instanceMetadataUnavailable}>
+              <Notice
+                tone="error"
+                title={metadataError ? COPY.instanceMetadataUnavailable : COPY.accessTokenUnavailable}
+              >
                 <p>{metadataError ?? tokenStateError}</p>
               </Notice>
             )}

@@ -159,7 +159,7 @@ describe('ResultDisplay', () => {
     });
   });
 
-  it('renders tailored guidance for BLOCKED_SURFACE preview warnings', () => {
+  it('renders BLOCKED_SURFACE preview warnings from the wire message', () => {
     render(
       <ResultDisplay
         viewModel={{
@@ -168,7 +168,7 @@ describe('ResultDisplay', () => {
           warnings: [
             {
               code: 'BLOCKED_SURFACE',
-              message: 'Blocked by Cloudflare',
+              message: 'This website blocked automated access.',
               retryable: false,
               nextAction: 'none',
             },
@@ -179,10 +179,10 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText(COPY.previewBlockedSurface)).toBeInTheDocument();
+    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
   });
 
-  it('renders tailored guidance for SCRAPER_UNAVAILABLE preview warnings', () => {
+  it('renders SCRAPER_UNAVAILABLE preview warnings from the wire message', () => {
     render(
       <ResultDisplay
         viewModel={{
@@ -191,7 +191,7 @@ describe('ResultDisplay', () => {
           warnings: [
             {
               code: 'SCRAPER_UNAVAILABLE',
-              message: 'Service down',
+              message: 'Feed fetching is temporarily unavailable.',
               retryable: true,
               nextAction: 'retry',
             },
@@ -202,6 +202,6 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText(COPY.previewScraperUnavailable)).toBeInTheDocument();
+    expect(screen.getByText('Feed fetching is temporarily unavailable.')).toBeInTheDocument();
   });
 });

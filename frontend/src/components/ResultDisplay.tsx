@@ -1,9 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { FeedPreviewWarning } from '../api/contracts';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
-import { presentErrorMessage } from '../journey/presentError';
 import { DominantField } from './DominantField';
 
 interface ResultDisplayProperties {
@@ -15,11 +13,6 @@ interface ResultDisplayProperties {
 interface PreviewSectionProperties {
   ariaLabel: string;
   children: ComponentChildren;
-}
-
-function getTailoredPreviewMessage(warning?: FeedPreviewWarning): string {
-  if (!warning) return '';
-  return presentErrorMessage(warning.code, warning.message);
 }
 
 function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {
@@ -46,7 +39,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
   const canManuallyRetryPreview =
     preview.status === 'preview_failed' && warnings.some((warning) => warning.retryable);
-  const previewMessage = getTailoredPreviewMessage(warnings[0]);
+  const previewMessage = warnings[0]?.message ?? '';
   const hasPreviewItems = preview.items.length > 0;
   const isShowPreviewError =
     preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;

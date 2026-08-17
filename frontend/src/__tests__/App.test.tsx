@@ -112,7 +112,7 @@ describe('App', () => {
     message: 'Access denied',
   };
 
-  async function renderCreateWithConversionError() {
+  async function renderCreateWithCreationError() {
     mockUseApiMetadata.mockReturnValue({
       metadata: {
         api: {
@@ -232,7 +232,7 @@ describe('App', () => {
   });
 
   it('remounts create from BrandLockup and clears creation chrome', async () => {
-    await renderCreateWithConversionError();
+    await renderCreateWithCreationError();
     const createCalls = mockCreateFeed.mock.calls.length;
 
     fireEvent.click(screen.getByRole('link', { name: 'html2rss' }));
@@ -242,7 +242,7 @@ describe('App', () => {
   });
 
   it('remounts create from a #/create visit and clears creation chrome', async () => {
-    await renderCreateWithConversionError();
+    await renderCreateWithCreationError();
     const createCalls = mockCreateFeed.mock.calls.length;
 
     dispatchEvent(new HashChangeEvent('hashchange'));
@@ -253,7 +253,7 @@ describe('App', () => {
   });
 
   it('remounts create from a hashbang entry and clears creation chrome', async () => {
-    await renderCreateWithConversionError();
+    await renderCreateWithCreationError();
     const createCalls = mockCreateFeed.mock.calls.length;
 
     location.hash = '#!/create';
@@ -402,7 +402,7 @@ describe('App', () => {
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
-  it('presents classified create errors with COPY instead of the wire sentence', () => {
+  it('presents classified create errors with the wire sentence', () => {
     mockUseFeedCreation.mockReturnValue({
       isCreating: false,
       result: undefined,
@@ -412,7 +412,7 @@ describe('App', () => {
         retryable: false,
         nextAction: 'correct_input',
         retryAction: 'none',
-        message: 'Blocked by Cloudflare',
+        message: 'This website blocked automated access.',
       },
       createFeed: mockCreateFeed,
       clearError: mockClearCreationError,
@@ -422,8 +422,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText(COPY.previewBlockedSurface)).toBeInTheDocument();
-    expect(screen.queryByText('Blocked by Cloudflare')).not.toBeInTheDocument();
+    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
   });
 
   it('shows instance metadata failure as a banner without create-error chrome', () => {
@@ -437,8 +436,27 @@ describe('App', () => {
 
     expect(screen.getByText(COPY.instanceMetadataUnavailable)).toBeInTheDocument();
     expect(screen.getByText(COPY.instanceUnavailable)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.accessTokenUnavailable)).not.toBeInTheDocument();
     expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+  });
+
+  it('shows access token load failure with a token title, not metadata heading', () => {
+    mockUseAccessToken.mockReturnValue({
+      token: undefined,
+      hasToken: false,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: COPY.unableToLoadToken,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText(COPY.accessTokenUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(COPY.unableToLoadToken)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.instanceMetadataUnavailable)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
   });
 
   it('shows title-only creating notice without preview copy', () => {

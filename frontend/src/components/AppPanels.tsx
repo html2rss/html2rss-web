@@ -5,7 +5,6 @@ import { DominantField } from './DominantField';
 import { Notice } from './Notice';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
-import { presentErrorMessage } from '../journey/presentError';
 
 export interface FeedFormData {
   url: string;
@@ -265,12 +264,9 @@ export function CreateFeedPanel({
   const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : creationError?.kind;
   const failureMessage = isTokenPrompt
     ? ''
-    : presentErrorMessage(
-        creationError?.code,
-        (viewModel.kind === 'error' ? viewModel.message : undefined) ||
-          creationError?.message ||
-          feedFieldErrors.form
-      );
+    : (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+      creationError?.message ||
+      feedFieldErrors.form;
   const isShowRetryButton = Boolean(
     creationError && creationError.nextAction === 'retry' && creationError.retryAction !== 'none'
   );
