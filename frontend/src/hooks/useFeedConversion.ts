@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult, FeedCreationError } from '../api/contracts';
 import {
-  buildLocalError,
   normalizeFeedCreationError,
   requestFeedCreation,
   buildCreatedFeedResult,
@@ -11,8 +10,6 @@ import {
   PREVIEW_UNAVAILABLE_MESSAGE,
   isAbortError,
 } from '../feeds/feedsService';
-import { COPY } from '../copy';
-import { isNormalizedHttpUrl, normalizeUserUrl } from '../utils/url';
 
 interface ConversionState {
   isConverting: boolean;
@@ -20,6 +17,10 @@ interface ConversionState {
   error?: FeedCreationError;
 }
 
+/**
+ * Feed conversion IO only. Callers must pass an already-expanded http(s) URL
+ * from `expandCreateUrl` — this module does not re-normalize or validate emptiness.
+ */
 export function useFeedConversion() {
   const requestIdReference = useRef(0);
   const previewAbortControllerReference = useRef<AbortController | undefined>(undefined);
@@ -38,13 +39,7 @@ export function useFeedConversion() {
     []
   );
 
-  async function convertFeed(url: string, token: string) {
-    const normalizedUrl = normalizeUserUrl(url);
-
-    if (!normalizedUrl) throw buildLocalError(COPY.sourceUrlRequired, 'input', 'correct_input');
-    if (!isNormalizedHttpUrl(normalizedUrl))
-      throw buildLocalError(COPY.invalidUrlFormat, 'input', 'correct_input');
-
+  async function convertFeed(normalizedUrl: string, token: string) {
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
     cancelPreview();

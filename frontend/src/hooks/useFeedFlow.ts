@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useFeedConversion } from './useFeedConversion';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
-import { normalizeUserUrl } from '../utils/url';
+import { expandCreateUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
 import { COPY } from '../copy';
 import type { AppRoute } from '../routes/appRoute';
@@ -85,12 +85,15 @@ export function useFeedFlow({
   };
 
   const attemptFeedCreation = async (accessToken: string) => {
-    const normalizedUrl = normalizeUserUrl(feedFormData.url);
-
-    if (!normalizedUrl) {
-      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: COPY.sourceUrlRequired });
+    const expanded = expandCreateUrl(feedFormData.url);
+    if ('error' in expanded) {
+      setFeedFieldErrors({
+        ...EMPTY_FEED_ERRORS,
+        url: expanded.error === 'empty' ? COPY.sourceUrlRequired : COPY.invalidUrlFormat,
+      });
       return false;
     }
+    const normalizedUrl = expanded.ok;
 
     const gate = mayCreate(accessToken);
     if (gate === 'disabled') {
@@ -164,10 +167,12 @@ export function useFeedFlow({
 
     if (mayCreate(token) === 'needToken') {
       hasAutoSubmittedReference.current = true;
-      setFeedFormData((previous) => ({ ...previous, url: normalizeUserUrl(autoSubmitUrl) }));
+      const expanded = expandCreateUrl(autoSubmitUrl);
+      const prefillUrl = expanded.error ? autoSubmitUrl : expanded.ok;
+      setFeedFormData((previous) => ({ ...previous, url: prefillUrl }));
       setTokenError('');
       if (route.kind !== 'token') {
-        navigate({ kind: 'token', prefillUrl: normalizeUserUrl(autoSubmitUrl) });
+        navigate({ kind: 'token', prefillUrl });
       }
       return;
     }
