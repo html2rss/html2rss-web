@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { FeedPreviewWarning } from '../api/contracts';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
+import { presentErrorMessage } from '../journey/presentError';
 import { DominantField } from './DominantField';
 
 interface ResultDisplayProperties {
@@ -18,13 +19,7 @@ interface PreviewSectionProperties {
 
 function getTailoredPreviewMessage(warning?: FeedPreviewWarning): string {
   if (!warning) return '';
-  if (warning.code === 'BLOCKED_SURFACE') {
-    return COPY.previewBlockedSurface;
-  }
-  if (warning.code === 'SCRAPER_UNAVAILABLE') {
-    return COPY.previewScraperUnavailable;
-  }
-  return warning.message;
+  return presentErrorMessage(warning.code, warning.message);
 }
 
 function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {

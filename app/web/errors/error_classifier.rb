@@ -55,7 +55,7 @@ module Html2rss
       ).freeze
 
       BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
-      BLOCKED_SURFACE_MESSAGE = 'The target website is protected by an anti-bot challenge or Cloudflare block.'
+      BLOCKED_SURFACE_MESSAGE = 'This website blocked automated access.'
 
       BLOCKED_SURFACE = Decision.new(
         status: 422,
@@ -69,7 +69,7 @@ module Html2rss
       ).freeze
 
       SCRAPER_UNAVAILABLE_CODE = 'SCRAPER_UNAVAILABLE'
-      SCRAPER_UNAVAILABLE_MESSAGE = 'The scraping backend is temporarily unavailable. Please try again later.'
+      SCRAPER_UNAVAILABLE_MESSAGE = 'Feed fetching is temporarily unavailable.'
 
       SCRAPER_UNAVAILABLE = Decision.new(
         status: 503,
@@ -85,7 +85,7 @@ module Html2rss
       SERVICE_UNAVAILABLE = Decision.new(
         status: 503,
         code: 'SERVICE_UNAVAILABLE',
-        message: 'The server is too busy or the request timed out. Please try again later.',
+        message: 'The server is too busy or the request timed out.',
         kind: 'server',
         cacheable: false,
         retryable: true,
@@ -96,7 +96,7 @@ module Html2rss
       GATEWAY_TIMEOUT = Decision.new(
         status: 504,
         code: 'GATEWAY_TIMEOUT',
-        message: 'The target website took too long to respond. Please try again later.',
+        message: 'The target website took too long to respond.',
         kind: 'network',
         cacheable: false,
         retryable: true,
@@ -194,7 +194,7 @@ module Html2rss
           case error
           when TooManyRequestsError
             decision_for_http_error(error, RETRY_META.merge(kind: 'client'),
-                                    default_message: 'Too many requests. Please wait before retrying.')
+                                    default_message: 'Too many requests. Wait before retrying.')
           when UnauthorizedError then decision_for_http_error(error, AUTH_META)
           when BadRequestError, ForbiddenError then decision_for_http_error(error, INPUT_META)
           when HealthCheckFailedError then decision_for_http_error(error, SERVER_META)

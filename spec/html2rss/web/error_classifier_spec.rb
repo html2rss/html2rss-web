@@ -66,6 +66,15 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(error)).to eq(described_class::BLOCKED_SURFACE)
     end
 
+    it 'uses one human sentence for classified user decisions', :aggregate_failures do
+      expect(described_class::BLOCKED_SURFACE.message).to eq('This website blocked automated access.')
+      expect(described_class::SCRAPER_UNAVAILABLE.message).to eq('Feed fetching is temporarily unavailable.')
+      expect(described_class::SERVICE_UNAVAILABLE.message).to eq(
+        'The server is too busy or the request timed out.'
+      )
+      expect(described_class::GATEWAY_TIMEOUT.message).to eq('The target website took too long to respond.')
+    end
+
     it 'returns the scraper-unavailable decision for BotasaurusConnectionFailed' do
       stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', Class.new(Html2rss::Error))
       error = Html2rss::RequestService::BotasaurusConnectionFailed.new('connection refused')

@@ -401,6 +401,30 @@ describe('App', () => {
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
+  it('presents classified create errors with COPY instead of the wire sentence', () => {
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: false,
+      result: undefined,
+      error: {
+        kind: 'input',
+        code: 'BLOCKED_SURFACE',
+        retryable: false,
+        nextAction: 'correct_input',
+        retryAction: 'none',
+        message: 'Blocked by Cloudflare',
+      },
+      convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
+      clearResult: mockClearResult,
+      retryPreviewFetch: mockRetryPreviewFetch,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(screen.queryByText('Blocked by Cloudflare')).not.toBeInTheDocument();
+  });
+
   it('shows instance metadata failure as a banner without create-error chrome', () => {
     mockUseApiMetadata.mockReturnValue({
       metadata: undefined,
