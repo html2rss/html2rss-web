@@ -5,22 +5,31 @@ This documents the ubiquitous language and domain concepts of the `html2rss-web`
 ## Glossary
 
 ### Session
-The user's active session context containing the Access Token (for authentication/privileges) and the API Metadata (defining instance config, features, and featured feeds). Session rehydrates the Access Token from persistent storage until Logout.
+Frontend owner of Access Token persistence (rehydrate / save / clear until Logout) and feed-creation gate predicates derived from API Metadata (`feed_creation.enabled`, `access_token_required`). Session exposes `mayCreate` / `feedCreationEnabled`; it does not own route transitions. Logout clear is Session; navigate-to-create after logout is App.
 
 ### Access Token
-A persistent secret token used to authenticate feed creation requests against the instance's security gate.
+A persistent secret token used to authenticate feed creation requests against the instance's security gate. Lives only in Session storage and the Authorization header adapter — never in COPY, logs, or view-model dumps.
 
 ### Feed Flow
-The process of capturing a target page URL, validating it, converting it to an RSS/JSON feed, and monitoring the preview.
+Sole frontend journey owner for create → submit → token prompt → result / error. Owns the closed UI kind set and journey `navigate(...)` transitions (auth rejection → token route, unmatched result → create without prefill). Distinct from backend `ErrorClassifier::Decision`.
 
 ### Auto-Submit
-A mechanism that automatically initiates feed creation when a prefilled URL is passed to the application route (e.g. from the bookmarklet).
+A mechanism that automatically initiates feed creation when a prefilled URL is passed to the application route (e.g. from the bookmarklet). Bare create remount without `prefillUrl` does not auto-submit.
+
+### Create-Time URL Expansion
+Single frontend path (`expandCreateUrl`) that normalizes the create URL before conversion. Conversion is IO-only and accepts an already-normalized URL. Field-error copy for empty/invalid is mapped by Feed Flow from COPY.
+
+### CreateEntry remount
+Visiting create (including hashbang `#!/…` → `#/…`) bumps `createEntryKey` so the create surface remounts. Remount alone does not auto-submit; auto-submit requires `prefillUrl`.
+
+### Unmatched result
+A result route whose in-memory token does not match the current Session token. Feed Flow replaces to create without prefill (no second journey decide elsewhere).
 
 ### Renderer
 Backend feed HTTP assembly: `Feeds::Renderer` owns the HTTP envelope and success serialization, and orchestrates `Feeds::FormatNegotiation` (Accept/path negotiation; `FormatNegotiation::MediaRange` for Accept scoring). Empty FEED bodies dump `ErrorClassifier::Decision#message`.
 
 ### Decision
-`ErrorClassifier::Decision` owns HTTP status, code, client message, kind, cacheability, and retry metadata for classified outcomes. Feed serve and API create/error paths share it; serializers only apply it (JSON via `ErrorResponder`, plain text via `Feeds::Renderer`).
+Backend only: `ErrorClassifier::Decision` owns HTTP status, code, client message, kind, cacheability, and retry metadata for classified outcomes. Feed serve and API create/error paths share it; serializers only apply it (JSON via `ErrorResponder`, plain text via `Feeds::Renderer`). Not the frontend journey closed set (see Feed Flow).
 
 ### Create-Time Extraction
 Feed creation runs `Feeds::Service` (same owner as serve) before minting a feed token. Fail closed on empty. On `:ok`, mint and reuse the warmed `Feeds::Cache` entry.
