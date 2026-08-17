@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { deriveAppViewModel, getPanelViewState } from '../appViewModel';
+import { decideJourney } from '../feed/decideJourney';
+import { getPanelViewState } from '../appViewModel';
 
 const emptyErrors = { url: '', form: '' };
 
-describe('deriveAppViewModel', () => {
+describe('decideJourney', () => {
   it('returns create by default', () => {
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: emptyErrors,
         isConverting: false,
         route: { kind: 'create' },
@@ -15,8 +16,8 @@ describe('deriveAppViewModel', () => {
     ).toEqual({ kind: 'create' });
   });
 
-  it('nests preview under the result variant', () => {
-    const viewModel = deriveAppViewModel({
+  it('nests preview under the result variant when tokens match', () => {
+    const viewModel = decideJourney({
       feedFieldErrors: emptyErrors,
       isConverting: false,
       route: { kind: 'result', feedToken: 'token' },
@@ -43,9 +44,9 @@ describe('deriveAppViewModel', () => {
     });
   });
 
-  it('does not treat a mismatched session result as the result route', () => {
+  it('does not treat a mismatched or missing result as the result kind', () => {
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: emptyErrors,
         isConverting: false,
         route: { kind: 'result', feedToken: 'route-token' },
@@ -66,11 +67,9 @@ describe('deriveAppViewModel', () => {
         },
       })
     ).toEqual({ kind: 'create' });
-  });
 
-  it('does not treat a missing session result as the result route', () => {
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: emptyErrors,
         isConverting: false,
         route: { kind: 'result', feedToken: 'route-token' },
@@ -79,31 +78,9 @@ describe('deriveAppViewModel', () => {
     ).toEqual({ kind: 'create' });
   });
 
-  it('maps auth conversion failures to token_prompt', () => {
-    expect(
-      deriveAppViewModel({
-        feedFieldErrors: emptyErrors,
-        isConverting: false,
-        route: { kind: 'create' },
-        tokenError: '',
-        conversionError: {
-          kind: 'auth',
-          code: 'UNAUTHORIZED',
-          retryable: false,
-          nextAction: 'enter_token',
-          retryAction: 'none',
-          message: 'Access denied',
-        },
-      })
-    ).toMatchObject({
-      kind: 'token_prompt',
-      error: { code: 'UNAUTHORIZED' },
-    });
-  });
-
   it('maps submitting and corrective input failures', () => {
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: emptyErrors,
         isConverting: true,
         route: { kind: 'create' },
@@ -112,7 +89,7 @@ describe('deriveAppViewModel', () => {
     ).toEqual({ kind: 'submitting' });
 
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: { url: '', form: 'Bad url' },
         isConverting: false,
         route: { kind: 'create' },
@@ -131,7 +108,7 @@ describe('deriveAppViewModel', () => {
 
   it('keeps token_prompt while converting on the token route', () => {
     expect(
-      deriveAppViewModel({
+      decideJourney({
         feedFieldErrors: emptyErrors,
         isConverting: true,
         route: { kind: 'token' },

@@ -1,7 +1,6 @@
 import { useSession } from '../session';
-import { useFeedFlow } from './useFeedFlow';
+import { useFeedFlow } from '../feed';
 import { useAppRoute } from '../routes/appRoute';
-import { deriveAppViewModel } from '../appViewModel';
 
 /**
  * Custom hook that coordinates session and feed flow domain modules,
@@ -25,9 +24,8 @@ export function useAppPresenter() {
   } = useSession();
 
   const {
+    viewModel,
     isConverting,
-    result,
-    conversionError,
     clearError,
     feedFormData,
     feedFieldErrors,
@@ -56,17 +54,8 @@ export function useAppPresenter() {
     route,
     navigate,
     createEntryKey,
-  });
-
-  const viewModel = deriveAppViewModel({
-    conversionError,
-    feedFieldErrors,
-    isConverting,
-    route,
-    tokenError,
     tokenStateError,
     metadataError,
-    result,
   });
 
   return {

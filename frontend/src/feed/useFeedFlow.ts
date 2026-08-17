@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useFeedConversion } from './useFeedConversion';
+import { decideJourney } from './decideJourney';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { expandCreateUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
@@ -23,8 +24,13 @@ export interface FeedFlowDependencies {
   route: AppRoute;
   navigate: (route: AppRoute, options?: RouteNavigationOptions) => void;
   createEntryKey: number;
+  tokenStateError?: string;
+  metadataError?: string;
 }
 
+/**
+ * Sole frontend journey owner: navigate transitions + closed UI kind via decideJourney.
+ */
 export function useFeedFlow({
   token,
   isLoading,
@@ -35,6 +41,8 @@ export function useFeedFlow({
   route,
   navigate,
   createEntryKey,
+  tokenStateError,
+  metadataError,
 }: FeedFlowDependencies) {
   const {
     isConverting,
@@ -168,7 +176,7 @@ export function useFeedFlow({
     if (mayCreate(token) === 'needToken') {
       hasAutoSubmittedReference.current = true;
       const expanded = expandCreateUrl(autoSubmitUrl);
-      const prefillUrl = expanded.error ? autoSubmitUrl : expanded.ok;
+      const prefillUrl = 'error' in expanded ? autoSubmitUrl : expanded.ok;
       setFeedFormData((previous) => ({ ...previous, url: prefillUrl }));
       setTokenError('');
       if (route.kind !== 'token') {
@@ -213,7 +221,19 @@ export function useFeedFlow({
     setFocusCreateComposerKey((current) => current + 1);
   }, [createEntryKey, route]);
 
+  const viewModel = decideJourney({
+    conversionError,
+    feedFieldErrors,
+    isConverting,
+    route,
+    tokenError,
+    tokenStateError,
+    metadataError,
+    result,
+  });
+
   return {
+    viewModel,
     isConverting,
     result,
     conversionError,

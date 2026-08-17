@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse, buildStructuredErrorResponse } from './mocks/server';
-import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useFeedConversion } from '../feed';
 
 describe('useFeedConversion contract', () => {
   it('sends feed creation requests with bearer auth and hydrates preview from json_public_url', async () => {

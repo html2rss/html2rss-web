@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
-import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useFeedConversion } from '../feed';
 
 const mockFeed = {
   id: 'feed-1',

@@ -7,7 +7,7 @@ vi.mock('../session/accessToken', () => ({
   resetAccessTokenMemory: vi.fn(),
 }));
 
-vi.mock('../hooks/useFeedConversion', () => ({
+vi.mock('../feed/useFeedConversion', () => ({
   useFeedConversion: vi.fn(),
 }));
 
@@ -17,7 +17,7 @@ vi.mock('../hooks/useApiMetadata', () => ({
 
 import { useAccessToken } from '../session/accessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
-import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useFeedConversion } from '../feed/useFeedConversion';
 
 const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
@@ -399,33 +399,6 @@ describe('App', () => {
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
     expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
-  });
-
-  it('maps auth conversion failures onto the token_prompt view model', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
-      result: undefined,
-      error: {
-        kind: 'auth',
-        code: 'UNAUTHORIZED',
-        retryable: false,
-        nextAction: 'enter_token',
-        retryAction: 'none',
-        message: 'Access denied',
-      },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
-      clearResult: mockClearResult,
-      retryPreviewFetch: mockRetryPreviewFetch,
-    });
-
-    render(<App />);
-
-    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
-    expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
   it('shows an explicit loading notice while feed creation is still resolving preview state', () => {

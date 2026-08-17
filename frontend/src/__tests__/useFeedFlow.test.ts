@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
-import { useFeedFlow, type FeedFlowDependencies } from '../hooks/useFeedFlow';
+import { useFeedFlow, type FeedFlowDependencies } from '../feed';
 
 const mockFeed = {
   id: 'feed-1',
@@ -117,6 +117,50 @@ describe('useFeedFlow', () => {
       kind: 'token',
       prefillUrl: 'https://example.com/private-articles',
     });
+  });
+
+  it('navigates to token and projects token_prompt on auth conversion failure', async () => {
+    const { server, buildStructuredErrorResponse } = await import('./mocks/server');
+    const { http, HttpResponse } = await import('msw');
+    server.use(
+      http.post('/api/v1/feeds', () =>
+        HttpResponse.json(
+          buildStructuredErrorResponse({
+            message: 'Access denied',
+            kind: 'auth',
+            code: 'UNAUTHORIZED',
+            retryable: false,
+            next_action: 'enter_token',
+            retry_action: 'none',
+          }),
+          { status: 401 }
+        )
+      )
+    );
+
+    const { result, rerender } = renderHook(
+      ({ route }) => useFeedFlow(feedFlowProperties({ route, mayCreate: () => 'proceed', token: 'bad-token' })),
+      { initialProps: { route: { kind: 'create' as const } } }
+    );
+
+    act(() => {
+      result.current.onFeedFieldChange('url', 'https://example.com/private-articles');
+    });
+
+    await act(async () => {
+      await result.current.onFeedSubmit({ preventDefault: vi.fn() } as any);
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      kind: 'token',
+      prefillUrl: 'https://example.com/private-articles',
+    });
+    expect(mockClearToken).toHaveBeenCalled();
+
+    rerender({ route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' } });
+
+    expect(result.current.viewModel.kind).toBe('token_prompt');
+    expect(result.current.tokenError).toBeTruthy();
   });
 
   it('returns non-auth conversion failures from token onto create', async () => {
