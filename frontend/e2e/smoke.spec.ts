@@ -28,23 +28,23 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/');
 
-    await expect(page.getByLabel('Page URL')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Generate feed URL' })).toBeVisible();
+    await expect(page.getByLabel('URL')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create feed' })).toBeVisible();
 
-    await page.getByLabel('Page URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await page.getByLabel('URL').fill('https://example.com/articles');
+    await page.getByRole('button', { name: 'Create feed' }).click();
 
     await expect(page.getByRole('heading', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save and continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
     await expect(page.locator('dialog')).toHaveAttribute('open');
-    await expect(page.getByLabel('Page URL')).toHaveCount(1);
+    await expect(page.getByLabel('URL')).toHaveCount(1);
     await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
-    await expect(page.getByRole('button', { name: 'Generate feed URL' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create feed' })).toBeVisible();
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
     await expect(page.getByLabel('Utilities')).toBeVisible();
   });
@@ -93,16 +93,16 @@ test.describe('frontend smoke', () => {
 
     await page.goto('/#/create');
 
-    await page.getByLabel('Page URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await page.getByLabel('URL').fill('https://example.com/articles');
+    await page.getByRole('button', { name: 'Create feed' }).click();
     await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
 
     await page.getByRole('link', { name: 'html2rss' }).click();
     await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
-    await expect(page.getByLabel('Page URL')).toBeFocused();
+    await expect(page.getByLabel('URL')).toBeFocused();
 
-    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await page.getByRole('button', { name: 'Create feed' }).click();
     await expect(page.getByText("Couldn't create feed yet")).toBeVisible();
 
     await page.evaluate(() => {
@@ -111,7 +111,7 @@ test.describe('frontend smoke', () => {
     await expect(page).toHaveURL(/\/#\/create$/);
     await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
-    await expect(page.getByLabel('Page URL')).toBeFocused();
+    await expect(page.getByLabel('URL')).toBeFocused();
   });
 
   test('shows result after successful feed creation and recovers unmatched result routes onto create', async ({
@@ -185,8 +185,8 @@ test.describe('frontend smoke', () => {
     });
 
     await page.goto('/');
-    await page.getByLabel('Page URL').fill('https://example.com/articles');
-    await page.getByRole('button', { name: 'Generate feed URL' }).click();
+    await page.getByLabel('URL').fill('https://example.com/articles');
+    await page.getByRole('button', { name: 'Create feed' }).click();
 
     await expect(page.getByText('Feed ready')).toBeVisible();
     await expect(page.locator('.result-shell')).toHaveAttribute('data-state', 'result');
@@ -202,7 +202,7 @@ test.describe('frontend smoke', () => {
     await page.goto('/#/result/missing-token');
 
     await expect(page).toHaveURL(/\/#\/create$/);
-    await expect(page.getByLabel('Page URL')).toBeVisible();
+    await expect(page.getByLabel('URL')).toBeVisible();
     await expect(page.getByText('Saved result unavailable')).toHaveCount(0);
     await expect(page.locator('.result-recovery')).toHaveCount(0);
   });

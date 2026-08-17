@@ -45,7 +45,7 @@ async function expectCreateRemountedWithoutErrorChrome() {
   });
   expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   await waitFor(() => {
-    expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+    expect(document.activeElement).toBe(screen.getByLabelText('URL'));
   });
 }
 
@@ -134,10 +134,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await waitFor(() => {
       expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe('App', () => {
 
     expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'html2rss' }).getAttribute('href')).toMatch(/#\/create$/);
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('URL')).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('App', () => {
   it('keeps the page url field permissive enough for hostname-only input', () => {
     render(<App />);
 
-    const urlInput = screen.getByLabelText('Page URL');
+    const urlInput = screen.getByLabelText('URL');
 
     expect(urlInput).toHaveAttribute('type', 'text');
     expect(urlInput).toHaveAttribute('inputmode', 'url');
@@ -170,7 +170,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+      expect(document.activeElement).toBe(screen.getByLabelText('URL'));
     });
   });
 
@@ -186,10 +186,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await waitFor(() => {
       expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
@@ -224,7 +224,7 @@ describe('App', () => {
       expect(location.hash).toBe('#/create');
     });
     expect(location.hash).not.toContain('url=');
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('URL')).toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
@@ -267,17 +267,17 @@ describe('App', () => {
   it('shows inline token prompt when submitting without a token', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
-    expect(screen.getByLabelText('Page URL').closest('[inert]')).not.toBeNull();
+    expect(screen.getByLabelText('URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('URL').closest('[inert]')).not.toBeNull();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
@@ -414,7 +414,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Creating feed link')).toBeInTheDocument();
+    expect(screen.getByText('Creating feed')).toBeInTheDocument();
   });
 
   it('keeps the token dialog open while converting', () => {
@@ -432,7 +432,7 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByRole('button', { name: 'Creating feed link' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Creating feed' })).toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
@@ -484,10 +484,10 @@ describe('App', () => {
   it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
@@ -517,10 +517,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
@@ -551,10 +551,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
@@ -569,10 +569,10 @@ describe('App', () => {
   it('submits the token prompt with Enter', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
@@ -600,7 +600,7 @@ describe('App', () => {
     await screen.findByRole('heading', { name: 'Access token' });
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('dialog')).toHaveAttribute('open');
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('URL')).toBeInTheDocument();
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
@@ -632,7 +632,7 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -672,7 +672,7 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -768,10 +768,10 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
@@ -788,10 +788,10 @@ describe('App', () => {
   it('cancels the token dialog with Back, Escape, and backdrop', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     expect(document.querySelector('dialog')).toHaveAttribute('open');
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
@@ -803,7 +803,7 @@ describe('App', () => {
     });
     expect(document.querySelector('dialog')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
     const dialog = document.querySelector('dialog');
     expect(dialog).toHaveAttribute('open');
     expect((document.querySelector('#access-token') as HTMLInputElement).value).toBe('');
@@ -813,7 +813,7 @@ describe('App', () => {
       expect(location.hash).toMatch(/^#\/create/);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
     const openDialog = document.querySelector('dialog') as HTMLDialogElement;
     expect(openDialog).toHaveAttribute('open');
     fireEvent.click(openDialog);

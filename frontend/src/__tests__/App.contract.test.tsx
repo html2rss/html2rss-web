@@ -94,13 +94,13 @@ describe('App contract', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+      expect(screen.getByLabelText('URL')).toBeInTheDocument();
     });
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
 
-    const urlInput = screen.getByLabelText('Page URL') as HTMLInputElement;
+    const urlInput = screen.getByLabelText('URL') as HTMLInputElement;
     fireEvent.input(urlInput, { target: { value: 'https://example.com/articles' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await waitFor(() => {
       expect(screen.getByText('Feed ready')).toBeInTheDocument();
@@ -134,13 +134,13 @@ describe('App contract', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+      expect(screen.getByLabelText('URL')).toBeInTheDocument();
     });
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText('URL'), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create feed' }));
 
     await screen.findByText('Access token was rejected. Paste a valid token to continue.');
 

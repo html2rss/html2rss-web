@@ -11,13 +11,16 @@ Frontend owner of Access Token persistence (rehydrate / save / clear until Logou
 A persistent secret token used to authenticate feed creation requests against the instance's security gate. Durable copy lives only in Session storage; Authorization header adapter sends it on create. Ephemeral gate draft must clear on cancel, logout, and create remount — never in COPY, logs, or view-model dumps.
 
 ### Feed Flow
-Sole frontend journey owner for create → submit → token prompt → result / error. Owns the closed UI kind set and journey `navigate(...)` transitions (auth rejection → token route, unmatched result → create without prefill). Distinct from backend `ErrorClassifier::Decision`.
+Sole frontend journey owner for create → submit → token prompt → result / error. Owns the closed UI kind set and journey `navigate(...)` transitions (auth rejection → token route, unmatched result → create without prefill). Distinct from backend `ErrorClassifier::Decision` and from Creation IO.
+
+### Creation IO
+Network-only feed create (`requestFeedCreation` / `useFeedConversion`). Accepts an already-normalized URL. Does not own journey kind, navigation, or user-facing sentences.
 
 ### Auto-Submit
 A mechanism that automatically initiates feed creation when a prefilled URL is passed to the application route (e.g. from the bookmarklet). Bare create remount without `prefillUrl` does not auto-submit.
 
 ### Create-Time URL Expansion
-Single frontend path (`expandCreateUrl`) that normalizes the create URL before conversion. Conversion is IO-only and accepts an already-normalized URL. Field-error copy for empty/invalid is mapped by Feed Flow from COPY.
+Single frontend path (`expandCreateUrl`) that normalizes the create URL before Creation IO. Field-error copy for empty/invalid is mapped by Feed Flow from COPY.
 
 ### CreateEntry remount
 Visiting create (including hashbang `#!/…` → `#/…`) bumps `createEntryKey` so the create surface remounts. Remount alone does not auto-submit; auto-submit requires `prefillUrl`.

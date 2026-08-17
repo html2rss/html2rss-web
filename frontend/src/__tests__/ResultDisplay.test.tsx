@@ -179,7 +179,7 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText(/target website is protected by an anti-bot challenge/i)).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewBlockedSurface)).toBeInTheDocument();
   });
 
   it('renders tailored guidance for SCRAPER_UNAVAILABLE preview warnings', () => {
@@ -202,6 +202,6 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText(/scraping backend is temporarily unavailable/i)).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewScraperUnavailable)).toBeInTheDocument();
   });
 });
