@@ -52,6 +52,7 @@ export function useFeedFlow({
   const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
   const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
   const hasAutoSubmittedReference = useRef(false);
+  const previousRouteKindReference = useRef(route.kind);
 
   // Prefill URL effect
   useEffect(() => {
@@ -173,7 +174,7 @@ export function useFeedFlow({
     void attemptFeedCreation(token ?? '');
   }, [feedCreation.access_token_required, feedFormData.url, isLoading, navigate, route.kind, token]);
 
-  // Fail-closed result route: only valid with matching in-memory result.
+  // Recover unmatched result routes onto a remounted create view.
   useEffect(() => {
     if (route.kind !== 'result') return;
 
@@ -183,6 +184,16 @@ export function useFeedFlow({
     // Do not carry a prefill URL — that would re-trigger auto-submit and bounce back to result.
     navigate({ kind: 'create' }, { replace: true });
   }, [navigate, result, route]);
+
+  useEffect(() => {
+    const previousKind = previousRouteKindReference.current;
+    previousRouteKindReference.current = route.kind;
+    if (route.kind !== 'create' || previousKind === 'create') return;
+
+    clearError();
+    clearResult();
+    setFocusCreateComposerKey((current) => current + 1);
+  }, [clearError, clearResult, route.kind]);
 
   return {
     isConverting,

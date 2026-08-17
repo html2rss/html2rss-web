@@ -162,7 +162,7 @@ describe('App', () => {
     });
   });
 
-  it('fail-closes unmatched result deep links to bare create without url prefill', async () => {
+  it('recovers unmatched result deep links onto remounted create without url prefill', async () => {
     history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
 
     render(<App />);
@@ -172,7 +172,22 @@ describe('App', () => {
     });
     expect(location.hash).not.toContain('url=');
     expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+  });
+
+  it('remounts create from a hashbang entry without error chrome', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#!/create');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(location.hash).toBe('#/create');
+    });
+    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
   it('shows inline token prompt when submitting without a token', async () => {

@@ -87,7 +87,7 @@ export function useAppRoute() {
       const nextRoute = readAppRoute();
       setRoute(nextRoute);
 
-      if (!location.hash || location.pathname !== '/') {
+      if (!location.hash || location.pathname !== '/' || location.hash.startsWith('#!')) {
         replaceRoute(nextRoute);
       }
     };
@@ -131,9 +131,10 @@ function normalizePathname(pathname: string): string {
 
 function parseHashRoute(hash: string): { pathname: string; search: string } {
   const normalizedHash = hash.startsWith('#') ? hash.slice(1) : hash;
-  if (!normalizedHash) return { pathname: '/', search: '' };
+  const withoutHashbang = normalizedHash.startsWith('!') ? normalizedHash.slice(1) : normalizedHash;
+  if (!withoutHashbang) return { pathname: '/', search: '' };
 
-  const [pathname = '/', search = ''] = normalizedHash.split('?');
+  const [pathname = '/', search = ''] = withoutHashbang.split('?');
   return {
     pathname: normalizePathname(pathname.startsWith('/') ? pathname : `/${pathname}`),
     search,

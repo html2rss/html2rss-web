@@ -47,7 +47,40 @@ test.describe('frontend smoke', () => {
     await expect(page.getByLabel('Utilities')).toBeVisible();
   });
 
-  test('shows result after successful feed creation and fail-closes unmatched result routes', async ({
+  test('remounts create from a hashbang entry without error chrome', async ({ page }) => {
+    await page.route(/\/api\/v1$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            api: {
+              name: 'html2rss-web API',
+              description: 'RESTful API for converting websites to RSS feeds',
+              openapi_url: 'https://example.test/openapi.yaml',
+            },
+            instance: {
+              feed_creation: {
+                enabled: true,
+                access_token_required: true,
+              },
+              featured_feeds: [],
+            },
+          },
+        }),
+      });
+    });
+
+    await page.goto('/#!/create');
+
+    await expect(page).toHaveURL(/\/#\/create$/);
+    await expect(page.getByLabel('Page URL')).toBeVisible();
+    await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
+    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
+  });
+
+  test('shows result after successful feed creation and recovers unmatched result routes onto create', async ({
     page,
   }) => {
     await page.route(/\/api\/v1$/, async (route) => {

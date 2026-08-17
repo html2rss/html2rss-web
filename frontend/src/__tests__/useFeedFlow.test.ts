@@ -112,17 +112,19 @@ describe('useFeedFlow', () => {
     });
   });
 
-  it('fail-closes unmatched result routes to create without prefillUrl', async () => {
-    renderHook(() =>
-      useFeedFlow({
-        token: undefined,
-        metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
-        isLoading: false,
-        saveToken: mockSaveToken,
-        clearToken: mockClearToken,
-        route: { kind: 'result', feedToken: 'missing-token' },
-        navigate: mockNavigate,
-      })
+  it('recovers unmatched result routes onto remounted create without prefillUrl', async () => {
+    const { result, rerender } = renderHook(
+      ({ route }) =>
+        useFeedFlow({
+          token: undefined,
+          metadata: { instance: { feed_creation: { enabled: true, access_token_required: false } } },
+          isLoading: false,
+          saveToken: mockSaveToken,
+          clearToken: mockClearToken,
+          route,
+          navigate: mockNavigate,
+        }),
+      { initialProps: { route: { kind: 'result' as const, feedToken: 'missing-token' } } }
     );
 
     await waitFor(() => {
@@ -134,5 +136,10 @@ describe('useFeedFlow', () => {
       expect(route).toEqual({ kind: 'create' });
       expect(route).not.toHaveProperty('prefillUrl');
     }
+
+    rerender({ route: { kind: 'create' } });
+
+    expect(result.current.focusCreateComposerKey).toBeGreaterThan(0);
+    expect(result.current.conversionError).toBeUndefined();
   });
 });
