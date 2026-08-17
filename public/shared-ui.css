@@ -56,6 +56,7 @@
   --overlay-hero-accent: rgb(var(--color-rgb-reader) / 12%);
   --overlay-icon-top: rgb(var(--color-rgb-white) / 8%);
   --overlay-icon-base: rgb(var(--color-rgb-white) / 3%);
+  --overlay-scrim: rgb(var(--color-rgb-black) / 64%);
   --surface-base: rgb(var(--color-rgb-white) / 2%);
   --surface-elevated: var(--overlay-top-light);
   --surface-chip: rgb(var(--color-rgb-white) / 2.5%);

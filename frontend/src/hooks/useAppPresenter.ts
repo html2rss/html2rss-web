@@ -77,6 +77,7 @@ export function useAppPresenter() {
     focusCreateComposerKey,
     metadata,
     hasToken,
+    isConverting,
     submitDisabled: submitDisabled || viewModel.kind === 'token_prompt',
     feedCreationEnabled,
     featuredFeeds,

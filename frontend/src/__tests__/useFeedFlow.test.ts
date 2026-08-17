@@ -112,6 +112,46 @@ describe('useFeedFlow', () => {
     });
   });
 
+  it('returns non-auth conversion failures from token onto create', async () => {
+    fetchMock.mockRejectedValueOnce({
+      kind: 'server',
+      code: 'INTERNAL_SERVER_ERROR',
+      retryable: true,
+      nextAction: 'retry',
+      retryAction: 'primary',
+      message: 'Upstream failed',
+    });
+
+    const { result } = renderHook(() =>
+      useFeedFlow({
+        token: undefined,
+        metadata: { instance: { feed_creation: { enabled: true, access_token_required: true } } },
+        isLoading: false,
+        saveToken: mockSaveToken,
+        clearToken: mockClearToken,
+        route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' },
+        navigate: mockNavigate,
+      })
+    );
+
+    act(() => {
+      result.current.onFeedFieldChange('url', 'https://example.com/private-articles');
+      result.current.setTokenDraft('token-123');
+    });
+
+    mockSaveToken.mockResolvedValueOnce(undefined);
+
+    await act(async () => {
+      await result.current.onSaveToken();
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      kind: 'create',
+      prefillUrl: 'https://example.com/private-articles',
+    });
+    expect(result.current.tokenError).toBe('');
+  });
+
   it('recovers unmatched result routes onto remounted create without prefillUrl', async () => {
     const { result, rerender } = renderHook(
       ({ route }) =>

@@ -36,6 +36,7 @@ export function App() {
     focusCreateComposerKey,
     metadata,
     hasToken,
+    isConverting,
     submitDisabled,
     feedCreationEnabled,
     featuredFeeds,
@@ -77,6 +78,7 @@ export function App() {
       <CreateFeedPanel
         focusComposerKey={focusCreateComposerKey}
         viewModel={viewModel}
+        isConverting={isConverting}
         feedFormData={feedFormData}
         feedFieldErrors={feedFieldErrors}
         submitDisabled={submitDisabled}

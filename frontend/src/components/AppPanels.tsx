@@ -21,6 +21,7 @@ type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' }>;
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
   viewModel: CreatePanelViewModel;
+  isConverting: boolean;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   submitDisabled: boolean;
@@ -122,6 +123,7 @@ function UrlEntrySection({
 interface TokenGateSectionProperties {
   tokenDraft: string;
   tokenError: string;
+  isConverting: boolean;
   inputRef: RefObject<HTMLInputElement>;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
@@ -131,23 +133,21 @@ interface TokenGateSectionProperties {
 function TokenGateSection({
   tokenDraft,
   tokenError,
+  isConverting,
   inputRef,
   onTokenDraftChange,
   onSaveToken,
   onCancelTokenPrompt,
 }: TokenGateSectionProperties) {
   return (
-    <div
-      class="token-gate ui-card ui-card--padded ui-card--framed layout-rail-reading"
-      role="group"
-      aria-label={COPY.tokenTitle}
-    >
+    <div class="token-gate ui-card ui-card--padded ui-card--framed" role="group" aria-labelledby="access-token-title">
       <div class="token-gate__copy">
-        <h2 class="ui-display-title">{COPY.tokenTitle}</h2>
+        <h2 id="access-token-title" class="ui-display-title">
+          {COPY.tokenTitle}
+        </h2>
         <p class="ui-eyebrow">{COPY.tokenHint}</p>
       </div>
       <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
-        <span class="ui-eyebrow ui-eyebrow--ghost">{COPY.tokenTitle}</span>
         <input
           id="access-token"
           name="access-token"
@@ -182,8 +182,8 @@ function TokenGateSection({
         {COPY.dockerSetup}
       </a>
       <div class="token-gate__actions">
-        <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-          {COPY.saveAndContinue}
+        <button type="button" class="btn btn--primary" disabled={isConverting} onClick={onSaveToken}>
+          {isConverting ? COPY.creating : COPY.saveAndContinue}
         </button>
       </div>
       <div class="token-gate__back">
@@ -239,6 +239,7 @@ function ActionFeedback({
 export function CreateFeedPanel({
   focusComposerKey,
   viewModel,
+  isConverting: flowConverting,
   feedFormData,
   feedFieldErrors,
   submitDisabled,
@@ -254,9 +255,12 @@ export function CreateFeedPanel({
 }: CreateFeedPanelProperties) {
   const urlInputReference = useRef<HTMLInputElement>(null);
   const tokenInputReference = useRef<HTMLInputElement>(null);
+  const tokenDialogReference = useRef<HTMLDialogElement>(null);
 
-  const { isTokenPrompt, isConverting, tokenError, errorKind, failureMessage, isShowRetryButton } =
+  const { isTokenPrompt, isConverting: submitting, tokenError, errorKind, failureMessage, isShowRetryButton } =
     getPanelViewState(viewModel, feedFieldErrors);
+  const createConverting = !isTokenPrompt && submitting;
+  const tokenConverting = isTokenPrompt && flowConverting;
 
   useLayoutEffect(() => {
     if (isTokenPrompt || !urlInputReference.current || globalThis.window === undefined) return;
@@ -282,6 +286,19 @@ export function CreateFeedPanel({
     return () => cancelAnimationFrame(focusHandle);
   }, [isTokenPrompt]);
 
+  useLayoutEffect(() => {
+    const dialog = tokenDialogReference.current;
+    if (!dialog || !isTokenPrompt) return;
+
+    try {
+      if (!dialog.open) dialog.showModal();
+    } catch {
+      dialog.setAttribute('open', '');
+    }
+
+    if (!dialog.open) dialog.setAttribute('open', '');
+  }, [isTokenPrompt]);
+
   return (
     <form
       class="form-shell form-shell--minimal"
@@ -289,36 +306,48 @@ export function CreateFeedPanel({
       data-state={viewModel.kind}
       data-error-kind={errorKind}
     >
-      {isTokenPrompt ? (
-        <TokenGateSection
-          tokenDraft={tokenDraft}
-          tokenError={tokenError}
-          inputRef={tokenInputReference}
-          onTokenDraftChange={onTokenDraftChange}
-          onSaveToken={onSaveToken}
-          onCancelTokenPrompt={onCancelTokenPrompt}
+      <div class="field-stack" inert={isTokenPrompt || undefined}>
+        <UrlEntrySection
+          url={feedFormData.url}
+          disabled={submitDisabled}
+          error={feedFieldErrors.url}
+          isConverting={createConverting}
+          feedCreationEnabled={feedCreationEnabled}
+          featuredFeeds={featuredFeeds}
+          inputRef={urlInputReference}
+          onInput={(value) => onFeedFieldChange('url', value)}
         />
-      ) : (
-        <div class="field-stack">
-          <UrlEntrySection
-            url={feedFormData.url}
-            disabled={submitDisabled}
-            error={feedFieldErrors.url}
-            isConverting={isConverting}
-            feedCreationEnabled={feedCreationEnabled}
-            featuredFeeds={featuredFeeds}
-            inputRef={urlInputReference}
-            onInput={(value) => onFeedFieldChange('url', value)}
+        <ActionFeedback
+          failureMessage={failureMessage}
+          isConverting={createConverting}
+          isShowRetryButton={isShowRetryButton}
+          onRetryCreate={onRetryCreate}
+        />
+      </div>
+      {isTokenPrompt ? (
+        <dialog
+          ref={tokenDialogReference}
+          class="token-dialog"
+          aria-labelledby="access-token-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            onCancelTokenPrompt();
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) onCancelTokenPrompt();
+          }}
+        >
+          <TokenGateSection
+            tokenDraft={tokenDraft}
+            tokenError={tokenError}
+            isConverting={tokenConverting}
+            inputRef={tokenInputReference}
+            onTokenDraftChange={onTokenDraftChange}
+            onSaveToken={onSaveToken}
+            onCancelTokenPrompt={onCancelTokenPrompt}
           />
-        </div>
-      )}
-
-      <ActionFeedback
-        failureMessage={failureMessage}
-        isConverting={isConverting}
-        isShowRetryButton={isShowRetryButton}
-        onRetryCreate={onRetryCreate}
-      />
+        </dialog>
+      ) : undefined}
     </form>
   );
 }

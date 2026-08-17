@@ -124,12 +124,10 @@ export function useFeedFlow({
         return false;
       }
 
-      if (failure.nextAction === 'correct_input') {
-        setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: failure.message });
-        return false;
-      }
-
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: failure.message });
+      if (route.kind === 'token') {
+        navigate({ kind: 'create', prefillUrl: normalizedUrl });
+      }
       return false;
     }
   };

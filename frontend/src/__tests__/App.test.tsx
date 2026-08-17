@@ -201,7 +201,10 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.queryByLabelText('Page URL')).not.toBeInTheDocument();
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('Page URL').closest('[inert]')).not.toBeNull();
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
@@ -346,6 +349,7 @@ describe('App', () => {
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
     expect(screen.getByRole('heading', { name: 'Access token' })).toBeInTheDocument();
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
     expect(screen.queryByText('Access denied')).not.toBeInTheDocument();
     expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
@@ -364,6 +368,25 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText('Creating feed link')).toBeInTheDocument();
+  });
+
+  it('keeps the token dialog open while converting', () => {
+    mockUseFeedConversion.mockReturnValue({
+      isConverting: true,
+      result: undefined,
+      error: undefined,
+      convertFeed: mockConvertFeed,
+      clearError: mockClearConversionError,
+      clearResult: mockClearResult,
+      retryPreviewFetch: mockRetryPreviewFetch,
+    });
+    history.replaceState({}, '', 'http://localhost:3000/#/token?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByRole('button', { name: 'Creating feed link' })).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
   });
 
   it('clears stored token from instance info', () => {
@@ -529,7 +552,8 @@ describe('App', () => {
 
     await screen.findByRole('heading', { name: 'Access token' });
     expect(location.hash).toMatch(/^#\/token/);
-    expect(screen.queryByLabelText('Page URL')).not.toBeInTheDocument();
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
     expect(mockConvertFeed).not.toHaveBeenCalled();
   });
 
@@ -683,6 +707,71 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Access token' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
+  });
+
+  it('returns non-auth token save failures onto create with notice', async () => {
+    mockConvertFeed.mockRejectedValueOnce({
+      kind: 'server',
+      code: 'INTERNAL_SERVER_ERROR',
+      retryable: true,
+      nextAction: 'retry',
+      retryAction: 'primary',
+      message: 'Upstream failed',
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(screen.getByText('Upstream failed')).toBeInTheDocument();
+  });
+
+  it('cancels the token dialog with Back, Escape, and backdrop', async () => {
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText('Page URL'), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    const dialog = document.querySelector('dialog');
+    expect(dialog).toHaveAttribute('open');
+    fireEvent(dialog as HTMLDialogElement, new Event('cancel', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    const openDialog = document.querySelector('dialog') as HTMLDialogElement;
+    expect(openDialog).toHaveAttribute('open');
+    fireEvent.click(openDialog);
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
   });
 
   it('shows the utility links in a user-focused order', () => {

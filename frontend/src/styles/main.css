@@ -25,6 +25,7 @@
 .form-shell,
 .field-stack,
 .token-gate,
+.token-dialog,
 .workspace-hero,
 .utility-strip,
 .utility-strip__items,
@@ -94,6 +95,18 @@
 .field-stack,
 .token-gate {
   gap: var(--space-4);
+}
+
+.token-dialog {
+  width: min(100%, var(--layout-field-max-width));
+  max-width: var(--layout-field-max-width);
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.token-dialog::backdrop {
+  background: var(--overlay-scrim);
 }
 
 .dominant-field {
@@ -286,10 +299,6 @@
   max-width: var(--layout-field-max-width);
   margin: 0 auto;
   gap: var(--space-3);
-}
-
-.token-gate.layout-rail-reading {
-  max-width: var(--layout-rail-reading);
 }
 
 .token-gate__copy {

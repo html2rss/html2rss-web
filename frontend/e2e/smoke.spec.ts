@@ -38,7 +38,9 @@ test.describe('frontend smoke', () => {
     await expect(page.getByRole('textbox', { name: 'Access token' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save and continue' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Back' })).toBeVisible();
-    await expect(page.getByLabel('Page URL')).toHaveCount(0);
+    await expect(page.locator('dialog')).toHaveAttribute('open');
+    await expect(page.getByLabel('Page URL')).toHaveCount(1);
+    await expect(page.getByText("Couldn't create feed yet")).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
