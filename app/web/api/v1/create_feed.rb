@@ -126,14 +126,7 @@ module Html2rss
             def ensure_extractable!(result)
               return if result.status == :ok
 
-              decision = result.decision || fallback_decision(result)
-              raise ErrorClassifier::DecidedError, decision
-            end
-
-            # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-            # @return [Html2rss::Web::ErrorClassifier::Decision]
-            def fallback_decision(result)
-              result.status == :empty ? ErrorClassifier::EXTRACTION_EMPTY : ErrorClassifier::INTERNAL_SERVER_ERROR
+              raise ErrorClassifier::DecidedError, result.decision
             end
 
             # @param feed_data [Html2rss::Web::Api::V1::FeedMetadata::Metadata]

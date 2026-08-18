@@ -5,12 +5,14 @@ import type {
   FeedPreviewWarning,
   FeedRecord,
 } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import { buildPreviewWarning } from './feedErrors';
 import { normalizePreviewItems } from './feedParsers';
 
 export const PREVIEW_RETRY_DELAYS_MS = [260, 620, 1180, 1800] as const;
-export const PREVIEW_UNAVAILABLE_MESSAGE = 'Preview unavailable right now.';
-export const PREVIEW_DEGRADED_MESSAGE = 'Preview content is partially degraded right now.';
+export const PREVIEW_UNAVAILABLE_MESSAGE = COPY.previewUnavailable;
+/** Reject HTML error pages and other dumps; Decision#message bodies stay well under this. */
+export const PREVIEW_ERROR_BODY_MAX_CHARS = 500;
 
 export interface PreviewLoadResult {
   items: FeedPreviewItem[];
@@ -74,6 +76,33 @@ export async function readJsonResponse<T>(response: Response): Promise<T | undef
   } catch {
     return undefined;
   }
+}
+
+export async function resolvePreviewHttpWarningMessage(response: Response): Promise<string> {
+  const contentType = response.headers.get('Content-Type') ?? '';
+
+  let bodyText: string;
+  try {
+    bodyText = await response.text();
+  } catch {
+    return PREVIEW_UNAVAILABLE_MESSAGE;
+  }
+
+  const trimmed = bodyText.trim();
+  if (!trimmed) return PREVIEW_UNAVAILABLE_MESSAGE;
+  if (trimmed.length > PREVIEW_ERROR_BODY_MAX_CHARS) return PREVIEW_UNAVAILABLE_MESSAGE;
+  if (isHtmlishPreviewErrorBody(contentType, trimmed)) return PREVIEW_UNAVAILABLE_MESSAGE;
+
+  const mediaType = contentType.split(';', 1)[0]?.trim().toLowerCase() ?? '';
+  if (mediaType && mediaType !== 'text/plain') return PREVIEW_UNAVAILABLE_MESSAGE;
+
+  return trimmed;
+}
+
+function isHtmlishPreviewErrorBody(contentType: string, trimmedBody: string): boolean {
+  const type = contentType.toLowerCase();
+  if (type.includes('text/html') || type.includes('application/xhtml')) return true;
+  return /^\s*<(!DOCTYPE\s+html|html[\s>])/i.test(trimmedBody);
 }
 
 export function buildCreatedFeedResult(feed: FeedRecord): CreatedFeedResult {
@@ -146,12 +175,13 @@ export async function loadPreviewItems(previewUrl: string, signal?: AbortSignal)
   }
 
   if (!response.ok) {
+    const message = await resolvePreviewHttpWarningMessage(response);
     return {
       items: [],
       warnings: [
         buildPreviewWarning(
           `PREVIEW_HTTP_${response.status}`,
-          isTransientHttpStatus(response.status) ? PREVIEW_DEGRADED_MESSAGE : PREVIEW_UNAVAILABLE_MESSAGE,
+          message,
           isTransientHttpStatus(response.status),
           isTransientHttpStatus(response.status) ? 'retry' : 'wait'
         ),

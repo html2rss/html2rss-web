@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi, type SpyInstance } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
-import { useSession } from '../hooks/useSession';
+import { resetAccessTokenMemory, useSession } from '../session';
+import { getPersistentStorage } from '../utils/persistentStorage';
+
+const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 
 const mockMetadata = {
   instance: {
@@ -15,24 +18,27 @@ describe('useSession', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    getPersistentStorage().clear();
+    localStorage.clear();
     sessionStorage.clear();
+    resetAccessTokenMemory();
     fetchMock = vi.spyOn(globalThis, 'fetch');
   });
 
   afterEach(() => {
+    resetAccessTokenMemory();
+    getPersistentStorage().clear();
     fetchMock.mockRestore();
   });
 
   it('coordinates api metadata load and token loading', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'session-token');
+    localStorage.setItem(ACCESS_TOKEN_KEY, 'session-token');
     fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
 
     const { result } = renderHook(() => useSession());
 
-    // Initially loading
     expect(result.current.isLoading).toBe(true);
 
-    // Wait for metadata load
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
@@ -41,9 +47,10 @@ describe('useSession', () => {
     expect(result.current.hasToken).toBe(true);
     expect(result.current.featuredFeeds).toEqual(mockMetadata.instance.featured_feeds);
     expect(result.current.metadataError).toBeUndefined();
+    expect(result.current.feedCreationEnabled).toBe(true);
   });
 
-  it('saves new tokens', async () => {
+  it('saves new tokens to persistent storage and does not write sessionStorage', async () => {
     fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
 
     const { result } = renderHook(() => useSession());
@@ -55,11 +62,13 @@ describe('useSession', () => {
 
     expect(result.current.token).toBe('brand-new-token');
     expect(result.current.hasToken).toBe(true);
-    expect(sessionStorage.getItem('html2rss_access_token')).toBe('brand-new-token');
+    expect(getPersistentStorage().getItem(ACCESS_TOKEN_KEY)).toBe('brand-new-token');
+    expect(localStorage.getItem(ACCESS_TOKEN_KEY)).toBe('brand-new-token');
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
   });
 
-  it('clears token state', async () => {
-    sessionStorage.setItem('html2rss_access_token', 'old-token');
+  it('clears the canonical persistent token copy', async () => {
+    localStorage.setItem(ACCESS_TOKEN_KEY, 'old-token');
     fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
 
     const { result } = renderHook(() => useSession());
@@ -71,6 +80,120 @@ describe('useSession', () => {
 
     expect(result.current.token).toBeUndefined();
     expect(result.current.hasToken).toBe(false);
-    expect(sessionStorage.getItem('html2rss_access_token')).toBeNull();
+    expect(getPersistentStorage().getItem(ACCESS_TOKEN_KEY)).toBeNull();
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  });
+
+  it('falls back to in-memory token when persistent storage write is unavailable', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
+    localStorage.setItem.mockImplementationOnce(() => {
+      throw new Error('blocked');
+    });
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.saveToken('memory-token');
+    });
+
+    expect(result.current.token).toBe('memory-token');
+    expect(result.current.hasToken).toBe(true);
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  });
+
+  it('loads from in-memory fallback when persistent storage read is unavailable', async () => {
+    fetchMock.mockResolvedValue(Response.json({ success: true, data: mockMetadata }));
+    localStorage.setItem.mockImplementationOnce(() => {
+      throw new Error('blocked');
+    });
+
+    const seeded = renderHook(() => useSession());
+    await waitFor(() => expect(seeded.result.current.isLoading).toBe(false));
+    await act(async () => {
+      await seeded.result.current.saveToken('memory-only');
+    });
+    seeded.unmount();
+
+    localStorage.getItem.mockImplementationOnce(() => {
+      throw new Error('blocked');
+    });
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.token).toBe('memory-only');
+    expect(result.current.hasToken).toBe(true);
+    expect(sessionStorage.getItem(ACCESS_TOKEN_KEY)).toBeNull();
+  });
+
+  it('mayCreate returns needToken when access token is required and missing', async () => {
+    fetchMock.mockResolvedValueOnce(Response.json({ success: true, data: mockMetadata }));
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.mayCreate()).toBe('needToken');
+    expect(result.current.mayCreate('')).toBe('needToken');
+    expect(result.current.mayCreate('provided-token')).toBe('proceed');
+  });
+
+  it('mayCreate returns disabled when feed creation is disabled', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        success: true,
+        data: {
+          ...mockMetadata,
+          instance: {
+            ...mockMetadata.instance,
+            feed_creation: { enabled: false, access_token_required: true },
+          },
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.feedCreationEnabled).toBe(false);
+    expect(result.current.mayCreate('any-token')).toBe('disabled');
+  });
+
+  it('mayCreate returns proceed when token is not required', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        success: true,
+        data: {
+          ...mockMetadata,
+          instance: {
+            ...mockMetadata.instance,
+            feed_creation: { enabled: true, access_token_required: false },
+          },
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.mayCreate()).toBe('proceed');
+  });
+
+  it('defaults gate to token-required when metadata feed_creation is absent', async () => {
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        success: true,
+        data: {
+          api: mockMetadata.api,
+          instance: {},
+        },
+      })
+    );
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.feedCreationEnabled).toBe(true);
+    expect(result.current.mayCreate()).toBe('needToken');
   });
 });

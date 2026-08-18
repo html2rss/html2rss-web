@@ -1,8 +1,12 @@
+import { buildAppRouteHref } from '../routes/appRoute';
+import { COPY } from '../journey/copy';
+
 export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
   const bookmarkletHref = (() => {
     if (globalThis.window === undefined) return '#';
 
-    const targetPrefix = new URL('/#/create?url=', location.href).href;
+    const createHref = buildAppRouteHref({ kind: 'create' });
+    const targetPrefix = `${createHref}?url=`;
 
     return `javascript:window.location.assign(${JSON.stringify(targetPrefix)}+encodeURIComponent(window.location.href));`;
   })();
@@ -12,7 +16,7 @@ export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
       id="bookmarklet"
       class="utility-link"
       href={bookmarkletHref}
-      title="Drag this bookmarklet to your bookmarks bar"
+      title={COPY.bookmarkletDragHint}
       onClick={(event) => {
         if (!onClick) {
           return;
@@ -22,7 +26,7 @@ export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
         onClick(event);
       }}
     >
-      Bookmarklet
+      {COPY.bookmarkletTitle}
     </a>
   );
 }

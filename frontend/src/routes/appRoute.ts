@@ -12,7 +12,6 @@ export type AppRoute =
   | {
       kind: 'result';
       feedToken: string;
-      prefillUrl?: string;
     };
 
 interface RouteNavigationOptions {
@@ -80,26 +79,33 @@ export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()):
 
 export function useAppRoute() {
   const [route, setRoute] = useState<AppRoute>(() => readAppRoute());
+  const [createEntryKey, setCreateEntryKey] = useState(0);
+
+  const publishCreateEntry = (nextRoute: AppRoute) => {
+    if (nextRoute.kind !== 'create') return;
+    setCreateEntryKey((current) => current + 1);
+  };
 
   useEffect(() => {
     if (globalThis.window === undefined) return;
 
-    const canonicalize = () => {
+    const canonicalize = (source: 'mount' | 'navigation') => {
       const nextRoute = readAppRoute();
-      setRoute(nextRoute);
+      const needsReplace = !location.hash || location.pathname !== '/' || location.hash.startsWith('#!');
 
-      if (!location.hash || location.pathname !== '/') {
-        replaceRoute(nextRoute);
-      }
+      if (needsReplace) replaceRoute(nextRoute);
+      setRoute(nextRoute);
+      if (source === 'navigation' || needsReplace) publishCreateEntry(nextRoute);
     };
 
-    canonicalize();
-    addEventListener('popstate', canonicalize);
-    addEventListener('hashchange', canonicalize);
+    canonicalize('mount');
+    const onNavigation = () => canonicalize('navigation');
+    addEventListener('popstate', onNavigation);
+    addEventListener('hashchange', onNavigation);
 
     return () => {
-      removeEventListener('popstate', canonicalize);
-      removeEventListener('hashchange', canonicalize);
+      removeEventListener('popstate', onNavigation);
+      removeEventListener('hashchange', onNavigation);
     };
   }, []);
 
@@ -114,11 +120,13 @@ export function useAppRoute() {
     }
 
     setRoute(readAppRoute());
+    publishCreateEntry(nextRoute);
   }, []);
 
   return {
     route,
     navigate,
+    createEntryKey,
   };
 }
 
@@ -132,9 +140,10 @@ function normalizePathname(pathname: string): string {
 
 function parseHashRoute(hash: string): { pathname: string; search: string } {
   const normalizedHash = hash.startsWith('#') ? hash.slice(1) : hash;
-  if (!normalizedHash) return { pathname: '/', search: '' };
+  const withoutHashbang = normalizedHash.startsWith('!') ? normalizedHash.slice(1) : normalizedHash;
+  if (!withoutHashbang) return { pathname: '/', search: '' };
 
-  const [pathname = '/', search = ''] = normalizedHash.split('?');
+  const [pathname = '/', search = ''] = withoutHashbang.split('?');
   return {
     pathname: normalizePathname(pathname.startsWith('/') ? pathname : `/${pathname}`),
     search,

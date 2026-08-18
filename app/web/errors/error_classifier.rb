@@ -17,6 +17,81 @@ module Html2rss
       )
 
       ##
+      # Gem strategy attempts plus expanded transport telemetry for feed Observability / headers.
+      Diagnostics = Data.define(
+        :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category
+      ) do
+        class << self
+          # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
+          def empty
+            EMPTY_DIAGNOSTICS
+          end
+
+          # Digs strategy attempts from the exception cause chain.
+          #
+          # @param error [Exception, nil]
+          # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
+          def from_error(error)
+            with_attempts = ErrorClassifier.error_chain(error).find { it.respond_to?(:attempts) }
+            from_attempts(with_attempts ? Array(with_attempts.attempts) : [])
+          end
+
+          # Expands attempt hashes into transport fields (single dig algorithm).
+          #
+          # @param attempts [Array<Hash>, nil]
+          # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
+          def from_attempts(attempts)
+            list = Array(attempts)
+            return EMPTY_DIAGNOSTICS if list.empty?
+
+            new(strategy_attempts: list, **transport_fields(list))
+          end
+
+          private
+
+          # @param attempts [Array<Hash>]
+          # @return [Hash{Symbol=>Object}]
+          def transport_fields(attempts)
+            meta = attempts.filter_map { it[:transport_meta] || it['transport_meta'] }.last
+            {
+              request_id: dig_meta(meta, :request_id),
+              strategy_used: dig_meta(meta, :strategy_used),
+              render_ms: dig_meta(meta, :render_ms),
+              error_category: dig_meta(meta, :error_category)
+            }
+          end
+
+          # @param meta [Hash, nil]
+          # @param key [Symbol]
+          # @return [Object, nil]
+          def dig_meta(meta, key)
+            return unless meta
+
+            meta[key] || meta[key.to_s]
+          end
+        end
+
+        # Sparse hash for Observability emit (omits blank fields).
+        #
+        # @return [Hash{Symbol=>Object}]
+        def to_h
+          details = strategy_attempts.empty? ? {} : { strategy_attempts: strategy_attempts }
+          %i[request_id strategy_used render_ms error_category].each do |key|
+            val = public_send(key)
+            details[key] = val if val
+          end
+          details
+        end
+      end
+      EMPTY_DIAGNOSTICS = Diagnostics.new(
+        strategy_attempts: [].freeze,
+        request_id: nil,
+        strategy_used: nil,
+        render_ms: nil,
+        error_category: nil
+      ).freeze
+
+      ##
       # Carries an already-computed {Decision} through raise → {ErrorResponder}.
       class DecidedError < StandardError
         # @return [Html2rss::Web::ErrorClassifier::Decision]
@@ -55,7 +130,7 @@ module Html2rss
       ).freeze
 
       BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
-      BLOCKED_SURFACE_MESSAGE = 'The target website is protected by an anti-bot challenge or Cloudflare block.'
+      BLOCKED_SURFACE_MESSAGE = 'This website blocked automated access.'
 
       BLOCKED_SURFACE = Decision.new(
         status: 422,
@@ -69,7 +144,7 @@ module Html2rss
       ).freeze
 
       SCRAPER_UNAVAILABLE_CODE = 'SCRAPER_UNAVAILABLE'
-      SCRAPER_UNAVAILABLE_MESSAGE = 'The scraping backend is temporarily unavailable. Please try again later.'
+      SCRAPER_UNAVAILABLE_MESSAGE = 'Feed fetching is temporarily unavailable.'
 
       SCRAPER_UNAVAILABLE = Decision.new(
         status: 503,
@@ -85,7 +160,7 @@ module Html2rss
       SERVICE_UNAVAILABLE = Decision.new(
         status: 503,
         code: 'SERVICE_UNAVAILABLE',
-        message: 'The server is too busy or the request timed out. Please try again later.',
+        message: 'The server is too busy or the request timed out.',
         kind: 'server',
         cacheable: false,
         retryable: true,
@@ -96,7 +171,7 @@ module Html2rss
       GATEWAY_TIMEOUT = Decision.new(
         status: 504,
         code: 'GATEWAY_TIMEOUT',
-        message: 'The target website took too long to respond. Please try again later.',
+        message: 'The target website took too long to respond.',
         kind: 'network',
         cacheable: false,
         retryable: true,
@@ -173,28 +248,13 @@ module Html2rss
           chain
         end
 
-        # Extracts upstream scraper attempts and transport telemetry from the exception chain.
-        #
-        # @param error [Exception, nil]
-        # @return [Hash{Symbol=>Object}]
-        def extract_diagnostics(error)
-          chain = error_chain(error)
-          with_attempts = chain.find { it.respond_to?(:attempts) }
-          attempts = with_attempts ? Array(with_attempts.attempts) : []
-          meta = attempts.filter_map { it[:transport_meta] || it['transport_meta'] }.last
-          return attempts.empty? ? {} : { strategy_attempts: attempts } unless meta
-
-          diagnostics = attempts.empty? ? {} : { strategy_attempts: attempts }
-          append_meta_fields(diagnostics, meta)
-        end
-
         private
 
         def classify_http_error(error)
           case error
           when TooManyRequestsError
             decision_for_http_error(error, RETRY_META.merge(kind: 'client'),
-                                    default_message: 'Too many requests. Please wait before retrying.')
+                                    default_message: 'Too many requests. Wait before retrying.')
           when UnauthorizedError then decision_for_http_error(error, AUTH_META)
           when BadRequestError, ForbiddenError then decision_for_http_error(error, INPUT_META)
           when HealthCheckFailedError then decision_for_http_error(error, SERVER_META)
@@ -205,14 +265,6 @@ module Html2rss
         def classify_special_error(error)
           chain = error_chain(error)
           SPECIAL_DECISIONS.find { |match, _| match.call(chain, error) }&.last
-        end
-
-        def append_meta_fields(diagnostics, meta)
-          %i[request_id strategy_used render_ms error_category].each do |key|
-            val = meta[key] || meta[key.to_s]
-            diagnostics[key] = val if val
-          end
-          diagnostics
         end
 
         def error_kind_for(error)

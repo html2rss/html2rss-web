@@ -22,7 +22,9 @@
 
           .feed-page__brand {
             display: grid;
-            justify-items: center;
+            width: 100%;
+            text-align: center;
+            place-items: center;
             margin-bottom: var(--section-gap);
           }
 
@@ -91,7 +93,7 @@
           .feed-meta {
             --stack-gap: var(--space-2);
             padding-top: var(--space-2);
-            border-top: 1px solid var(--border-subtle);
+            border-top: var(--border-width) solid var(--border-subtle);
           }
 
           .feed-meta__row {
@@ -99,14 +101,6 @@
             flex-wrap: wrap;
             gap: var(--space-2);
             align-items: baseline;
-          }
-
-          .feed-meta__label {
-            color: var(--eyebrow-color);
-            font-size: var(--font-size-00);
-            letter-spacing: var(--eyebrow-letter-spacing);
-            text-transform: uppercase;
-            font-weight: 600;
           }
 
           .feed-meta__value,
@@ -133,53 +127,8 @@
             gap: var(--space-4);
           }
 
-          .feed-section__label {
-            letter-spacing: 0.1em;
-          }
-
           .feed-list {
             --stack-gap: var(--space-4);
-            margin: 0;
-            padding: 0;
-            list-style: none;
-          }
-
-          .feed-card {
-            padding: clamp(var(--space-3), 3vw, var(--space-4));
-          }
-
-          .feed-card__title {
-            margin: 0;
-            color: var(--text-strong);
-            font-family: var(--font-family-display);
-            font-size: clamp(1.15rem, 2vw, 1.45rem);
-            line-height: 1.08;
-          }
-
-          .feed-card__meta {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: var(--font-size-00);
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-          }
-
-          .feed-card__excerpt {
-            margin: 0;
-            color: var(--text-body);
-            font-size: var(--font-size-0);
-          }
-
-          .feed-card__actions {
-            margin: 0;
-          }
-
-          .feed-card__actions a {
-            color: var(--text-soft);
-            font-size: var(--font-size-00);
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
           }
 
           .feed-card__footer {
@@ -193,7 +142,7 @@
           .feed-card__signals {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.45rem;
+            gap: var(--space-2);
             align-items: center;
             justify-content: flex-end;
             margin-left: auto;
@@ -202,23 +151,23 @@
           .feed-signal {
             display: inline-flex;
             align-items: center;
-            gap: 0.38rem;
-            padding: 0.34rem 0.58rem;
-            border-radius: 999px;
-            border: 1px solid var(--border-chip);
+            gap: var(--space-1);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-pill);
+            border: var(--border-width) solid var(--border-chip);
             background: var(--surface-chip);
             color: var(--text-muted);
-            font-size: 0.72rem;
-            letter-spacing: 0.07em;
+            font-size: var(--font-size-00);
+            letter-spacing: var(--letter-spacing-meta);
             text-transform: uppercase;
             white-space: nowrap;
           }
 
           .feed-signal__glyph {
-            width: 0.42rem;
-            height: 0.42rem;
-            border-radius: 999px;
-            background: currentColor;
+            width: var(--space-1);
+            height: var(--space-1);
+            border-radius: var(--radius-pill);
+            background: currentcolor;
             opacity: 0.76;
           }
 
@@ -326,20 +275,20 @@
 
             <div class="feed-meta layout-stack">
               <div class="feed-meta__row">
-                <span class="feed-meta__label">Items</span>
+                <span class="ui-eyebrow">Items</span>
                 <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
               </div>
 
               <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
                 <div class="feed-meta__row">
-                  <span class="feed-meta__label">Updated</span>
+                  <span class="ui-eyebrow">Updated</span>
                   <span class="feed-meta__value"><xsl:value-of select="rss/channel/lastBuildDate" /></span>
                 </div>
               </xsl:if>
 
               <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                 <div class="feed-meta__row">
-                  <span class="feed-meta__label">Source</span>
+                  <span class="ui-eyebrow">Source</span>
                   <span class="feed-meta__value">
                     <a href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">
                       <xsl:value-of select="rss/channel/link" />
@@ -350,7 +299,7 @@
 
               <xsl:if test="normalize-space(string(rss/channel/generator)) != ''">
                 <div class="feed-meta__row">
-                  <span class="feed-meta__label">Generated by</span>
+                  <span class="ui-eyebrow">Generated by</span>
                   <span class="feed-meta__value">
                     <xsl:call-template name="clean-text">
                       <xsl:with-param name="text" select="string(rss/channel/generator)" />
@@ -377,14 +326,14 @@
           </xsl:if>
 
           <section class="feed-section layout-rail-reading layout-stack" aria-label="Feed items">
-            <p class="feed-section__label ui-eyebrow">Latest items</p>
+            <p class="ui-eyebrow">Latest items</p>
 
             <xsl:choose>
               <xsl:when test="count(rss/channel/item) &gt; 0">
                 <ul class="feed-list layout-stack">
                   <xsl:for-each select="rss/channel/item">
                     <li>
-                      <article class="feed-card ui-card layout-stack layout-stack--tight">
+                      <article class="feed-card ui-card ui-item--card layout-stack layout-stack--tight">
                         <xsl:variable name="cleanTitle">
                           <xsl:call-template name="clean-text">
                             <xsl:with-param name="text" select="string(title)" />
@@ -414,16 +363,16 @@
                         <xsl:variable name="hasCategories" select="category[normalize-space(string(.)) != '']" />
                         <xsl:variable name="hasAuthor" select="normalize-space(string(author)) != '' or *[local-name()='creator'][normalize-space(string(.)) != '']" />
 
-                        <h2 class="feed-card__title">
+                        <h2 class="ui-item__title">
                           <xsl:value-of select="$displayTitle" />
                         </h2>
 
                         <xsl:if test="normalize-space(string(pubDate)) != ''">
-                          <p class="feed-card__meta"><xsl:value-of select="pubDate" /></p>
+                          <p class="ui-item__meta"><xsl:value-of select="pubDate" /></p>
                         </xsl:if>
 
                         <xsl:if test="$hasSummary">
-                          <p class="feed-card__excerpt">
+                          <p class="ui-item__excerpt">
                             <xsl:call-template name="truncate-text">
                               <xsl:with-param name="text" select="string($cleanDescription)" />
                               <xsl:with-param name="limit" select="260" />
@@ -434,7 +383,7 @@
                         <xsl:if test="normalize-space(string(link)) != '' or $hasSummary or $hasImage or $hasCategories or $hasAuthor">
                           <div class="feed-card__footer">
                             <xsl:if test="normalize-space(string(link)) != ''">
-                              <p class="feed-card__actions">
+                              <p class="ui-item__actions">
                                 <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
                               </p>
                             </xsl:if>

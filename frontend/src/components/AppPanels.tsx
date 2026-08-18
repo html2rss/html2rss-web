@@ -3,8 +3,8 @@ import type { RefObject } from 'preact';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
-import { getPanelViewState } from '../appViewModel';
-import type { AppViewModel } from '../appViewModel';
+import type { AppViewModel } from '../feed';
+import { COPY } from '../journey/copy';
 
 export interface FeedFormData {
   url: string;
@@ -20,6 +20,7 @@ type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' }>;
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
   viewModel: CreatePanelViewModel;
+  isCreating: boolean;
   feedFormData: FeedFormData;
   feedFieldErrors: FeedFieldErrors;
   submitDisabled: boolean;
@@ -38,7 +39,7 @@ interface UrlEntrySectionProperties {
   url: string;
   disabled: boolean;
   error: string;
-  isConverting: boolean;
+  isCreating: boolean;
   feedCreationEnabled: boolean;
   featuredFeeds: Array<{ path: string; title: string; description: string }>;
   inputRef: RefObject<HTMLInputElement>;
@@ -49,7 +50,7 @@ function UrlEntrySection({
   url,
   disabled,
   error,
-  isConverting,
+  isCreating,
   feedCreationEnabled,
   featuredFeeds,
   inputRef,
@@ -60,39 +61,43 @@ function UrlEntrySection({
       <DominantField
         className="layout-rail-reading"
         id="url"
-        label="Page URL"
+        label={COPY.urlLabel}
         type="text"
         value={url}
-        placeholder="example.com/articles"
+        placeholder={COPY.urlPlaceholder}
         inputMode="url"
         autoCapitalize="off"
         spellcheck={false}
         autoFocus
         inputRef={inputRef}
-        actionLabel={isConverting ? 'Creating feed link' : 'Generate feed URL'}
-        actionText={isConverting ? '...' : '>'}
+        actionLabel={isCreating ? COPY.creating : COPY.createFeed}
+        actionText={isCreating ? '...' : '>'}
         disabled={disabled}
         error={error}
-        onInput={(event) => onInput((event.target as HTMLInputElement).value)}
+        onInput={(event) => onInput(event.currentTarget.value)}
       />
 
       {!feedCreationEnabled && (
         <>
-          <p class="field-help field-help--alert">Feed creation is disabled on this instance.</p>
+          <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
           {featuredFeeds.length > 0 && (
             <Notice
               className="layout-rail-reading"
               role="status"
-              ariaLabel="Included feeds"
-              title="Try a working included feed"
+              ariaLabel={COPY.includedFeedsTitle}
+              title={COPY.includedFeedsTitle}
             >
-              <p class="notice__intro">Start with a ready-made feed from this instance.</p>
-              <div class="featured-feed-list" role="list" aria-label="Featured feeds">
+              <p class="notice__intro">{COPY.includedFeedsIntro}</p>
+              <div class="layout-stack layout-stack--tight" role="list" aria-label={COPY.includedFeedsTitle}>
                 {featuredFeeds.map((feed) => (
-                  <div key={feed.path} class="featured-feed-item" role="listitem">
-                    <a href={feed.path} class="featured-feed-item__link" aria-label={feed.title}>
-                      <span class="featured-feed-item__title">{feed.title}</span>
-                      <span class="featured-feed-item__description">{feed.description}</span>
+                  <div key={feed.path} role="listitem">
+                    <a
+                      href={feed.path}
+                      class="ui-card ui-item--card layout-stack layout-stack--tight"
+                      aria-label={feed.title}
+                    >
+                      <span class="ui-item__title">{feed.title}</span>
+                      <span class="ui-item__excerpt">{feed.description}</span>
                     </a>
                   </div>
                 ))}
@@ -103,7 +108,7 @@ function UrlEntrySection({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Learn how included configs work.
+                  {COPY.includedFeedsLearnMore}
                 </a>
               </p>
             </Notice>
@@ -117,8 +122,8 @@ function UrlEntrySection({
 interface TokenGateSectionProperties {
   tokenDraft: string;
   tokenError: string;
+  isCreating: boolean;
   inputRef: RefObject<HTMLInputElement>;
-  onInput?: (value: string) => void;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
@@ -127,26 +132,32 @@ interface TokenGateSectionProperties {
 function TokenGateSection({
   tokenDraft,
   tokenError,
+  isCreating,
   inputRef,
   onTokenDraftChange,
   onSaveToken,
   onCancelTokenPrompt,
 }: TokenGateSectionProperties) {
   return (
-    <div class="token-gate layout-rail-reading" role="group" aria-label="Access token">
+    <div
+      class="token-gate ui-card ui-card--padded ui-card--framed"
+      role="group"
+      aria-labelledby="access-token-title"
+    >
       <div class="token-gate__copy">
-        <h2>Enter access token</h2>
-        <p class="token-gate__hint">Required by this instance.</p>
+        <h2 id="access-token-title" class="ui-display-title">
+          {COPY.tokenTitle}
+        </h2>
+        <p class="ui-eyebrow">{COPY.tokenHint}</p>
       </div>
       <label class="field-block field-block--stretch field-block--compact" htmlFor="access-token">
-        <span class="field-label field-label--ghost">Access token</span>
         <input
           id="access-token"
           name="access-token"
           type="password"
-          class="input input--mono input--minimal"
-          aria-label="Access token"
-          placeholder="Paste access token"
+          class="input input--mono"
+          aria-label={COPY.tokenTitle}
+          placeholder={COPY.tokenPlaceholder}
           autoComplete="off"
           autoCapitalize="off"
           autoCorrect="off"
@@ -161,9 +172,9 @@ function TokenGateSection({
             event.preventDefault();
             void onSaveToken();
           }}
-          onInput={(event) => onTokenDraftChange((event.target as HTMLInputElement).value)}
+          onInput={(event) => onTokenDraftChange(event.currentTarget.value)}
         />
-        <span class="field-error">{tokenError}</span>
+        {tokenError ? <span class="field-error">{tokenError}</span> : undefined}
       </label>
       <a
         href="https://html2rss.github.io/web-application/getting-started/"
@@ -171,16 +182,16 @@ function TokenGateSection({
         rel="noopener noreferrer"
         class="token-gate__nudge token-gate__nudge-link"
       >
-        Set up your own instance with Docker.
+        {COPY.dockerSetup}
       </a>
       <div class="token-gate__actions">
-        <button type="button" class="btn btn--primary" onClick={onSaveToken}>
-          Save and continue
+        <button type="button" class="btn btn--primary" disabled={isCreating} onClick={onSaveToken}>
+          {isCreating ? COPY.creating : COPY.saveAndContinue}
         </button>
       </div>
       <div class="token-gate__back">
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancelTokenPrompt}>
-          Back
+          {COPY.back}
         </button>
       </div>
     </div>
@@ -189,14 +200,14 @@ function TokenGateSection({
 
 interface ActionFeedbackProperties {
   failureMessage: string;
-  isConverting: boolean;
+  isCreating: boolean;
   isShowRetryButton: boolean;
   onRetryCreate: () => void;
 }
 
 function ActionFeedback({
   failureMessage,
-  isConverting,
+  isCreating,
   isShowRetryButton,
   onRetryCreate,
 }: ActionFeedbackProperties) {
@@ -206,11 +217,11 @@ function ActionFeedback({
         <Notice
           className="layout-rail-reading"
           tone="error"
-          title="Couldn't create feed yet"
+          title={COPY.createFailedTitle}
           actions={
             isShowRetryButton && (
               <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
-                Try again
+                {COPY.tryAgain}
               </button>
             )
           }
@@ -219,11 +230,7 @@ function ActionFeedback({
         </Notice>
       )}
 
-      {isConverting && (
-        <Notice className="layout-rail-reading" state="loading" title="Creating feed link">
-          <p>Preparing preview.</p>
-        </Notice>
-      )}
+      {isCreating && <Notice className="layout-rail-reading" state="loading" title={COPY.creating} />}
     </>
   );
 }
@@ -231,6 +238,7 @@ function ActionFeedback({
 export function CreateFeedPanel({
   focusComposerKey,
   viewModel,
+  isCreating: flowCreating,
   feedFormData,
   feedFieldErrors,
   submitDisabled,
@@ -244,14 +252,29 @@ export function CreateFeedPanel({
   onCancelTokenPrompt,
   onRetryCreate,
 }: CreateFeedPanelProperties) {
-  const urlInputReference = useRef<HTMLInputElement>(undefined as never);
-  const tokenInputReference = useRef<HTMLInputElement>(undefined as never);
+  const urlInputReference = useRef<HTMLInputElement>(null);
+  const tokenInputReference = useRef<HTMLInputElement>(null);
+  const tokenDialogReference = useRef<HTMLDialogElement>(null);
 
-  const { isTokenPrompt, isConverting, tokenError, errorKind, failureMessage, isShowRetryButton } =
-    getPanelViewState(viewModel, feedFieldErrors);
+  const isTokenPrompt = viewModel.kind === 'token_prompt';
+  const isSubmitting = viewModel.kind === 'submitting';
+  const creationError =
+    viewModel.kind === 'error' || viewModel.kind === 'token_prompt' ? viewModel.error : undefined;
+  const tokenError = viewModel.kind === 'token_prompt' ? viewModel.tokenError : '';
+  const errorKind = viewModel.kind === 'error' ? viewModel.errorKind : creationError?.kind;
+  const failureMessage = isTokenPrompt
+    ? ''
+    : (viewModel.kind === 'error' ? viewModel.message : undefined) ||
+      creationError?.message ||
+      feedFieldErrors.form;
+  const isShowRetryButton = Boolean(
+    creationError && creationError.nextAction === 'retry' && creationError.retryAction !== 'none'
+  );
+  const isCreatingFeed = !isTokenPrompt && isSubmitting;
+  const tokenCreating = isTokenPrompt && flowCreating;
 
   useLayoutEffect(() => {
-    if (!urlInputReference.current || globalThis.window === undefined) return;
+    if (isTokenPrompt || !urlInputReference.current || globalThis.window === undefined) return;
 
     const focusHandle = requestAnimationFrame(() => {
       const input = urlInputReference.current;
@@ -262,7 +285,7 @@ export function CreateFeedPanel({
     });
 
     return () => cancelAnimationFrame(focusHandle);
-  }, [focusComposerKey]);
+  }, [focusComposerKey, isTokenPrompt]);
 
   useLayoutEffect(() => {
     if (!isTokenPrompt || !tokenInputReference.current || globalThis.window === undefined) return;
@@ -274,6 +297,27 @@ export function CreateFeedPanel({
     return () => cancelAnimationFrame(focusHandle);
   }, [isTokenPrompt]);
 
+  useLayoutEffect(() => {
+    const dialog = tokenDialogReference.current;
+    if (!dialog || !isTokenPrompt) return;
+
+    try {
+      if (!dialog.open) dialog.showModal();
+    } catch {
+      dialog.setAttribute('open', '');
+    }
+
+    if (!dialog.open) dialog.setAttribute('open', '');
+
+    return () => {
+      try {
+        if (dialog.open) dialog.close();
+      } catch {
+        dialog.removeAttribute('open');
+      }
+    };
+  }, [isTokenPrompt]);
+
   return (
     <form
       class="form-shell form-shell--minimal"
@@ -281,36 +325,48 @@ export function CreateFeedPanel({
       data-state={viewModel.kind}
       data-error-kind={errorKind}
     >
-      <div class={`field-stack field-stack--dense${isTokenPrompt ? ' field-stack--inactive' : ''}`}>
+      <div class="field-stack" inert={isTokenPrompt || undefined}>
         <UrlEntrySection
           url={feedFormData.url}
           disabled={submitDisabled}
           error={feedFieldErrors.url}
-          isConverting={isConverting}
+          isCreating={isCreatingFeed}
           feedCreationEnabled={feedCreationEnabled}
           featuredFeeds={featuredFeeds}
           inputRef={urlInputReference}
           onInput={(value) => onFeedFieldChange('url', value)}
         />
-      </div>
-
-      {isTokenPrompt && (
-        <TokenGateSection
-          tokenDraft={tokenDraft}
-          tokenError={tokenError}
-          inputRef={tokenInputReference}
-          onTokenDraftChange={onTokenDraftChange}
-          onSaveToken={onSaveToken}
-          onCancelTokenPrompt={onCancelTokenPrompt}
+        <ActionFeedback
+          failureMessage={failureMessage}
+          isCreating={isCreatingFeed}
+          isShowRetryButton={isShowRetryButton}
+          onRetryCreate={onRetryCreate}
         />
-      )}
-
-      <ActionFeedback
-        failureMessage={failureMessage}
-        isConverting={isConverting}
-        isShowRetryButton={isShowRetryButton}
-        onRetryCreate={onRetryCreate}
-      />
+      </div>
+      {isTokenPrompt ? (
+        <dialog
+          ref={tokenDialogReference}
+          class="token-dialog"
+          aria-labelledby="access-token-title"
+          onCancel={(event) => {
+            event.preventDefault();
+            onCancelTokenPrompt();
+          }}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) onCancelTokenPrompt();
+          }}
+        >
+          <TokenGateSection
+            tokenDraft={tokenDraft}
+            tokenError={tokenError}
+            isCreating={tokenCreating}
+            inputRef={tokenInputReference}
+            onTokenDraftChange={onTokenDraftChange}
+            onSaveToken={onSaveToken}
+            onCancelTokenPrompt={onCancelTokenPrompt}
+          />
+        </dialog>
+      ) : undefined}
     </form>
   );
 }
@@ -339,15 +395,15 @@ export function UtilityStrip({
   })();
 
   return (
-    <section class="utility-strip" aria-label="Utilities">
+    <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
         <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
-          Try included feeds
+          {COPY.tryIncludedFeeds}
         </a>
         <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>
-            Logout
+            {COPY.logout}
           </button>
         )}
         <a
@@ -356,7 +412,7 @@ export function UtilityStrip({
           rel="noopener noreferrer"
           class="utility-link"
         >
-          Install from Docker Hub
+          {COPY.dockerInstall}
         </a>
         {openapiUrl && (
           <a
@@ -365,7 +421,7 @@ export function UtilityStrip({
             rel="noopener noreferrer"
             class="utility-link"
           >
-            OpenAPI spec
+            {COPY.openapiSpec}
           </a>
         )}
         <a
@@ -374,7 +430,7 @@ export function UtilityStrip({
           rel="noopener noreferrer"
           class="utility-link"
         >
-          Source code
+          {COPY.sourceCode}
         </a>
       </div>
     </section>

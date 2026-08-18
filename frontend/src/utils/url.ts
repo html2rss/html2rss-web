@@ -24,3 +24,13 @@ export function isNormalizedHttpUrl(rawValue: string): boolean {
     return false;
   }
 }
+
+/** Sole create-time URL expansion: normalize + http(s) gate. */
+export type ExpandCreateUrlResult = { ok: string } | { error: 'empty' | 'invalid' };
+
+export function expandCreateUrl(raw: string): ExpandCreateUrlResult {
+  const normalized = normalizeUserUrl(raw);
+  if (!normalized) return { error: 'empty' };
+  if (!isNormalizedHttpUrl(normalized)) return { error: 'invalid' };
+  return { ok: normalized };
+}

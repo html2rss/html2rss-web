@@ -2,13 +2,16 @@ import type { JSX } from 'preact';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
 import { Notice } from './Notice';
-import { useAppPresenter } from '../hooks/useAppPresenter';
+import { COPY } from '../journey/copy';
+import { useSession } from '../session';
+import { useFeedFlow } from '../feed';
+import { buildAppRouteHref, useAppRoute } from '../routes/appRoute';
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
     <a
       class="brand-lockup"
-      href="/#/create"
+      href={buildAppRouteHref({ kind: 'create' })}
       aria-label="html2rss"
       onClick={(event) => {
         event.preventDefault();
@@ -26,41 +29,74 @@ function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
 }
 
 export function App() {
+  const { route, navigate, createEntryKey } = useAppRoute();
+
+  const {
+    token,
+    hasToken,
+    metadata,
+    featuredFeeds,
+    isLoading: sessionLoading,
+    metadataError,
+    tokenStateError,
+    saveToken,
+    clearToken,
+    feedCreationEnabled,
+    mayCreate,
+  } = useSession();
+
   const {
     viewModel,
+    isCreating,
+    clearError,
     feedFormData,
     feedFieldErrors,
     tokenDraft,
     bookmarkletNotice,
     focusCreateComposerKey,
-    metadata,
-    hasToken,
-    submitDisabled,
-    feedCreationEnabled,
-    featuredFeeds,
-    metadataLoading,
-    tokenLoading,
-    metadataError,
-    tokenStateError,
-    onFeedSubmit,
+    submitDisabled: flowSubmitDisabled,
     onFeedFieldChange,
-    onTokenDraftChange,
+    onFeedSubmit,
     onSaveToken,
     onCancelTokenPrompt,
     onRetryCreate,
     onCreateAnother,
     onRetryPreview,
-    onClearToken,
-    onShowBookmarkletHelp,
     setBookmarkletNotice,
+    setTokenDraft,
+    setTokenError,
+  } = useFeedFlow({
+    token,
+    isLoading: sessionLoading,
+    feedCreationEnabled,
+    mayCreate,
+    saveToken,
+    clearToken,
+    route,
     navigate,
-  } = useAppPresenter();
+    createEntryKey,
+  });
+
+  const submitDisabled = flowSubmitDisabled || viewModel.kind === 'token_prompt';
+  const onTokenDraftChange = (value: string) => {
+    setTokenDraft(value);
+    setTokenError('');
+    clearError();
+  };
+  const onClearToken = () => {
+    clearToken();
+    setTokenDraft('');
+    setTokenError('');
+    clearError();
+    navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
+  };
+  const onShowBookmarkletHelp = () => setBookmarkletNotice('show');
 
   let bodyContent: JSX.Element;
-  if (metadataLoading || tokenLoading) {
+  if (sessionLoading) {
     bodyContent = (
-      <Notice title="Loading instance" state="loading" ariaLive="polite">
-        <p>Reading feed-generation capabilities.</p>
+      <Notice title={COPY.loadingInstance} state="loading" ariaLive="polite">
+        <p>{COPY.loadingInstanceBody}</p>
       </Notice>
     );
   } else if (viewModel.kind === 'result') {
@@ -76,6 +112,7 @@ export function App() {
       <CreateFeedPanel
         focusComposerKey={focusCreateComposerKey}
         viewModel={viewModel}
+        isCreating={isCreating}
         feedFormData={feedFormData}
         feedFieldErrors={feedFieldErrors}
         submitDisabled={submitDisabled}
@@ -103,27 +140,26 @@ export function App() {
           <div class="workspace-content">
             {bookmarkletNotice && (
               <Notice
-                title="How to use the Bookmarklet"
+                title={COPY.bookmarkletTitle}
                 actions={
                   <button
                     type="button"
                     class="btn btn--quiet btn--linkish"
                     onClick={() => setBookmarkletNotice('')}
                   >
-                    Dismiss
+                    {COPY.dismiss}
                   </button>
                 }
               >
-                <p style="margin: 0; line-height: 1.5;">
-                  Drag the "Bookmarklet" link from the footer to your browser's bookmarks bar. When viewing
-                  any website you want to convert to RSS, click the bookmark to automatically prefill its URL
-                  here.
-                </p>
+                <p>{COPY.bookmarkletHelp}</p>
               </Notice>
             )}
 
             {(metadataError || tokenStateError) && (
-              <Notice tone="error" title="Instance metadata unavailable">
+              <Notice
+                tone="error"
+                title={metadataError ? COPY.instanceMetadataUnavailable : COPY.accessTokenUnavailable}
+              >
                 <p>{metadataError ?? tokenStateError}</p>
               </Notice>
             )}
@@ -133,7 +169,7 @@ export function App() {
         </section>
       </main>
 
-      <footer class="app-footer" aria-label="Footer navigation">
+      <footer class="app-footer" aria-label={COPY.footerNav}>
         <div class="app-footer__inner">
           <UtilityStrip
             hasAccessToken={hasToken}

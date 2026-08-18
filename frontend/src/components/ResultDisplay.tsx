@@ -1,7 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { FeedPreviewWarning } from '../api/contracts';
-import type { AppViewModel } from '../appViewModel';
+import type { AppViewModel } from '../feed';
+import { COPY } from '../journey/copy';
 import { DominantField } from './DominantField';
 
 interface ResultDisplayProperties {
@@ -12,28 +12,13 @@ interface ResultDisplayProperties {
 
 interface PreviewSectionProperties {
   ariaLabel: string;
-  intro?: string;
   children: ComponentChildren;
 }
 
-function getTailoredPreviewMessage(warning?: FeedPreviewWarning): string {
-  if (!warning) return '';
-  if (warning.code === 'BLOCKED_SURFACE') {
-    return 'The target website is protected by an anti-bot challenge or Cloudflare block. Try providing a direct RSS feed URL.';
-  }
-  if (warning.code === 'SCRAPER_UNAVAILABLE') {
-    return 'The scraping backend is temporarily unavailable. Please try again in a few moments.';
-  }
-  return warning.message;
-}
-
-function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties) {
+function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {
   return (
     <section class="result-preview layout-rail-reading layout-stack" aria-label={ariaLabel}>
-      <div class="result-preview__header layout-stack layout-stack--tight">
-        <p class="result-preview__label ui-eyebrow">Preview</p>
-        {intro && <p class="result-preview__intro">{intro}</p>}
-      </div>
+      <p class="ui-eyebrow">{COPY.previewLatest}</p>
       {children}
     </section>
   );
@@ -42,7 +27,7 @@ function PreviewSection({ ariaLabel, intro, children }: PreviewSectionProperties
 export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: ResultDisplayProperties) {
   const [copied, setCopied] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
-  const inputReference = useRef<HTMLInputElement>(null);
+  const copyButtonReference = useRef<HTMLButtonElement>(null);
   const { feed, preview, warnings } = viewModel;
 
   const fullUrl = feed.public_url.startsWith('http')
@@ -52,22 +37,15 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
     ? feed.json_public_url
     : `${location.origin}${feed.json_public_url}`;
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
-  const canUseFeed = preview.status !== 'preview_loading';
   const canManuallyRetryPreview =
     preview.status === 'preview_failed' && warnings.some((warning) => warning.retryable);
-  const statusTitle = {
-    created: 'Feed created',
-    preview_loading: 'Checking preview',
-    preview_ready: 'Feed ready',
-    preview_failed: 'Feed link created',
-  }[preview.status];
-  const previewMessage = getTailoredPreviewMessage(warnings[0]);
+  const previewMessage = warnings[0]?.message ?? '';
   const hasPreviewItems = preview.items.length > 0;
   const isShowPreviewError =
     preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
 
   useEffect(() => {
-    inputReference.current?.focus();
+    copyButtonReference.current?.focus();
     return () => {
       if (copyResetReference.current) clearTimeout(copyResetReference.current);
     };
@@ -80,76 +58,73 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       if (copyResetReference.current) clearTimeout(copyResetReference.current);
       copyResetReference.current = setTimeout(() => setCopied(false), 2500);
     } catch {
-      // Fallback
+      // Clipboard may be unavailable in restricted contexts.
     }
   };
 
   return (
     <section class="result-shell layout-stack" aria-live="polite" data-state={viewModel.kind}>
       <header class="result-header layout-rail-reading layout-stack layout-stack--tight">
-        <p class="ui-eyebrow">{statusTitle}</p>
+        <p class="ui-eyebrow">{COPY.feedReady}</p>
         <h1 class="result-title ui-display-title">{feed.name}</h1>
       </header>
 
       <DominantField
         className="layout-rail-reading"
         id="feed-url"
-        label="Feed URL"
+        label={COPY.feedUrl}
         value={fullUrl}
         readOnly
-        autoFocus
-        inputRef={inputReference}
-        actionLabel="Copy feed URL"
-        actionText={copied ? 'Copied!' : 'Copy'}
-        actionVariant={copied ? 'default' : 'soft'}
+        actionRef={copyButtonReference}
+        actionLabel={COPY.copyFeedUrl}
+        actionText={copied ? COPY.copied : COPY.copy}
+        actionVariant={copied ? 'soft' : 'default'}
         onAction={() => void copyToClipboard(fullUrl)}
       />
 
       <div class="result-actions layout-rail-reading">
-        {canUseFeed && (
-          <>
-            <a href={fullUrl} class="btn btn--primary" target="_blank" rel="noopener noreferrer">
-              Open feed
-            </a>
-            <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
-              Open JSON Feed
-            </a>
-            {subscribeUrl && (
-              <a href={subscribeUrl} class="btn btn--ghost">
-                Open in feed reader
-              </a>
-            )}
-          </>
+        <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+          {COPY.openFeed}
+        </a>
+        <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
+          {COPY.openJsonFeed}
+        </a>
+        {subscribeUrl && (
+          <a href={subscribeUrl} class="btn btn--ghost">
+            {COPY.openInFeedReader}
+          </a>
         )}
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
-          Create another feed
+          {COPY.createAnother}
         </button>
       </div>
 
       {preview.isLoading && (
-        <PreviewSection ariaLabel="Feed preview status">
+        <PreviewSection ariaLabel={COPY.previewStatus}>
           <div class="preview-feedback preview-feedback--loading">
             <span class="preview-feedback__spinner" aria-hidden="true" />
-            <span>Checking preview...</span>
+            <span>{COPY.previewChecking}</span>
           </div>
         </PreviewSection>
       )}
 
       {!preview.isLoading && hasPreviewItems && (
-        <PreviewSection ariaLabel="Feed preview" intro="Latest items from this feed">
-          <ul class="result-preview__list editorial-list" role="list">
+        <PreviewSection ariaLabel={COPY.previewRegion}>
+          <ul class="ui-item-list" role="list">
             {preview.items.map((item) => (
-              <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="preview-item">
+              <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
                 <article class="layout-stack layout-stack--tight">
-                  <div class="preview-item__metadata">
-                    {item.publishedLabel && <span class="preview-item__date">{item.publishedLabel}</span>}
-                  </div>
-                  <h2 class="preview-item__title">{item.title}</h2>
-                  {item.excerpt && <p class="preview-item__excerpt">{item.excerpt}</p>}
+                  {item.publishedLabel && (
+                    <div class="ui-item__meta">
+                      <span>{item.publishedLabel}</span>
+                    </div>
+                  )}
+                  <h2 class="ui-item__title">{item.title}</h2>
+                  {item.excerpt && <p class="ui-item__excerpt">{item.excerpt}</p>}
                   {item.url && (
-                    <p class="preview-item__actions">
+                    <p class="ui-item__actions">
                       <a href={item.url} target="_blank" rel="noopener noreferrer">
-                        Open original
+                        {COPY.openOriginal}
                       </a>
                     </p>
                   )}
@@ -161,17 +136,12 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       )}
 
       {isShowPreviewError && (
-        <PreviewSection ariaLabel="Feed preview status">
+        <PreviewSection ariaLabel={COPY.previewStatus}>
           <div class="preview-feedback preview-feedback--error">
             <span>{previewMessage}</span>
             {canManuallyRetryPreview && (
-              <button
-                type="button"
-                class="btn btn--quiet btn--linkish"
-                style="margin-left: var(--space-2); display: inline-flex;"
-                onClick={onRetryPreview}
-              >
-                Check again
+              <button type="button" class="btn btn--quiet btn--linkish" onClick={onRetryPreview}>
+                {COPY.checkAgain}
               </button>
             )}
           </div>

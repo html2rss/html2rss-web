@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/preact';
 import { http, HttpResponse } from 'msw';
 import { server, buildFeedResponse, buildStructuredErrorResponse } from './mocks/server';
-import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useFeedCreation } from '../feed';
 
-describe('useFeedConversion contract', () => {
+describe('useFeedCreation contract', () => {
   it('sends feed creation requests with bearer auth and hydrates preview from json_public_url', async () => {
     let receivedAuthorization: string | undefined;
     const nativeFetch = fetch;
@@ -52,10 +52,10 @@ describe('useFeedConversion contract', () => {
       )
     );
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'test-token-123');
+      await result.current.createFeed('https://example.com/articles', 'test-token-123');
     });
 
     expect(receivedAuthorization).toBe('Bearer test-token-123');
@@ -82,14 +82,12 @@ describe('useFeedConversion contract', () => {
       )
     );
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          message: 'Authentication required',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        message: 'Authentication required',
+      });
     });
 
     expect(result.current.result).toBeUndefined();
@@ -120,19 +118,17 @@ describe('useFeedConversion contract', () => {
       )
     );
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          kind: 'input',
-          code: 'NO_FEED_ITEMS_EXTRACTED',
-          nextAction: 'correct_input',
-          retryAction: 'none',
-          retryable: false,
-          message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        kind: 'input',
+        code: 'NO_FEED_ITEMS_EXTRACTED',
+        nextAction: 'correct_input',
+        retryAction: 'none',
+        retryable: false,
+        message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
+      });
     });
   });
 
@@ -171,10 +167,10 @@ describe('useFeedConversion contract', () => {
       )
     );
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await result.current.convertFeed('https://example.com/articles', 'token');
+      await result.current.createFeed('https://example.com/articles', 'token');
     });
 
     await waitFor(() => {
@@ -206,15 +202,13 @@ describe('useFeedConversion contract', () => {
       )
     );
 
-    const { result } = renderHook(() => useFeedConversion());
+    const { result } = renderHook(() => useFeedCreation());
 
     await act(async () => {
-      await expect(result.current.convertFeed('https://example.com/articles', 'token')).rejects.toMatchObject(
-        {
-          kind: 'server',
-          code: 'INVALID_RESPONSE',
-        }
-      );
+      await expect(result.current.createFeed('https://example.com/articles', 'token')).rejects.toMatchObject({
+        kind: 'server',
+        code: 'INVALID_RESPONSE',
+      });
     });
   });
 });

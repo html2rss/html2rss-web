@@ -19,6 +19,7 @@ interface DominantFieldProperties {
   onAction?: () => void;
   onInput?: JSX.GenericEventHandler<HTMLInputElement>;
   inputRef?: Ref<HTMLInputElement>;
+  actionRef?: Ref<HTMLButtonElement>;
   error?: string;
 }
 
@@ -60,12 +61,13 @@ export function DominantField({
   onAction,
   onInput,
   inputRef,
+  actionRef,
   error,
 }: DominantFieldProperties) {
   return (
     <div class={className ? `dominant-field ${className}` : 'dominant-field'}>
       <label class="field-block field-block--centered" htmlFor={id}>
-        <span class="field-label field-label--ghost">{label}</span>
+        <span class="ui-eyebrow ui-eyebrow--ghost">{label}</span>
         <input
           id={id}
           name={id}
@@ -82,8 +84,14 @@ export function DominantField({
           readOnly={readOnly}
           disabled={disabled}
           onInput={onInput}
+          onKeyDown={(event) => {
+            if (onAction || event.key !== 'Enter' || event.isComposing || event.repeat) return;
+
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }}
         />
-        <span class="field-error">{error ?? ''}</span>
+        {error ? <span class="field-error">{error}</span> : undefined}
       </label>
       <button
         type={onAction ? 'button' : 'submit'}
@@ -93,6 +101,7 @@ export function DominantField({
         disabled={disabled}
         aria-label={actionLabel}
         onClick={onAction}
+        ref={actionRef}
       >
         {actionText === '>' ? <ArrowIcon /> : actionText}
       </button>

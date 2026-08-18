@@ -1,26 +1,28 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
 import { App } from '../components/App';
+import { COPY } from '../journey/copy';
 
-vi.mock('../hooks/useAccessToken', () => ({
+vi.mock('../session/accessToken', () => ({
   useAccessToken: vi.fn(),
+  resetAccessTokenMemory: vi.fn(),
 }));
 
-vi.mock('../hooks/useFeedConversion', () => ({
-  useFeedConversion: vi.fn(),
+vi.mock('../feed/useFeedCreation', () => ({
+  useFeedCreation: vi.fn(),
 }));
 
 vi.mock('../hooks/useApiMetadata', () => ({
   useApiMetadata: vi.fn(),
 }));
 
-import { useAccessToken } from '../hooks/useAccessToken';
+import { useAccessToken } from '../session/accessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
-import { useFeedConversion } from '../hooks/useFeedConversion';
+import { useFeedCreation } from '../feed/useFeedCreation';
 
 const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
-const mockUseFeedConversion = useFeedConversion as any;
+const mockUseFeedCreation = useFeedCreation as any;
 const mockCreatedFeedResult = {
   feed: {
     id: 'feed-123',
@@ -38,11 +40,21 @@ const mockCreatedFeedResult = {
   warnings: [],
 };
 
+async function expectCreateRemountedWithoutErrorChrome() {
+  await waitFor(() => {
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+  });
+  expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+  await waitFor(() => {
+    expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
+  });
+}
+
 describe('App', () => {
   const mockSaveToken = vi.fn();
   const mockClearToken = vi.fn();
-  const mockConvertFeed = vi.fn();
-  const mockClearConversionError = vi.fn();
+  const mockCreateFeed = vi.fn();
+  const mockClearCreationError = vi.fn();
   const mockClearResult = vi.fn();
   const mockRetryPreviewFetch = vi.fn();
 
@@ -50,7 +62,7 @@ describe('App', () => {
     vi.clearAllMocks();
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
-    mockConvertFeed.mockResolvedValue(mockCreatedFeedResult);
+    mockCreateFeed.mockResolvedValue(mockCreatedFeedResult);
 
     mockUseAccessToken.mockReturnValue({
       token: undefined,
@@ -80,44 +92,86 @@ describe('App', () => {
       error: undefined,
     });
 
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
   });
 
+  const creationFailure = {
+    kind: 'server' as const,
+    code: 'INTERNAL_SERVER_ERROR' as const,
+    retryable: true,
+    nextAction: 'retry' as const,
+    retryAction: 'primary' as const,
+    message: 'Access denied',
+  };
+
+  async function renderCreateWithCreationError() {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: {
+        api: {
+          name: 'html2rss-web API',
+          description: 'RESTful API for converting websites to RSS feeds',
+          openapi_url: 'https://example.test/openapi.yaml',
+        },
+        instance: {
+          feed_creation: {
+            enabled: true,
+            access_token_required: false,
+          },
+          featured_feeds: [],
+        },
+      },
+      isLoading: false,
+      error: undefined,
+    });
+    mockCreateFeed.mockRejectedValue(creationFailure);
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+
+    await waitFor(() => {
+      expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    });
+  }
+
   it('renders the radical-simple create flow', () => {
     render(<App />);
 
     expect(screen.getByLabelText('html2rss')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'html2rss' })).toHaveAttribute('href', '/#/create');
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'html2rss' }).getAttribute('href')).toMatch(/#\/create$/);
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   });
 
-  it('keeps the page url field permissive enough for hostname-only input', () => {
+  it('keeps the URL field permissive enough for hostname-only input', () => {
     render(<App />);
 
-    const urlInput = screen.getByLabelText('Page URL');
+    const urlInput = screen.getByLabelText(COPY.urlLabel);
 
     expect(urlInput).toHaveAttribute('type', 'text');
     expect(urlInput).toHaveAttribute('inputmode', 'url');
     expect(urlInput).toHaveAttribute('autocapitalize', 'off');
   });
 
-  it('autofocuses the source url field', async () => {
+  it('autofocuses the URL field', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(document.activeElement).toBe(screen.getByLabelText('Page URL'));
+      expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
     });
   });
 
@@ -133,14 +187,62 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
+  });
+
+  it('submits create requests when Enter is pressed on the URL field', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.keyDown(screen.getByLabelText(COPY.urlLabel), { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+    });
+  });
+
+  it('does not submit extra create requests when Enter key-repeats', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    const urlField = screen.getByLabelText(COPY.urlLabel);
+    fireEvent.keyDown(urlField, { key: 'Enter' });
+    fireEvent.keyDown(urlField, { key: 'Enter', repeat: true });
+    fireEvent.keyDown(urlField, { key: 'Enter', repeat: true });
+
+    await waitFor(() => {
+      expect(mockCreateFeed).toHaveBeenCalledTimes(1);
+    });
+    expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
   });
 
   it('auto-submits a prefilled url without persisting strategy state', async () => {
@@ -157,41 +259,84 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
       expect(location.hash).toBe('#/result/generated-token');
     });
   });
 
-  it('shows the create flow when opening a stale result deep link', async () => {
+  it('recovers unmatched result deep links onto remounted create without url prefill', async () => {
     history.replaceState({}, '', 'http://localhost:3000/#/result/generated-token');
 
     render(<App />);
 
-    expect(screen.getByLabelText('Page URL')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(location.hash).toBe('#/create');
+    });
+    expect(location.hash).not.toContain('url=');
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
     expect(screen.queryByRole('heading', { name: 'Saved result unavailable' })).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+  });
+
+  it('remounts create from BrandLockup and clears creation chrome', async () => {
+    await renderCreateWithCreationError();
+    const createCalls = mockCreateFeed.mock.calls.length;
+
+    fireEvent.click(screen.getByRole('link', { name: 'html2rss' }));
+
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
+  });
+
+  it('remounts create from a #/create visit and clears creation chrome', async () => {
+    await renderCreateWithCreationError();
+    const createCalls = mockCreateFeed.mock.calls.length;
+
+    dispatchEvent(new HashChangeEvent('hashchange'));
+
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(location.hash).toBe('#/create');
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
+  });
+
+  it('remounts create from a hashbang entry and clears creation chrome', async () => {
+    await renderCreateWithCreationError();
+    const createCalls = mockCreateFeed.mock.calls.length;
+
+    location.hash = '#!/create';
+
+    await waitFor(() => {
+      expect(location.hash).toBe('#/create');
+    });
+    await expectCreateRemountedWithoutErrorChrome();
+    expect(mockCreateFeed).toHaveBeenCalledTimes(createCalls);
   });
 
   it('shows inline token prompt when submitting without a token', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
-    expect(screen.getByText('Enter access token')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: COPY.tokenTitle })).toBeInTheDocument();
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.getByLabelText('Page URL')).toBeDisabled();
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.urlLabel).closest('[inert]')).not.toBeNull();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Set up your own instance with Docker.' })).toBeInTheDocument();
-    expect(screen.getByText('Required by this instance.')).toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.dockerSetup })).toBeInTheDocument();
+    expect(screen.getByText(COPY.tokenHint)).toBeInTheDocument();
     expect(screen.queryByText('Paste an access token to keep going.')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(document.activeElement).toBe(document.querySelector('#access-token'));
     });
-    expect(mockConvertFeed).not.toHaveBeenCalled();
+    expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
   it('promotes included feeds when feed creation is disabled', () => {
@@ -222,18 +367,18 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Try a working included feed')).toBeInTheDocument();
+    expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
       'href',
       '/microsoft.com/azure-products.rss'
     );
-    expect(screen.getByText('Feed creation is disabled on this instance.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
   });
 
   it('renders the result panel when a feed is available', async () => {
     history.replaceState({}, '', 'http://localhost:3000/#/result/example-token');
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: {
         feed: {
           id: 'feed-123',
@@ -258,8 +403,8 @@ describe('App', () => {
         ],
       },
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -267,22 +412,22 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'result');
-    expect(screen.getByRole('button', { name: 'Create another feed' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Open feed' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Bookmarklet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.openFeed })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();
-    expect(screen.getByText('Feed link created')).toBeInTheDocument();
-    expect(screen.getByText('Preview unavailable right now.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
+    expect(screen.getByText(COPY.previewUnavailable)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create another feed' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createAnother }));
     return waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
   });
 
-  it('surfaces conversion errors to the user', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+  it('surfaces creation errors to the user', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -292,8 +437,8 @@ describe('App', () => {
         retryAction: 'primary',
         message: 'Access denied',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -301,49 +446,101 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
-    expect(screen.getByText("Couldn't create feed yet")).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
-  it('maps auth conversion failures onto the token_prompt view model', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+  it('presents classified create errors with the wire sentence', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
-        kind: 'auth',
-        code: 'UNAUTHORIZED',
+        kind: 'input',
+        code: 'BLOCKED_SURFACE',
         retryable: false,
-        nextAction: 'enter_token',
+        nextAction: 'correct_input',
         retryAction: 'none',
-        message: 'Access denied',
+        message: 'This website blocked automated access.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
 
     render(<App />);
 
-    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'token_prompt');
-    expect(screen.getByText('Enter access token')).toBeInTheDocument();
-    expect(screen.getByText('Access denied')).toBeInTheDocument();
+    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
   });
 
-  it('shows an explicit loading notice while feed creation is still resolving preview state', () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: true,
+  it('shows instance metadata failure as a banner without create-error chrome', () => {
+    mockUseApiMetadata.mockReturnValue({
+      metadata: undefined,
+      isLoading: false,
+      error: 'Instance unavailable.',
+    });
+
+    render(<App />);
+
+    expect(screen.getByText(COPY.instanceMetadataUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(COPY.instanceUnavailable)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.accessTokenUnavailable)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+    expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
+  });
+
+  it('shows access token load failure with a token title, not metadata heading', () => {
+    mockUseAccessToken.mockReturnValue({
+      token: undefined,
+      hasToken: false,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: COPY.unableToLoadToken,
+    });
+
+    render(<App />);
+
+    expect(screen.getByText(COPY.accessTokenUnavailable)).toBeInTheDocument();
+    expect(screen.getByText(COPY.unableToLoadToken)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.instanceMetadataUnavailable)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+  });
+
+  it('shows title-only creating notice without preview copy', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: true,
       result: undefined,
       error: undefined,
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
 
     render(<App />);
 
-    expect(screen.getByText('Creating feed link')).toBeInTheDocument();
+    expect(screen.getByText(COPY.creating)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.previewChecking)).not.toBeInTheDocument();
+  });
+
+  it('keeps the token dialog open while creating', () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: true,
+      result: undefined,
+      error: undefined,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
+      clearResult: mockClearResult,
+      retryPreviewFetch: mockRetryPreviewFetch,
+    });
+    history.replaceState({}, '', 'http://localhost:3000/#/token?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByRole('button', { name: COPY.creating })).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
   });
 
   it('clears stored token from instance info', () => {
@@ -358,7 +555,7 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Logout' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.logout }));
 
     expect(mockClearToken).toHaveBeenCalled();
   });
@@ -377,34 +574,34 @@ describe('App', () => {
 
     const utilityItems = [
       ...screen
-        .getByLabelText('Utilities')
+        .getByLabelText(COPY.utilities)
         .querySelectorAll(':scope .utility-strip__items > a, :scope .utility-strip__items > button'),
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
-      'Try included feeds',
-      'Bookmarklet',
-      'Logout',
-      'Install from Docker Hub',
-      'OpenAPI spec',
-      'Source code',
+      COPY.tryIncludedFeeds,
+      COPY.bookmarkletTitle,
+      COPY.logout,
+      COPY.dockerInstall,
+      COPY.openapiSpec,
+      COPY.sourceCode,
     ]);
   });
 
   it('saves access token and resumes feed creation from the inline prompt', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save and continue' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.saveAndContinue }));
 
     await waitFor(() => {
       expect(mockSaveToken).toHaveBeenCalledWith('token-123');
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'token-123');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'token-123');
     });
   });
 
@@ -417,7 +614,7 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    mockConvertFeed.mockRejectedValueOnce(
+    mockCreateFeed.mockRejectedValueOnce(
       Object.assign(new Error('Unauthorized'), {
         code: 'UNAUTHORIZED',
         status: 401,
@@ -427,22 +624,20 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByText('Enter access token')).toBeInTheDocument();
-      expect(
-        screen.getByText('Access token was rejected. Paste a valid token to continue.')
-      ).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: COPY.tokenTitle })).toBeInTheDocument();
+      expect(screen.getByText(COPY.tokenRejected)).toBeInTheDocument();
       expect(mockClearToken).toHaveBeenCalled();
-      expect(mockClearConversionError).toHaveBeenCalled();
+      expect(mockClearCreationError).toHaveBeenCalled();
     });
   });
 
-  it('clears stale conversion error when backing out of token recovery', async () => {
+  it('clears stale creation error when backing out of the token gate', async () => {
     mockUseAccessToken.mockReturnValue({
       token: 'saved-token',
       hasToken: true,
@@ -451,7 +646,7 @@ describe('App', () => {
       isLoading: false,
       error: undefined,
     });
-    mockConvertFeed.mockRejectedValueOnce(
+    mockCreateFeed.mockRejectedValueOnce(
       Object.assign(new Error('Unauthorized'), {
         code: 'UNAUTHORIZED',
         status: 401,
@@ -461,28 +656,28 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
-    await screen.findByText('Access token was rejected. Paste a valid token to continue.');
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    await screen.findByText(COPY.tokenRejected);
+    fireEvent.click(screen.getByRole('button', { name: COPY.back }));
 
     await waitFor(() => {
       expect(location.hash).toMatch(/^#\/create/);
     });
-    expect(screen.queryByText("Couldn't create feed yet")).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
     expect(screen.queryByText('Unauthorized')).not.toBeInTheDocument();
   });
 
   it('submits the token prompt with Enter', async () => {
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Generate feed URL' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
     fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
@@ -497,7 +692,7 @@ describe('App', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
-    const bookmarklet = screen.getByRole('link', { name: 'Bookmarklet' });
+    const bookmarklet = screen.getByRole('link', { name: COPY.bookmarkletTitle });
     expect(bookmarklet.getAttribute('href')).toContain('/#/create?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
   });
@@ -507,15 +702,16 @@ describe('App', () => {
 
     render(<App />);
 
-    await screen.findByText('Enter access token');
+    await screen.findByRole('heading', { name: COPY.tokenTitle });
     expect(location.hash).toMatch(/^#\/token/);
-    expect(screen.getByLabelText('Page URL')).toHaveValue('https://example.com/articles');
-    expect(mockConvertFeed).not.toHaveBeenCalled();
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
+    expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
   it('shows generic retry action for alternate retry metadata and reruns create', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -525,8 +721,8 @@ describe('App', () => {
         retryAction: 'alternate',
         message: 'Browserless failed.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -541,21 +737,21 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.tryAgain }));
 
     expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
   });
 
   it('shows Try again for primary retry metadata and reruns the create flow', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -565,8 +761,8 @@ describe('App', () => {
         retryAction: 'primary',
         message: 'Browserless failed.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -581,19 +777,19 @@ describe('App', () => {
 
     render(<App />);
 
-    fireEvent.input(screen.getByLabelText('Page URL'), {
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'https://example.com/articles' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.tryAgain }));
 
     await waitFor(() => {
-      expect(mockConvertFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
     });
   });
 
-  it('does not treat non-token forbidden failures as token rejection or strategy-recovery UX', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+  it('does not treat non-token forbidden failures as token rejection', async () => {
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'server',
@@ -603,8 +799,8 @@ describe('App', () => {
         retryAction: 'none',
         message: 'URL not allowed for this account',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -621,17 +817,15 @@ describe('App', () => {
 
     await screen.findByText('URL not allowed for this account');
     expect(mockClearToken).not.toHaveBeenCalled();
-    expect(screen.queryByText('Enter access token')).not.toBeInTheDocument();
-    expect(
-      screen.queryByText('Access token was rejected. Paste a valid token to continue.')
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.tokenRejected)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Retry with .*/ })).not.toBeInTheDocument();
   });
 
   it('keeps extraction-empty failures generic and input-corrective', async () => {
-    mockUseFeedConversion.mockReturnValue({
-      isConverting: false,
+    mockUseFeedCreation.mockReturnValue({
+      isCreating: false,
       result: undefined,
       error: {
         kind: 'input',
@@ -641,8 +835,8 @@ describe('App', () => {
         retryAction: 'none',
         message: 'Could not extract feed items. Try a more specific listing URL or explicit selectors.',
       },
-      convertFeed: mockConvertFeed,
-      clearError: mockClearConversionError,
+      createFeed: mockCreateFeed,
+      clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
     });
@@ -660,9 +854,77 @@ describe('App', () => {
     await screen.findByText(
       'Could not extract feed items. Try a more specific listing URL or explicit selectors.'
     );
-    expect(screen.queryByText('Enter access token')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
+  });
+
+  it('returns non-auth token save failures onto create with notice', async () => {
+    mockCreateFeed.mockRejectedValueOnce({
+      kind: 'server',
+      code: 'INTERNAL_SERVER_ERROR',
+      retryable: true,
+      nextAction: 'retry',
+      retryAction: 'primary',
+      message: 'Upstream failed',
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'token-123' } });
+    fireEvent.click(screen.getByRole('button', { name: COPY.saveAndContinue }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.getByText('Upstream failed')).toBeInTheDocument();
+  });
+
+  it('cancels the token dialog with Back, Escape, and backdrop', async () => {
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+
+    expect(document.querySelector('dialog')).toHaveAttribute('open');
+    const accessTokenInput = document.querySelector('#access-token') as HTMLInputElement;
+    fireEvent.input(accessTokenInput, { target: { value: 'secret-draft' } });
+    fireEvent.click(screen.getByRole('button', { name: COPY.back }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+    const dialog = document.querySelector('dialog');
+    expect(dialog).toHaveAttribute('open');
+    expect((document.querySelector('#access-token') as HTMLInputElement).value).toBe('');
+    fireEvent(dialog as HTMLDialogElement, new Event('cancel', { bubbles: true }));
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+    const openDialog = document.querySelector('dialog') as HTMLDialogElement;
+    expect(openDialog).toHaveAttribute('open');
+    fireEvent.click(openDialog);
+
+    await waitFor(() => {
+      expect(location.hash).toMatch(/^#\/create/);
+    });
+    expect(document.querySelector('dialog')).toBeNull();
   });
 
   it('shows the utility links in a user-focused order', () => {
@@ -670,25 +932,25 @@ describe('App', () => {
     render(<App />);
 
     const utilityLinks = [
-      ...screen.getByLabelText('Utilities').querySelectorAll(':scope .utility-strip__items > a'),
+      ...screen.getByLabelText(COPY.utilities).querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
-      'Try included feeds',
-      'Bookmarklet',
-      'Install from Docker Hub',
-      'OpenAPI spec',
-      'Source code',
+      COPY.tryIncludedFeeds,
+      COPY.bookmarkletTitle,
+      COPY.dockerInstall,
+      COPY.openapiSpec,
+      COPY.sourceCode,
     ]);
 
-    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.openapiSpec })).toHaveAttribute(
       'href',
       'https://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: 'Try included feeds' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.tryIncludedFeeds })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );
-    expect(screen.getByRole('link', { name: 'Install from Docker Hub' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.dockerInstall })).toHaveAttribute(
       'href',
       'https://hub.docker.com/r/html2rss/web'
     );
@@ -717,7 +979,7 @@ describe('App', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     render(<App />);
 
-    expect(screen.getByRole('link', { name: 'OpenAPI spec' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.openapiSpec })).toHaveAttribute(
       'href',
       'http://localhost:3000/openapi.yaml'
     );
@@ -728,7 +990,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Utilities')).toBeInTheDocument();
+      expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
     });
   });
 });

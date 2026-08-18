@@ -1,4 +1,5 @@
 import type { FeedRecord } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import {
   buildStructuredError,
   normalizeFeedCreationErrorFromResponse,
@@ -7,7 +8,6 @@ import {
 import { normalizeString } from './feedParsers';
 import { readJsonResponse } from './feedPreviewClient';
 
-// Re-export public APIs from submodules for 100% backward compatibility
 export * from './feedErrors';
 export * from './feedParsers';
 export * from './feedPreviewClient';
@@ -52,7 +52,7 @@ export async function requestFeedCreation(url: string, token: string): Promise<F
       true,
       'retry',
       'primary',
-      'Unable to start feed generation.',
+      COPY.unableToStartCreation,
       response.status
     );
   }

@@ -71,8 +71,8 @@ RSpec.describe 'public/rss.xsl' do
   it 'preserves plain-text angle brackets while stripping actual html tags' do
     doc = Nokogiri::HTML(rendered_html)
 
-    expect(doc.css('.feed-card__title').last.text.strip).to eq('Math 1 < 2 > 0')
-    expect(doc.css('.feed-card__excerpt')[1].text.strip).to eq('Math 1 < 2 > 0')
+    expect(doc.css('.ui-item__title').last.text.strip).to eq('Math 1 < 2 > 0')
+    expect(doc.css('.ui-item__excerpt')[1].text.strip).to eq('Math 1 < 2 > 0')
   end
 
   it 'surfaces last build time in the hero instead of decorative quality pills' do

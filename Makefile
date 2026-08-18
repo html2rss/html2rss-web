@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
 
 RUBOCOP_FLAGS ?= --cache false
 
@@ -76,9 +76,14 @@ lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Stylelint + P
 	@cd frontend && pnpm run lint
 	@echo "Running Stylelint..."
 	@cd frontend && pnpm exec stylelint "../public/shared-ui.css" "**/*.css"
+	@$(MAKE) lint-css-primitives
 	@echo "Running Prettier format check..."
 	@cd frontend && pnpm run format:check
 	@echo "JavaScript linting complete!"
+
+lint-css-primitives: ## Fail if app CSS redefines shared primitives or reintroduces banned tokens
+	@echo "Checking CSS primitive ownership..."
+	@bundle exec ruby bin/lint-css-primitives
 
 lintfix: lintfix-ruby lintfix-js ## Auto-fix all linting issues (Ruby + Frontend)
 	@echo "All lintfix complete!"

@@ -163,7 +163,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.empty_reason).to eq('content_extraction_empty')
       expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY)
       expect(result.error_message).to include('No feed items extracted after auto fallback')
-      expect(result.strategy_attempts).to eq(
+      expect(result.diagnostics.strategy_attempts).to eq(
         [
           { strategy: :faraday, items_count: 0, error_class: nil },
           { strategy: :botasaurus, items_count: 0, error_class: nil }
@@ -192,7 +192,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
-      expect(result.strategy_attempts).to eq([{ strategy: :faraday, items_count: 0, error_class: nil }])
+      expect(result.diagnostics.strategy_attempts).to eq([{ strategy: :faraday, items_count: 0, error_class: nil }])
     end
   end
 
@@ -218,6 +218,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.status).to eq(:error)
       expect(result.decision.code).to eq('NON_CACHEABLE')
       expect(result.empty_reason).to be_nil
+      expect(result.diagnostics).to eq(Html2rss::Web::ErrorClassifier::Diagnostics.empty)
     end
   end
 end

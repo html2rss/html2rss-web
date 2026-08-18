@@ -52,6 +52,7 @@ RSpec.describe Html2rss::Web::App do
       payload: nil,
       ttl_seconds: 600,
       cache_key: 'feed_result:error',
+      decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
       error_message: 'upstream timeout',
       empty_reason: nil
     )

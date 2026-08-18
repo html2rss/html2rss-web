@@ -1,41 +1,54 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { useFeedConversion } from './useFeedConversion';
+import { useFeedCreation } from './useFeedCreation';
+import { decideJourney } from './decideJourney';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
-import { normalizeUserUrl } from '../utils/url';
+import { expandCreateUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
+import { COPY } from '../journey/copy';
 import type { AppRoute } from '../routes/appRoute';
+import type { MayCreateResult } from '../session';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
-const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
+
+interface RouteNavigationOptions {
+  replace?: boolean;
+}
 
 export interface FeedFlowDependencies {
   token: string | undefined;
-  metadata: any;
   isLoading: boolean;
+  feedCreationEnabled: boolean;
+  mayCreate: (accessToken?: string) => MayCreateResult;
   saveToken: (token: string) => Promise<void>;
   clearToken: () => void;
   route: AppRoute;
-  navigate: (route: AppRoute) => void;
+  navigate: (route: AppRoute, options?: RouteNavigationOptions) => void;
+  createEntryKey: number;
 }
 
+/**
+ * Sole frontend journey owner: navigate transitions + closed UI kind via decideJourney.
+ */
 export function useFeedFlow({
   token,
-  metadata,
   isLoading,
+  feedCreationEnabled,
+  mayCreate,
   saveToken,
   clearToken,
   route,
   navigate,
+  createEntryKey,
 }: FeedFlowDependencies) {
   const {
-    isConverting,
+    isCreating,
     result,
-    error: conversionError,
-    convertFeed,
+    error: creationError,
+    createFeed,
     clearError,
     clearResult,
     retryPreviewFetch,
-  } = useFeedConversion();
+  } = useFeedCreation();
 
   const [feedFormData, setFeedFormData] = useState(() => loadFeedDraftState() ?? { url: '' });
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
@@ -44,20 +57,22 @@ export function useFeedFlow({
   const [bookmarkletNotice, setBookmarkletNotice] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
 
-  const autoSubmitUrlReference = useRef<string | undefined>(route.prefillUrl);
+  const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
+  const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
   const hasAutoSubmittedReference = useRef(false);
+  const previousRouteKindReference = useRef(route.kind);
+  const previousCreateEntryKeyReference = useRef(createEntryKey);
 
   // Prefill URL effect
   useEffect(() => {
-    if (!route.prefillUrl) return;
-    autoSubmitUrlReference.current = route.prefillUrl;
+    if (!routePrefillUrl) return;
+    autoSubmitUrlReference.current = routePrefillUrl;
     if (feedFormData.url) return;
 
-    setFeedFormData((previous) => ({ ...previous, url: route.prefillUrl ?? previous.url }));
-  }, [feedFormData.url, route.prefillUrl]);
+    setFeedFormData((previous) => ({ ...previous, url: routePrefillUrl }));
+  }, [feedFormData.url, routePrefillUrl]);
 
-  const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
-  const submitDisabled = isConverting || !feedCreation.enabled;
+  const submitDisabled = isCreating || !feedCreationEnabled;
 
   const onFeedFieldChange = (key: 'url', value: string) => {
     setFeedFormData((previous) => {
@@ -74,22 +89,26 @@ export function useFeedFlow({
   };
 
   const attemptFeedCreation = async (accessToken: string) => {
-    const normalizedUrl = normalizeUserUrl(feedFormData.url);
-
-    if (!normalizedUrl) {
-      setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, url: 'Source URL is required.' });
-      return false;
-    }
-
-    if (!feedCreation.enabled) {
+    const expanded = expandCreateUrl(feedFormData.url);
+    if ('error' in expanded) {
       setFeedFieldErrors({
         ...EMPTY_FEED_ERRORS,
-        form: 'Feed creation is disabled on this instance.',
+        url: expanded.error === 'empty' ? COPY.urlRequired : COPY.invalidUrlFormat,
+      });
+      return false;
+    }
+    const normalizedUrl = expanded.ok;
+
+    const gate = mayCreate(accessToken);
+    if (gate === 'disabled') {
+      setFeedFieldErrors({
+        ...EMPTY_FEED_ERRORS,
+        form: COPY.creationDisabled,
       });
       return false;
     }
 
-    if (feedCreation.access_token_required && !accessToken) {
+    if (gate === 'needToken') {
       setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
       clearError();
       setTokenError('');
@@ -99,7 +118,7 @@ export function useFeedFlow({
 
     try {
       setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
-      const createdResult = await convertFeed(normalizedUrl, accessToken);
+      const createdResult = await createFeed(normalizedUrl, accessToken);
       clearFeedDraftState();
       navigate({ kind: 'result', feedToken: createdResult.feed.feed_token });
       setTokenError('');
@@ -112,17 +131,15 @@ export function useFeedFlow({
         clearError();
         setTokenDraft('');
         if (route.kind !== 'token') navigate({ kind: 'token', prefillUrl: normalizedUrl });
-        setTokenError('Access token was rejected. Paste a valid token to continue.');
+        setTokenError(COPY.tokenRejected);
         setFeedFieldErrors(EMPTY_FEED_ERRORS);
         return false;
       }
 
-      if (failure.nextAction === 'correct_input') {
-        setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: failure.message });
-        return false;
-      }
-
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: failure.message });
+      if (route.kind === 'token') {
+        navigate({ kind: 'create', prefillUrl: normalizedUrl });
+      }
       return false;
     }
   };
@@ -141,7 +158,7 @@ export function useFeedFlow({
       const created = await attemptFeedCreation(normalizedToken);
       if (created) setTokenDraft('');
     } catch (error) {
-      setTokenError(error instanceof Error ? error.message : 'Unable to save access token.');
+      setTokenError(error instanceof Error ? error.message : COPY.unableToSaveToken);
     }
   };
 
@@ -152,12 +169,14 @@ export function useFeedFlow({
     if (isLoading) return;
     if (feedFormData.url !== autoSubmitUrl) return;
 
-    if (feedCreation.access_token_required && !token) {
+    if (mayCreate(token) === 'needToken') {
       hasAutoSubmittedReference.current = true;
-      setFeedFormData((previous) => ({ ...previous, url: normalizeUserUrl(autoSubmitUrl) }));
+      const expanded = expandCreateUrl(autoSubmitUrl);
+      const prefillUrl = 'error' in expanded ? autoSubmitUrl : expanded.ok;
+      setFeedFormData((previous) => ({ ...previous, url: prefillUrl }));
       setTokenError('');
       if (route.kind !== 'token') {
-        navigate({ kind: 'token', prefillUrl: normalizeUserUrl(autoSubmitUrl) });
+        navigate({ kind: 'token', prefillUrl });
       }
       return;
     }
@@ -165,12 +184,54 @@ export function useFeedFlow({
     hasAutoSubmittedReference.current = true;
     setFeedFieldErrors(EMPTY_FEED_ERRORS);
     void attemptFeedCreation(token ?? '');
-  }, [feedCreation.access_token_required, feedFormData.url, isLoading, navigate, route.kind, token]);
+  }, [feedFormData.url, isLoading, mayCreate, navigate, route.kind, token]);
+
+  // Recover unmatched result routes onto a remounted create view.
+  useEffect(() => {
+    if (route.kind !== 'result') return;
+
+    const isMatched = Boolean(result && result.feed.feed_token === route.feedToken);
+    if (isMatched) return;
+
+    // Do not carry a prefill URL — that would re-trigger auto-submit and bounce back to result.
+    navigate({ kind: 'create' }, { replace: true });
+  }, [navigate, result, route]);
+
+  useEffect(() => {
+    const previousKind = previousRouteKindReference.current;
+    const previousCreateEntryKey = previousCreateEntryKeyReference.current;
+    previousRouteKindReference.current = route.kind;
+    previousCreateEntryKeyReference.current = createEntryKey;
+
+    if (route.kind !== 'create') return;
+
+    const didKindChangeToCreate = previousKind !== 'create';
+    const isSameKindCreateEntry = previousKind === 'create' && previousCreateEntryKey !== createEntryKey;
+    if (!didKindChangeToCreate && !isSameKindCreateEntry) return;
+
+    clearError();
+    clearResult();
+    setTokenError('');
+    setTokenDraft('');
+    if (isSameKindCreateEntry) setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    if (!route.prefillUrl) autoSubmitUrlReference.current = undefined;
+    setFocusCreateComposerKey((current) => current + 1);
+  }, [createEntryKey, route]);
+
+  const viewModel = decideJourney({
+    creationError,
+    feedFieldErrors,
+    isCreating,
+    route,
+    tokenError,
+    result,
+  });
 
   return {
-    isConverting,
+    viewModel,
+    isCreating,
     result,
-    conversionError,
+    creationError,
     clearError,
     clearResult,
     retryPreviewFetch,
@@ -181,12 +242,13 @@ export function useFeedFlow({
     bookmarkletNotice,
     focusCreateComposerKey,
     submitDisabled,
-    feedCreationEnabled: feedCreation.enabled,
+    feedCreationEnabled,
     onFeedFieldChange,
     onFeedSubmit,
     onSaveToken,
     onCancelTokenPrompt: () => {
       setTokenError('');
+      setTokenDraft('');
       clearError();
       navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
     },

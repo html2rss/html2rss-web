@@ -109,6 +109,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         payload: nil,
         ttl_seconds: 600,
         cache_key: 'feed_result:error',
+        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
         error_message: 'timeout',
         empty_reason: nil
       )
@@ -129,6 +130,36 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       expect(response['Cache-Control']).to include('no-store')
       expect(response['Vary']).to eq('Accept')
+    end
+
+    it 'emits hard error from RenderResult fields including diagnostics', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      attempts = [{ strategy: :faraday, items_count: 0, error_class: 'Timeout::Error' }]
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(
+        Html2rss::Web::Feeds::Contracts::RenderResult.new(
+          status: :error,
+          decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
+          ttl_seconds: 600,
+          cache_key: 'feed_result:error-diag',
+          error_message: 'timeout',
+          diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.from_attempts(attempts)
+        )
+      )
+
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'failure',
+        details: include(
+          strategy: :faraday,
+          url: 'https://example.com',
+          feed_name: 'example',
+          error_code: 'INTERNAL_SERVER_ERROR',
+          error_message: 'timeout',
+          strategy_attempts: attempts
+        ),
+        level: :warn
+      )
     end
   end
 
@@ -153,10 +184,12 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         cache_key: 'feed_result:empty',
         decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
         empty_reason: 'content_extraction_empty',
-        strategy_attempts: [
-          { strategy: :faraday, items_count: 0, error_class: nil },
-          { strategy: :botasaurus, items_count: 0, error_class: nil }
-        ]
+        diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.from_attempts(
+          [
+            { strategy: :faraday, items_count: 0, error_class: nil },
+            { strategy: :botasaurus, items_count: 0, error_class: nil }
+          ]
+        )
       )
     end
 
@@ -181,7 +214,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           strategy: :faraday,
           url: 'https://example.com',
           reason: 'content_extraction_empty',
-          strategy_attempts: result.strategy_attempts
+          strategy_attempts: result.diagnostics.strategy_attempts
         ),
         level: :warn
       )
@@ -207,6 +240,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         ),
         ttl_seconds: 600,
         cache_key: 'feed_result:feed-empty',
+        decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
         error_message: nil,
         empty_reason: 'feed_empty'
       )

@@ -26,6 +26,9 @@
   --motion-nudge: 0.04rem;
   --layout-field-max-width: 38rem;
   --eyebrow-letter-spacing: 0.08em;
+  --letter-spacing-meta: 0.05em;
+  --letter-spacing-display: -0.03em;
+  --letter-spacing-title: -0.01em;
   --brand-lockup-gap: 0.3rem;
   --brand-lockup-mark-size: 1.7rem;
   --brand-lockup-mark-padding: 0.3rem;
@@ -53,6 +56,8 @@
   --overlay-hero-accent: rgb(var(--color-rgb-reader) / 12%);
   --overlay-icon-top: rgb(var(--color-rgb-white) / 8%);
   --overlay-icon-base: rgb(var(--color-rgb-white) / 3%);
+  --overlay-scrim: rgb(var(--color-rgb-black) / 64%);
+  --canvas: #080808;
   --surface-base: rgb(var(--color-rgb-white) / 2%);
   --surface-elevated: var(--overlay-top-light);
   --surface-chip: rgb(var(--color-rgb-white) / 2.5%);
@@ -79,6 +84,8 @@
   --section-gap-tight: var(--space-4);
   --section-gap: var(--space-5);
   --transition-fast: 140ms ease;
+  --font-weight-semibold: 600;
+  --font-weight-medium: 500;
 }
 
 *,
@@ -95,7 +102,7 @@ body {
 html {
   background:
     radial-gradient(circle at top, var(--overlay-top-light), transparent 32%),
-    linear-gradient(180deg, #080808 0%, #040404 100%);
+    linear-gradient(180deg, var(--canvas) 0%, #040404 100%);
 }
 
 body {
@@ -118,15 +125,50 @@ textarea {
   text-rendering: optimizelegibility;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
 }
 
-a:hover,
-a:focus-visible {
+a:hover {
   text-decoration: underline;
   text-underline-offset: 0.16em;
+}
+
+a:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+  box-shadow: var(--focus-ring);
+  border-color: var(--border-strong);
 }
 
 button,
@@ -179,6 +221,10 @@ textarea {
   border-radius: var(--radius-md);
 }
 
+.ui-card--framed {
+  box-shadow: var(--shadow-elevated);
+}
+
 .ui-hero {
   justify-items: start;
   text-align: left;
@@ -216,7 +262,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-muted);
+  border: var(--border-width) solid var(--border-muted);
   border-radius: 1.15rem;
   background:
     linear-gradient(180deg, var(--overlay-icon-top), var(--surface-base)),
@@ -243,7 +289,7 @@ textarea {
   font-family: var(--font-family-display);
   font-size: clamp(1.9rem, 4.2vw, 2.85rem);
   line-height: 0.98;
-  letter-spacing: -0.03em;
+  letter-spacing: var(--letter-spacing-display);
 }
 
 .ui-lede {
@@ -258,7 +304,126 @@ textarea {
   font-size: var(--font-size-00);
   letter-spacing: var(--eyebrow-letter-spacing);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
+}
+
+.ui-eyebrow--ghost {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ui-item-list {
+  display: grid;
+  width: 100%;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.ui-item {
+  min-width: 0;
+  padding: var(--space-4) 0;
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.ui-item--card {
+  padding: clamp(var(--space-3), 3vw, var(--space-4));
+  border-bottom: 0;
+}
+
+.ui-item__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-muted);
+  font-size: var(--font-size-00);
+  letter-spacing: var(--letter-spacing-meta);
+  text-transform: uppercase;
+  font-weight: var(--font-weight-medium);
+}
+
+.ui-item__title {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: var(--font-family-display);
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  line-height: 1.25;
+  letter-spacing: var(--letter-spacing-title);
+  overflow-wrap: break-word;
+}
+
+.ui-item__excerpt {
+  margin: 0;
+  color: var(--text-body);
+  font-size: var(--font-size-0);
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+
+.ui-item__actions {
+  margin: 0;
+}
+
+.ui-item__actions a {
+  color: var(--eyebrow-color);
+  font-size: var(--font-size-00);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-meta);
+  text-transform: uppercase;
+}
+
+.ui-item__actions a:hover,
+.ui-item__actions a:focus-visible {
+  color: var(--text-strong);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--border-muted);
+  border-radius: var(--radius-pill);
+  background: var(--surface-elevated);
+  color: var(--text-strong);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--border-strong);
+}
+
+.input--mono {
+  font-family: var(--font-family-mono);
+}
+
+.input--lg {
+  min-height: var(--control-input-lg-min-height, 4.5rem);
+  padding-inline: var(--control-input-lg-padding-inline, 1.25rem 5rem);
+  font-size: var(--control-input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
+  letter-spacing: var(--control-input-lg-letter-spacing, var(--letter-spacing-display));
+}
+
+.input:disabled {
+  cursor: not-allowed;
 }
 
 .btn {
@@ -273,7 +438,7 @@ textarea {
   color: var(--text-strong);
   text-decoration: none;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   transition:
     transform var(--transition-fast),
     background-color var(--transition-fast),
@@ -324,7 +489,11 @@ textarea {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--eyebrow-color);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-00);
+  letter-spacing: var(--letter-spacing-meta);
+  text-transform: uppercase;
 }
 
 .btn--quiet:hover:not(:disabled),
@@ -334,7 +503,9 @@ textarea {
 }
 
 .brand-lockup {
-  display: inline-grid;
+  display: grid;
+  width: max-content;
+  margin-inline: auto;
   justify-items: center;
   gap: var(--brand-lockup-gap);
   text-decoration: none;
@@ -375,7 +546,7 @@ textarea {
   color: var(--text-strong);
   font-family: var(--font-family-display);
   font-size: var(--brand-lockup-wordmark-size);
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
   letter-spacing: 0.01em;
 }
 
