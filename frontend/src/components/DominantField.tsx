@@ -85,7 +85,7 @@ export function DominantField({
           disabled={disabled}
           onInput={onInput}
           onKeyDown={(event) => {
-            if (onAction || event.key !== 'Enter' || event.isComposing) return;
+            if (onAction || event.key !== 'Enter' || event.isComposing || event.repeat) return;
 
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();

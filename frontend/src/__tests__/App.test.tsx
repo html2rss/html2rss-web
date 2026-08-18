@@ -219,6 +219,32 @@ describe('App', () => {
     });
   });
 
+  it('does not submit extra create requests when Enter key-repeats', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    const urlField = screen.getByLabelText(COPY.urlLabel);
+    fireEvent.keyDown(urlField, { key: 'Enter' });
+    fireEvent.keyDown(urlField, { key: 'Enter', repeat: true });
+    fireEvent.keyDown(urlField, { key: 'Enter', repeat: true });
+
+    await waitFor(() => {
+      expect(mockCreateFeed).toHaveBeenCalledTimes(1);
+    });
+    expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+  });
+
   it('auto-submits a prefilled url without persisting strategy state', async () => {
     mockUseAccessToken.mockReturnValue({
       token: 'saved-token',

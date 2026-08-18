@@ -159,6 +159,22 @@ describe('ResultDisplay', () => {
     });
   });
 
+  it('does not copy when Enter is pressed on the feed URL field', () => {
+    render(
+      <ResultDisplay
+        viewModel={mockViewModel}
+        onCreateAnother={mockOnCreateAnother}
+        onRetryPreview={mockOnRetryPreview}
+      />
+    );
+
+    const feedUrlField = screen.getByLabelText(COPY.feedUrl);
+    fireEvent.keyDown(feedUrlField, { key: 'Enter' });
+    fireEvent.keyDown(feedUrlField, { key: 'Enter', repeat: true });
+
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+  });
+
   it('renders PREVIEW_HTTP warning messages from the loader', () => {
     render(
       <ResultDisplay
