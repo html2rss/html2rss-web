@@ -84,6 +84,12 @@ export function DominantField({
           readOnly={readOnly}
           disabled={disabled}
           onInput={onInput}
+          onKeyDown={(event) => {
+            if (onAction || event.key !== 'Enter' || event.isComposing) return;
+
+            event.preventDefault();
+            event.currentTarget.form?.requestSubmit();
+          }}
         />
         {error ? <span class="field-error">{error}</span> : undefined}
       </label>

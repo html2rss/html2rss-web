@@ -197,6 +197,28 @@ describe('App', () => {
     });
   });
 
+  it('submits create requests when Enter is pressed on the URL field', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.keyDown(screen.getByLabelText(COPY.urlLabel), { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://example.com/articles', 'saved-token');
+    });
+  });
+
   it('auto-submits a prefilled url without persisting strategy state', async () => {
     mockUseAccessToken.mockReturnValue({
       token: 'saved-token',

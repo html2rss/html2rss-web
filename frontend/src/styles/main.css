@@ -299,6 +299,7 @@
   max-width: var(--layout-field-max-width);
   margin: 0 auto;
   gap: var(--space-3);
+  background: linear-gradient(180deg, var(--overlay-top-light), transparent), var(--canvas);
 }
 
 .token-gate__copy {

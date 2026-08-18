@@ -57,6 +57,7 @@
   --overlay-icon-top: rgb(var(--color-rgb-white) / 8%);
   --overlay-icon-base: rgb(var(--color-rgb-white) / 3%);
   --overlay-scrim: rgb(var(--color-rgb-black) / 64%);
+  --canvas: #080808;
   --surface-base: rgb(var(--color-rgb-white) / 2%);
   --surface-elevated: var(--overlay-top-light);
   --surface-chip: rgb(var(--color-rgb-white) / 2.5%);
@@ -101,7 +102,7 @@ body {
 html {
   background:
     radial-gradient(circle at top, var(--overlay-top-light), transparent 32%),
-    linear-gradient(180deg, #080808 0%, #040404 100%);
+    linear-gradient(180deg, var(--canvas) 0%, #040404 100%);
 }
 
 body {
@@ -502,7 +503,9 @@ textarea {
 }
 
 .brand-lockup {
-  display: inline-grid;
+  display: grid;
+  width: max-content;
+  margin-inline: auto;
   justify-items: center;
   gap: var(--brand-lockup-gap);
   text-decoration: none;

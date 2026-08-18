@@ -112,7 +112,7 @@ This file owns:
 - page-shell / workspace composition
 - form and dominant-field composition
 - notice state composition
-- token dialog host (transparent) plus inner `.ui-card` token-gate; `::backdrop` uses `--overlay-scrim`
+- token dialog host (transparent) plus inner `.token-gate` with an opaque canvas fill; `::backdrop` uses `--overlay-scrim`
 - result-page composition
 - utility strip / footer composition
 

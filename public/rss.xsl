@@ -22,7 +22,9 @@
 
           .feed-page__brand {
             display: grid;
-            justify-items: center;
+            width: 100%;
+            text-align: center;
+            place-items: center;
             margin-bottom: var(--section-gap);
           }
 
