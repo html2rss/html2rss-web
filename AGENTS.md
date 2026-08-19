@@ -50,3 +50,21 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 - **Security first:** No leaking secrets or insecure patterns. See [Security & Safety Rules](docs/README.md#security--safety-rules).
 - **YARD docs:** Strict for public Ruby methods in `app/`. Every public method must have a YARD docstring with typed `@param` and `@return`. See [Architectural Constraints](docs/README.md#architectural-constraints).
 - **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
+
+## Config catalog API
+
+Public feed-directory metadata for embedded and local configs.
+
+| Item | Detail |
+| --- | --- |
+| Endpoint | `GET /api/v1/configs` |
+| Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
+| Disabled response | `404` with `{ "error": "catalog_disabled" }` |
+| Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
+| Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
+| Starter feeds (UI) | `Catalog::Merge.starter_entries` — used by frontend when feed creation is disabled |
+| CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
+| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
+| Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
+
+After handler or envelope changes: `make openapi` and `make ci-ready`.

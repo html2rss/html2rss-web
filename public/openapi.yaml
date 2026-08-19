@@ -44,21 +44,16 @@ paths:
                         type: object
                       instance:
                         properties:
-                          featured_feeds:
-                            items:
-                              properties:
-                                description:
-                                  type: string
-                                path:
-                                  type: string
-                                title:
-                                  type: string
-                              required:
-                              - path
-                              - title
-                              - description
-                              type: object
-                            type: array
+                          catalog:
+                            properties:
+                              enabled:
+                                type: boolean
+                              url:
+                                type: string
+                            required:
+                            - enabled
+                            - url
+                            type: object
                           feed_creation:
                             properties:
                               access_token_required:
@@ -71,7 +66,7 @@ paths:
                             type: object
                         required:
                         - feed_creation
-                        - featured_feeds
+                        - catalog
                         type: object
                     required:
                     - api
@@ -83,12 +78,227 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns API information with trailing slash
+          description: returns catalog pointer metadata
       security:
       - {}
       summary: API metadata
       tags:
       - Root
+  "/configs":
+    get:
+      description: Config catalog
+      operationId: getConfigCatalog
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      configs:
+                        items:
+                          properties:
+                            channel:
+                              properties:
+                                language:
+                                  type: string
+                                title:
+                                  type: string
+                                url:
+                                  type: string
+                              required:
+                              - url
+                              - language
+                              - title
+                              type: object
+                            directory:
+                              properties:
+                                summary:
+                                  type: string
+                                title:
+                                  type: string
+                                topics:
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - title
+                              - summary
+                              - topics
+                              type: object
+                            id:
+                              type: string
+                            parameters:
+                              properties:
+                                defaults:
+                                  properties:
+                                    blog:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    id:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    region:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    repository:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    section:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    user_id:
+                                      type:
+                                      - string
+                                      - 'null'
+                                    username:
+                                      type:
+                                      - string
+                                      - 'null'
+                                  type: object
+                                schema:
+                                  properties:
+                                    blog:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    id:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    region:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    repository:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    section:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    user_id:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                    username:
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type:
+                                      - object
+                                      - 'null'
+                                  type: object
+                              required:
+                              - schema
+                              - defaults
+                              type: object
+                            path:
+                              type: string
+                            source:
+                              type: string
+                          required:
+                          - id
+                          - path
+                          - source
+                          - directory
+                          - channel
+                          - parameters
+                          type: object
+                        type: array
+                    required:
+                    - configs
+                    type: object
+                  meta:
+                    properties:
+                      catalog_version:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                    - total
+                    - catalog_version
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                - meta
+                type: object
+          description: returns the merged catalog with CORS headers
+        '404':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                required:
+                - error
+                type: object
+          description: returns 404 when the catalog is disabled
+      security:
+      - {}
+      summary: Config catalog
+      tags:
+      - Catalog
+    options:
+      description: Config catalog
+      operationId: getConfigCatalog
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties: {}
+              type: object
+      responses:
+        '204':
+          description: responds to preflight requests with CORS headers
+      security:
+      - {}
+      summary: Config catalog
+      tags:
+      - Catalog
   "/feeds":
     post:
       description: Create a feed

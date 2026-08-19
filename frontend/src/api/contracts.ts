@@ -75,10 +75,9 @@ export interface ApiMetadataRecord {
       enabled: boolean;
       access_token_required: boolean;
     };
-    featured_feeds?: Array<{
-      path: string;
-      title: string;
-      description: string;
-    }>;
+    catalog?: {
+      enabled: boolean;
+      url: string;
+    };
   };
 }

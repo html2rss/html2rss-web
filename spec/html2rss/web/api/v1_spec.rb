@@ -126,14 +126,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   end
 
   def expected_featured_feeds
-    [
-      ['/microsoft.com/azure-products.rss', 'Azure product updates',
-       'Follow Microsoft Azure product announcements from your own instance.'],
-      ['/phys.org/weekly.rss', 'Top science news of the week',
-       'Try a high-signal feed with stable weekly headlines from the built-in config set.'],
-      ['/softwareleadweekly.com/issues.rss', 'Software Lead Weekly issues',
-       'Follow a long-running newsletter archive from the embedded config catalog.']
-    ].map { |path, title, description| { 'path' => path, 'title' => title, 'description' => description } }
+    []
   end
 
   # @param token [String]
@@ -192,12 +185,15 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
-    it 'returns featured included feeds for trial runs', :aggregate_failures do
+    it 'returns catalog pointer metadata', :aggregate_failures do
       get '/api/v1'
 
       expect(last_response.status).to eq(200)
       json = expect_success_response(last_response)
-      expect(json.dig('data', 'instance', 'featured_feeds')).to eq(expected_featured_feeds)
+      expect(json.dig('data', 'instance', 'catalog')).to eq(
+        'enabled' => true,
+        'url' => 'http://example.org/api/v1/configs'
+      )
     end
 
     it 'returns API information with trailing slash', :aggregate_failures do
@@ -208,6 +204,41 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
       json = expect_success_response(last_response)
       expect(json.dig('data', 'api', 'name')).to eq('html2rss-web API')
+    end
+  end
+
+  describe 'GET /api/v1/configs', openapi: {
+    summary: 'Config catalog',
+    operation_id: 'getConfigCatalog',
+    tags: ['Catalog'],
+    security: [{}]
+  } do
+    it 'returns the merged catalog with CORS headers', :aggregate_failures do
+      get '/api/v1/configs'
+
+      expect(last_response.status).to eq(200)
+      expect(last_response.headers['Access-Control-Allow-Origin']).to eq('*')
+      json = expect_success_response(last_response)
+      expect(json.dig('meta', 'catalog_version')).to eq(1)
+      expect(json.dig('data', 'configs')).to be_an(Array)
+      expect(json.dig('data', 'configs').first).to include('id', 'path', 'source', 'directory', 'channel', 'parameters')
+    end
+
+    it 'returns 404 when the catalog is disabled', :aggregate_failures do
+      ClimateControl.modify(CONFIG_CATALOG_ENABLED: 'false') do
+        get '/api/v1/configs'
+
+        expect(last_response.status).to eq(404)
+        expect(JSON.parse(last_response.body)).to eq('error' => 'catalog_disabled')
+      end
+    end
+
+    it 'responds to preflight requests with CORS headers', :aggregate_failures do
+      options '/api/v1/configs'
+
+      expect(last_response.status).to eq(204)
+      expect(last_response.headers['Access-Control-Allow-Origin']).to eq('*')
+      expect(last_response.headers['Access-Control-Allow-Methods']).to include('GET')
     end
   end
 
