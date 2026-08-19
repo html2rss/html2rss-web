@@ -713,11 +713,7 @@ describe('App', () => {
   });
 
   it('prefills the URL field when landing with a bookmarklet hash route', async () => {
-    history.replaceState(
-      {},
-      '',
-      'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles'
-    );
+    history.replaceState({}, '', 'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles');
 
     render(<App />);
 
@@ -731,11 +727,7 @@ describe('App', () => {
       'html2rss_feed_draft_state',
       JSON.stringify({ url: 'https://old.example.com/page' })
     );
-    history.replaceState(
-      {},
-      '',
-      'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles'
-    );
+    history.replaceState({}, '', 'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles');
 
     render(<App />);
 
