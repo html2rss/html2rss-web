@@ -123,7 +123,7 @@ export type GetConfigCatalogResponses = {
 
 export type GetConfigCatalogResponse = GetConfigCatalogResponses[keyof GetConfigCatalogResponses];
 
-export type GetConfigCatalog2Data = {
+export type OptionsConfigCatalogData = {
     body?: {
         [key: string]: unknown;
     };
@@ -132,14 +132,14 @@ export type GetConfigCatalog2Data = {
     url: '/configs';
 };
 
-export type GetConfigCatalog2Responses = {
+export type OptionsConfigCatalogResponses = {
     /**
      * responds to preflight requests with CORS headers
      */
     204: void;
 };
 
-export type GetConfigCatalog2Response = GetConfigCatalog2Responses[keyof GetConfigCatalog2Responses];
+export type OptionsConfigCatalogResponse = OptionsConfigCatalogResponses[keyof OptionsConfigCatalogResponses];
 
 export type CreateFeedData = {
     body?: {

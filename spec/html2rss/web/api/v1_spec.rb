@@ -232,7 +232,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         expect(JSON.parse(last_response.body)).to eq('error' => 'catalog_disabled')
       end
     end
+  end
 
+  describe 'OPTIONS /api/v1/configs', openapi: {
+    summary: 'Config catalog preflight',
+    operation_id: 'optionsConfigCatalog',
+    tags: ['Catalog'],
+    security: [{}]
+  } do
     it 'responds to preflight requests with CORS headers', :aggregate_failures do
       options '/api/v1/configs'
 

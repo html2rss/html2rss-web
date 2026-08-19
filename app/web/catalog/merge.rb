@@ -52,22 +52,48 @@ module Html2rss
           id = feed_name.to_s
           channel = feed_config[:channel] || {}
 
+          local_entry(id, directory, title, channel)
+        end
+
+        ##
+        # @param id [String]
+        # @param directory [Hash]
+        # @param title [String]
+        # @param channel [Hash]
+        # @return [Hash{Symbol => Object}]
+        def local_entry(id, directory, title, channel)
           {
             id:,
             path: "/#{id}.rss",
             source: 'local',
-            directory: {
-              title: title.to_s,
-              summary: directory[:summary],
-              topics: Array(directory[:topics])
-            }.compact,
-            channel: {
-              url: channel.fetch(:url),
-              language: channel[:language],
-              title: channel[:title] || title.to_s
-            }.compact,
+            directory: local_directory(directory, title),
+            channel: local_channel(channel, title),
             parameters: { schema: {}, defaults: {} }
           }
+        end
+
+        ##
+        # @param directory [Hash]
+        # @param title [String]
+        # @return [Hash{Symbol => Object}]
+        def local_directory(directory, title)
+          {
+            title: title.to_s,
+            summary: directory[:summary],
+            topics: Array(directory[:topics])
+          }.compact
+        end
+
+        ##
+        # @param channel [Hash]
+        # @param title [String]
+        # @return [Hash{Symbol => Object}]
+        def local_channel(channel, title)
+          {
+            url: channel.fetch(:url),
+            language: channel[:language],
+            title: channel[:title] || title.to_s
+          }.compact
         end
       end
     end

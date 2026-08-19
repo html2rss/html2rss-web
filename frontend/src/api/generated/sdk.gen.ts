@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalog2Data, GetConfigCatalog2Responses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
+import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -33,11 +33,11 @@ export const getApiMetadata = <ThrowOnError extends boolean = false>(options?: O
 export const getConfigCatalog = <ThrowOnError extends boolean = false>(options?: Options<GetConfigCatalogData, ThrowOnError>): RequestResult<GetConfigCatalogResponses, GetConfigCatalogErrors, ThrowOnError> => (options?.client ?? client).get<GetConfigCatalogResponses, GetConfigCatalogErrors, ThrowOnError>({ url: '/configs', ...options });
 
 /**
- * Config catalog
+ * Config catalog preflight
  *
- * Config catalog
+ * Config catalog preflight
  */
-export const getConfigCatalog2 = <ThrowOnError extends boolean = false>(options?: Options<GetConfigCatalog2Data, ThrowOnError>): RequestResult<GetConfigCatalog2Responses, unknown, ThrowOnError> => (options?.client ?? client).options<GetConfigCatalog2Responses, unknown, ThrowOnError>({
+export const optionsConfigCatalog = <ThrowOnError extends boolean = false>(options?: Options<OptionsConfigCatalogData, ThrowOnError>): RequestResult<OptionsConfigCatalogResponses, unknown, ThrowOnError> => (options?.client ?? client).options<OptionsConfigCatalogResponses, unknown, ThrowOnError>({
     ...urlSearchParamsBodySerializer,
     url: '/configs',
     ...options,

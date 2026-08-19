@@ -283,8 +283,8 @@ paths:
       tags:
       - Catalog
     options:
-      description: Config catalog
-      operationId: getConfigCatalog
+      description: Config catalog preflight
+      operationId: optionsConfigCatalog
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -296,7 +296,7 @@ paths:
           description: responds to preflight requests with CORS headers
       security:
       - {}
-      summary: Config catalog
+      summary: Config catalog preflight
       tags:
       - Catalog
   "/feeds":
