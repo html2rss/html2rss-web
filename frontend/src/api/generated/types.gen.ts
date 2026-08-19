@@ -13,7 +13,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
     /**
-     * returns API information with trailing slash
+     * returns catalog pointer metadata
      */
     200: {
         data: {
@@ -23,11 +23,10 @@ export type GetApiMetadataResponses = {
                 openapi_url: string;
             };
             instance: {
-                featured_feeds: Array<{
-                    description: string;
-                    path: string;
-                    title: string;
-                }>;
+                catalog: {
+                    enabled: boolean;
+                    url: string;
+                };
                 feed_creation: {
                     access_token_required: boolean;
                     enabled: boolean;
@@ -39,6 +38,108 @@ export type GetApiMetadataResponses = {
 };
 
 export type GetApiMetadataResponse = GetApiMetadataResponses[keyof GetApiMetadataResponses];
+
+export type GetConfigCatalogData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/configs';
+};
+
+export type GetConfigCatalogErrors = {
+    /**
+     * returns 404 when the catalog is disabled
+     */
+    404: {
+        error: string;
+    };
+};
+
+export type GetConfigCatalogError = GetConfigCatalogErrors[keyof GetConfigCatalogErrors];
+
+export type GetConfigCatalogResponses = {
+    /**
+     * returns the merged catalog with CORS headers
+     */
+    200: {
+        data: {
+            configs: Array<{
+                channel: {
+                    language: string;
+                    title: string;
+                    url: string;
+                };
+                directory: {
+                    summary: string;
+                    title: string;
+                    topics: Array<string>;
+                };
+                id: string;
+                parameters: {
+                    defaults: {
+                        blog?: string | null;
+                        id?: string | null;
+                        region?: string | null;
+                        repository?: string | null;
+                        section?: string | null;
+                        user_id?: string | null;
+                        username?: string | null;
+                    };
+                    schema: {
+                        blog?: {
+                            type: string;
+                        } | null;
+                        id?: {
+                            type: string;
+                        } | null;
+                        region?: {
+                            type: string;
+                        } | null;
+                        repository?: {
+                            type: string;
+                        } | null;
+                        section?: {
+                            type: string;
+                        } | null;
+                        user_id?: {
+                            type: string;
+                        } | null;
+                        username?: {
+                            type: string;
+                        } | null;
+                    };
+                };
+                path: string;
+                source: string;
+            }>;
+        };
+        meta: {
+            catalog_version: number;
+            total: number;
+        };
+        success: boolean;
+    };
+};
+
+export type GetConfigCatalogResponse = GetConfigCatalogResponses[keyof GetConfigCatalogResponses];
+
+export type GetConfigCatalog2Data = {
+    body?: {
+        [key: string]: unknown;
+    };
+    path?: never;
+    query?: never;
+    url: '/configs';
+};
+
+export type GetConfigCatalog2Responses = {
+    /**
+     * responds to preflight requests with CORS headers
+     */
+    204: void;
+};
+
+export type GetConfigCatalog2Response = GetConfigCatalog2Responses[keyof GetConfigCatalog2Responses];
 
 export type CreateFeedData = {
     body?: {
