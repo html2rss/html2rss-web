@@ -20,24 +20,30 @@ module Html2rss
             def call(router)
               router.on 'configs' do
                 apply_cors!(router)
-
-                router.options do
-                  router.response.status = 204
-                  ''
-                end
-
-                router.get do
-                  unless Flags.config_catalog_enabled?
-                    router.response.status = 404
-                    next JSON.generate(error: 'catalog_disabled')
-                  end
-
-                  JSON.generate(Api::V1::Configs.index(router))
-                end
+                router.options { handle_options(router) }
+                router.get { handle_get(router) }
               end
             end
 
             private
+
+            # @param router [Roda::RodaRequest]
+            # @return [String]
+            def handle_get(router)
+              unless Flags.config_catalog_enabled?
+                router.response.status = 404
+                return JSON.generate(error: 'catalog_disabled')
+              end
+
+              JSON.generate(Api::V1::Configs.index(router))
+            end
+
+            # @param router [Roda::RodaRequest]
+            # @return [String]
+            def handle_options(router)
+              router.response.status = 204
+              ''
+            end
 
             # @param router [Roda::RodaRequest]
             # @return [void]
