@@ -63,14 +63,17 @@ export function useFeedFlow({
   const previousRouteKindReference = useRef(route.kind);
   const previousCreateEntryKeyReference = useRef(createEntryKey);
 
-  // Prefill URL effect
+  // Prefill URL effect — route prefill wins over persisted draft (bookmarklet / deep links).
   useEffect(() => {
     if (!routePrefillUrl) return;
     autoSubmitUrlReference.current = routePrefillUrl;
-    if (feedFormData.url) return;
-
-    setFeedFormData((previous) => ({ ...previous, url: routePrefillUrl }));
-  }, [feedFormData.url, routePrefillUrl]);
+    hasAutoSubmittedReference.current = false;
+    setFeedFormData((previous) => {
+      if (previous.url === routePrefillUrl) return previous;
+      return { ...previous, url: routePrefillUrl };
+    });
+    saveFeedDraftState({ url: routePrefillUrl });
+  }, [routePrefillUrl]);
 
   const submitDisabled = isCreating || !feedCreationEnabled;
 
