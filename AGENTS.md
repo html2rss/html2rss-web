@@ -6,6 +6,7 @@ This document defines execution constraints for AI agents. For general contribut
 
 - **DoD:** `make ready` in Dev Container; if applicable, user completes manual smoke test with agent-provided steps.
 - **Verification:** Always smoke Dev Container + `make ready`.
+- **PR open gate:** Do not push or open a PR until the quality gate passes **inside the Dev Container**. Host-only shortcuts (e.g. frontend `vitest` + `eslint` alone) are not a substitute. Never mark Validation as done or open a PR with “gate skipped / unavailable” — start the Dev Container and run the gate, or stop and report the blocker without opening the PR.
 - **Commits:** Group by logical unit after smoke-tested (feature / improvement / refactor).
 - **Responses:** Changes → Commands → Results → Next steps, ending with a concise one-line summary.
 - **KISS vs Refactor:** KISS by default; boy-scout refactors allowed if low-risk and simplifying.
@@ -15,7 +16,8 @@ This document defines execution constraints for AI agents. For general contribut
 ## Agent-Specific Verification Rules
 
 - Always run Dev Container smoke + `make ready` for changes.
-- For frontend changes or API contract/spec changes, run `make ci-ready` to mirror CI parity checks.
+- For frontend changes or API contract/spec changes, run `make ci-ready` before push/PR open to mirror CI parity checks (`ready` + OpenAPI verify + frontend e2e smoke).
+- For frontend-only changes when `make ci-ready` is too heavy mid-task, still run at minimum inside Dev Container: `make ready` (includes `pnpm run format:check` via `lint-js`). Prettier failures are a common CI break — never skip format check.
 - For frontend changes, also verify in `chrome-devtools` MCP at `http://127.0.0.1:4001/` while the Dev Container is running.
 - Capture a quick state check for all affected UI states (e.g., guest/member/result) to enforce state parity and avoid duplicate actions.
 
@@ -50,6 +52,7 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 - **Security first:** No leaking secrets or insecure patterns. See [Security & Safety Rules](docs/README.md#security--safety-rules).
 - **YARD docs:** Strict for public Ruby methods in `app/`. Every public method must have a YARD docstring with typed `@param` and `@return`. See [Architectural Constraints](docs/README.md#architectural-constraints).
 - **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
+- **No skipped quality gate:** Opening a PR without a green Dev Container gate is forbidden. If the gate cannot run, do not open the PR; fix the environment or hand off with explicit blocker + next command for the user.
 
 ## Config catalog API
 

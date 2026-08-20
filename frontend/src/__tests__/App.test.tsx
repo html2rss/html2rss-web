@@ -871,7 +871,34 @@ describe('App', () => {
     expect(location.hash).toMatch(/^#\/token/);
     expect(document.querySelector('dialog')).toHaveAttribute('open');
     expect(screen.getByLabelText(COPY.urlLabel)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText(COPY.urlLabel)).toHaveValue('https://example.com/articles');
+    });
     expect(mockCreateFeed).not.toHaveBeenCalled();
+  });
+
+  it('prefills the URL field when landing with a bookmarklet hash route', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(COPY.urlLabel)).toHaveValue('https://example.com/articles');
+    });
+  });
+
+  it('prefers bookmarklet route prefill over a saved draft url', async () => {
+    localStorage.setItem(
+      'html2rss_feed_draft_state',
+      JSON.stringify({ url: 'https://old.example.com/page' })
+    );
+    history.replaceState({}, '', 'http://localhost:3000/#/create?url=https%3A%2F%2Fexample.com%2Farticles');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(COPY.urlLabel)).toHaveValue('https://example.com/articles');
+    });
   });
 
   it('shows generic retry action for alternate retry metadata and reruns create', async () => {

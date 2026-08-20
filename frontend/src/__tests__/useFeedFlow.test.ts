@@ -62,6 +62,25 @@ describe('useFeedFlow', () => {
     fetchMock.mockRestore();
   });
 
+  it('prefills the url field from route prefill even when a draft url exists', async () => {
+    localStorage.setItem(
+      'html2rss_feed_draft_state',
+      JSON.stringify({ url: 'https://old.example.com/page' })
+    );
+
+    const { result } = renderHook(() =>
+      useFeedFlow(
+        feedFlowProperties({
+          route: { kind: 'create', prefillUrl: 'https://example.com/articles' },
+        })
+      )
+    );
+
+    await waitFor(() => {
+      expect(result.current.feedFormData.url).toBe('https://example.com/articles');
+    });
+  });
+
   it('manages form input field changes and draft state', async () => {
     const { result } = renderHook(() => useFeedFlow(feedFlowProperties()));
 

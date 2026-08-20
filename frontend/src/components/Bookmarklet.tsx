@@ -18,12 +18,7 @@ export function Bookmarklet({ onClick }: { onClick?: (event: Event) => void }) {
       href={bookmarkletHref}
       title={COPY.bookmarkletDragHint}
       onClick={(event) => {
-        if (!onClick) {
-          return;
-        }
-
-        event.preventDefault();
-        onClick(event);
+        onClick?.(event);
       }}
     >
       {COPY.bookmarkletTitle}
