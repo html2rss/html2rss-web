@@ -7,24 +7,6 @@ module Html2rss
         ##
         # Builds the public metadata payload for the API root endpoint.
         module RootMetadata
-          FEATURED_FEEDS = [
-            {
-              path: '/microsoft.com/azure-products.rss',
-              title: 'Azure product updates',
-              description: 'Follow Microsoft Azure product announcements from your own instance.'
-            },
-            {
-              path: '/phys.org/weekly.rss',
-              title: 'Top science news of the week',
-              description: 'Try a high-signal feed with stable weekly headlines from the built-in config set.'
-            },
-            {
-              path: '/softwareleadweekly.com/issues.rss',
-              title: 'Software Lead Weekly issues',
-              description: 'Follow a long-running newsletter archive from the embedded config catalog.'
-            }
-          ].freeze
-
           class << self
             # @param router [Roda::RodaRequest]
             # @return [Hash{Symbol=>Object}]
@@ -41,15 +23,18 @@ module Html2rss
 
             private
 
-            # @param _router [Roda::RodaRequest]
+            # @param router [Roda::RodaRequest]
             # @return [Hash{Symbol=>Object}]
-            def instance_payload(_router)
+            def instance_payload(router)
               {
                 feed_creation: {
                   enabled: Flags.auto_source_enabled?,
                   access_token_required: Flags.auto_source_enabled?
                 },
-                featured_feeds: FEATURED_FEEDS
+                catalog: {
+                  enabled: Flags.config_catalog_enabled?,
+                  url: "#{router.base_url}/api/v1/configs"
+                }
               }
             end
           end

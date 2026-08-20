@@ -8,7 +8,7 @@ const ACCESS_TOKEN_KEY = 'html2rss_access_token';
 const mockMetadata = {
   instance: {
     feed_creation: { enabled: true, access_token_required: true },
-    featured_feeds: [{ name: 'Test Feed', url: 'https://example.com' }],
+    catalog: { enabled: true, url: '/api/v1/configs' },
   },
   api: { openapi_url: '/openapi.yaml' },
 };
@@ -45,7 +45,7 @@ describe('useSession', () => {
 
     expect(result.current.token).toBe('session-token');
     expect(result.current.hasToken).toBe(true);
-    expect(result.current.featuredFeeds).toEqual(mockMetadata.instance.featured_feeds);
+    expect(result.current.featuredFeeds).toEqual([]);
     expect(result.current.metadataError).toBeUndefined();
     expect(result.current.feedCreationEnabled).toBe(true);
   });

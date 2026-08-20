@@ -24,6 +24,13 @@ module Html2rss
           default: -> { development_or_test? },
           validator: nil
         ),
+        config_catalog_enabled: Definition.new(
+          name: :config_catalog_enabled,
+          env_key: 'CONFIG_CATALOG_ENABLED',
+          type: :boolean,
+          default: true,
+          validator: nil
+        ),
         async_feed_refresh_enabled: Definition.new(
           name: :async_feed_refresh_enabled,
           env_key: 'ASYNC_FEED_REFRESH_ENABLED',
@@ -75,7 +82,7 @@ module Html2rss
         )
       }.freeze
       MANAGED_ENV_PREFIXES = %w[
-        AUTO_SOURCE_ ASYNC_FEED_REFRESH_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
+        AUTO_SOURCE_ ASYNC_FEED_REFRESH_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
       ].freeze
 
       class << self
@@ -102,6 +109,11 @@ module Html2rss
         # @return [Integer]
         def feeds_cache_max_size
           fetch(:feeds_cache_max_size)
+        end
+
+        # @return [Boolean]
+        def config_catalog_enabled?
+          fetch(:config_catalog_enabled)
         end
 
         # @return [Boolean]

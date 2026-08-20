@@ -85,7 +85,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -125,7 +125,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: false,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -339,7 +339,26 @@ describe('App', () => {
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
-  it('promotes included feeds when feed creation is disabled', () => {
+  it('promotes included feeds when feed creation is disabled', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch');
+    fetchMock.mockResolvedValueOnce(
+      Response.json({
+        success: true,
+        data: {
+          configs: [
+            {
+              id: 'microsoft.com/azure-products',
+              path: '/microsoft.com/azure-products.rss',
+              directory: {
+                title: 'Azure product updates',
+                summary: 'Follow Microsoft Azure product announcements from your own instance.',
+              },
+            },
+          ],
+        },
+      })
+    );
+
     mockUseApiMetadata.mockReturnValue({
       metadata: {
         api: {
@@ -352,13 +371,7 @@ describe('App', () => {
             enabled: false,
             access_token_required: false,
           },
-          featured_feeds: [
-            {
-              path: '/microsoft.com/azure-products.rss',
-              title: 'Azure product updates',
-              description: 'Follow Microsoft Azure product announcements from your own instance.',
-            },
-          ],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -367,12 +380,15 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+    });
     expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
       'href',
       '/microsoft.com/azure-products.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
+    fetchMock.mockRestore();
   });
 
   it('renders the result panel when a feed is available', async () => {
@@ -969,7 +985,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,

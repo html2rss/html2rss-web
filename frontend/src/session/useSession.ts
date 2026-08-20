@@ -1,4 +1,5 @@
 import { useApiMetadata } from '../hooks/useApiMetadata';
+import { useStarterFeeds } from '../hooks/useStarterFeeds';
 import { useAccessToken } from './accessToken';
 
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
@@ -23,9 +24,9 @@ export function useSession() {
   const { metadata, isLoading: metadataLoading, error: metadataError } = useApiMetadata();
 
   const isLoading = tokenLoading || metadataLoading;
-  const featuredFeeds = metadata?.instance.featured_feeds ?? [];
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const feedCreationEnabled = feedCreation.enabled;
+  const featuredFeeds = useStarterFeeds(metadata, feedCreationEnabled);
 
   const mayCreate = (accessToken?: string): MayCreateResult => {
     if (!feedCreation.enabled) return 'disabled';
