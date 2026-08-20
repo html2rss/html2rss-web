@@ -23,6 +23,13 @@ export const server = setupServer(
         },
       },
     });
+  }),
+  http.get('/api/v1/configs', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { configs: [] },
+      meta: { total: 0, catalog_version: 1 },
+    });
   })
 );
 

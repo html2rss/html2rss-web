@@ -38,7 +38,7 @@ If a page looks like it came from a different product, the change is wrong even 
 
 ## Journey Grammar (enforced)
 
-- **Create:** URL field is the task. Visiting `#/create` or `#!/create` remounts create; hashbang aliases canonicalize to `#/create`. Bare create does not auto-submit.
+- **Create:** URL field is the task. Visiting `#/create` or `#!/create` remounts create; hashbang aliases canonicalize to `#/create`. Bare create does not auto-submit. When the typed query finds catalog entries (URL equivalence or text substring), show matching included feeds as a subordinate list under the field — never a second primary task or in-app catalog browser.
 - **Token gate:** a native `<dialog>` over the still-mounted, inert URL task (one interactive task). Auth copy is in-field (`tokenError`); ActionFeedback stays on create. Access Token persists until Logout with no storage UI.
 - **Result:** primary CTA is **Copy feed URL**. Open feed / JSON / feed-reader are demoted secondary actions and stay available while preview loads. Preview is non-blocking confirmation only.
 - **Unmatched result:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens recover onto remounted `#/create` (no API rehydrate, no failure chrome, no durable shareable result page).

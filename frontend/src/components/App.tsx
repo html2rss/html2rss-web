@@ -35,6 +35,7 @@ export function App() {
     token,
     hasToken,
     metadata,
+    catalogEntries,
     featuredFeeds,
     isLoading: sessionLoading,
     metadataError,
@@ -117,6 +118,7 @@ export function App() {
         feedFieldErrors={feedFieldErrors}
         submitDisabled={submitDisabled}
         feedCreationEnabled={feedCreationEnabled}
+        catalogEntries={catalogEntries}
         featuredFeeds={featuredFeeds}
         tokenDraft={tokenDraft}
         onFeedSubmit={onFeedSubmit}

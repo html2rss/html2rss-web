@@ -182,6 +182,46 @@
   color: var(--text-body);
 }
 
+.catalog-hit-list {
+  width: 100%;
+  max-width: var(--layout-rail-reading);
+  margin: 0 auto;
+  text-align: start;
+}
+
+.catalog-hit {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+}
+
+.catalog-hit:hover,
+.catalog-hit:focus-visible,
+.catalog-hit[data-active] {
+  text-decoration: none;
+  background: var(--surface-base);
+}
+
+.catalog-hit:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-color: var(--border-strong);
+}
+
+.catalog-hit[data-active] {
+  background: var(--surface-elevated);
+  border-color: var(--border-strong);
+}
+
+.catalog-hit__excerpt {
+  color: var(--text-muted);
+  font-size: var(--font-size-00);
+}
+
 .dominant-field__action {
   position: absolute;
   right: var(--dominant-field-action-right, var(--space-3));

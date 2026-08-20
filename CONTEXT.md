@@ -22,6 +22,9 @@ A mechanism that automatically initiates feed creation when a prefilled URL is p
 ### Create-Time URL Expansion
 Single frontend path (`expandCreateUrl`) that normalizes the create URL before Creation IO. Field-error copy for empty/invalid is mapped by Feed Flow from COPY.
 
+### Catalog Find
+On create, `findCatalogEntries` matches the typed query against the catalog (URL equivalence after create-time expansion, plus case-insensitive substring on title/description/id/channelUrl). Hits (capped) render as a subordinate included-feeds list under the URL field via `catalogFeedHref` (path + parameter defaults). Create stays primary. Browse stays on the docs Feed Directory.
+
 ### CreateEntry remount
 Visiting create (including hashbang `#!/…` → `#/…`) bumps `createEntryKey` so the create surface remounts. Remount alone does not auto-submit; auto-submit requires `prefillUrl`.
 
