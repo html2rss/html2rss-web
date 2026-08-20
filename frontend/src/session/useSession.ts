@@ -1,5 +1,7 @@
+import { useMemo } from 'preact/hooks';
+import type { CatalogEntry } from '../catalog';
+import { selectStarterFeeds, useCatalogEntries } from '../catalog';
 import { useApiMetadata } from '../hooks/useApiMetadata';
-import { useStarterFeeds } from '../hooks/useStarterFeeds';
 import { useAccessToken } from './accessToken';
 
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
@@ -26,7 +28,11 @@ export function useSession() {
   const isLoading = tokenLoading || metadataLoading;
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const feedCreationEnabled = feedCreation.enabled;
-  const featuredFeeds = useStarterFeeds(metadata, feedCreationEnabled);
+  const catalogEntries = useCatalogEntries(metadata);
+  const featuredFeeds: CatalogEntry[] = useMemo(() => {
+    if (feedCreationEnabled) return [];
+    return selectStarterFeeds(catalogEntries);
+  }, [catalogEntries, feedCreationEnabled]);
 
   const mayCreate = (accessToken?: string): MayCreateResult => {
     if (!feedCreation.enabled) return 'disabled';
@@ -39,6 +45,7 @@ export function useSession() {
     token,
     hasToken,
     metadata,
+    catalogEntries,
     featuredFeeds,
     isLoading,
     metadataError,
