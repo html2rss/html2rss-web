@@ -4,9 +4,10 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-gem 'html2rss', '~> 0.26'
+gem 'html2rss', github: 'html2rss/html2rss', branch: 'feat/feed-directory-catalog-schema'
+# gem 'html2rss', '~> 0.26'
 # gem 'html2rss', github: 'html2rss/html2rss', branch: 'master'
-gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
+gem 'html2rss-configs', github: 'html2rss/html2rss-configs', branch: 'feat/feed-directory-catalog'
 
 # Use these instead of the two above (uncomment them) when developing locally:
 # gem 'html2rss', path: '../html2rss'

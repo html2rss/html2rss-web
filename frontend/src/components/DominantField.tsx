@@ -18,9 +18,13 @@ interface DominantFieldProperties {
   actionVariant?: 'default' | 'soft';
   onAction?: () => void;
   onInput?: JSX.GenericEventHandler<HTMLInputElement>;
+  onKeyDown?: JSX.KeyboardEventHandler<HTMLInputElement>;
   inputRef?: Ref<HTMLInputElement>;
   actionRef?: Ref<HTMLButtonElement>;
   error?: string;
+  'aria-controls'?: string;
+  'aria-expanded'?: boolean | 'true' | 'false';
+  'aria-activedescendant'?: string;
 }
 
 const ArrowIcon = () => (
@@ -60,9 +64,13 @@ export function DominantField({
   actionVariant = 'default',
   onAction,
   onInput,
+  onKeyDown,
   inputRef,
   actionRef,
   error,
+  'aria-controls': ariaControls,
+  'aria-expanded': ariaExpanded,
+  'aria-activedescendant': ariaActivedescendant,
 }: DominantFieldProperties) {
   return (
     <div class={className ? `dominant-field ${className}` : 'dominant-field'}>
@@ -83,8 +91,13 @@ export function DominantField({
           value={value}
           readOnly={readOnly}
           disabled={disabled}
+          aria-controls={ariaControls}
+          aria-expanded={ariaExpanded}
+          aria-activedescendant={ariaActivedescendant}
           onInput={onInput}
           onKeyDown={(event) => {
+            onKeyDown?.(event);
+            if (event.defaultPrevented) return;
             if (onAction || event.key !== 'Enter' || event.isComposing || event.repeat) return;
 
             event.preventDefault();

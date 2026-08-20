@@ -11,6 +11,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:4000',
       '/rss.xsl': 'http://localhost:4000',
+      // Feed documents (relative catalogFeedHref); exclude /api so JSON API stays on /api.
+      '^/(?!api/).+\\.(?:rss|xml|json)$': 'http://localhost:4000',
     },
   },
   preview: {

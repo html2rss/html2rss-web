@@ -16,9 +16,19 @@ export const server = setupServer(
             enabled: true,
             access_token_required: true,
           },
-          featured_feeds: [],
+          catalog: {
+            enabled: true,
+            url: '/api/v1/configs',
+          },
         },
       },
+    });
+  }),
+  http.get('/api/v1/configs', () => {
+    return HttpResponse.json({
+      success: true,
+      data: { configs: [] },
+      meta: { total: 0, catalog_version: 1 },
     });
   })
 );

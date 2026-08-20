@@ -16,13 +16,19 @@ vi.mock('../hooks/useApiMetadata', () => ({
   useApiMetadata: vi.fn(),
 }));
 
+vi.mock('../catalog/useCatalogEntries', () => ({
+  useCatalogEntries: vi.fn(() => []),
+}));
+
 import { useAccessToken } from '../session/accessToken';
 import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useFeedCreation } from '../feed/useFeedCreation';
+import { useCatalogEntries } from '../catalog/useCatalogEntries';
 
 const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
 const mockUseFeedCreation = useFeedCreation as any;
+const mockUseCatalogEntries = useCatalogEntries as any;
 const mockCreatedFeedResult = {
   feed: {
     id: 'feed-123',
@@ -63,6 +69,7 @@ describe('App', () => {
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
     mockCreateFeed.mockResolvedValue(mockCreatedFeedResult);
+    mockUseCatalogEntries.mockReturnValue([]);
 
     mockUseAccessToken.mockReturnValue({
       token: undefined,
@@ -85,7 +92,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -125,7 +132,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: false,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -339,7 +346,18 @@ describe('App', () => {
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
-  it('promotes included feeds when feed creation is disabled', () => {
+  it('promotes included feeds when feed creation is disabled', async () => {
+    mockUseCatalogEntries.mockReturnValue([
+      {
+        id: 'microsoft.com/azure-products',
+        path: '/microsoft.com/azure-products.rss',
+        title: 'Azure product updates',
+        description: 'Follow Microsoft Azure product announcements from your own instance.',
+        channelUrl: 'https://azure.microsoft.com/updates',
+        parameterDefaults: {},
+      },
+    ]);
+
     mockUseApiMetadata.mockReturnValue({
       metadata: {
         api: {
@@ -352,13 +370,7 @@ describe('App', () => {
             enabled: false,
             access_token_required: false,
           },
-          featured_feeds: [
-            {
-              path: '/microsoft.com/azure-products.rss',
-              title: 'Azure product updates',
-              description: 'Follow Microsoft Azure product announcements from your own instance.',
-            },
-          ],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,
@@ -367,12 +379,165 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+    });
     expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
       'href',
       '/microsoft.com/azure-products.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
+  });
+
+  it('suggests included feeds when the URL matches the catalog', async () => {
+    mockUseCatalogEntries.mockReturnValue([
+      {
+        id: 'anthropic.com/news',
+        path: '/anthropic.com/news.rss',
+        title: 'Anthropic — News',
+        description: 'Product and research announcements from Anthropic.',
+        channelUrl: 'https://www.anthropic.com/news',
+        parameterDefaults: {},
+      },
+    ]);
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'www.anthropic.com/news' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Anthropic — News' })).toHaveAttribute(
+        'href',
+        '/anthropic.com/news.rss'
+      );
+    });
+    expect(screen.getByRole('status')).toHaveTextContent(COPY.catalogFindHint);
+  });
+
+  it('lists multiple catalog find hits for a text query including defaults href', async () => {
+    mockUseCatalogEntries.mockReturnValue([
+      {
+        id: 'bbc.com/mundo',
+        path: '/bbc.com/mundo.rss',
+        title: 'BBC — Mundo',
+        description: 'Spanish-language news from BBC Mundo.',
+        channelUrl: 'https://www.bbc.com/mundo',
+        parameterDefaults: {},
+      },
+      {
+        id: 'bbc.co.uk/available_episodes',
+        path: '/bbc.co.uk/available_episodes.rss',
+        title: 'BBC Sounds — Programme episodes',
+        description: 'Available episodes for a BBC programme on Sounds.',
+        channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
+        parameterDefaults: { id: 'b006wkfp' },
+      },
+    ]);
+
+    render(<App />);
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'bbc' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'BBC — Mundo' })).toHaveAttribute(
+        'href',
+        '/bbc.com/mundo.rss'
+      );
+      expect(screen.getByRole('option', { name: 'BBC Sounds — Programme episodes' })).toHaveAttribute(
+        'href',
+        '/bbc.co.uk/available_episodes.rss?id=b006wkfp'
+      );
+    });
+
+    expect(screen.getByRole('option', { name: 'BBC — Mundo' })).toHaveClass('catalog-hit');
+    expect(screen.getByRole('option', { name: 'BBC — Mundo' })).not.toHaveClass('ui-card');
+    expect(screen.getByRole('listbox', { name: COPY.catalogFindHitsLabel })).toBeInTheDocument();
+  });
+
+  it('opens the active catalog hit with ArrowDown then Enter without submitting Create', async () => {
+    const assignSpy = vi.fn();
+    vi.stubGlobal('location', { ...location, assign: assignSpy });
+
+    mockUseCatalogEntries.mockReturnValue([
+      {
+        id: 'bbc.com/mundo',
+        path: '/bbc.com/mundo.rss',
+        title: 'BBC — Mundo',
+        description: 'Spanish-language news from BBC Mundo.',
+        channelUrl: 'https://www.bbc.com/mundo',
+        parameterDefaults: {},
+      },
+      {
+        id: 'bbc.co.uk/available_episodes',
+        path: '/bbc.co.uk/available_episodes.rss',
+        title: 'BBC Sounds — Programme episodes',
+        description: 'Available episodes for a BBC programme on Sounds.',
+        channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
+        parameterDefaults: { id: 'b006wkfp' },
+      },
+    ]);
+
+    render(<App />);
+
+    const urlField = screen.getByLabelText(COPY.urlLabel);
+    fireEvent.input(urlField, { target: { value: 'bbc' } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('listbox', { name: COPY.catalogFindHitsLabel })).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(urlField, { key: 'ArrowDown' });
+    await waitFor(() => {
+      expect(urlField).toHaveAttribute('aria-activedescendant', 'catalog-find-hits-option-0');
+    });
+
+    fireEvent.keyDown(urlField, { key: 'Enter' });
+
+    expect(assignSpy).toHaveBeenCalledWith('/bbc.co.uk/available_episodes.rss?id=b006wkfp');
+    expect(mockCreateFeed).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it('submits Create with Enter when no catalog hit is active', async () => {
+    mockUseAccessToken.mockReturnValue({
+      token: 'saved-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    mockUseCatalogEntries.mockReturnValue([
+      {
+        id: 'bbc.com/mundo',
+        path: '/bbc.com/mundo.rss',
+        title: 'BBC — Mundo',
+        description: 'Spanish-language news from BBC Mundo.',
+        channelUrl: 'https://www.bbc.com/mundo',
+        parameterDefaults: {},
+      },
+    ]);
+
+    render(<App />);
+
+    const urlField = screen.getByLabelText(COPY.urlLabel);
+    fireEvent.input(urlField, { target: { value: 'https://www.bbc.com/mundo' } });
+
+    await waitFor(() => {
+      expect(screen.getByRole('listbox', { name: COPY.catalogFindHitsLabel })).toBeInTheDocument();
+    });
+
+    fireEvent.keyDown(urlField, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mockCreateFeed).toHaveBeenCalledWith('https://www.bbc.com/mundo', 'saved-token');
+    });
   });
 
   it('renders the result panel when a feed is available', async () => {
@@ -996,7 +1161,7 @@ describe('App', () => {
             enabled: true,
             access_token_required: true,
           },
-          featured_feeds: [],
+          catalog: { enabled: true, url: '/api/v1/configs' },
         },
       },
       isLoading: false,

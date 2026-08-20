@@ -1,8 +1,10 @@
-import { useLayoutEffect, useRef } from 'preact/hooks';
-import type { RefObject } from 'preact';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
+import type { JSX, RefObject } from 'preact';
 import { Bookmarklet } from './Bookmarklet';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
+import type { CatalogEntry } from '../catalog';
+import { catalogFeedHref, findCatalogEntries } from '../catalog';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
 
@@ -25,7 +27,8 @@ interface CreateFeedPanelProperties {
   feedFieldErrors: FeedFieldErrors;
   submitDisabled: boolean;
   feedCreationEnabled: boolean;
-  featuredFeeds: Array<{ path: string; title: string; description: string }>;
+  catalogEntries: CatalogEntry[];
+  featuredFeeds: CatalogEntry[];
   tokenDraft: string;
   onFeedSubmit: (event: Event) => void;
   onFeedFieldChange: (key: 'url', value: string) => void;
@@ -41,9 +44,66 @@ interface UrlEntrySectionProperties {
   error: string;
   isCreating: boolean;
   feedCreationEnabled: boolean;
-  featuredFeeds: Array<{ path: string; title: string; description: string }>;
+  catalogEntries: CatalogEntry[];
+  featuredFeeds: CatalogEntry[];
   inputRef: RefObject<HTMLInputElement>;
   onInput: (value: string) => void;
+}
+
+const CATALOG_FIND_LISTBOX_ID = 'catalog-find-hits';
+
+function catalogHitOptionId(index: number): string {
+  return `${CATALOG_FIND_LISTBOX_ID}-option-${index}`;
+}
+
+interface CatalogHitListProperties {
+  entries: readonly CatalogEntry[];
+  ariaLabel: string;
+  listboxId?: string;
+  activeIndex?: number;
+}
+
+function CatalogHitList({ entries, ariaLabel, listboxId, activeIndex }: CatalogHitListProperties) {
+  const isListbox = listboxId !== undefined;
+
+  return (
+    <div
+      class="catalog-hit-list layout-stack layout-stack--tight"
+      id={listboxId}
+      role={isListbox ? 'listbox' : 'list'}
+      aria-label={ariaLabel}
+    >
+      {entries.map((entry, index) => {
+        const isActive = isListbox && activeIndex === index;
+        const hit = (
+          <a
+            key={entry.id}
+            id={isListbox ? catalogHitOptionId(index) : undefined}
+            href={catalogFeedHref(entry)}
+            rel="noopener"
+            class="catalog-hit"
+            role={isListbox ? 'option' : undefined}
+            aria-selected={isListbox ? isActive : undefined}
+            data-active={isActive ? '' : undefined}
+            aria-label={entry.title}
+          >
+            <span class="catalog-hit__title ui-item__title">{entry.title}</span>
+            {entry.description ? (
+              <span class="catalog-hit__excerpt ui-item__excerpt">{entry.description}</span>
+            ) : undefined}
+          </a>
+        );
+
+        if (isListbox) return hit;
+
+        return (
+          <div key={entry.id} role="listitem">
+            {hit}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function UrlEntrySection({
@@ -52,10 +112,54 @@ function UrlEntrySection({
   error,
   isCreating,
   feedCreationEnabled,
+  catalogEntries,
   featuredFeeds,
   inputRef,
   onInput,
 }: UrlEntrySectionProperties) {
+  const catalogHits = useMemo(() => findCatalogEntries(url, catalogEntries), [url, catalogEntries]);
+  const [activeHitIndex, setActiveHitIndex] = useState<number | undefined>(undefined);
+  const hasHits = catalogHits.length > 0;
+
+  useEffect(() => {
+    setActiveHitIndex(undefined);
+  }, [catalogHits]);
+
+  const handleUrlKeyDown: JSX.KeyboardEventHandler<HTMLInputElement> = (event) => {
+    if (!hasHits || event.isComposing || event.repeat) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActiveHitIndex((current) => (current === undefined ? 0 : (current + 1) % catalogHits.length));
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveHitIndex((current) =>
+        current === undefined
+          ? catalogHits.length - 1
+          : (current - 1 + catalogHits.length) % catalogHits.length
+      );
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      if (activeHitIndex === undefined) return;
+      event.preventDefault();
+      setActiveHitIndex(undefined);
+      return;
+    }
+
+    if (event.key === 'Enter' && activeHitIndex !== undefined) {
+      const active = catalogHits[activeHitIndex];
+      if (!active) return;
+
+      event.preventDefault();
+      location.assign(catalogFeedHref(active));
+    }
+  };
+
   return (
     <>
       <DominantField
@@ -74,8 +178,24 @@ function UrlEntrySection({
         actionText={isCreating ? '...' : '>'}
         disabled={disabled}
         error={error}
+        aria-controls={hasHits ? CATALOG_FIND_LISTBOX_ID : undefined}
+        aria-expanded={hasHits}
+        aria-activedescendant={activeHitIndex === undefined ? undefined : catalogHitOptionId(activeHitIndex)}
+        onKeyDown={handleUrlKeyDown}
         onInput={(event) => onInput(event.currentTarget.value)}
       />
+
+      {hasHits && (
+        <div class="layout-rail-reading" role="status">
+          <p class="field-help">{COPY.catalogFindHint}</p>
+          <CatalogHitList
+            entries={catalogHits}
+            ariaLabel={COPY.catalogFindHitsLabel}
+            listboxId={CATALOG_FIND_LISTBOX_ID}
+            activeIndex={activeHitIndex}
+          />
+        </div>
+      )}
 
       {!feedCreationEnabled && (
         <>
@@ -88,20 +208,7 @@ function UrlEntrySection({
               title={COPY.includedFeedsTitle}
             >
               <p class="notice__intro">{COPY.includedFeedsIntro}</p>
-              <div class="layout-stack layout-stack--tight" role="list" aria-label={COPY.includedFeedsTitle}>
-                {featuredFeeds.map((feed) => (
-                  <div key={feed.path} role="listitem">
-                    <a
-                      href={feed.path}
-                      class="ui-card ui-item--card layout-stack layout-stack--tight"
-                      aria-label={feed.title}
-                    >
-                      <span class="ui-item__title">{feed.title}</span>
-                      <span class="ui-item__excerpt">{feed.description}</span>
-                    </a>
-                  </div>
-                ))}
-              </div>
+              <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
               <p class="notice__meta">
                 <a
                   href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
@@ -243,6 +350,7 @@ export function CreateFeedPanel({
   feedFieldErrors,
   submitDisabled,
   feedCreationEnabled,
+  catalogEntries,
   featuredFeeds,
   tokenDraft,
   onFeedSubmit,
@@ -332,6 +440,7 @@ export function CreateFeedPanel({
           error={feedFieldErrors.url}
           isCreating={isCreatingFeed}
           feedCreationEnabled={feedCreationEnabled}
+          catalogEntries={catalogEntries}
           featuredFeeds={featuredFeeds}
           inputRef={urlInputReference}
           onInput={(value) => onFeedFieldChange('url', value)}

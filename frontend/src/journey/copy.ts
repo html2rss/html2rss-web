@@ -20,6 +20,8 @@ export const COPY = {
   includedFeedsTitle: 'Included feeds',
   includedFeedsIntro: 'Start with a ready-made feed from this instance.',
   includedFeedsLearnMore: 'Learn how included feeds work.',
+  catalogFindHint: 'Matching included feeds.',
+  catalogFindHitsLabel: 'Matching included feeds',
   dockerSetup: 'Set up your own instance with Docker.',
   dockerInstall: 'Install from Docker Hub',
   bookmarkletTitle: 'Bookmarklet',
