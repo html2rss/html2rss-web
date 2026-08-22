@@ -1,5 +1,7 @@
-PATH
-  remote: ../html2rss
+GIT
+  remote: https://github.com/html2rss/html2rss
+  revision: e32014ac089679cac7e91fd55f3bd85a0489771e
+  branch: feat/registry-v1
   specs:
     html2rss (0.28.0)
       addressable (~> 2.7)
