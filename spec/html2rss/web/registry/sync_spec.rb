@@ -219,17 +219,15 @@ RSpec.describe Html2rss::Web::Registry::Sync do
 
   describe Html2rss::Web::Registry::SyncTransport do
     describe '.exceeds_max?' do
-      it 'compares dotted numeric versions' do
-        expect(described_class.exceeds_max?('2026.08.22', '2026.08.21')).to be(true)
-        expect(described_class.exceeds_max?('2026.08.21', '2026.08.22')).to be(false)
-      end
-
-      it 'strips a leading v prefix before comparing' do
-        expect(described_class.exceeds_max?('v2026.08.22', '2026.08.21')).to be(true)
-      end
-
-      it 'returns false when max_version is unset' do
-        expect(described_class.exceeds_max?('2026.08.22', nil)).to be(false)
+      [
+        ['2026.08.22', '2026.08.21', true],
+        ['2026.08.21', '2026.08.22', false],
+        ['v2026.08.22', '2026.08.21', true],
+        ['2026.08.22', nil, false]
+      ].each do |manifest_version, max_version, expected|
+        it "returns #{expected} for #{manifest_version} vs #{max_version.inspect}" do
+          expect(described_class.exceeds_max?(manifest_version, max_version)).to be(expected)
+        end
       end
     end
 
