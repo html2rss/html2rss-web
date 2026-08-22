@@ -1,15 +1,14 @@
 # frozen_string_literal: true
 
-require 'openssl'
 require 'fileutils'
-require 'zlib'
+require 'openssl'
 require 'stringio'
-require 'rubygems/package'
+require 'yaml'
 
 module RegistrySyncTestHelpers
-  HTML2RSS_FIXTURES = File.expand_path('../../../html2rss/spec/fixtures/registry', __dir__)
-  TEST_PUBLIC_KEY = File.read(File.join(HTML2RSS_FIXTURES, 'test-key.pub'))
-  TEST_PRIVATE_KEY = File.read(File.join(HTML2RSS_FIXTURES, 'test-key.pem'))
+  FIXTURE_KEYS_ROOT = File.expand_path('../fixtures/registries/keys', __dir__)
+  TEST_PUBLIC_KEY = File.read(File.join(FIXTURE_KEYS_ROOT, 'test-key.pub'))
+  TEST_PRIVATE_KEY = File.read(File.join(FIXTURE_KEYS_ROOT, 'test-key.pem'))
   SYNC_FIXTURES_ROOT = File.expand_path('../fixtures/registries/sync', __dir__)
   SYNC_REGISTRIES_CONFIG = File.join(SYNC_FIXTURES_ROOT, 'registries.yml')
   SYNC_DATA_ROOT = File.join(Dir.pwd, 'tmp', 'sync-registry-data')
@@ -19,39 +18,57 @@ module RegistrySyncTestHelpers
   def configure_sync_registry!
     ENV['REGISTRIES_CONFIG'] = SYNC_REGISTRIES_CONFIG
     ENV['REGISTRY_DATA_ROOT'] = SYNC_DATA_ROOT
-    ENV['REGISTRY_SYNC_ALLOWED_HOSTS'] = 'registry.test.example'
+    ENV['REGISTRY_SYNC_ALLOWED_HOSTS'] = 'registry.test.example,release-assets.githubusercontent.com'
     FileUtils.rm_rf(SYNC_DATA_ROOT)
     Html2rss::Web::Registry::Index.reload!
   end
 
-  def build_signed_tarball # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+  def build_signed_tarball
     bundle_dir = Dir.mktmpdir('signed-registry-bundle')
     FileUtils.cp_r(File.join(SYNC_FIXTURES_ROOT, 'bundle', '.'), bundle_dir)
     manifest = Html2rss::Registry::Manifest.parse(
       File.read(File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
     )
-    private_key = OpenSSL::PKey.read(TEST_PRIVATE_KEY)
-    signature = private_key.sign(nil, manifest.canonical_bytes)
-    File.write(
-      File.join(bundle_dir, Html2rss::Registry::Manifest::SIGNATURE_FILE),
-      [signature].pack('m0')
-    )
+    sign_manifest!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
 
-    tar_io = StringIO.new
-    Gem::Package::TarWriter.new(tar_io) do |tar|
-      Dir.glob(File.join(bundle_dir, '**', '*'), File::FNM_DOTMATCH).sort.each do |path|
-        next if File.directory?(path)
-
-        relative = path.delete_prefix("#{bundle_dir}/")
-        tar.add_file(relative, 0o644) { |io| io.write(File.binread(path)) }
-      end
-    end
-
-    gz_io = StringIO.new
-    Zlib::GzipWriter.wrap(gz_io) { |gz| gz.write(tar_io.string) }
-    gz_io.string
+    pack_bundle_dir(bundle_dir)
   ensure
     FileUtils.rm_rf(bundle_dir)
+  end
+
+  def pack_bundle_dir(bundle_dir)
+    dir = File.dirname(tarball_path = File.join(Dir.mktmpdir('registry-sync-tarball'), 'bundle.tar.gz'))
+    env = { 'COPYFILE_DISABLE' => '1' }
+    success = system(env, 'tar', '--format=ustar', '-czf', tarball_path, '-C', bundle_dir, '.', exception: false)
+    raise "Failed to pack registry test bundle from #{bundle_dir}" unless success
+
+    File.binread(tarball_path)
+  ensure
+    FileUtils.rm_rf(dir) if dir
+  end
+
+  def policy_registry_yaml(download_url:, auto_promote:, sync_extra: {}) # rubocop:disable Metrics/MethodLength
+    sync = { 'url' => download_url }.merge(sync_extra.transform_keys(&:to_s))
+    YAML.dump(
+      {
+        'precedence' => ['official'],
+        'registries' => {
+          'official' => {
+            'sync' => sync,
+            'auto_promote' => auto_promote,
+            'catalog' => true,
+            'public_key_id' => 'test-key',
+            'public_key' => TEST_PUBLIC_KEY
+          }
+        }
+      }
+    )
+  end
+
+  def sign_manifest!(manifest, key_pem:, bundle_dir:)
+    private_key = OpenSSL::PKey.read(key_pem)
+    signature = private_key.sign(nil, manifest.canonical_bytes)
+    File.write(File.join(bundle_dir, Html2rss::Registry::Manifest::SIGNATURE_FILE), [signature].pack('m0'))
   end
 end
 

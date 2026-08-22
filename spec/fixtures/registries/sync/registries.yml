@@ -5,6 +5,7 @@ registries:
   official:
     sync:
       url: https://registry.test.example/registry-bundle.tar.gz
+    auto_promote: true
     catalog: true
     public_key_id: test-key
     public_key: |

@@ -9,16 +9,24 @@ module RegistrySyncCLI
   module_function
 
   def run(argv = ARGV) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-    options = { status: false, registry_id: nil, dry_run: false }
+    options = { status: false, registry_id: nil, dry_run: false, promote: false }
     OptionParser.new do |opts|
       opts.banner = 'Usage: bin/registry-sync [options]'
       opts.on('--status', 'Print registry sync status and exit') { options[:status] = true }
       opts.on('--registry ID', 'Sync a single registry id') { |value| options[:registry_id] = value }
       opts.on('--dry-run', 'Fetch and verify without swapping the active bundle') { options[:dry_run] = true }
+      opts.on('--promote', 'Promote a verified staging bundle to active') { options[:promote] = true }
     end.parse!(argv)
 
     if options[:status]
       print_status_table(options[:registry_id])
+      exit Html2rss::Web::Registry::Sync.cli_exit_code
+    end
+
+    if options[:promote]
+      target_registry_ids(options[:registry_id]).each do |registry_id|
+        Html2rss::Web::Registry::Sync.promote_staged!(registry_id:)
+      end
       exit Html2rss::Web::Registry::Sync.cli_exit_code
     end
 
@@ -36,13 +44,14 @@ module RegistrySyncCLI
 
   def print_status_table(registry_id) # rubocop:disable Metrics/MethodLength
     rows = Html2rss::Web::Registry::Sync.status(registry_id:)
-    headers = %w[registry mode version updated_at sync_url last_error]
+    headers = %w[registry mode version staged_version updated_at sync_url last_error]
     puts headers.join("\t")
     rows.each do |row|
       puts [
         row.registry_id,
         row.mode,
         row.version || '-',
+        row.staged_version || '-',
         format_time(row.updated_at),
         row.sync_url || '-',
         row.last_error || '-'

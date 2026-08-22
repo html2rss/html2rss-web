@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require 'net/http'
-require 'json'
-require 'stringio'
-require 'uri'
 
 module Html2rss
   module Web
@@ -12,22 +8,15 @@ module Html2rss
       ##
       # Fetches, verifies, and stores signed registry bundles.
       module Sync # rubocop:disable Metrics/ModuleLength
-        OFFICIAL_RELEASE_URL = Config::OFFICIAL_RELEASE_URL
-        OFFICIAL_GITHUB_RELEASES_API =
-          'https://api.github.com/repos/html2rss/html2rss-configs/releases/latest'
-        OFFICIAL_ASSET_NAME = 'registry-bundle.tar.gz'
-
-        DEFAULT_ALLOWED_HOSTS = %w[
-          api.github.com
-          github.com
-          objects.githubusercontent.com
-        ].freeze
-        FETCH_OPEN_TIMEOUT_SECONDS = 10
-        FETCH_READ_TIMEOUT_SECONDS = 60
-        MAX_RESPONSE_BYTES = Html2rss::Registry::Archive::MAX_TARBALL_BYTES
-        BACKGROUND_JITTER_FRACTION = 0.1
-
-        SyncStatus = Data.define(:registry_id, :mode, :version, :updated_at, :sync_url, :last_error)
+        SyncStatus = Data.define(
+          :registry_id,
+          :mode,
+          :version,
+          :staged_version,
+          :updated_at,
+          :sync_url,
+          :last_error
+        )
 
         @boot_mutex = Mutex.new
         @boot_started = false
@@ -43,7 +32,7 @@ module Html2rss
             entry = Config.entry(registry_id)
             raise Errors::SyncError, "Registry '#{registry_id}' is not sync-mode" unless entry.mode == :sync
 
-            resolve_download_url(entry)
+            SyncUrlResolver.resolve(entry)
           end
 
           ##
@@ -52,30 +41,21 @@ module Html2rss
           # @param registry_id [String, Symbol]
           # @param dry_run [Boolean] when true, verify without swapping the active bundle
           # @return [SyncStatus]
-          def run(registry_id:, dry_run: false) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-            entry = Config.entry(registry_id)
-            if entry.mode == :path
-              raise Errors::SyncError, "Registry '#{registry_id}' uses path mode; sync is not applicable"
-            end
-
-            staging_root = nil
-            download_url = resolve_download_url(entry)
-            staging_root, staged_dir = fetch_and_verify!(entry, download_url)
-            unless dry_run
-              Store.swap!(registry_id, staged_dir)
-              Index.reload!
-              record_success!(registry_id)
-            end
-            sync_status_for(Index.current.status.find { |row| row.id == registry_id.to_s })
-          rescue StandardError => error
-            record_failure!(registry_id, error) unless dry_run
-            raise
-          ensure
-            FileUtils.rm_rf(staging_root) if staging_root
+          def run(registry_id:, dry_run: false)
+            SyncCoordinator.run(registry_id) { run!(registry_id:, dry_run:) }
           end
 
           ##
-          # @param registry_id [String, Symbol, nil]
+          # Promotes a verified staging bundle to the active registry directory.
+          #
+          # @param registry_id [String, Symbol]
+          # @return [SyncStatus]
+          def promote_staged!(registry_id:)
+            SyncCoordinator.run(registry_id) { promote_staged_bundle!(registry_id:) }
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
           # @return [Array<SyncStatus>]
           def status(registry_id: nil)
             rows = Index.current.status
@@ -150,6 +130,90 @@ module Html2rss
           private
 
           ##
+          # @param registry_id [String, Symbol]
+          # @param dry_run [Boolean]
+          # @return [SyncStatus]
+          def run!(registry_id:, dry_run:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+            entry = Config.entry(registry_id)
+            if entry.mode == :path
+              raise Errors::SyncError, "Registry '#{registry_id}' uses path mode; sync is not applicable"
+            end
+
+            staging_root = nil
+            download_url = SyncUrlResolver.resolve(entry)
+            staging_root, staged_dir = fetch_and_verify!(entry, download_url)
+            unless dry_run
+              if entry.sync_policy.auto_promote
+                activate_bundle!(registry_id, staged_dir)
+              else
+                Store.stage_bundle!(registry_id, staged_dir)
+                record_success!(registry_id, promoted: false)
+              end
+            end
+            sync_status_for(Index.current.status.find { |row| row.id == registry_id.to_s })
+          rescue StandardError => error
+            record_failure!(registry_id, error) unless dry_run
+            raise
+          ensure
+            FileUtils.rm_rf(staging_root) if staging_root
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @return [SyncStatus]
+          def promote_staged_bundle!(registry_id:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+            entry = Config.entry(registry_id)
+            if entry.mode == :path
+              raise Errors::SyncError, "Registry '#{registry_id}' uses path mode; promote is not applicable"
+            end
+            unless Store.staged_present?(registry_id)
+              raise Errors::SyncError, "Registry '#{registry_id}' has no staged bundle"
+            end
+
+            previous_bundle = Index.current.bundle_for(registry_id)
+            Store.promote_staged!(registry_id)
+            Index.reload!
+            report_catalog_change!(registry_id, previous_bundle)
+            record_success!(registry_id, promoted: true)
+            Observability.emit(
+              event_name: 'registry.promote_staged',
+              outcome: 'success',
+              details: {
+                registry_id: registry_id.to_s,
+                version: Index.current.status.find { |row| row.id == registry_id.to_s }&.version
+              }
+            )
+            sync_status_for(Index.current.status.find { |row| row.id == registry_id.to_s })
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @param staged_dir [String]
+          # @return [void]
+          def activate_bundle!(registry_id, staged_dir)
+            previous_bundle = Index.current.bundle_for(registry_id)
+            Store.swap!(registry_id, staged_dir)
+            Index.reload!
+            report_catalog_change!(registry_id, previous_bundle)
+            record_success!(registry_id, promoted: true)
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @param previous_bundle [Index::RegistryBundle, nil]
+          # @return [void]
+          def report_catalog_change!(registry_id, previous_bundle)
+            new_bundle = Index.current.bundle_for(registry_id)
+            return unless new_bundle
+
+            CatalogChangeReporter.report!(
+              registry_id: registry_id.to_s,
+              previous_bundle:,
+              new_bundle:
+            )
+          end
+
+          ##
           # @return [Boolean]
           def skip_boot?
             ENV.fetch('RACK_ENV', 'development') == 'test'
@@ -213,41 +277,22 @@ module Html2rss
             rand(max_jitter)
           end
 
-          ##
-          # @param entry [Entry]
-          # @return [String]
-          def resolve_download_url(entry)
-            return entry.sync_url if entry.sync_url && !entry.sync_url.empty?
-            return resolve_official_download_url if entry.sync_channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
-
-            raise Errors::SyncError, "Registry '#{entry.id}' has no sync URL"
-          end
-
-          ##
-          # @return [String]
-          def resolve_official_download_url
-            response_body = Fetcher.fetch!(OFFICIAL_GITHUB_RELEASES_API)
-            release = JSON.parse(response_body, symbolize_names: true)
-            asset = Array(release[:assets]).find { |row| row[:name] == OFFICIAL_ASSET_NAME }
-            url = asset&.dig(:browser_download_url)
-            raise Errors::SyncError, "Official release asset '#{OFFICIAL_ASSET_NAME}' not found" unless url
-
-            url
-          rescue JSON::ParserError => error
-            raise Errors::SyncError, "Invalid GitHub release metadata: #{error.message}"
-          end
+          BACKGROUND_JITTER_FRACTION = 0.1
+          private_constant :BACKGROUND_JITTER_FRACTION
 
           ##
           # @param entry [Entry]
           # @param download_url [String]
           # @return [Array(String, String)] staging root and verified bundle directory
           def fetch_and_verify!(entry, download_url) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-            tarball = Fetcher.fetch!(download_url)
+            tarball = SyncFetcher.fetch!(download_url)
             staging_root = Dir.mktmpdir('registry-sync-')
             staged_dir = File.join(staging_root, 'bundle')
+            tarball_path = File.join(staging_root, 'download.tar.gz')
             FileUtils.mkdir_p(staged_dir)
+            File.binwrite(tarball_path, tarball)
 
-            StringIO.open(tarball) do |io|
+            File.open(tarball_path, 'rb') do |io|
               Html2rss::Registry::Archive.extract!(io, into: staged_dir)
             end
 
@@ -256,6 +301,7 @@ module Html2rss
               trust: :signed,
               public_keys: entry.public_keys
             )
+            enforce_max_version!(entry, staged_dir)
             [staging_root, staged_dir]
           rescue Html2rss::Registry::VerificationError => error
             log_signature_failure!(entry.id, error.message) if signature_failure?(error)
@@ -280,15 +326,45 @@ module Html2rss
           end
 
           ##
-          # @param registry_id [String]
+          # @param entry [Entry]
+          # @param staged_dir [String]
           # @return [void]
-          def record_success!(registry_id)
+          def enforce_max_version!(entry, staged_dir)
+            manifest = read_manifest!(staged_dir)
+            max_version = entry.sync_policy.max_version
+            return unless max_version
+
+            return unless VersionGate.exceeds_max?(manifest.version, max_version)
+
+            raise Errors::SyncError,
+                  "Registry '#{entry.id}' manifest version '#{manifest.version}' exceeds max_version '#{max_version}'"
+          end
+
+          ##
+          # @param staged_dir [String]
+          # @return [Html2rss::Registry::Manifest]
+          def read_manifest!(staged_dir)
+            Html2rss::Registry::Manifest.parse(
+              File.read(File.join(staged_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
+            )
+          end
+
+          ##
+          # @param registry_id [String]
+          # @param promoted [Boolean]
+          # @return [void]
+          def record_success!(registry_id, promoted:) # rubocop:disable Metrics/MethodLength
             Store.write_sync_state!(registry_id, last_error: nil)
             row = Index.current.status.find { |entry| entry.id == registry_id.to_s }
             Observability.emit(
               event_name: 'registry.sync',
               outcome: 'success',
-              details: { registry_id:, version: row&.version }
+              details: {
+                registry_id:,
+                version: row&.version,
+                staged_version: Store.staged_version(registry_id),
+                promoted:
+              }
             )
           end
 
@@ -309,118 +385,20 @@ module Html2rss
           ##
           # @param row [Index::StatusEntry]
           # @return [SyncStatus]
-          def sync_status_for(row)
+          def sync_status_for(row) # rubocop:disable Metrics/MethodLength
             entry = Config.entry(row.id)
             state = Store.sync_state(row.id)
             SyncStatus.new(
               registry_id: row.id,
               mode: row.sync_mode,
               version: row.version,
+              staged_version: Store.staged_version(row.id),
               updated_at: row.updated_at,
-              sync_url: entry.mode == :sync ? resolve_download_url(entry) : nil,
-              last_error: state['last_error']
+              sync_url: entry.mode == :sync ? SyncUrlResolver.resolve(entry) : nil,
+              last_error: state.last_error
             )
           end
         end # rubocop:enable Metrics/ClassLength
-
-        ##
-        # HTTPS fetcher with host allowlisting and redirect rejection.
-        module Fetcher
-          module_function
-
-          ##
-          # @param url [String]
-          # @return [String] response body
-          def fetch!(url)
-            uri = parse_https_uri!(url)
-            ensure_allowed_host!(uri.host)
-            perform_request!(uri)
-          end
-
-          ##
-          # @param url [String]
-          # @return [URI::HTTPS]
-          def parse_https_uri!(url)
-            uri = URI(url)
-            unless uri.is_a?(URI::HTTPS)
-              raise Errors::SyncError, "Registry sync requires HTTPS URLs (got #{uri.scheme.inspect})"
-            end
-
-            uri
-          end
-
-          ##
-          # @param host [String]
-          # @return [void]
-          def ensure_allowed_host!(host)
-            allowed = DEFAULT_ALLOWED_HOSTS + extra_allowed_hosts
-            return if allowed.include?(host)
-
-            raise Errors::SyncError, "Registry sync host not allowed: #{host}"
-          end
-
-          ##
-          # @return [Array<String>]
-          def extra_allowed_hosts
-            ENV.fetch('REGISTRY_SYNC_ALLOWED_HOSTS', '')
-               .split(',')
-               .map(&:strip)
-               .reject(&:empty?)
-          end
-
-          ##
-          # @param uri [URI::HTTPS]
-          # @return [String]
-          def perform_request!(uri) # rubocop:disable Metrics/MethodLength
-            response = nil
-            Net::HTTP.start(
-              uri.host,
-              uri.port,
-              use_ssl: true,
-              open_timeout: FETCH_OPEN_TIMEOUT_SECONDS,
-              read_timeout: FETCH_READ_TIMEOUT_SECONDS
-            ) do |http|
-              request = Net::HTTP::Get.new(uri)
-              request['Accept'] = 'application/octet-stream'
-              request['User-Agent'] = 'html2rss-web/registry-sync'
-              response = http.request(request)
-            end
-
-            reject_redirect!(response)
-            reject_error_status!(response)
-            read_body!(response)
-          end
-
-          ##
-          # @param response [Net::HTTPResponse]
-          # @return [void]
-          def reject_redirect!(response)
-            return unless response.is_a?(Net::HTTPRedirection)
-
-            raise Errors::SyncError, 'Registry sync rejects HTTP redirects'
-          end
-
-          ##
-          # @param response [Net::HTTPResponse]
-          # @return [void]
-          def reject_error_status!(response)
-            return if response.is_a?(Net::HTTPSuccess)
-
-            raise Errors::SyncError, "Registry sync fetch failed with HTTP #{response.code}"
-          end
-
-          ##
-          # @param response [Net::HTTPResponse]
-          # @return [String]
-          def read_body!(response)
-            body = response.body.to_s
-            if body.bytesize > MAX_RESPONSE_BYTES
-              raise Errors::SyncError, "Registry sync response exceeds max bytes (#{MAX_RESPONSE_BYTES})"
-            end
-
-            body
-          end
-        end
       end # rubocop:enable Metrics/ModuleLength
     end
   end

@@ -8,13 +8,17 @@ if (ENV.fetch('CI', nil) || ENV.fetch('COVERAGE', nil)) && ENV['RUN_DOCKER_SPECS
   require 'simplecov'
 
   SimpleCov.start do
-    add_filter '/spec/'
-    add_filter '/config/'
+    enable_coverage :branch
+    primary_coverage :branch
 
-    track_files '**/*.rb'
+    add_group 'App', 'app'
+    add_group 'Config', 'config'
 
-    minimum_coverage 80 unless ENV['OPENAPI']
-    maximum_coverage_drop 5 unless ENV['OPENAPI']
+    skip_filter %r{/spec/}
+    skip_filter %r{/config/}
+
+    minimum_coverage line: 80, branch: 70 unless ENV['OPENAPI']
+    maximum_coverage_drop line: 5, branch: 5 unless ENV['OPENAPI']
   end
 end
 

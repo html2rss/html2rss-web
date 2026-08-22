@@ -7,6 +7,10 @@ module Html2rss
   module Web
     module Registry
       ##
+      # Sync policy parsed from registry YAML.
+      SyncPolicy = Data.define(:pin_version, :max_version, :auto_promote)
+
+      ##
       # Registry definition parsed from {Config::REGISTRIES_FILE}.
       Entry = Data.define(
         :id,
@@ -16,7 +20,9 @@ module Html2rss
         :sync_url,
         :catalog,
         :public_key_id,
-        :public_key
+        :public_key,
+        :sync_policy,
+        :allowed_channel_domains
       ) do
         ##
         # @return [Hash{String => OpenSSL::PKey::PKey}]
@@ -115,12 +121,30 @@ module Html2rss
             {
               precedence: DEFAULT_PRECEDENCE,
               registries: {
-                'official' => {
-                  sync: { channel: DEFAULT_OFFICIAL_SYNC_CHANNEL },
-                  catalog: true
-                }
+                'official' => default_official_registry
               }
             }
+          end
+
+          ##
+          # @return [Hash{Symbol => Object}]
+          def default_official_registry
+            {
+              sync: { channel: DEFAULT_OFFICIAL_SYNC_CHANNEL },
+              catalog: true,
+              public_key_id: 'html2rss:registry:2026',
+              public_key: default_public_key_pem
+            }
+          end
+
+          ##
+          # @return [String]
+          def default_public_key_pem
+            <<~PEM
+              -----BEGIN PUBLIC KEY-----
+              MCowBQYDK2VwAyEAiMbg/04MyC5azBdM/aeY0mNuA8JbP5/jOiNRwJ2KJHE=
+              -----END PUBLIC KEY-----
+            PEM
           end
 
           ##
@@ -141,13 +165,36 @@ module Html2rss
           # @return [Entry]
           def build_entry(registry_id, raw)
             sync = sync_section(raw)
-            mode, resolved_path, sync_channel, sync_url = resolve_mode(
-              path: raw[:path]&.to_s,
-              sync_channel: sync[:channel]&.to_s,
-              sync_url: sync[:url]&.to_s
-            )
+            case raw
+            in { path: path } if path&.then { |value| !value.empty? }
+              entry_attributes(registry_id, raw, :path, expand_path(path.to_s), nil, nil)
+            else
+              build_sync_entry(registry_id, raw, sync)
+            end
+          end
 
-            entry_attributes(registry_id, raw, mode, resolved_path, sync_channel, sync_url)
+          ##
+          # @param registry_id [String]
+          # @param raw [Hash{Symbol => Object}]
+          # @param sync [Hash{Symbol => Object}]
+          # @return [Entry]
+          def build_sync_entry(registry_id, raw, sync)
+            sync_channel = sync[:channel]&.to_s
+            sync_url = sync[:url]&.to_s
+            resolved_sync_url = resolved_sync_url(sync_url, sync_channel)
+            entry = entry_attributes(registry_id, raw, :sync, nil, sync_channel, resolved_sync_url)
+            validate_sync_public_key!(registry_id, entry)
+            entry
+          end
+
+          ##
+          # @param sync_url [String]
+          # @param sync_channel [String, nil]
+          # @return [String]
+          def resolved_sync_url(sync_url, sync_channel)
+            return sync_url if sync_url && !sync_url.empty?
+
+            SyncUrlResolver.resolve_channel_url(sync_channel)
           end
 
           ##
@@ -158,7 +205,8 @@ module Html2rss
           # @param sync_channel [String, nil]
           # @param sync_url [String, nil]
           # @return [Entry]
-          def entry_attributes(registry_id, raw, mode, path, sync_channel, sync_url) # rubocop:disable Metrics/ParameterLists
+          def entry_attributes(registry_id, raw, mode, path, sync_channel, sync_url) # rubocop:disable Metrics/ParameterLists, Metrics/MethodLength
+            sync = sync_section(raw)
             Entry.new(
               id: registry_id,
               mode:,
@@ -167,7 +215,9 @@ module Html2rss
               sync_url:,
               catalog: raw.fetch(:catalog, true),
               public_key_id: public_key_id_for(raw[:public_key_id]&.to_s),
-              public_key: parse_public_key(raw[:public_key])
+              public_key: parse_public_key(raw[:public_key]),
+              sync_policy: sync_policy_for(raw, sync),
+              allowed_channel_domains: parse_allowed_channel_domains(raw[:allowed_channel_domains])
             )
           end
 
@@ -176,6 +226,40 @@ module Html2rss
           # @return [Hash{Symbol => Object}]
           def sync_section(raw)
             raw[:sync].is_a?(Hash) ? raw[:sync] : {}
+          end
+
+          ##
+          # @param raw [Hash{Symbol => Object}]
+          # @param sync [Hash{Symbol => Object}]
+          # @return [SyncPolicy]
+          def sync_policy_for(raw, sync)
+            SyncPolicy.new(
+              pin_version: optional_string(sync[:pin_version]),
+              max_version: optional_string(sync[:max_version]),
+              auto_promote: auto_promote?(raw[:auto_promote])
+            )
+          end
+
+          ##
+          # @param value [Object]
+          # @return [Boolean]
+          def auto_promote?(value)
+            value == true
+          end
+
+          ##
+          # @param value [Object]
+          # @return [String, nil]
+          def optional_string(value)
+            string = value&.to_s
+            string.nil? || string.empty? ? nil : string
+          end
+
+          ##
+          # @param value [Object]
+          # @return [Array<String>]
+          def parse_allowed_channel_domains(value)
+            Array(value).map { |domain| domain.to_s.strip }.reject(&:empty?)
           end
 
           ##
@@ -188,25 +272,14 @@ module Html2rss
           end
 
           ##
-          # @param path [String, nil]
-          # @param sync_channel [String, nil]
-          # @param sync_url [String, nil]
-          # @return [Array(Symbol, String, nil, String, nil)]
-          def resolve_mode(path:, sync_channel:, sync_url:)
-            return [:path, expand_path(path), nil, nil] if path && !path.empty?
+          # @param registry_id [String]
+          # @param entry [Entry]
+          # @return [void]
+          def validate_sync_public_key!(registry_id, entry)
+            return unless entry.public_key.nil?
 
-            resolved_sync_url = sync_url && !sync_url.empty? ? sync_url : resolve_sync_channel_url(sync_channel)
-            [:sync, nil, sync_channel, resolved_sync_url]
-          end
-
-          ##
-          # @param sync_channel [String, nil]
-          # @return [String]
-          def resolve_sync_channel_url(sync_channel)
-            channel = sync_channel && !sync_channel.empty? ? sync_channel : DEFAULT_OFFICIAL_SYNC_CHANNEL
-            return OFFICIAL_RELEASE_URL if channel == DEFAULT_OFFICIAL_SYNC_CHANNEL
-
-            raise Errors::ConfigError, "Unknown sync channel '#{channel}'"
+            raise Errors::ConfigError,
+                  "Sync registry '#{registry_id}' requires a pinned public_key in #{registries_file}"
           end
 
           ##

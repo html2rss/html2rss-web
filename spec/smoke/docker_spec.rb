@@ -112,4 +112,13 @@ RSpec.describe 'Dockerized API smoke test', :docker do
     expect(body.dig('error', 'code')).to eq('FORBIDDEN')
     expect(body.dig('error', 'message')).to eq('Auto source feature is disabled')
   end
+
+  it 'exposes the config catalog without authentication', :aggregate_failures do
+    response, payload = get_json('/api/v1/configs')
+
+    expect(response).to be_a(Net::HTTPOK)
+    expect(payload.fetch('success')).to be(true)
+    expect(payload.dig('data', 'configs')).to be_an(Array)
+    expect(payload.dig('meta', 'catalog_version')).to eq(1)
+  end
 end

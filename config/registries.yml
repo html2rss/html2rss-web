@@ -7,5 +7,16 @@ registries:
       channel: html2rss-official
     catalog: true
     public_key_id: html2rss:registry:2026
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      MCowBQYDK2VwAyEAiMbg/04MyC5azBdM/aeY0mNuA8JbP5/jOiNRwJ2KJHE=
+      -----END PUBLIC KEY-----
     # Pin the publisher Ed25519 public key for signed network sync.
     # Seed bundles copied from the image use integrity-only verification.
+    # Production: keep auto_promote false and promote manually after review.
+    # auto_promote: false
+    # sync:
+    #   pin_version: v2026.08.22
+    #   max_version: v2026.08.22
+    # allowed_channel_domains:
+    #   - anthropic.com

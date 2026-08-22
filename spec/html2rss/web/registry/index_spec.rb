@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'spec_helper'
 
 require_relative '../../../../app'
@@ -40,6 +41,13 @@ RSpec.describe Html2rss::Web::Registry::Index do
 
       expect(rows.map { |row| row.fetch(:id) }).not_to include('secret.example/private')
     end
+
+    it 'prefers the first registry in precedence for duplicate feed ids' do
+      rows = described_class.current.catalog_rows
+      apple = rows.find { |row| row.fetch(:id) == 'support.apple.com/en_gb_ht201222' }
+
+      expect(apple.fetch(:registry)).to eq('official')
+    end
   end
 
   describe '#status' do
@@ -51,6 +59,35 @@ RSpec.describe Html2rss::Web::Registry::Index do
         version: 'test-fixture',
         sync_mode: :path
       )
+    end
+  end
+
+  describe 'allowed_channel_domains' do
+    let(:config_path) { File.join(Dir.pwd, 'tmp', 'domain-allowlist-registries.yml') }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(config_path))
+      File.write(config_path, <<~YAML)
+        precedence:
+          - official
+        registries:
+          official:
+            path: spec/fixtures/registries/official
+            catalog: true
+            allowed_channel_domains:
+              - blocked.example
+      YAML
+      ENV['REGISTRIES_CONFIG'] = config_path
+      described_class.reload!
+    end
+
+    after do
+      FileUtils.rm_f(config_path)
+    end
+
+    it 'rejects bundles with channel URLs outside the allowlist' do
+      expect { described_class.current.config_for('phys.org/weekly') }
+        .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /phys.org/)
     end
   end
 end

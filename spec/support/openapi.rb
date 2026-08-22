@@ -233,5 +233,11 @@ if ENV['OPENAPI']
     else
       spec[:tags] = tags
     end
+
+    paths = spec['paths'] || spec[:paths]
+    catalog_configs_required = paths&.dig('/configs', 'get', 'responses', '200', 'content',
+                                          'application/json', 'schema', 'properties', 'data', 'properties', 'configs',
+                                          'items', 'required')
+    catalog_configs_required&.delete('registry') if catalog_configs_required.is_a?(Array)
   end
 end

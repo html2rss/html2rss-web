@@ -8,12 +8,14 @@ module Html2rss
     module Registry
       ##
       # Manages on-disk registry bundle directories under {data_root}.
-      module Store
+      module Store # rubocop:disable Metrics/ModuleLength
         DEFAULT_DATA_ROOT = 'tmp/registry-data'
         DEFAULT_SEED_ROOT = '/app/registries/seed'
         SYNC_STATE_FILE = '.sync-state.json'
 
-        class << self
+        SyncState = Data.define(:last_error, :last_sync_at)
+
+        class << self # rubocop:disable Metrics/ClassLength
           ##
           # @return [String] root directory for extracted registry bundles
           def data_root
@@ -45,6 +47,66 @@ module Html2rss
           # @return [Boolean]
           def bundle_present?(registry_id)
             bundle_present_at?(registry_dir(registry_id))
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @return [String] verified staging directory for a registry id
+          def staging_dir(registry_id)
+            File.join(registry_dir(registry_id), '.staging')
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @return [Boolean]
+          def staged_present?(registry_id)
+            bundle_present_at?(staging_dir(registry_id))
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @return [String, nil]
+          def staged_version(registry_id)
+            manifest_version_at(staging_dir(registry_id))
+          end
+
+          ##
+          # Writes a verified bundle to the registry staging directory.
+          #
+          # @param registry_id [String, Symbol]
+          # @param staged_dir [String] verified bundle directory to stage
+          # @return [String] staging directory
+          def stage_bundle!(registry_id, staged_dir)
+            raise Errors::LoadError, "Staged bundle missing: #{staged_dir}" unless File.directory?(staged_dir)
+
+            target = staging_dir(registry_id)
+            parent = registry_dir(registry_id)
+            FileUtils.mkdir_p(parent)
+
+            backup = "#{target}.backup.#{Process.pid}"
+            promote_bundle!(staged_dir, target, backup)
+            target
+          end
+
+          ##
+          # Promotes a verified staging bundle to the active registry directory.
+          #
+          # @param registry_id [String, Symbol]
+          # @return [String] active bundle directory
+          def promote_staged!(registry_id) # rubocop:disable Metrics/MethodLength
+            staged = staging_dir(registry_id)
+            raise Errors::LoadError, "No staged bundle for '#{registry_id}'" unless staged_present?(registry_id)
+
+            temp_root = Dir.mktmpdir('registry-promote-')
+            temp_staged = File.join(temp_root, 'bundle')
+            FileUtils.mv(staged, temp_staged)
+
+            active = registry_dir(registry_id)
+            backup = "#{active}.backup.#{Process.pid}"
+            promote_bundle!(temp_staged, active, backup)
+            active
+          ensure
+            FileUtils.rm_rf(temp_root) if temp_root
           end
 
           ##
@@ -84,9 +146,13 @@ module Html2rss
 
           ##
           # @param registry_id [String, Symbol]
-          # @return [Hash{Symbol => Object}]
+          # @return [SyncState]
           def sync_state(registry_id)
-            read_sync_state.fetch(registry_id.to_s, {})
+            raw = read_sync_state.fetch(registry_id.to_s, {})
+            SyncState.new(
+              last_error: raw['last_error'],
+              last_sync_at: parse_sync_time(raw['last_sync_at'])
+            )
           end
 
           ##
@@ -143,7 +209,30 @@ module Html2rss
           # @param path [String]
           # @return [Boolean]
           def bundle_present_at?(path)
-            File.directory?(path) && !Dir.empty?(path)
+            File.file?(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
+          end
+
+          ##
+          # @param path [String]
+          # @return [String, nil]
+          def manifest_version_at(path)
+            return nil unless bundle_present_at?(path)
+
+            manifest = Html2rss::Registry::Manifest.parse(
+              File.read(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
+            )
+            manifest.version
+          rescue Html2rss::Registry::ManifestError
+            nil
+          end
+
+          ##
+          # @param value [String, nil]
+          # @return [Time, nil]
+          def parse_sync_time(value)
+            return nil if value.to_s.empty?
+
+            Time.parse(value)
           end
         end
       end

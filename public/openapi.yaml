@@ -173,7 +173,6 @@ paths:
                           - channel
                           - parameters
                           - source
-                          - registry
                           type: object
                         type: array
                     required:

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'fileutils'
+require 'climate_control'
 require 'spec_helper'
 require 'webmock/rspec'
 
@@ -43,12 +45,36 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       end.not_to(change { Html2rss::Web::Registry::Store.bundle_present?('official') })
     end
 
-    it 'rejects redirects' do
+    it 'follows bounded redirects to allowed CDN hosts', :aggregate_failures do
+      cdn_url = 'https://release-assets.githubusercontent.com/registry-bundle.tar.gz'
+      stub_request(:get, download_url)
+        .to_return(status: 302, headers: { 'Location' => cdn_url })
+      stub_request(:get, cdn_url)
+        .to_return(status: 200, body: tarball, headers: { 'Content-Type' => 'application/octet-stream' })
+
+      status = described_class.run(registry_id: 'official')
+
+      expect(status.version).to eq('test-fixture')
+      expect(Html2rss::Web::Registry::Store.bundle_present?('official')).to be(true)
+    end
+
+    it 'rejects redirects to disallowed hosts' do
       stub_request(:get, download_url)
         .to_return(status: 302, headers: { 'Location' => 'https://evil.example/bundle.tar.gz' })
 
       expect { described_class.run(registry_id: 'official') }
-        .to raise_error(Html2rss::Web::Registry::Errors::SyncError, /redirect/i)
+        .to raise_error(Html2rss::Web::Registry::Errors::SyncError, /host not allowed/i)
+    end
+
+    it 'rejects excessive redirect chains' do
+      (1..6).each do |hop|
+        from = hop == 1 ? download_url : "#{download_url}?hop=#{hop - 1}"
+        to = "#{download_url}?hop=#{hop}"
+        stub_request(:get, from).to_return(status: 302, headers: { 'Location' => to })
+      end
+
+      expect { described_class.run(registry_id: 'official') }
+        .to raise_error(Html2rss::Web::Registry::Errors::SyncError, /redirect limit/i)
     end
 
     it 'logs signature verification failures to the security logger' do
@@ -86,8 +112,82 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       expect(row).to have_attributes(
         registry_id: 'official',
         mode: :sync,
-        sync_url: 'https://registry.test.example/registry-bundle.tar.gz'
+        sync_url: 'https://registry.test.example/registry-bundle.tar.gz',
+        staged_version: nil
       )
+    end
+  end
+
+  describe 'sync policy', :registry_sync do
+    let(:download_url) { 'https://registry.test.example/registry-bundle.tar.gz' }
+    let(:tarball) { RegistrySyncTestHelpers.build_signed_tarball }
+    let(:policy_config_path) { File.join(Dir.pwd, 'tmp', 'sync-policy-official.yml') }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(policy_config_path))
+      stub_request(:get, download_url)
+        .to_return(status: 200, body: tarball, headers: { 'Content-Type' => 'application/octet-stream' })
+    end
+
+    after do
+      FileUtils.rm_f(policy_config_path)
+    end
+
+    def write_policy_config(yaml)
+      File.write(policy_config_path, yaml)
+      ENV['REGISTRIES_CONFIG'] = policy_config_path
+      Html2rss::Web::Registry::Index.reload!
+    end
+
+    it 'stages verified bundles when auto_promote is false', :aggregate_failures do
+      write_policy_config(
+        RegistrySyncTestHelpers.policy_registry_yaml(
+          download_url:,
+          auto_promote: false,
+          sync_extra: { max_version: 'test-fixture' }
+        )
+      )
+
+      status = described_class.run(registry_id: 'official')
+
+      expect(Html2rss::Web::Registry::Store.staged_present?('official')).to be(true)
+      expect(Html2rss::Web::Registry::Store.bundle_present?('official')).to be(false)
+      expect(status.staged_version).to eq('test-fixture')
+    end
+
+    it 'promotes staged bundles and emits catalog change telemetry', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::Observability).to receive(:emit)
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_registry_catalog_changed)
+
+      write_policy_config(
+        RegistrySyncTestHelpers.policy_registry_yaml(download_url:, auto_promote: false)
+      )
+
+      described_class.run(registry_id: 'official')
+      status = described_class.promote_staged!(registry_id: 'official')
+
+      expect(status.version).to eq('test-fixture')
+      expect(Html2rss::Web::Registry::Store.staged_present?('official')).to be(false)
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        hash_including(event_name: 'registry.promote_staged', outcome: 'success')
+      )
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        hash_including(event_name: 'registry.catalog_changed', outcome: 'success')
+      )
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_registry_catalog_changed)
+    end
+
+    it 'rejects manifests newer than max_version' do
+      write_policy_config(
+        RegistrySyncTestHelpers.policy_registry_yaml(
+          download_url:,
+          auto_promote: true,
+          sync_extra: { max_version: '0.0.1' }
+        )
+      )
+
+      expect { described_class.run(registry_id: 'official') }
+        .to raise_error(Html2rss::Web::Registry::Errors::SyncError, /exceeds max_version/)
     end
   end
 

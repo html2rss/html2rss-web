@@ -37,12 +37,14 @@ Source of truth for feed YAML and signed release artifacts.
    ```
 3. Tag the release (tag name becomes `manifest.json` `version` in CI via `REGISTRY_VERSION: ${{ github.ref_name }}`):
    ```bash
-   git tag 2026.08.22   # example; use your release tag
-   git push origin 2026.08.22
+   git tag v2026.08.22   # example; use your release tag
+   git push origin v2026.08.22
    ```
 4. Tag push triggers [`.github/workflows/release.yml`](../../html2rss-configs/.github/workflows/release.yml):
    - `make registry-build -- --sign`
-   - uploads `dist/registry-bundle.tar.gz` to the GitHub Release
+   - uploads `dist/registry-bundle.tar.gz` to a **draft** GitHub Release (human publishes after review)
+
+**Draft → publish:** CI creates a draft release. Maintainers review the asset, release notes, and tag diff, then click **Publish release** in GitHub. Draft releases are invisible to `/releases/latest` until published.
 
 ### 1.3 `html2rss-web` (runtime + Docker image)
 
@@ -71,17 +73,27 @@ openssl pkey -in registry-signing.pem -pubout -out registry-signing.pub
 
 Keep the private key offline except where signing happens.
 
-### 2.2 Configure `html2rss-configs` CI secret
+### 2.2 Configure `html2rss-configs` CI secrets
 
-1. In the `html2rss-configs` GitHub repo, add secret **`REGISTRY_SIGNING_KEY`** with the full PEM contents of `registry-signing.pem`.
-2. Release CI reads it here:
+In the `html2rss-configs` GitHub repo, add secrets on the **`registry-release`** environment:
 
-   ```yaml
-   env:
-     REGISTRY_VERSION: ${{ github.ref_name }}
-     REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
-   run: make registry-build -- --sign
-   ```
+| Secret | Purpose |
+| --- | --- |
+| `REGISTRY_SIGNING_KEY` | Full PEM contents of `registry-signing.pem` (private key; used by `make registry-build -- --sign`) |
+| `REGISTRY_PUBLIC_KEY_PEM` | Full PEM contents of `registry-signing.pub` (public key; used by the release verify step — not a repo fixture) |
+
+Release CI reads them here:
+
+```yaml
+env:
+  REGISTRY_VERSION: ${{ github.ref_name }}
+  REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
+run: make registry-build -- --sign
+```
+
+The verify step loads the public key from `REGISTRY_PUBLIC_KEY_PEM` in-process (`OpenSSL::PKey.read(ENV.fetch('REGISTRY_PUBLIC_KEY_PEM'))`); no committed PEM file in the configs repo.
+
+At go-live, the same public key must appear in `html2rss-web/config/registries.yml` (`public_key` / `public_key_id`) so runtime sync verification matches CI.
 
 ### 2.3 Pin the public key in `html2rss-web`
 
@@ -92,16 +104,26 @@ registries:
   official:
     sync:
       channel: html2rss-official
+      pin_version: v2026.08.22   # optional: fetch this tag only
+      max_version: v2026.08.22   # optional: reject newer manifests (incident freeze)
+    auto_promote: false          # default false; verified bundles stage until manual promote
     catalog: true
     public_key_id: html2rss:registry:2026
     public_key: |
       -----BEGIN PUBLIC KEY-----
       ...
       -----END PUBLIC KEY-----
+    allowed_channel_domains:     # optional suffix allowlist for channel.url domains
+      - anthropic.com
+      - github.com
 ```
 
 - `public_key_id` must match the value in signed `manifest.json` (default in `tool/registry-build`: `html2rss:registry:2026`).
 - Network sync uses `:signed` trust and requires this pin. Seed bundles copied from the Docker image use `:integrity_only` trust (no signature check on load).
+- **`auto_promote: false`** (default) writes verified bundles to `REGISTRY_DATA_ROOT/<id>/.staging/` without changing the active catalog. Promote after review with `bin/registry-sync --promote --registry official`.
+- **`pin_version`** resolves the GitHub tag release API instead of `/releases/latest`.
+- **`max_version`** rejects sync when the verified manifest version is newer than the cap (incident freeze).
+- **`allowed_channel_domains`** rejects bundle load when any config `channel.url` host is outside the suffix allowlist.
 
 ### 2.4 Tag and publish the configs release
 
@@ -311,16 +333,17 @@ Inside the running container (or Dev Container):
 bin/registry-sync --status
 ```
 
-Tab-separated columns: `registry`, `mode`, `version`, `updated_at`, `sync_url`, `last_error`.
+Tab-separated columns: `registry`, `mode`, `version`, `staged_version`, `updated_at`, `sync_url`, `last_error`.
 
 - Exit code **0** — all sync-mode registries have a usable on-disk bundle.
 - Exit code **1** — at least one sync registry lacks a bundle (see `Registry::Sync.unusable_sync_registries`).
 
-Single registry or dry-run:
+Single registry, dry-run, or promote staged bundle:
 
 ```bash
 bin/registry-sync --registry official
 bin/registry-sync --registry official --dry-run
+bin/registry-sync --promote --registry official
 ```
 
 ### 6.2 Instance metadata API
@@ -360,15 +383,34 @@ Expect HTTP **200** and valid RSS XML.
 
 Configs releases are independent of web image releases. To refresh feeds on a running instance:
 
-### 7.1 Manual sync
+### 7.1 Manual sync and promote
+
+Production recommendation: keep `auto_promote: false`, set `sync.pin_version` to the approved tag, fetch with sync, then promote manually after review.
 
 ```bash
 bin/registry-sync --registry official
+bin/registry-sync --status          # staged_version shows verified bundle
+bin/registry-sync --promote --registry official
 ```
 
-Fetches the latest signed tarball, verifies signature + digests, atomically swaps the active bundle, and reloads `Registry::Index`.
+Fetches the pinned or latest signed tarball, verifies signature + digests, and either stages (`auto_promote: false`) or atomically swaps the active bundle (`auto_promote: true`).
 
-### 7.2 Automatic refresh
+### 7.2 Incident freeze
+
+To block uptake of a newer configs release without disabling sync entirely:
+
+```yaml
+registries:
+  official:
+    sync:
+      channel: html2rss-official
+      max_version: v2026.08.21
+    auto_promote: false
+```
+
+Set `REGISTRY_SYNC_INTERVAL_HOURS=0` to pause background refresh while investigating.
+
+### 7.3 Automatic refresh
 
 | Mechanism | Env var | Default | Behavior |
 | --- | --- | --- | --- |

@@ -1,9 +1,9 @@
 {
   "format": "registry.v1",
   "registry_id": "private",
-  "version": "test-private",
+  "version": "test-fixture",
   "public_key_id": "test",
   "files": {
-    "configs/secret.example/private.yml": "196760640262a019c0b32e08d2f5272c08b11b10b5880dc13266922a30c872a3"
+    "configs/secret.example/private.yml": "f3b4f6d567e44960be89c171a915a5451266998090ca9ffdb394050bcbbd0dd2"
   }
 }

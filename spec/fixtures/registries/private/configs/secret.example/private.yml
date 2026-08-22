@@ -1,3 +1,5 @@
+registry:
+  id: secret.example/private
 directory:
   title: "Private Corp Feed"
   summary: "Hidden from catalog."

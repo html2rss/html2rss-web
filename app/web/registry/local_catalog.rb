@@ -9,7 +9,7 @@ module Html2rss
         module_function
 
         ##
-        # @return [Array<Hash{Symbol => Object}>]
+        # @return [Array<LocalCatalogRow>]
         def rows
           LocalConfig.feeds.filter_map do |feed_name, feed_config|
             build_row(feed_name, feed_config)
@@ -19,7 +19,7 @@ module Html2rss
         ##
         # @param feed_name [String, Symbol]
         # @param feed_config [Hash{Symbol => Object}]
-        # @return [Hash{Symbol => Object}, nil]
+        # @return [LocalCatalogRow, nil]
         def build_row(feed_name, feed_config)
           directory = feed_config[:directory] || {}
           title = directory[:title]
@@ -33,17 +33,17 @@ module Html2rss
         # @param directory [Hash{Symbol => Object}]
         # @param title [String]
         # @param channel [Hash{Symbol => Object}]
-        # @return [Hash{Symbol => Object}]
+        # @return [LocalCatalogRow]
         def row_identity(feed_name, directory, title, channel)
           id = feed_name.to_s
-          {
+          LocalCatalogRow.new(
             id:,
             path: "/#{id}.rss",
             source: 'local',
             directory: directory_payload(directory, title),
             channel: channel_payload(channel, title),
             parameters: { schema: {}, defaults: {} }
-          }
+          )
         end
 
         ##

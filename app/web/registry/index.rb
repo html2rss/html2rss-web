@@ -50,8 +50,15 @@ module Html2rss
         # @return [Array<Hash{Symbol => Object}>] catalog rows in HTTP wire shape
         def catalog_rows
           rows = registry_catalog_rows
-          LocalCatalog.rows.each { |row| rows[row.fetch(:id)] = row }
-          rows.values.sort_by { |row| row.fetch(:id) }
+          LocalCatalog.rows.each { |row| rows[row.id] = row }
+          rows.values.sort_by(&:id).map(&:to_h)
+        end
+
+        ##
+        # @param registry_id [String, Symbol]
+        # @return [RegistryBundle, nil]
+        def bundle_for(registry_id)
+          loaded_bundles[registry_id.to_s]
         end
 
         ##
@@ -72,7 +79,7 @@ module Html2rss
         private
 
         ##
-        # @return [Hash{String => Hash{Symbol => Object}}]
+        # @return [Hash{String => RegistryCatalogRow, LocalCatalogRow}]
         def registry_catalog_rows
           Config.precedence.each_with_object({}) do |registry_id, rows|
             next unless Config.catalog_enabled?(registry_id)
@@ -81,7 +88,7 @@ module Html2rss
             next unless bundle
 
             bundle.catalog_entries.each do |entry|
-              rows[entry.id] ||= wire_registry_row(entry, registry_id)
+              rows[entry.id] ||= RegistryCatalogRow.from_entry(entry, registry_id)
             end
           end
         end
@@ -99,13 +106,15 @@ module Html2rss
           entry = Config.entry(registry_id)
           directory = bundle_directory(entry)
           return nil unless directory && File.directory?(directory)
+          return nil unless active_bundle_present?(directory)
 
           bundle = Html2rss::Registry::Bundle.load(
             directory,
-            trust: :integrity_only,
-            public_keys: entry.public_keys
+            **TrustContext.for_entry(entry, directory).load_options
           )
-          to_registry_bundle(registry_id, bundle)
+          registry_bundle = to_registry_bundle(registry_id, bundle)
+          ScrapePolicy.enforce!(entry, registry_bundle)
+          registry_bundle
         rescue Html2rss::Registry::Error => error
           raise Errors::LoadError, "Failed to load registry '#{registry_id}': #{error.message}"
         end
@@ -133,30 +142,17 @@ module Html2rss
         end
 
         ##
+        # @param directory [String]
+        # @return [Boolean]
+        def active_bundle_present?(directory)
+          File.file?(File.join(directory, Html2rss::Registry::Manifest::MANIFEST_FILE))
+        end
+
+        ##
         # @param feed_id [String, Symbol]
         # @return [String]
         def normalize_feed_id(feed_id)
           feed_id.to_s.delete_prefix('/').sub(LocalConfig::FEED_EXTENSION_PATTERN, '')
-        end
-
-        ##
-        # @param feed_id [String]
-        # @return [Hash{Symbol => Object}, nil]
-        def local_config_for(feed_id)
-          feed = LocalConfig.feeds[feed_id.to_sym] || LocalConfig.feeds[feed_id]
-          return nil unless feed
-
-          deep_dup(feed)
-        rescue Html2rss::Web::LocalConfig::InvalidConfig, Html2rss::Web::LocalConfig::NotFound
-          nil
-        end
-
-        ##
-        # @param entry [Html2rss::Registry::CatalogEntry]
-        # @param registry_id [String]
-        # @return [Hash{Symbol => Object}]
-        def wire_registry_row(entry, registry_id)
-          entry.to_h.merge(source: 'registry', registry: registry_id)
         end
 
         ##
@@ -170,6 +166,18 @@ module Html2rss
           return nil unless File.file?(manifest_path)
 
           File.mtime(manifest_path)
+        end
+
+        ##
+        # @param feed_id [String]
+        # @return [Hash{Symbol => Object}, nil]
+        def local_config_for(feed_id)
+          feed = LocalConfig.feeds[feed_id.to_sym] || LocalConfig.feeds[feed_id]
+          return nil unless feed
+
+          deep_dup(feed)
+        rescue Html2rss::Web::LocalConfig::InvalidConfig, Html2rss::Web::LocalConfig::NotFound
+          nil
         end
 
         ##

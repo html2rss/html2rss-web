@@ -4,9 +4,8 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-# gem 'html2rss', path: '../html2rss'
-# gem 'html2rss', '~> 0.27'
 gem 'html2rss', github: 'html2rss/html2rss', branch: 'feat/registry-v1'
+# Local monorepo override: BUNDLE_LOCAL__HTML2RSS=/path/to/html2rss
 
 gem 'base64'
 gem 'rack-cache'

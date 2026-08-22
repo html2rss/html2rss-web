@@ -76,6 +76,13 @@ module Html2rss
           log_event('registry_signature_failure', { registry_id:, reason: }, severity: :warn)
         end
 
+        # @param registry_id [String]
+        # @param details [Hash{Symbol => Object}]
+        # @return [void]
+        def log_registry_catalog_changed(registry_id, details)
+          log_event('registry_catalog_changed', { registry_id:, **details }, severity: :warn)
+        end
+
         private
 
         # @param event_type [String]
