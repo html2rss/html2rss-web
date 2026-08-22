@@ -38,6 +38,10 @@ Style/Documentation:
   AllowedConstants:
     - App
 
+Style/ItBlockParameter:
+  Enabled: true
+  EnforcedStyle: allow_single_line
+
 RSpec/SpecFilePathFormat:
   Exclude:
     - 'spec/html2rss/web/app/*_spec.rb'

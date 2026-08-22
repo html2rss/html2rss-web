@@ -91,7 +91,7 @@ module Html2rss
             precedence = Array(document[:precedence]).map(&:to_s)
             precedence = DEFAULT_PRECEDENCE if precedence.empty?
 
-            entries = precedence.to_h { |registry_id| [registry_id, parse_entry(registry_id, document)] }
+            entries = precedence.to_h { [it, parse_entry(it, document)] }
             missing = precedence - entries.keys
             raise Errors::ConfigError, "Missing registry definitions: #{missing.join(', ')}" unless missing.empty?
 
@@ -166,7 +166,7 @@ module Html2rss
           def build_entry(registry_id, raw)
             sync = sync_section(raw)
             case raw
-            in { path: path } if path&.then { |value| !value.empty? }
+            in { path: path } if path&.then { !it.empty? }
               entry_attributes(registry_id, raw, :path, expand_path(path.to_s), nil, nil)
             else
               build_sync_entry(registry_id, raw, sync)
@@ -192,7 +192,7 @@ module Html2rss
           # @param sync_channel [String, nil]
           # @return [String]
           def resolved_sync_url(sync_url, sync_channel)
-            return sync_url if sync_url && !sync_url.empty?
+            return sync_url unless sync_url.to_s.empty?
 
             SyncTransport.resolve_channel_url(sync_channel)
           end
@@ -259,14 +259,14 @@ module Html2rss
           # @param value [Object]
           # @return [Array<String>]
           def parse_allowed_channel_domains(value)
-            Array(value).map { |domain| domain.to_s.strip }.reject(&:empty?)
+            Array(value).map { it.to_s.strip }.reject(&:empty?)
           end
 
           ##
           # @param public_key_id [String, nil]
           # @return [String]
           def public_key_id_for(public_key_id)
-            return public_key_id if public_key_id && !public_key_id.empty?
+            return public_key_id unless public_key_id.to_s.empty?
 
             'html2rss:registry:2026'
           end
