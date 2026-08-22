@@ -215,16 +215,57 @@ Canonical event fields: `event_name`, `schema_version`, `request_id`, `route_gro
 
 Critical-path event families: auth, feed create, feed render, request errors.
 
+### Sentry DSN separation
+
+Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never share a DSN.
+
+| Env var | Service | Project |
+| --- | --- | --- |
+| `SENTRY_DSN` | html2rss-web | A (web) |
+| `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
+
+Compose requires `BOTASAURUS_SENTRY_DSN` for botasaurus and does not fall back to web `SENTRY_DSN`.
+
 ## Sentry Runbook
 
-When `SENTRY_DSN` is present, Sentry is enabled. `BUILD_TAG` and `GIT_SHA` become the release identifier, and
-`RACK_ENV` becomes the environment tag.
+With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational failures (`SentryOps`) to Sentry Issues. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
 
-Triage starts with the newest `feed.create`, `feed.render`, and `request.error` events. Confirm the release tag,
-route group, strategy, and outcome before deciding whether the failure is retryable, terminal, or user-facing.
+Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs`.
 
-Alert on sustained production `request.error` spikes or repeated `feed.render` failures, then tune thresholds from
-real incidents.
+Start triage from the newest `feed.create`, `feed.render`, and `request.error` events. Check release, route group, strategy, and outcome.
+
+### On-call triage
+
+1. **Confirm project** — `SENTRY_DSN` (web) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper errors in the web project usually mean DSN mix-up.
+2. **Correlate** — copy `request_id` from one issue and search the other project.
+3. **Decision tree**
+   - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
+   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal)
+   - `EXTRACTION_EMPTY` → selectors/config (product signal)
+   - `GATEWAY_TIMEOUT` / `timeout` → slow or unreachable target
+
+### Alert baselines
+
+After baseline traffic, configure per project:
+
+**Project B (scraper)**
+
+- P0: `error_category:navigation_error` above baseline
+- P0: `error_category:timeout` sustained spike
+- Metric: `scrape.challenge_block` anomaly (product signal)
+
+**Project A (web)**
+
+- P0: `error_code:SCRAPER_UNAVAILABLE` sustained
+- P0: `request.error` spike with `kind:server`
+
+### Dashboard baselines
+
+**Scraper (B)**: outcomes by `error_category`, top `host`, `render_ms`, `scrape.challenge_block` trend
+
+**Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
+
+Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
 
 ---
 

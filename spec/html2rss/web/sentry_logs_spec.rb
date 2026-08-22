@@ -59,6 +59,16 @@ RSpec.describe Html2rss::Web::SentryLogs do
     expect(captured_call).to eq({})
   end
 
+  it 'keeps log intake disabled when only SENTRY_DSN is set', :aggregate_failures do
+    stub_const('Sentry', fake_sentry)
+    allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: true, sentry_logs_enabled?: false)
+    expect(described_class.send(:enabled?)).to be(false)
+
+    described_class.emit(raw_payload)
+
+    expect(captured_call).to eq({})
+  end
+
   it 'does not forward payloads when sentry is disabled' do
     stub_const('Sentry', fake_sentry)
     allow(Html2rss::Web::RuntimeEnv).to receive_messages(sentry_enabled?: false, sentry_logs_enabled?: true)

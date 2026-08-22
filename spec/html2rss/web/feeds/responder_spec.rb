@@ -27,6 +27,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
     allow(Html2rss::Web::Observability).to receive(:emit)
+    allow(Html2rss::Web::SentryOps).to receive(:emit_failure_telemetry)
   end
 
   context 'with a cacheable success result' do
@@ -147,9 +148,10 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       write_response
 
-      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+      expect(Html2rss::Web::SentryOps).to have_received(:emit_failure_telemetry).with(
+        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
+        diagnostics: have_attributes(strategy_attempts: attempts),
         event_name: 'feed.render',
-        outcome: 'failure',
         details: include(
           strategy: :faraday,
           url: 'https://example.com',
@@ -158,7 +160,8 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           error_message: 'timeout',
           strategy_attempts: attempts
         ),
-        level: :warn
+        level: :warn,
+        context: { url: 'https://example.com', strategy: :faraday }
       )
     end
   end
@@ -276,13 +279,19 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       allow(Html2rss::Web::Feeds::Renderer).to receive(:render).and_raise(StandardError, 'render failed')
     end
 
-    it 'emits only the failure event' do
+    it 'emits only the failure event' do # rubocop:disable RSpec/ExampleLength
       expect { write_response }.to raise_error(StandardError, 'render failed')
 
-      expect(Html2rss::Web::Observability).to have_received(:emit).once.with(
+      expect(Html2rss::Web::SentryOps).to have_received(:emit_failure_telemetry).once.with(
+        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
+        diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.empty,
         event_name: 'feed.render',
-        outcome: 'failure',
-        details: include(error_class: 'StandardError', error_message: 'render failed', feed_name: 'example'),
+        details: include(
+          error_class: 'StandardError',
+          error_message: 'render failed',
+          error_code: 'INTERNAL_SERVER_ERROR',
+          feed_name: 'example'
+        ),
         level: :warn
       )
     end

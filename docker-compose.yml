@@ -17,6 +17,7 @@ services:
       GIT_SHA: ${GIT_SHA:-local}
       HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY}
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:?set HEALTH_CHECK_TOKEN}
+      # Web Sentry (Project A): SENTRY_DSN; logs opt-in via SENTRY_ENABLE_LOGS=true
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
       HTML2RSS_TOTAL_TIMEOUT_SECONDS: 25
@@ -41,5 +42,10 @@ services:
   botasaurus:
     image: html2rss/botasaurus-scrape-api:latest
     restart: unless-stopped
+    environment:
+      # Scraper Sentry (Project B): BOTASAURUS_SENTRY_DSN only — not web SENTRY_DSN
+      SENTRY_DSN: ${BOTASAURUS_SENTRY_DSN:?set BOTASAURUS_SENTRY_DSN}
+      SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
+      SENTRY_RELEASE: ${GIT_SHA:-unknown}
     ports:
       - "127.0.0.1:4010:4010"

@@ -3,11 +3,7 @@
 module Html2rss
   module Web
     module Feeds
-      ##
       # Resolves, renders, and emits feed responses for both token and legacy routes.
-      #
-      # +feed.render+ Observability for completed Service outcomes is emitted only from
-      # {Contracts::RenderResult} fields. +emit_failure+ covers exceptions outside that path.
       module Responder
         class << self
           # @param request [Rack::Request]
@@ -81,12 +77,19 @@ module Html2rss
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
-          def emit_error(target_kind:, identifier:, resolved_source:, result:)
-            emit_render_failure(
-              target_kind:, identifier:, resolved_source:,
-              error_code: result.decision.code,
-              error_message: result.error_message || result.client_message,
-              **result.diagnostics.to_h
+          def emit_error(target_kind:, identifier:, resolved_source:, result:) # rubocop:disable Metrics/MethodLength
+            SentryOps.emit_failure_telemetry(
+              decision: result.decision,
+              diagnostics: result.diagnostics,
+              event_name: 'feed.render',
+              details: render_details(
+                resolved_source, identifier, target_kind,
+                error_code: result.decision.code,
+                error_message: result.error_message || result.client_message,
+                **result.diagnostics.to_h
+              ),
+              level: :warn,
+              context: { url: resolved_source.url, strategy: resolved_source.strategy }
             )
           end
 
@@ -135,21 +138,35 @@ module Html2rss
             reason
           end
 
-          # Emits for exceptions outside a completed RenderResult emit path.
-          #
           # @param target_kind [Symbol]
           # @param identifier [String]
           # @param error [StandardError]
           # @return [void]
           def emit_failure(target_kind:, identifier:, error:)
-            details = {
+            decision = ErrorClassifier.classify(error)
+            diagnostics = ErrorClassifier::Diagnostics.from_error(error)
+            SentryOps.emit_failure_telemetry(
+              decision:, diagnostics:, event_name: 'feed.render',
+              details: exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:),
+              level: :warn
+            )
+          end
+
+          # @param target_kind [Symbol]
+          # @param identifier [String]
+          # @param error [StandardError]
+          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+          # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+          # @return [Hash{Symbol=>Object}]
+          def exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
+            {
               error_class: error.class.name,
               error_message: error.message,
-              **ErrorClassifier::Diagnostics.from_error(error).to_h
-            }
-            details[:feed_name] = identifier if target_kind == :static
-
-            Observability.emit(event_name: 'feed.render', outcome: 'failure', details:, level: :warn)
+              error_code: decision.code,
+              **diagnostics.to_h
+            }.tap do |details|
+              details[:feed_name] = identifier if target_kind == :static
+            end
           end
         end
       end
