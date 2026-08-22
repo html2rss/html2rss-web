@@ -217,63 +217,55 @@ Critical-path event families: auth, feed create, feed render, request errors.
 
 ### Sentry DSN separation
 
-Use **separate Sentry projects** for each service. Never share a DSN between html2rss-web and botasaurus-scrape-api.
+Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never share a DSN.
 
-| Env var | Service | Sentry project |
+| Env var | Service | Project |
 | --- | --- | --- |
-| `SENTRY_DSN` | html2rss-web | Project A (web) |
-| `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | Project B (scraper) |
+| `SENTRY_DSN` | html2rss-web | A (web) |
+| `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
 
-`docker-compose.yml` requires `BOTASAURUS_SENTRY_DSN` for the botasaurus service and does **not** fall back to web `SENTRY_DSN`.
+Compose requires `BOTASAURUS_SENTRY_DSN` for botasaurus and does not fall back to web `SENTRY_DSN`.
 
 ## Sentry Runbook
 
-When `SENTRY_DSN` is present, Sentry Issues are enabled for html2rss-web via Rack middleware and `Telemetry::SentryOps` (P0 operational codes only). `BUILD_TAG` and `GIT_SHA` become the release identifier, and `RACK_ENV` becomes the environment tag.
+With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational failures (`SentryOps`) to Sentry Issues. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
 
-Structured log intake into Sentry is **opt-in**: set `SENTRY_ENABLE_LOGS=true` explicitly. A DSN alone does not enable log forwarding (`SentryLogs`).
+Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs`.
 
-Triage starts with the newest `feed.create`, `feed.render`, and `request.error` events. Confirm the release tag, route group, strategy, and outcome before deciding whether the failure is retryable, terminal, or user-facing.
+Start triage from the newest `feed.create`, `feed.render`, and `request.error` events. Check release, route group, strategy, and outcome.
 
 ### On-call triage
 
-1. **Confirm the project** — check env vars first (`SENTRY_DSN` vs `BOTASAURUS_SENTRY_DSN`). A scraper outage in the web project usually means DSN mix-up.
-2. **Correlate across services** — open the Sentry issue, copy the `request_id` tag, then search the other project for the same `request_id`.
+1. **Confirm project** — `SENTRY_DSN` (web) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper errors in the web project usually mean DSN mix-up.
+2. **Correlate** — copy `request_id` from one issue and search the other project.
 3. **Decision tree**
-   - `SCRAPER_UNAVAILABLE` / botasaurus `navigation_error` → scraper connectivity or upstream crash
-   - `challenge_block` metric (botasaurus) or web `BLOCKED_SURFACE` → target site blocked automation (product signal, no page)
-   - `EXTRACTION_EMPTY` → config/selectors issue (product signal, no page)
-   - `GATEWAY_TIMEOUT` / `timeout` → slow or unreachable target host
+   - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
+   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal)
+   - `EXTRACTION_EMPTY` → selectors/config (product signal)
+   - `GATEWAY_TIMEOUT` / `timeout` → slow or unreachable target
 
-### Alert baselines (Sentry UI)
+### Alert baselines
 
-Configure these in each project after baseline traffic is established:
+After baseline traffic, configure per project:
 
-**Project B — botasaurus-scrape-api**
+**Project B (scraper)**
 
-- P0 Issue alert: `error_category:navigation_error` rate above baseline
-- P0 Issue alert: `error_category:timeout` sustained spike
-- Metric alert: `scrape.challenge_block` rate anomaly (product signal — no page)
+- P0: `error_category:navigation_error` above baseline
+- P0: `error_category:timeout` sustained spike
+- Metric: `scrape.challenge_block` anomaly (product signal)
 
-**Project A — html2rss-web**
+**Project A (web)**
 
-- P0 Issue alert: `error_code:SCRAPER_UNAVAILABLE` any sustained occurrence
-- P0 Issue alert: `request.error` spike with `kind:server`
+- P0: `error_code:SCRAPER_UNAVAILABLE` sustained
+- P0: `request.error` spike with `kind:server`
 
-### Dashboard baselines (Sentry UI)
+### Dashboard baselines
 
-**Scraper (Project B)**
+**Scraper (B)**: outcomes by `error_category`, top `host`, `render_ms`, `scrape.challenge_block` trend
 
-- Outcomes by `error_category`
-- Top `host` values
-- `render_ms` distribution
-- `scrape.challenge_block` metric trend
+**Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
 
-**Web (Project A)**
-
-- `feed.render` failures by `error_code` and `strategy`
-- Release comparison for operational issue volume
-
-Alert on sustained production `request.error` spikes or repeated `feed.render` failures, then tune thresholds from real incidents.
+Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
 
 ---
 

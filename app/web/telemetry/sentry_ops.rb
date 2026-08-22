@@ -7,9 +7,8 @@ module Html2rss
     ##
     # Emits P0 operational failures to Sentry Issues.
     #
-    # Distinct from {SentryLogs}, which mirrors structured stdout logs when
-    # +SENTRY_ENABLE_LOGS=true+. This module consumes {ErrorClassifier::Decision}
-    # codes only — it never re-classifies exceptions.
+    # Separate from {SentryLogs} (opt-in via +SENTRY_ENABLE_LOGS+). Uses
+    # {ErrorClassifier::Decision} codes only.
     module SentryOps
       OPERATIONAL_CODES = %w[
         SCRAPER_UNAVAILABLE
@@ -20,8 +19,6 @@ module Html2rss
       SERVICE_NAME = 'html2rss-web'
 
       class << self
-        # Emits product telemetry and, when applicable, a P0 Sentry Issue.
-        #
         # @param decision [Html2rss::Web::ErrorClassifier::Decision]
         # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
         # @param event_name [String]

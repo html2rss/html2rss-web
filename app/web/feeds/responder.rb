@@ -3,11 +3,7 @@
 module Html2rss
   module Web
     module Feeds
-      ##
       # Resolves, renders, and emits feed responses for both token and legacy routes.
-      #
-      # +feed.render+ Observability for completed Service outcomes is emitted only from
-      # {Contracts::RenderResult} fields. +emit_failure+ covers exceptions outside that path.
       module Responder
         class << self
           # @param request [Rack::Request]
@@ -142,8 +138,6 @@ module Html2rss
             reason
           end
 
-          # Emits for exceptions outside a completed RenderResult emit path.
-          #
           # @param target_kind [Symbol]
           # @param identifier [String]
           # @param error [StandardError]
