@@ -196,6 +196,21 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
+    it 'returns registry status metadata', :aggregate_failures do
+      get '/api/v1'
+
+      expect(last_response.status).to eq(200)
+      json = expect_success_response(last_response)
+      official = json.dig('data', 'instance', 'registries').find { |row| row['id'] == 'official' }
+
+      expect(official).to include(
+        'id' => 'official',
+        'version' => 'test-fixture',
+        'sync_mode' => 'path'
+      )
+      expect(official['updated_at']).to be_a(String)
+    end
+
     it 'returns API information with trailing slash', :aggregate_failures do
       get '/api/v1/'
 

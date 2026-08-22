@@ -24,6 +24,7 @@ module Html2rss
             configure_request_service!
             configure_runtime_logging!
             configure_gem_defaults!
+            configure_registry!
             log_startup!
           end
 
@@ -74,6 +75,11 @@ module Html2rss
             return unless defined?(Rack::Timeout::Logger)
 
             Rack::Timeout::Logger.logger = AppLogger.logger
+          end
+
+          # @return [void]
+          def configure_registry!
+            Registry::Sync.boot!
           end
 
           # @return [void]

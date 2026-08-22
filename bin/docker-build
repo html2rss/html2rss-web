@@ -1,4 +1,5 @@
 #!/bin/bash
 set -eux
 
+"$(dirname "$0")/prepare-registry-seed"
 docker build --no-cache -t html2rss/web -f Dockerfile .

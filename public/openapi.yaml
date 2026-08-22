@@ -64,9 +64,28 @@ paths:
                             - enabled
                             - access_token_required
                             type: object
+                          registries:
+                            items:
+                              properties:
+                                id:
+                                  type: string
+                                sync_mode:
+                                  type: string
+                                updated_at:
+                                  type: string
+                                version:
+                                  type: string
+                              required:
+                              - id
+                              - version
+                              - updated_at
+                              - sync_mode
+                              type: object
+                            type: array
                         required:
                         - feed_creation
                         - catalog
+                        - registries
                         type: object
                     required:
                     - api
@@ -78,7 +97,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns catalog pointer metadata
+          description: returns registry status metadata
       security:
       - {}
       summary: API metadata

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+CONFIGS_REPO="${HTML2RSS_CONFIGS_ROOT:-$ROOT_DIR/../html2rss-configs}"
+SEED_DIR="$ROOT_DIR/app/registries/seed/official"
+OUTPUT_TAR="$(mktemp -t registry-seed.XXXXXX.tar.gz)"
+
+cleanup() {
+  rm -f "$OUTPUT_TAR"
+}
+trap cleanup EXIT
+
+if [[ ! -d "$CONFIGS_REPO/configs" ]]; then
+  echo "Missing configs tree at $CONFIGS_REPO/configs" >&2
+  exit 1
+fi
+
+echo "Building registry seed bundle from $CONFIGS_REPO"
+(
+  cd "$CONFIGS_REPO"
+  BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
+)
+
+rm -rf "$SEED_DIR"
+mkdir -p "$SEED_DIR"
+tar -xzf "$OUTPUT_TAR" -C "$SEED_DIR"
+
+echo "Seed bundle prepared at $SEED_DIR"

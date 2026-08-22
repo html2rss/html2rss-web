@@ -1,0 +1,11 @@
+precedence:
+  - official
+
+registries:
+  official:
+    sync:
+      channel: html2rss-official
+    catalog: true
+    public_key_id: html2rss:registry:2026
+    # Pin the publisher Ed25519 public key for signed network sync.
+    # Seed bundles copied from the image use integrity-only verification.

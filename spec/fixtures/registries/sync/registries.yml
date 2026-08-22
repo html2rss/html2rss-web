@@ -1,0 +1,13 @@
+precedence:
+  - official
+
+registries:
+  official:
+    sync:
+      url: https://registry.test.example/registry-bundle.tar.gz
+    catalog: true
+    public_key_id: test-key
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      MCowBQYDK2VwAyEAiMbg/04MyC5azBdM/aeY0mNuA8JbP5/jOiNRwJ2KJHE=
+      -----END PUBLIC KEY-----

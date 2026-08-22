@@ -184,7 +184,7 @@ module Html2rss
           def public_key_id_for(public_key_id)
             return public_key_id if public_key_id && !public_key_id.empty?
 
-            'official-v1'
+            'html2rss:registry:2026'
           end
 
           ##

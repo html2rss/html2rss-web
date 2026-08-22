@@ -69,6 +69,13 @@ module Html2rss
           log_event('blocked_request', { ip:, reason:, endpoint: }, severity: :warn)
         end
 
+        # @param registry_id [String]
+        # @param reason [String]
+        # @return [void]
+        def log_registry_signature_failure(registry_id, reason)
+          log_event('registry_signature_failure', { registry_id:, reason: }, severity: :warn)
+        end
+
         private
 
         # @param event_type [String]

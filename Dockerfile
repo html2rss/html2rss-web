@@ -78,6 +78,7 @@ RUN apk add --no-cache \
   && mkdir -p /app \
   && mkdir -p /app/tmp/rack-cache-body \
   && mkdir -p /app/tmp/rack-cache-meta \
+  && mkdir -p /app/data/registries \
   && chown "$USER":"$USER" -R /app
 
 WORKDIR /app
@@ -89,6 +90,7 @@ COPY --chown=$USER:$USER bin/docker-healthcheck ./bin/docker-healthcheck
 COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config
+COPY --chown=$USER:$USER app/registries/seed ./app/registries/seed
 COPY --chown=$USER:$USER public ./public
 COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./frontend/dist
 

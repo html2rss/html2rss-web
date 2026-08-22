@@ -102,7 +102,7 @@ module Html2rss
 
           bundle = Html2rss::Registry::Bundle.load(
             directory,
-            trust: entry.mode == :path ? :integrity_only : :signed,
+            trust: :integrity_only,
             public_keys: entry.public_keys
           )
           to_registry_bundle(registry_id, bundle)

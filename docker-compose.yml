@@ -24,6 +24,7 @@ services:
       RACK_TIMEOUT_SERVICE_TIMEOUT: 55
       BOTASAURUS_SCRAPE_TIMEOUT_SECONDS: 45
       BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS: 30
+      REGISTRY_DATA_ROOT: /app/data/registries
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
     # Trial runs use the image's bundled config/feeds.yml.
     # Uncomment the block below when you want to replace it with your own file.
@@ -32,6 +33,8 @@ services:
     #     source: ./config/feeds.yml
     #     target: /app/config/feeds.yml
     #     read_only: true
+    volumes:
+      - registry-data:/app/data/registries
 
   watchtower:
     image: containrrr/watchtower
@@ -53,3 +56,6 @@ services:
       SCRAPE_WORK_TIMEOUT_SECONDS: 30
     ports:
       - "127.0.0.1:4010:4010"
+
+volumes:
+  registry-data:
