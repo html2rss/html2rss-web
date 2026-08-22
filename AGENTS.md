@@ -54,6 +54,45 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 - **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
 - **No skipped quality gate:** Opening a PR without a green Dev Container gate is forbidden. If the gate cannot run, do not open the PR; fix the environment or hand off with explicit blocker + next command for the user.
 
+## Ruby 4 Style
+
+**Ruby 4.0+ only** (see `.tool-versions`). No Ruby 3.x backward-compat shims, guards, or dual-path APIs.
+
+### Baseline
+
+- `# frozen_string_literal: true` on every `.rb` file
+- Plain Ruby — no ActiveSupport
+- Keyword arguments for public multi-arg APIs
+- Typed YARD on public methods in `app/` (`@param`, `@return`) — enforced by `make yard-verify-public-docs`
+
+### Modern syntax (prefer consistently)
+
+| Idiom | Use instead of |
+| --- | --- |
+| Leading `&&` / `\|\|` at line start (Ruby 4) | Trailing operators on long wrapped conditions |
+| `it` in single-parameter blocks | `{ \|x\| x.foo }` when block has one arg only |
+| Pattern matching (`in`, `case … in`) | Deep `if/elsif` chains on shape |
+| `Data.define` | OpenStruct / hand-rolled structs |
+| `filter_map`, `index_by`, `then`, `match?` | Verbose `map`/`compact`, nested `if`, `=~` |
+| Endless `def` | One-line pure helpers when RuboCop allows |
+| Core `Set` (no `require 'set'`) | Array membership/diff on growing collections |
+
+### Performance (agent defaults)
+
+- **Set** for catalog/diff/membership when sizes can grow
+- **Memoize** repeated `ENV.fetch` / pure computations on hot paths
+- **One owner** for duplicated helpers — dedupe before splitting into new files
+- **Functional iterators** over imperative loops
+- **No metric-driven micro-methods** whose only purpose is satisfying RuboCop metrics
+- Do **not** document ZJIT/Ruby Box/Ractor as defaults
+
+### Web-specific deltas
+
+- Prefer `class << self` + `private` over `module_function` (see docs/README Architectural Constraints)
+- Do not use `send(...)` to reach private APIs in app code or specs
+- Specs: table-drive matrices; `:aggregate_failures` for discriminating multi-assert examples
+- LOC: dedupe/unify before extracting — new files only when they buy a real seam or test surface
+
 ## Config catalog API
 
 Public feed-directory metadata from verified registry bundles and local `feeds.yml` entries.

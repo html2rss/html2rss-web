@@ -167,12 +167,15 @@ Search these pages for examples, plugins, and configuration options:
 ## Architectural Constraints
 
 - **No Persistence**: Do not add databases, ORMs, or background job systems.
-- **Backend Style**:
+- **Backend Style** (Ruby **4.0+** only — see [AGENTS.md](../AGENTS.md#ruby-4-style)):
   - Keep the main `app.rb` thin; organize routes in `Html2rss::Web::Routes::*`.
   - For helpers, use `class << self` and `private` methods. Avoid `module_function`.
   - Use YARD doc comments for all public methods in `app/`.
   - Add `# frozen_string_literal: true` to all Ruby files.
   - Do not use `send(...)` to reach into private APIs; expose what is needed at the module level.
+  - Prefer leading `&&` / `||` at line start for wrapped conditions; `it` in single-parameter blocks; pattern matching over deep `if/elsif` chains.
+  - Prefer `Data.define`, `filter_map`, `index_by`, `then`, `match?`, and core `Set` (no `require 'set'`) over OpenStruct, verbose `map`/`compact`, nested `if`, `=~`, and array membership on growing collections.
+  - Dedupe helpers before extracting new files; use `Set` and memoization on hot paths; table-drive specs with `:aggregate_failures` for multi-assert outcomes.
 - **Frontend Style**:
   - Follow visual and CSS rules in [design-system.md](design-system.md).
   - Use Preact components in `frontend/src/`.

@@ -5,6 +5,7 @@ plugins:
   - rubocop-thread_safety
 
 AllCops:
+  TargetRubyVersion: 4.0
   DisplayCopNames: true
   NewCops: enable
   Exclude:
