@@ -21,6 +21,7 @@ module Html2rss
         @boot_mutex = Mutex.new
         @boot_started = false
         @timer_started = false
+        REGISTRY_MUTEXES = Hash.new { |mutexes, registry_id| mutexes[registry_id] = Mutex.new }
 
         class << self # rubocop:disable Metrics/ClassLength
           ##
@@ -32,7 +33,7 @@ module Html2rss
             entry = Config.entry(registry_id)
             raise Errors::SyncError, "Registry '#{registry_id}' is not sync-mode" unless entry.mode == :sync
 
-            SyncUrlResolver.resolve(entry)
+            SyncTransport.resolve(entry)
           end
 
           ##
@@ -42,7 +43,7 @@ module Html2rss
           # @param dry_run [Boolean] when true, verify without swapping the active bundle
           # @return [SyncStatus]
           def run(registry_id:, dry_run: false)
-            SyncCoordinator.run(registry_id) { run!(registry_id:, dry_run:) }
+            with_registry_lock(registry_id) { run!(registry_id:, dry_run:) }
           end
 
           ##
@@ -51,7 +52,7 @@ module Html2rss
           # @param registry_id [String, Symbol]
           # @return [SyncStatus]
           def promote_staged!(registry_id:)
-            SyncCoordinator.run(registry_id) { promote_staged_bundle!(registry_id:) }
+            with_registry_lock(registry_id) { promote_staged_bundle!(registry_id:) }
           end
 
           ##
@@ -131,6 +132,14 @@ module Html2rss
 
           ##
           # @param registry_id [String, Symbol]
+          # @yield runs sync work exclusively for the registry id
+          # @return [Object] block result
+          def with_registry_lock(registry_id, &)
+            REGISTRY_MUTEXES[registry_id.to_s].synchronize(&)
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
           # @param dry_run [Boolean]
           # @return [SyncStatus]
           def run!(registry_id:, dry_run:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -140,7 +149,7 @@ module Html2rss
             end
 
             staging_root = nil
-            download_url = SyncUrlResolver.resolve(entry)
+            download_url = SyncTransport.resolve(entry)
             staging_root, staged_dir = fetch_and_verify!(entry, download_url)
             unless dry_run
               if entry.sync_policy.auto_promote
@@ -199,18 +208,86 @@ module Html2rss
           end
 
           ##
-          # @param registry_id [String, Symbol]
+          # @param registry_id [String]
           # @param previous_bundle [Index::RegistryBundle, nil]
           # @return [void]
           def report_catalog_change!(registry_id, previous_bundle)
             new_bundle = Index.current.bundle_for(registry_id)
             return unless new_bundle
 
-            CatalogChangeReporter.report!(
-              registry_id: registry_id.to_s,
-              previous_bundle:,
-              new_bundle:
+            diff = build_catalog_diff(previous_bundle, new_bundle)
+            return if diff.empty?
+
+            emit_catalog_change_observability!(registry_id, diff)
+            emit_catalog_change_security!(registry_id, diff) if diff[:added].any? || diff[:removed].any?
+          end
+
+          ##
+          # @param previous_bundle [Index::RegistryBundle, nil]
+          # @param new_bundle [Index::RegistryBundle]
+          # @return [Hash{Symbol => Object}]
+          def build_catalog_diff(previous_bundle, new_bundle) # rubocop:disable Metrics/MethodLength
+            previous_version = previous_bundle&.manifest&.version
+            new_version = new_bundle.manifest.version
+            previous_ids = catalog_ids(previous_bundle)
+            new_ids = catalog_ids(new_bundle)
+            added = new_ids - previous_ids
+            removed = previous_ids - new_ids
+
+            return {} if previous_version == new_version && added.empty? && removed.empty?
+
+            {
+              previous_version:,
+              version: new_version,
+              added:,
+              removed:
+            }
+          end
+
+          ##
+          # @param registry_id [String]
+          # @param diff [Hash{Symbol => Object}]
+          # @return [void]
+          def emit_catalog_change_observability!(registry_id, diff) # rubocop:disable Metrics/MethodLength
+            Observability.emit(
+              event_name: 'registry.catalog_changed',
+              outcome: 'success',
+              level: :warn,
+              details: {
+                registry_id:,
+                version: diff[:version],
+                previous_version: diff[:previous_version],
+                added_count: diff[:added].size,
+                removed_count: diff[:removed].size,
+                added_ids: diff[:added].sort,
+                removed_ids: diff[:removed].sort
+              }
             )
+          end
+
+          ##
+          # @param registry_id [String]
+          # @param diff [Hash{Symbol => Object}]
+          # @return [void]
+          def emit_catalog_change_security!(registry_id, diff)
+            SecurityLogger.log_registry_catalog_changed(
+              registry_id,
+              version: diff[:version],
+              previous_version: diff[:previous_version],
+              added_count: diff[:added].size,
+              removed_count: diff[:removed].size,
+              added_ids: diff[:added].sort,
+              removed_ids: diff[:removed].sort
+            )
+          end
+
+          ##
+          # @param bundle [Index::RegistryBundle, nil]
+          # @return [Array<String>]
+          def catalog_ids(bundle)
+            return [] unless bundle
+
+            bundle.catalog_entries.map(&:id)
           end
 
           ##
@@ -285,7 +362,7 @@ module Html2rss
           # @param download_url [String]
           # @return [Array(String, String)] staging root and verified bundle directory
           def fetch_and_verify!(entry, download_url) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-            tarball = SyncFetcher.fetch!(download_url)
+            tarball = SyncTransport.fetch!(download_url)
             staging_root = Dir.mktmpdir('registry-sync-')
             staged_dir = File.join(staging_root, 'bundle')
             tarball_path = File.join(staging_root, 'download.tar.gz')
@@ -334,7 +411,7 @@ module Html2rss
             max_version = entry.sync_policy.max_version
             return unless max_version
 
-            return unless VersionGate.exceeds_max?(manifest.version, max_version)
+            return unless SyncTransport.exceeds_max?(manifest.version, max_version)
 
             raise Errors::SyncError,
                   "Registry '#{entry.id}' manifest version '#{manifest.version}' exceeds max_version '#{max_version}'"
@@ -394,7 +471,7 @@ module Html2rss
               version: row.version,
               staged_version: Store.staged_version(row.id),
               updated_at: row.updated_at,
-              sync_url: entry.mode == :sync ? SyncUrlResolver.resolve(entry) : nil,
+              sync_url: entry.mode == :sync ? SyncTransport.resolve(entry) : nil,
               last_error: state.last_error
             )
           end

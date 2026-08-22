@@ -2,13 +2,14 @@
 
 require 'net/http'
 require 'uri'
+require 'json'
 
 module Html2rss
   module Web
     module Registry
       ##
-      # HTTPS fetcher with host allowlisting and bounded redirect following.
-      module SyncFetcher
+      # HTTPS fetch, sync URL resolution, and manifest version gating for registry sync.
+      module SyncTransport # rubocop:disable Metrics/ModuleLength
         DEFAULT_ALLOWED_HOSTS = %w[
           api.github.com
           github.com
@@ -20,6 +21,12 @@ module Html2rss
         MAX_RESPONSE_BYTES = 52_428_800
         DEFAULT_MAX_REDIRECTS = 5
 
+        OFFICIAL_GITHUB_RELEASES_API =
+          'https://api.github.com/repos/html2rss/html2rss-configs/releases/latest'
+        OFFICIAL_GITHUB_TAG_RELEASES_API =
+          'https://api.github.com/repos/html2rss/html2rss-configs/releases/tags/%<tag>s'
+        OFFICIAL_ASSET_NAME = 'registry-bundle.tar.gz'
+
         RedirectPolicy = Data.define(:max_hops, :allowed_hosts) do
           ##
           # @return [RedirectPolicy]
@@ -30,7 +37,7 @@ module Html2rss
           ##
           # @return [Array<String>]
           def self.default_allowed_hosts
-            DEFAULT_ALLOWED_HOSTS + SyncFetcher.extra_allowed_hosts
+            DEFAULT_ALLOWED_HOSTS + SyncTransport.extra_allowed_hosts
           end
         end
 
@@ -43,6 +50,42 @@ module Html2rss
         def fetch!(url, policy: RedirectPolicy.default)
           uri = parse_https_uri!(url)
           follow_redirects!(uri, policy)
+        end
+
+        ##
+        # @param entry [Entry]
+        # @return [String]
+        def resolve(entry)
+          return entry.sync_url if entry.sync_url && !entry.sync_url.empty?
+
+          pin_version = entry.sync_policy.pin_version
+          if entry.sync_channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
+            return resolve_official_tag_download_url(pin_version) if pin_version && !pin_version.empty?
+
+            return resolve_official_download_url
+          end
+
+          raise Errors::SyncError, "Registry '#{entry.id}' has no sync URL"
+        end
+
+        ##
+        # @param sync_channel [String, nil]
+        # @return [String]
+        def resolve_channel_url(sync_channel)
+          channel = sync_channel && !sync_channel.empty? ? sync_channel : Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
+          return Config::OFFICIAL_RELEASE_URL if channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
+
+          raise Errors::ConfigError, "Unknown sync channel '#{channel}'"
+        end
+
+        ##
+        # @param manifest_version [String]
+        # @param max_version [String, nil]
+        # @return [Boolean] true when manifest_version is newer than max_version
+        def exceeds_max?(manifest_version, max_version)
+          return false if max_version.nil? || max_version.empty?
+
+          compare(normalize(manifest_version), normalize(max_version)).positive?
         end
 
         ##
@@ -80,6 +123,56 @@ module Html2rss
              .split(',')
              .map(&:strip)
              .reject(&:empty?)
+        end
+
+        ##
+        # @param tag [String]
+        # @return [String]
+        def resolve_official_tag_download_url(tag) # rubocop:disable Metrics/MethodLength
+          api_url = format(OFFICIAL_GITHUB_TAG_RELEASES_API, tag:)
+          response_body = fetch!(api_url)
+          release = JSON.parse(response_body, symbolize_names: true)
+          asset = Array(release[:assets]).find { |row| row[:name] == OFFICIAL_ASSET_NAME }
+          url = asset&.dig(:browser_download_url)
+          unless url
+            raise Errors::SyncError,
+                  "Official release asset '#{OFFICIAL_ASSET_NAME}' not found for tag '#{tag}'"
+          end
+
+          url
+        rescue JSON::ParserError => error
+          raise Errors::SyncError, "Invalid GitHub release metadata: #{error.message}"
+        end
+
+        ##
+        # @return [String]
+        def resolve_official_download_url
+          response_body = fetch!(OFFICIAL_GITHUB_RELEASES_API)
+          release = JSON.parse(response_body, symbolize_names: true)
+          asset = Array(release[:assets]).find { |row| row[:name] == OFFICIAL_ASSET_NAME }
+          url = asset&.dig(:browser_download_url)
+          raise Errors::SyncError, "Official release asset '#{OFFICIAL_ASSET_NAME}' not found" unless url
+
+          url
+        rescue JSON::ParserError => error
+          raise Errors::SyncError, "Invalid GitHub release metadata: #{error.message}"
+        end
+
+        ##
+        # @param version [String]
+        # @return [String]
+        def normalize(version)
+          version.to_s.delete_prefix('v')
+        end
+
+        ##
+        # @param left [String]
+        # @param right [String]
+        # @return [Integer]
+        def compare(left, right)
+          Gem::Version.new(left) <=> Gem::Version.new(right)
+        rescue ArgumentError
+          left <=> right
         end
 
         ##
@@ -144,7 +237,7 @@ module Html2rss
 
           body
         end
-      end
+      end # rubocop:enable Metrics/ModuleLength
     end
   end
 end

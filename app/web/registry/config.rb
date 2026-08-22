@@ -194,7 +194,7 @@ module Html2rss
           def resolved_sync_url(sync_url, sync_channel)
             return sync_url if sync_url && !sync_url.empty?
 
-            SyncUrlResolver.resolve_channel_url(sync_channel)
+            SyncTransport.resolve_channel_url(sync_channel)
           end
 
           ##

@@ -216,4 +216,52 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       expect(described_class).not_to have_received(:seed_registry!)
     end
   end
+
+  describe Html2rss::Web::Registry::SyncTransport do
+    describe '.exceeds_max?' do
+      it 'compares dotted numeric versions' do
+        expect(described_class.exceeds_max?('2026.08.22', '2026.08.21')).to be(true)
+        expect(described_class.exceeds_max?('2026.08.21', '2026.08.22')).to be(false)
+      end
+
+      it 'strips a leading v prefix before comparing' do
+        expect(described_class.exceeds_max?('v2026.08.22', '2026.08.21')).to be(true)
+      end
+
+      it 'returns false when max_version is unset' do
+        expect(described_class.exceeds_max?('2026.08.22', nil)).to be(false)
+      end
+    end
+
+    describe '.resolve' do
+      it 'uses the GitHub tag release API when pin_version is set', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        tag_api = format(
+          described_class::OFFICIAL_GITHUB_TAG_RELEASES_API,
+          tag: 'v2026.08.22'
+        )
+        download_url = 'https://release-assets.githubusercontent.com/registry-bundle.tar.gz'
+        stub_request(:get, tag_api).to_return(
+          status: 200,
+          body: {
+            assets: [{ name: described_class::OFFICIAL_ASSET_NAME, browser_download_url: download_url }]
+          }.to_json
+        )
+
+        entry = Html2rss::Web::Registry::Entry.new(
+          id: 'official',
+          mode: :sync,
+          path: nil,
+          sync_channel: Html2rss::Web::Registry::Config::DEFAULT_OFFICIAL_SYNC_CHANNEL,
+          sync_url: nil,
+          catalog: true,
+          public_key_id: 'html2rss:registry:2026',
+          public_key: nil,
+          sync_policy: Html2rss::Web::Registry::SyncPolicy.new('v2026.08.22', nil, false),
+          allowed_channel_domains: []
+        )
+
+        expect(described_class.resolve(entry)).to eq(download_url)
+      end
+    end
+  end
 end
