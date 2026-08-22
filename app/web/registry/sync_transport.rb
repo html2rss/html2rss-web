@@ -9,7 +9,7 @@ module Html2rss
     module Registry
       ##
       # HTTPS fetch, sync URL resolution, and manifest version gating for registry sync.
-      module SyncTransport # rubocop:disable Metrics/ModuleLength
+      module SyncTransport
         DEFAULT_ALLOWED_HOSTS = %w[
           api.github.com
           github.com
@@ -56,13 +56,16 @@ module Html2rss
         # @param entry [Entry]
         # @return [String]
         def resolve(entry)
-          return entry.sync_url if entry.sync_url && !entry.sync_url.empty?
+          return entry.sync_url unless entry.sync_url.to_s.empty?
 
           pin_version = entry.sync_policy.pin_version
           if entry.sync_channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
-            return resolve_official_tag_download_url(pin_version) if pin_version && !pin_version.empty?
+            unless pin_version.to_s.empty?
+              api_url = format(OFFICIAL_GITHUB_TAG_RELEASES_API, tag: pin_version)
+              return resolve_official_asset_url(api_url, tag: pin_version)
+            end
 
-            return resolve_official_download_url
+            return resolve_official_asset_url(OFFICIAL_GITHUB_RELEASES_API)
           end
 
           raise Errors::SyncError, "Registry '#{entry.id}' has no sync URL"
@@ -72,7 +75,7 @@ module Html2rss
         # @param sync_channel [String, nil]
         # @return [String]
         def resolve_channel_url(sync_channel)
-          channel = sync_channel && !sync_channel.empty? ? sync_channel : Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
+          channel = sync_channel.to_s.empty? ? Config::DEFAULT_OFFICIAL_SYNC_CHANNEL : sync_channel
           return Config::OFFICIAL_RELEASE_URL if channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
 
           raise Errors::ConfigError, "Unknown sync channel '#{channel}'"
@@ -119,39 +122,32 @@ module Html2rss
         ##
         # @return [Array<String>]
         def extra_allowed_hosts
-          ENV.fetch('REGISTRY_SYNC_ALLOWED_HOSTS', '')
-             .split(',')
-             .map(&:strip)
-             .reject(&:empty?)
-        end
-
-        ##
-        # @param tag [String]
-        # @return [String]
-        def resolve_official_tag_download_url(tag) # rubocop:disable Metrics/MethodLength
-          api_url = format(OFFICIAL_GITHUB_TAG_RELEASES_API, tag:)
-          response_body = fetch!(api_url)
-          release = JSON.parse(response_body, symbolize_names: true)
-          asset = Array(release[:assets]).find { |row| row[:name] == OFFICIAL_ASSET_NAME }
-          url = asset&.dig(:browser_download_url)
-          unless url
-            raise Errors::SyncError,
-                  "Official release asset '#{OFFICIAL_ASSET_NAME}' not found for tag '#{tag}'"
+          raw = ENV.fetch('REGISTRY_SYNC_ALLOWED_HOSTS', '')
+          if defined?(@extra_allowed_hosts_raw) && @extra_allowed_hosts_raw == raw
+            return @extra_allowed_hosts
           end
 
-          url
-        rescue JSON::ParserError => error
-          raise Errors::SyncError, "Invalid GitHub release metadata: #{error.message}"
+          @extra_allowed_hosts_raw = raw
+          @extra_allowed_hosts = raw.split(',').map(&:strip).reject(&:empty?).freeze
         end
 
         ##
+        # @param api_url [String]
+        # @param tag [String, nil]
         # @return [String]
-        def resolve_official_download_url
-          response_body = fetch!(OFFICIAL_GITHUB_RELEASES_API)
+        def resolve_official_asset_url(api_url, tag: nil)
+          response_body = fetch!(api_url)
           release = JSON.parse(response_body, symbolize_names: true)
-          asset = Array(release[:assets]).find { |row| row[:name] == OFFICIAL_ASSET_NAME }
+          asset = Array(release[:assets]).find { it[:name] == OFFICIAL_ASSET_NAME }
           url = asset&.dig(:browser_download_url)
-          raise Errors::SyncError, "Official release asset '#{OFFICIAL_ASSET_NAME}' not found" unless url
+          unless url
+            message = if tag
+                        "Official release asset '#{OFFICIAL_ASSET_NAME}' not found for tag '#{tag}'"
+                      else
+                        "Official release asset '#{OFFICIAL_ASSET_NAME}' not found"
+                      end
+            raise Errors::SyncError, message
+          end
 
           url
         rescue JSON::ParserError => error
@@ -237,7 +233,7 @@ module Html2rss
 
           body
         end
-      end # rubocop:enable Metrics/ModuleLength
+      end
     end
   end
 end

@@ -7,7 +7,7 @@ module Html2rss
     module Registry
       ##
       # Sole merge owner for registry bundles and local {LocalConfig} feeds.
-      class Index # rubocop:disable Metrics/ClassLength
+      class Index
         RegistryBundle = Data.define(:registry_id, :manifest, :configs, :catalog_entries)
         StatusEntry = Data.define(:id, :version, :updated_at, :sync_mode)
 
@@ -96,7 +96,7 @@ module Html2rss
 
           loaded_bundles.each_value do |bundle|
             config = bundle.configs[normalized_id]
-            return deep_dup(config) if config
+            return StructuredData.deep_dup(config) if config
           end
 
           nil
@@ -105,9 +105,11 @@ module Html2rss
         ##
         # @return [Array<Hash{Symbol => Object}>] catalog rows in HTTP wire shape
         def catalog_rows
-          rows = registry_catalog_rows
-          local_catalog_rows.each { |row| rows[row.id] = row }
-          rows.values.sort_by(&:id).map(&:to_h)
+          registry_catalog_rows
+            .merge(local_catalog_rows.to_h { [it.id, it] })
+            .values
+            .sort_by(&:id)
+            .map(&:to_h)
         end
 
         ##
@@ -130,6 +132,13 @@ module Html2rss
               sync_mode: entry.mode
             )
           end
+        end
+
+        ##
+        # @param registry_id [String, Symbol]
+        # @return [StatusEntry, nil]
+        def status_entry_for(registry_id)
+          status.find { it.id == registry_id.to_s }
         end
 
         private
@@ -160,7 +169,7 @@ module Html2rss
         ##
         # @return [Hash{String => RegistryBundle}]
         def loaded_bundles
-          @loaded_bundles ||= Config.precedence.to_h { |registry_id| [registry_id, load_bundle(registry_id)] }.compact
+          @loaded_bundles ||= Config.precedence.to_h { [it, load_bundle(it)] }.compact
         end
 
         ##
@@ -215,14 +224,14 @@ module Html2rss
         # @param bundle [RegistryBundle]
         # @return [void]
         # @raise [Errors::LoadError] when a config channel URL violates the allowlist
-        def enforce_scrape_policy!(entry, bundle) # rubocop:disable Metrics/CyclomaticComplexity
+        def enforce_scrape_policy!(entry, bundle)
           allowed = entry.allowed_channel_domains
           return if allowed.nil? || allowed.empty?
 
           bundle.configs.each do |feed_id, config|
             channel_url = config.dig(:channel, :url)
             host = channel_host_for(channel_url)
-            next if host && allowed.any? { |domain| channel_domain_allowed?(host, domain) }
+            next if host && allowed.any? { channel_domain_allowed?(host, it) }
 
             raise Errors::LoadError,
                   "Registry '#{entry.id}' config '#{feed_id}' channel.url host " \
@@ -291,13 +300,7 @@ module Html2rss
         # @param registry_id [String]
         # @return [Time, nil]
         def bundle_updated_at(registry_id)
-          path = bundle_directory(Config.entry(registry_id))
-          return nil unless path && File.directory?(path)
-
-          manifest_path = File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE)
-          return nil unless File.file?(manifest_path)
-
-          File.mtime(manifest_path)
+          Store.manifest_mtime(bundle_directory(Config.entry(registry_id)))
         end
 
         ##
@@ -307,25 +310,11 @@ module Html2rss
           feed = LocalConfig.feeds[feed_id.to_sym] || LocalConfig.feeds[feed_id]
           return nil unless feed
 
-          deep_dup(feed)
+          StructuredData.deep_dup(feed)
         rescue Html2rss::Web::LocalConfig::InvalidConfig, Html2rss::Web::LocalConfig::NotFound
           nil
         end
-
-        ##
-        # @param value [Object]
-        # @return [Object]
-        def deep_dup(value)
-          case value
-          when Hash
-            value.transform_values { |entry| deep_dup(entry) }
-          when Array
-            value.map { |entry| deep_dup(entry) }
-          else
-            value
-          end
-        end
-      end # rubocop:enable Metrics/ClassLength
+      end
     end
   end
 end

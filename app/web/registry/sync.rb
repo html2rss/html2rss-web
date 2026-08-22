@@ -7,7 +7,7 @@ module Html2rss
     module Registry
       ##
       # Fetches, verifies, and stores signed registry bundles.
-      module Sync # rubocop:disable Metrics/ModuleLength
+      module Sync
         SyncStatus = Data.define(
           :registry_id,
           :mode,
@@ -23,7 +23,7 @@ module Html2rss
         @timer_started = false
         REGISTRY_MUTEXES = Hash.new { |mutexes, registry_id| mutexes[registry_id] = Mutex.new }
 
-        class << self # rubocop:disable Metrics/ClassLength
+        class << self
           ##
           # Resolves the download URL for a sync-mode registry id.
           #
@@ -60,8 +60,8 @@ module Html2rss
           # @return [Array<SyncStatus>]
           def status(registry_id: nil)
             rows = Index.current.status
-            rows = rows.select { |row| row.id == registry_id.to_s } if registry_id
-            rows.map { |row| sync_status_for(row) }
+            rows = rows.select { it.id == registry_id.to_s } if registry_id
+            rows.map { sync_status_for(it) }
           end
 
           ##
@@ -142,7 +142,7 @@ module Html2rss
           # @param registry_id [String, Symbol]
           # @param dry_run [Boolean]
           # @return [SyncStatus]
-          def run!(registry_id:, dry_run:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+          def run!(registry_id:, dry_run:) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
             entry = Config.entry(registry_id)
             if entry.mode == :path
               raise Errors::SyncError, "Registry '#{registry_id}' uses path mode; sync is not applicable"
@@ -159,7 +159,7 @@ module Html2rss
                 record_success!(registry_id, promoted: false)
               end
             end
-            sync_status_for(Index.current.status.find { |row| row.id == registry_id.to_s })
+            sync_status_for(Index.current.status_entry_for(registry_id))
           rescue StandardError => error
             record_failure!(registry_id, error) unless dry_run
             raise
@@ -184,15 +184,16 @@ module Html2rss
             Index.reload!
             report_catalog_change!(registry_id, previous_bundle)
             record_success!(registry_id, promoted: true)
+            status_row = Index.current.status_entry_for(registry_id)
             Observability.emit(
               event_name: 'registry.promote_staged',
               outcome: 'success',
               details: {
                 registry_id: registry_id.to_s,
-                version: Index.current.status.find { |row| row.id == registry_id.to_s }&.version
+                version: status_row&.version
               }
             )
-            sync_status_for(Index.current.status.find { |row| row.id == registry_id.to_s })
+            sync_status_for(status_row)
           end
 
           ##
@@ -226,11 +227,11 @@ module Html2rss
           # @param previous_bundle [Index::RegistryBundle, nil]
           # @param new_bundle [Index::RegistryBundle]
           # @return [Hash{Symbol => Object}]
-          def build_catalog_diff(previous_bundle, new_bundle) # rubocop:disable Metrics/MethodLength
+          def build_catalog_diff(previous_bundle, new_bundle)
             previous_version = previous_bundle&.manifest&.version
             new_version = new_bundle.manifest.version
-            previous_ids = catalog_ids(previous_bundle)
-            new_ids = catalog_ids(new_bundle)
+            previous_ids = Set.new(catalog_ids(previous_bundle))
+            new_ids = Set.new(catalog_ids(new_bundle))
             added = new_ids - previous_ids
             removed = previous_ids - new_ids
 
@@ -239,8 +240,8 @@ module Html2rss
             {
               previous_version:,
               version: new_version,
-              added:,
-              removed:
+              added: added.to_a,
+              removed: removed.to_a
             }
           end
 
@@ -431,7 +432,7 @@ module Html2rss
           # @return [void]
           def record_success!(registry_id, promoted:) # rubocop:disable Metrics/MethodLength
             Store.write_sync_state!(registry_id, last_error: nil)
-            row = Index.current.status.find { |entry| entry.id == registry_id.to_s }
+            row = Index.current.status_entry_for(registry_id)
             Observability.emit(
               event_name: 'registry.sync',
               outcome: 'success',
@@ -474,8 +475,8 @@ module Html2rss
               last_error: state.last_error
             )
           end
-        end # rubocop:enable Metrics/ClassLength
-      end # rubocop:enable Metrics/ModuleLength
+        end
+      end
     end
   end
 end
