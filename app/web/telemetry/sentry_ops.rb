@@ -20,6 +20,22 @@ module Html2rss
       SERVICE_NAME = 'html2rss-web'
 
       class << self
+        # Emits product telemetry and, when applicable, a P0 Sentry Issue.
+        #
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+        # @param event_name [String]
+        # @param details [Hash{Symbol=>Object}]
+        # @param level [Symbol]
+        # @param context [Hash{Symbol=>Object}]
+        # @return [void]
+        def emit_failure_telemetry(decision:, diagnostics:, event_name:, details:, level: :error, context: {}) # rubocop:disable Metrics/ParameterLists
+          Observability.emit(event_name:, outcome: 'failure', level:, details:)
+          emit_operational_failure(decision:, diagnostics:, context: context.merge(event_name:))
+        rescue StandardError
+          nil
+        end
+
         # @param decision [Html2rss::Web::ErrorClassifier::Decision]
         # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
         # @param context [Hash{Symbol=>Object}]

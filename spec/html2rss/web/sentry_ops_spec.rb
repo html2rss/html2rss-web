@@ -4,6 +4,7 @@ require 'spec_helper'
 
 require_relative '../../../app/web/config/runtime_env'
 require_relative '../../../app/web/errors/error_classifier'
+require_relative '../../../app/web/telemetry/observability'
 require_relative '../../../app/web/telemetry/sentry_ops'
 
 RSpec.describe Html2rss::Web::SentryOps do
@@ -69,6 +70,26 @@ RSpec.describe Html2rss::Web::SentryOps do
     )
 
     expect(capture_store).to be_empty
+  end
+
+  it 'emits observability and sentry for classified failures', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    allow(Html2rss::Web::Observability).to receive(:emit)
+
+    described_class.emit_failure_telemetry(
+      decision: operational_decision('SERVICE_UNAVAILABLE'),
+      diagnostics:,
+      event_name: 'request.error',
+      details: { error_code: 'SERVICE_UNAVAILABLE', status: 503 },
+      level: :error
+    )
+
+    expect(Html2rss::Web::Observability).to have_received(:emit).with(
+      event_name: 'request.error',
+      outcome: 'failure',
+      level: :error,
+      details: { error_code: 'SERVICE_UNAVAILABLE', status: 503 }
+    )
+    expect(capture_store).to include(message: 'request.error: SERVICE_UNAVAILABLE')
   end
 
   def operational_decision(code)

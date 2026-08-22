@@ -70,14 +70,26 @@ module Html2rss
 
         def emit_error_event(error, decision)
           diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-          details = {
+          SentryOps.emit_failure_telemetry(
+            decision:,
+            diagnostics:,
+            event_name: 'request.error',
+            details: error_event_details(error, decision, diagnostics),
+            level: :error
+          )
+        end
+
+        # @param error [StandardError]
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+        # @return [Hash{Symbol=>Object}]
+        def error_event_details(error, decision, diagnostics)
+          {
             error_class: error.class.name,
             error_code: decision.code,
             status: decision.status,
             **diagnostics.to_h
           }
-          Observability.emit(event_name: 'request.error', outcome: 'failure', level: :error, details: details)
-          SentryOps.emit_operational_failure(decision:, diagnostics:, context: { event_name: 'request.error' })
         end
       end
     end
