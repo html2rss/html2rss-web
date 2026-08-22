@@ -20,8 +20,10 @@ services:
       # Web Sentry (Project A): SENTRY_DSN; logs opt-in via SENTRY_ENABLE_LOGS=true
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
-      HTML2RSS_TOTAL_TIMEOUT_SECONDS: 25
-      RACK_TIMEOUT_SERVICE_TIMEOUT: 30
+      HTML2RSS_TOTAL_TIMEOUT_SECONDS: 50
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 55
+      BOTASAURUS_SCRAPE_TIMEOUT_SECONDS: 45
+      BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS: 30
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
     # Trial runs use the image's bundled config/feeds.yml.
     # Uncomment the block below when you want to replace it with your own file.
@@ -47,5 +49,7 @@ services:
       SENTRY_DSN: ${BOTASAURUS_SENTRY_DSN:?set BOTASAURUS_SENTRY_DSN}
       SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
       SENTRY_RELEASE: ${GIT_SHA:-unknown}
+      SCRAPE_TIMEOUT_SECONDS: 45
+      SCRAPE_WORK_TIMEOUT_SECONDS: 30
     ports:
       - "127.0.0.1:4010:4010"

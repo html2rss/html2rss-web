@@ -226,6 +226,21 @@ Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never s
 
 Compose requires `BOTASAURUS_SENTRY_DSN` for botasaurus and does not fall back to web `SENTRY_DSN`.
 
+### Compose timeout ladder
+
+Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem client, and html2rss-web so the scraper exhausts its budget before the web tier aborts the request. Keep **scrape total (45) ≤ feed build (50) ≤ Rack (55)**; the **work** budget (30) applies only after the browser is ready on the scraper.
+
+| Variable | Service | Default | Role |
+| --- | --- | --- | --- |
+| `SCRAPE_TIMEOUT_SECONDS` | botasaurus-scrape-api | `45` | Handler wall (queue, boot, navigate, wait) |
+| `SCRAPE_WORK_TIMEOUT_SECONDS` | botasaurus-scrape-api | `30` | Post-boot navigate, selector wait, scroll |
+| `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS` | html2rss (web) | `45` | Faraday POST `/scrape` cap (mirrors scrape total) |
+| `BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS` | html2rss | `30` | Max `wait_timeout_seconds` in feed YAML |
+| `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
+| `RACK_TIMEOUT_SERVICE_TIMEOUT` | html2rss-web | `55` | Rack outer wall |
+
+When triaging `GATEWAY_TIMEOUT` or `error_category:timeout`, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side.
+
 ## Sentry Runbook
 
 With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational failures (`SentryOps`) to Sentry Issues. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
@@ -242,7 +257,7 @@ Start triage from the newest `feed.create`, `feed.render`, and `request.error` e
    - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
    - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal)
    - `EXTRACTION_EMPTY` → selectors/config (product signal)
-   - `GATEWAY_TIMEOUT` / `timeout` → slow or unreachable target
+   - `GATEWAY_TIMEOUT` / `timeout` → slow target, or timeout ladder mismatch (see **Compose timeout ladder**)
 
 ### Alert baselines
 
