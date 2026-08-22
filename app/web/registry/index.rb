@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'uri'
+
 module Html2rss
   module Web
     module Registry
@@ -8,6 +10,60 @@ module Html2rss
       class Index # rubocop:disable Metrics/ClassLength
         RegistryBundle = Data.define(:registry_id, :manifest, :configs, :catalog_entries)
         StatusEntry = Data.define(:id, :version, :updated_at, :sync_mode)
+
+        CatalogRow = Data.define(
+          :id,
+          :path,
+          :directory,
+          :channel,
+          :parameters,
+          :source,
+          :registry
+        ) do
+          ##
+          # @param entry [Html2rss::Registry::CatalogEntry]
+          # @param registry_id [String]
+          # @return [CatalogRow]
+          def self.from_entry(entry, registry_id)
+            new(
+              id: entry.id,
+              path: entry.path,
+              directory: entry.directory,
+              channel: entry.channel,
+              parameters: entry.parameters,
+              source: 'registry',
+              registry: registry_id
+            )
+          end
+
+          ##
+          # @param feed_name [String, Symbol]
+          # @param feed_config [Hash{Symbol => Object}]
+          # @return [CatalogRow, nil]
+          def self.from_local_feed(feed_name, feed_config) # rubocop:disable Metrics/MethodLength
+            directory = feed_config[:directory] || {}
+            title = directory[:title]
+            return nil if title.to_s.strip.empty?
+
+            id = feed_name.to_s
+            channel = feed_config[:channel] || {}
+            new(
+              id:,
+              path: "/#{id}.rss",
+              source: 'local',
+              directory: Html2rss::Registry::CatalogBuilder.directory_payload(directory, title),
+              channel: Html2rss::Registry::CatalogBuilder.channel_payload(channel, title),
+              parameters: { schema: {}, defaults: {} },
+              registry: nil
+            )
+          end
+
+          ##
+          # @return [Hash{Symbol => Object}]
+          def to_h
+            super.compact
+          end
+        end
 
         @mutex = Mutex.new
         @current = nil
@@ -50,7 +106,7 @@ module Html2rss
         # @return [Array<Hash{Symbol => Object}>] catalog rows in HTTP wire shape
         def catalog_rows
           rows = registry_catalog_rows
-          LocalCatalog.rows.each { |row| rows[row.id] = row }
+          local_catalog_rows.each { |row| rows[row.id] = row }
           rows.values.sort_by(&:id).map(&:to_h)
         end
 
@@ -79,7 +135,7 @@ module Html2rss
         private
 
         ##
-        # @return [Hash{String => RegistryCatalogRow, LocalCatalogRow}]
+        # @return [Hash{String => CatalogRow}]
         def registry_catalog_rows
           Config.precedence.each_with_object({}) do |registry_id, rows|
             next unless Config.catalog_enabled?(registry_id)
@@ -88,8 +144,16 @@ module Html2rss
             next unless bundle
 
             bundle.catalog_entries.each do |entry|
-              rows[entry.id] ||= RegistryCatalogRow.from_entry(entry, registry_id)
+              rows[entry.id] ||= CatalogRow.from_entry(entry, registry_id)
             end
+          end
+        end
+
+        ##
+        # @return [Array<CatalogRow>]
+        def local_catalog_rows
+          LocalConfig.feeds.filter_map do |feed_name, feed_config|
+            CatalogRow.from_local_feed(feed_name, feed_config)
           end
         end
 
@@ -110,13 +174,80 @@ module Html2rss
 
           bundle = Html2rss::Registry::Bundle.load(
             directory,
-            **TrustContext.for_entry(entry, directory).load_options
+            **trust_options_for(entry, directory)
           )
           registry_bundle = to_registry_bundle(registry_id, bundle)
-          ScrapePolicy.enforce!(entry, registry_bundle)
+          enforce_scrape_policy!(entry, registry_bundle)
           registry_bundle
         rescue Html2rss::Registry::Error => error
           raise Errors::LoadError, "Failed to load registry '#{registry_id}': #{error.message}"
+        end
+
+        ##
+        # @param entry [Entry]
+        # @param bundle_dir [String]
+        # @return [Hash{Symbol => Object}] keyword args for {Html2rss::Registry::Bundle.load}
+        def trust_options_for(entry, bundle_dir)
+          case entry.mode
+          in :path
+            { trust: :integrity_only, public_keys: {} }
+          in :sync
+            if signed_bundle?(bundle_dir, entry)
+              { trust: :signed, public_keys: entry.public_keys }
+            else
+              { trust: :integrity_only, public_keys: {} }
+            end
+          end
+        end
+
+        ##
+        # @param bundle_dir [String]
+        # @param entry [Entry]
+        # @return [Boolean]
+        def signed_bundle?(bundle_dir, entry)
+          signature_path = File.join(bundle_dir, Html2rss::Registry::Manifest::SIGNATURE_FILE)
+          File.file?(signature_path) && !entry.public_keys.empty?
+        end
+
+        ##
+        # @param entry [Entry]
+        # @param bundle [RegistryBundle]
+        # @return [void]
+        # @raise [Errors::LoadError] when a config channel URL violates the allowlist
+        def enforce_scrape_policy!(entry, bundle) # rubocop:disable Metrics/CyclomaticComplexity
+          allowed = entry.allowed_channel_domains
+          return if allowed.nil? || allowed.empty?
+
+          bundle.configs.each do |feed_id, config|
+            channel_url = config.dig(:channel, :url)
+            host = channel_host_for(channel_url)
+            next if host && allowed.any? { |domain| channel_domain_allowed?(host, domain) }
+
+            raise Errors::LoadError,
+                  "Registry '#{entry.id}' config '#{feed_id}' channel.url host " \
+                  "'#{host || channel_url}' is not allowed by allowed_channel_domains"
+          end
+        end
+
+        ##
+        # @param host [String]
+        # @param allowed_domain [String]
+        # @return [Boolean]
+        def channel_domain_allowed?(host, allowed_domain)
+          normalized_host = host.downcase
+          normalized_domain = allowed_domain.downcase
+          normalized_host == normalized_domain || normalized_host.end_with?(".#{normalized_domain}")
+        end
+
+        ##
+        # @param channel_url [String, nil]
+        # @return [String, nil]
+        def channel_host_for(channel_url)
+          return nil if channel_url.to_s.strip.empty?
+
+          URI.parse(channel_url).host
+        rescue URI::InvalidURIError
+          nil
         end
 
         ##

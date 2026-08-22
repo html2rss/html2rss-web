@@ -48,6 +48,26 @@ RSpec.describe Html2rss::Web::Registry::Index do
 
       expect(apple.fetch(:registry)).to eq('official')
     end
+
+    it 'merges local feeds.yml rows after registry rows', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::LocalConfig).to receive(:feeds).and_return(
+        'team/releases' => {
+          directory: { title: 'Team Releases', summary: 'Internal release notes' },
+          channel: { url: 'https://team.example/releases', title: 'Team Releases' }
+        }
+      )
+
+      rows = described_class.current.catalog_rows
+      local = rows.find { |row| row.fetch(:id) == 'team/releases' }
+
+      expect(local).to include(
+        source: 'local',
+        path: '/team/releases.rss',
+        directory: hash_including(title: 'Team Releases'),
+        channel: hash_including(url: 'https://team.example/releases')
+      )
+      expect(local).not_to have_key(:registry)
+    end
   end
 
   describe '#status' do
@@ -62,10 +82,60 @@ RSpec.describe Html2rss::Web::Registry::Index do
     end
   end
 
+  describe 'channel domain allowlist' do
+    let(:index) { described_class.new }
+    let(:entry) do
+      Html2rss::Web::Registry::Entry.new(
+        id: 'official',
+        mode: :path,
+        path: nil,
+        sync_channel: nil,
+        sync_url: nil,
+        catalog: true,
+        public_key_id: 'test',
+        public_key: nil,
+        sync_policy: Html2rss::Web::Registry::SyncPolicy.new(nil, nil, false),
+        allowed_channel_domains: ['phys.org']
+      )
+    end
+    let(:allowed_bundle) do
+      described_class::RegistryBundle.new(
+        registry_id: 'official',
+        manifest: instance_double(Html2rss::Registry::Manifest, version: '1.0.0'),
+        configs: {
+          'phys.org/weekly' => { channel: { url: 'https://phys.org/weekly-news/' } }
+        },
+        catalog_entries: []
+      )
+    end
+
+    it 'allows suffix-matching channel domains' do
+      expect { index.send(:enforce_scrape_policy!, entry, allowed_bundle) }.not_to raise_error
+    end
+
+    it 'raises when a config channel domain is not allowlisted' do
+      blocked_bundle = described_class::RegistryBundle.new(
+        registry_id: 'official',
+        manifest: instance_double(Html2rss::Registry::Manifest, version: '1.0.0'),
+        configs: {
+          'blocked.example/feed' => { channel: { url: 'https://blocked.example/private' } }
+        },
+        catalog_entries: []
+      )
+
+      expect { index.send(:enforce_scrape_policy!, entry, blocked_bundle) }
+        .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /blocked.example/)
+    end
+  end
+
   describe 'allowed_channel_domains' do
     let(:config_path) { File.join(Dir.pwd, 'tmp', 'domain-allowlist-registries.yml') }
 
-    before do
+    after do
+      FileUtils.rm_f(config_path)
+    end
+
+    it 'rejects bundles with channel URLs outside the allowlist' do # rubocop:disable RSpec/ExampleLength
       FileUtils.mkdir_p(File.dirname(config_path))
       File.write(config_path, <<~YAML)
         precedence:
@@ -79,13 +149,7 @@ RSpec.describe Html2rss::Web::Registry::Index do
       YAML
       ENV['REGISTRIES_CONFIG'] = config_path
       described_class.reload!
-    end
 
-    after do
-      FileUtils.rm_f(config_path)
-    end
-
-    it 'rejects bundles with channel URLs outside the allowlist' do
       expect { described_class.current.config_for('phys.org/weekly') }
         .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /phys.org/)
     end
