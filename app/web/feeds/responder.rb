@@ -81,12 +81,22 @@ module Html2rss
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
-          def emit_error(target_kind:, identifier:, resolved_source:, result:)
+          # @return [void]
+          def emit_error(target_kind:, identifier:, resolved_source:, result:) # rubocop:disable Metrics/MethodLength
             emit_render_failure(
               target_kind:, identifier:, resolved_source:,
               error_code: result.decision.code,
               error_message: result.error_message || result.client_message,
               **result.diagnostics.to_h
+            )
+            SentryOps.emit_operational_failure(
+              decision: result.decision,
+              diagnostics: result.diagnostics,
+              context: {
+                url: resolved_source.url,
+                strategy: resolved_source.strategy,
+                event_name: 'feed.render'
+              }
             )
           end
 

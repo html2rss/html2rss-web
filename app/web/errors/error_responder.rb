@@ -69,13 +69,15 @@ module Html2rss
         end
 
         def emit_error_event(error, decision)
+          diagnostics = ErrorClassifier::Diagnostics.from_error(error)
           details = {
             error_class: error.class.name,
             error_code: decision.code,
             status: decision.status,
-            **ErrorClassifier::Diagnostics.from_error(error).to_h
+            **diagnostics.to_h
           }
           Observability.emit(event_name: 'request.error', outcome: 'failure', level: :error, details: details)
+          SentryOps.emit_operational_failure(decision:, diagnostics:, context: { event_name: 'request.error' })
         end
       end
     end
