@@ -373,6 +373,7 @@ module Html2rss
               Html2rss::Registry::Archive.extract!(io, into: staged_dir)
             end
 
+            # Verify before promote: network-trust seam; Index reload still verifies on disk via Bundle.load.
             Html2rss::Registry::Verifier.verify!(
               staged_dir,
               trust: :signed,
@@ -421,9 +422,7 @@ module Html2rss
           # @param staged_dir [String]
           # @return [Html2rss::Registry::Manifest]
           def read_manifest!(staged_dir)
-            Html2rss::Registry::Manifest.parse(
-              File.read(File.join(staged_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
-            )
+            Store.read_manifest(staged_dir)
           end
 
           ##

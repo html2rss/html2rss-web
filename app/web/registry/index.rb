@@ -172,6 +172,7 @@ module Html2rss
           return nil unless directory && File.directory?(directory)
           return nil unless active_bundle_present?(directory)
 
+          # Verify on read: disk-trust seam; Sync already verifies downloaded bundles before promote.
           bundle = Html2rss::Registry::Bundle.load(
             directory,
             **trust_options_for(entry, directory)
@@ -276,7 +277,7 @@ module Html2rss
         # @param directory [String]
         # @return [Boolean]
         def active_bundle_present?(directory)
-          File.file?(File.join(directory, Html2rss::Registry::Manifest::MANIFEST_FILE))
+          Store.bundle_present_at?(directory)
         end
 
         ##

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require 'openssl'
 require 'stringio'
 require 'yaml'
 
@@ -29,7 +28,7 @@ module RegistrySyncTestHelpers
     manifest = Html2rss::Registry::Manifest.parse(
       File.read(File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
     )
-    sign_manifest!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
+    Html2rss::Registry::TestSupport.sign!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
 
     pack_bundle_dir(bundle_dir)
   ensure
@@ -63,12 +62,6 @@ module RegistrySyncTestHelpers
         }
       }
     )
-  end
-
-  def sign_manifest!(manifest, key_pem:, bundle_dir:)
-    private_key = OpenSSL::PKey.read(key_pem)
-    signature = private_key.sign(nil, manifest.canonical_bytes)
-    File.write(File.join(bundle_dir, Html2rss::Registry::Manifest::SIGNATURE_FILE), [signature].pack('m0'))
   end
 end
 

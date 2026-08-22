@@ -50,6 +50,22 @@ module Html2rss
           end
 
           ##
+          # @param path [String] bundle directory
+          # @return [Boolean]
+          def bundle_present_at?(path)
+            File.file?(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
+          end
+
+          ##
+          # @param path [String] bundle directory
+          # @return [Html2rss::Registry::Manifest]
+          def read_manifest(path)
+            Html2rss::Registry::Manifest.parse(
+              File.read(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
+            )
+          end
+
+          ##
           # @param registry_id [String, Symbol]
           # @return [String] verified staging directory for a registry id
           def staging_dir(registry_id)
@@ -207,21 +223,11 @@ module Html2rss
 
           ##
           # @param path [String]
-          # @return [Boolean]
-          def bundle_present_at?(path)
-            File.file?(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
-          end
-
-          ##
-          # @param path [String]
           # @return [String, nil]
           def manifest_version_at(path)
             return nil unless bundle_present_at?(path)
 
-            manifest = Html2rss::Registry::Manifest.parse(
-              File.read(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
-            )
-            manifest.version
+            read_manifest(path).version
           rescue Html2rss::Registry::ManifestError
             nil
           end
