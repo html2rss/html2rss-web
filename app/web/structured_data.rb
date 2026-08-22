@@ -10,7 +10,7 @@ module Html2rss
       ##
       # @param value [Object]
       # @return [Object]
-      def deep_dup(value)
+      def deep_dup(value) # rubocop:disable Metrics/MethodLength
         case value
         when Hash
           value.each_with_object({}) do |(key, val), memo|

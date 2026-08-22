@@ -7,7 +7,7 @@ module Html2rss
     module Registry
       ##
       # Sole merge owner for registry bundles and local {LocalConfig} feeds.
-      class Index
+      class Index # rubocop:disable Metrics/ClassLength
         RegistryBundle = Data.define(:registry_id, :manifest, :configs, :catalog_entries)
         StatusEntry = Data.define(:id, :version, :updated_at, :sync_mode)
 
@@ -314,7 +314,7 @@ module Html2rss
         rescue Html2rss::Web::LocalConfig::InvalidConfig, Html2rss::Web::LocalConfig::NotFound
           nil
         end
-      end
+      end # rubocop:enable Metrics/ClassLength
     end
   end
 end

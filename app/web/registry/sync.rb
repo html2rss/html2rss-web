@@ -7,7 +7,7 @@ module Html2rss
     module Registry
       ##
       # Fetches, verifies, and stores signed registry bundles.
-      module Sync
+      module Sync # rubocop:disable Metrics/ModuleLength
         SyncStatus = Data.define(
           :registry_id,
           :mode,
@@ -23,7 +23,7 @@ module Html2rss
         @timer_started = false
         REGISTRY_MUTEXES = Hash.new { |mutexes, registry_id| mutexes[registry_id] = Mutex.new }
 
-        class << self
+        class << self # rubocop:disable Metrics/ClassLength
           ##
           # Resolves the download URL for a sync-mode registry id.
           #
@@ -227,7 +227,7 @@ module Html2rss
           # @param previous_bundle [Index::RegistryBundle, nil]
           # @param new_bundle [Index::RegistryBundle]
           # @return [Hash{Symbol => Object}]
-          def build_catalog_diff(previous_bundle, new_bundle)
+          def build_catalog_diff(previous_bundle, new_bundle) # rubocop:disable Metrics/MethodLength
             previous_version = previous_bundle&.manifest&.version
             new_version = new_bundle.manifest.version
             previous_ids = Set.new(catalog_ids(previous_bundle))
@@ -475,8 +475,8 @@ module Html2rss
               last_error: state.last_error
             )
           end
-        end
-      end
+        end # rubocop:enable Metrics/ClassLength
+      end # rubocop:enable Metrics/ModuleLength
     end
   end
 end

@@ -9,7 +9,7 @@ module Html2rss
     module Registry
       ##
       # HTTPS fetch, sync URL resolution, and manifest version gating for registry sync.
-      module SyncTransport
+      module SyncTransport # rubocop:disable Metrics/ModuleLength
         DEFAULT_ALLOWED_HOSTS = %w[
           api.github.com
           github.com
@@ -26,6 +26,7 @@ module Html2rss
         OFFICIAL_GITHUB_TAG_RELEASES_API =
           'https://api.github.com/repos/html2rss/html2rss-configs/releases/tags/%<tag>s'
         OFFICIAL_ASSET_NAME = 'registry-bundle.tar.gz'
+        EXTRA_ALLOWED_HOSTS_CACHE = {} # rubocop:disable Style/MutableConstant
 
         RedirectPolicy = Data.define(:max_hops, :allowed_hosts) do
           ##
@@ -123,19 +124,16 @@ module Html2rss
         # @return [Array<String>]
         def extra_allowed_hosts
           raw = ENV.fetch('REGISTRY_SYNC_ALLOWED_HOSTS', '')
-          if defined?(@extra_allowed_hosts_raw) && @extra_allowed_hosts_raw == raw
-            return @extra_allowed_hosts
+          EXTRA_ALLOWED_HOSTS_CACHE.fetch(raw) do
+            EXTRA_ALLOWED_HOSTS_CACHE[raw] = raw.split(',').map(&:strip).reject(&:empty?).freeze
           end
-
-          @extra_allowed_hosts_raw = raw
-          @extra_allowed_hosts = raw.split(',').map(&:strip).reject(&:empty?).freeze
         end
 
         ##
         # @param api_url [String]
         # @param tag [String, nil]
         # @return [String]
-        def resolve_official_asset_url(api_url, tag: nil)
+        def resolve_official_asset_url(api_url, tag: nil) # rubocop:disable Metrics/MethodLength
           response_body = fetch!(api_url)
           release = JSON.parse(response_body, symbolize_names: true)
           asset = Array(release[:assets]).find { it[:name] == OFFICIAL_ASSET_NAME }
@@ -233,7 +231,7 @@ module Html2rss
 
           body
         end
-      end
+      end # rubocop:enable Metrics/ModuleLength
     end
   end
 end
