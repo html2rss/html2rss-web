@@ -26,7 +26,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 - **Runtime behavior**: Application code plus tests.
 - **HTTP contract**: Request specs plus generated OpenAPI.
-- **Config catalog API**: `GET /api/v1/configs` — embedded data from `Html2rss::Configs::Catalog`, merged with local `feeds.yml` entries that include `directory.title`. Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
+- **Config catalog API**: `GET /api/v1/configs` — catalog rows from `Registry::Index` (verified registry bundles per `config/registries.yml`, merged with local `feeds.yml` entries that include `directory.title`). Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
 - **This file**: Contributor conventions and current project rules.
 
 ---
@@ -281,6 +281,92 @@ After baseline traffic, configure per project:
 **Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
 
 Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
+
+---
+
+## Registry sync runbook
+
+Signed feed registries replace the embedded `html2rss-configs` gem. Each registry is defined in `config/registries.yml` (override path with `REGISTRIES_CONFIG`).
+
+### Check sync status
+
+Inside the Dev Container:
+
+```bash
+bin/registry-sync --status
+```
+
+Columns: `registry`, `mode`, `version`, `updated_at`, `sync_url`, `last_error`. Exit code is non-zero when any registry reports `last_error`.
+
+Sync a single registry or dry-run without swapping the active bundle:
+
+```bash
+bin/registry-sync --registry official
+bin/registry-sync --registry official --dry-run
+```
+
+### Boot behavior
+
+`Registry::Sync.boot!` runs during app boot (see `app/web/boot/setup.rb`):
+
+1. **Seed** — copies the image-embedded official bundle when no on-disk bundle exists.
+2. **Sync on boot** — when `REGISTRY_SYNC_ON_BOOT=true`, or when the bundle is missing, fetches and verifies the latest release.
+3. **Background refresh** — when `REGISTRY_SYNC_INTERVAL_HOURS` is greater than zero (default `24`), re-syncs on a jittered timer. Set to `0` to disable.
+
+Network sync verifies Ed25519 signatures using the `public_key` pinned in `registries.yml`. Seed bundles from the Docker image use integrity-only verification.
+
+### Add a corporate registry
+
+```yaml
+precedence:
+  - official
+  - corp
+
+registries:
+  official:
+    sync:
+      channel: html2rss-official
+    catalog: true
+    public_key_id: html2rss:registry:2026
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      ...
+      -----END PUBLIC KEY-----
+
+  corp:
+    sync:
+      url: https://registry.example.com/registry-bundle.tar.gz
+    catalog: false          # feeds served; omitted from GET /api/v1/configs
+    public_key_id: corp:registry:2026
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      ...
+      -----END PUBLIC KEY-----
+```
+
+- **`precedence`** — merge order for feed lookup; first match wins.
+- **`sync.url`** — direct tarball URL, or use `sync.channel: html2rss-official` for the default GitHub release asset.
+- **`catalog: false`** — private registry: configs are served at `/{registry.id}.rss` but excluded from the public catalog API (privacy for internal feeds).
+- Restrict outbound hosts with `REGISTRY_SYNC_ALLOWED_HOSTS` (comma-separated hostnames).
+
+### Air-gapped / offline path mount
+
+For environments without outbound network access, mount a verified bundle directory:
+
+```yaml
+registries:
+  official:
+    path: /opt/html2rss/registry/official
+    catalog: true
+```
+
+The directory must contain `manifest.json`, optional `manifest.sig`, and `configs/`. Path mode skips network sync; run `bin/registry-sync --status` to confirm `mode` is `path`.
+
+### Key rotation
+
+1. Publish a new bundle signed with the new key (`public_key_id` in `manifest.json`).
+2. Update `public_key_id` and `public_key` in `registries.yml` on every instance **before** or together with the first release that requires the new key.
+3. Re-sync (`bin/registry-sync` or wait for background refresh). Failed verification leaves the previous bundle active and records `last_error`.
 
 ---
 

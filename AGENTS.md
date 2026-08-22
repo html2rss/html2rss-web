@@ -56,19 +56,22 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 
 ## Config catalog API
 
-Public feed-directory metadata for embedded and local configs.
+Public feed-directory metadata from verified registry bundles and local `feeds.yml` entries.
 
 | Item | Detail |
 | --- | --- |
 | Endpoint | `GET /api/v1/configs` |
 | Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
 | Disabled response | `404` with `{ "error": "catalog_disabled" }` |
-| Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
-| Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
+| Registry entries | `Registry::Index.current.catalog_rows` — loads signed bundles from `config/registries.yml`; adds `source: registry`, `registry: <id>` |
+| Local entries | `Registry::LocalCatalog` includes `feeds.yml` feeds only when `directory.title` is set (`source: local`) |
+| Per-registry privacy | `catalog: false` in `registries.yml` omits that registry from the API (feeds still served) |
 | Starter feeds (UI) | Frontend `selectStarterFeeds` when feed creation is disabled; catalog find uses full catalog when enabled |
 | Catalog find | `findCatalogEntries` → multi-hit list under create URL; links via `catalogFeedHref` (path + defaults) |
 | CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
-| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
+| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` and `instance.registries` sync status |
 | Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
+
+Registry sync: `bin/registry-sync --status`; boot seed + optional sync via `Registry::Sync.boot!`. See [docs/README.md](docs/README.md#registry-sync-runbook).
 
 After handler or envelope changes: `make openapi` and `make ci-ready`.
