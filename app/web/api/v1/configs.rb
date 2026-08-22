@@ -17,7 +17,7 @@ module Html2rss
               entries, duration_ms = build_entries
               emit_success(entries.size, duration_ms)
               success_payload(entries)
-            rescue Html2rss::Configs::Catalog::MissingDirectoryTitle => error
+            rescue Html2rss::Registry::CatalogBuilder::MissingDirectoryTitle => error
               emit_failure(error)
               raise
             end
@@ -26,7 +26,7 @@ module Html2rss
 
             def build_entries
               started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-              entries = Html2rss::Web::Catalog::Merge.call
+              entries = Registry::Index.current.catalog_rows
               duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
               [entries, duration_ms]
             end

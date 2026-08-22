@@ -1,0 +1,10 @@
+{
+  "format": "registry.v1",
+  "registry_id": "official",
+  "version": "test-fixture",
+  "public_key_id": "test",
+  "files": {
+    "configs/phys.org/weekly.yml": "0f2a052f5c6da5c260985058302805b962da3211b635483667e258c714b31373",
+    "configs/support.apple.com/en_gb_ht201222.yml": "3a6f84899ac24472f6476c697d50ac366425ae1c87f7ddf045cc9e2c80e93eac"
+  }
+}

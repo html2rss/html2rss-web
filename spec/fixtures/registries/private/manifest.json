@@ -1,0 +1,9 @@
+{
+  "format": "registry.v1",
+  "registry_id": "private",
+  "version": "test-private",
+  "public_key_id": "test",
+  "files": {
+    "configs/secret.example/private.yml": "196760640262a019c0b32e08d2f5272c08b11b10b5880dc13266922a30c872a3"
+  }
+}

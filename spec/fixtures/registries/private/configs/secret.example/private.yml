@@ -1,0 +1,15 @@
+directory:
+  title: "Private Corp Feed"
+  summary: "Hidden from catalog."
+channel:
+  title: "Private Corp Feed"
+  url: https://secret.example/private
+  ttl: 60
+selectors:
+  items:
+    selector: article
+  title:
+    selector: h1
+  url:
+    selector: a
+    extractor: href

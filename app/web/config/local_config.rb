@@ -3,12 +3,6 @@
 require 'erb'
 require 'yaml'
 require_relative 'runtime_env'
-begin
-  require 'html2rss/configs'
-rescue LoadError => error
-  warn "[html2rss-web] Failed to load 'html2rss/configs': #{error.message}"
-  raise
-end
 
 module Html2rss
   module Web
@@ -28,7 +22,6 @@ module Html2rss
       # raised when the local config shape is invalid
       class InvalidConfig < RuntimeError; end
       FEED_EXTENSION_PATTERN = /\.(json|rss|xml)\z/
-      EMBEDDED_FEED_NAME_PATTERN = %r{\A[^/]+/.+\z}
 
       # Path to local feed configuration file.
       CONFIG_FILE = 'config/feeds.yml'
@@ -39,7 +32,7 @@ module Html2rss
         # @return [Hash<Symbol, Any>]
         def find(name)
           normalized_name = normalize_name(name)
-          config_hash = local_feed_config(normalized_name) || embedded_feed_config(normalized_name)
+          config_hash = local_feed_config(normalized_name) || registry_feed_config(normalized_name)
           raise NotFound, "Did not find local feed config at '#{normalized_name}'" unless config_hash
 
           config_hash
@@ -94,6 +87,7 @@ module Html2rss
         # @return [nil]
         def reload!(reason: 'manual')
           @mutex.synchronize { @snapshot = nil }
+          Registry::Index.reload!
           Observability.emit(
             event_name: 'cache.lifecycle',
             outcome: 'success',
@@ -115,13 +109,8 @@ module Html2rss
 
         # @param normalized_name [String]
         # @return [Hash{Symbol=>Object}, nil]
-        def embedded_feed_config(normalized_name)
-          return nil unless defined?(Html2rss::Configs)
-          return nil unless normalized_name.match?(EMBEDDED_FEED_NAME_PATTERN)
-
-          deep_dup(Html2rss::Configs.find_by_name(normalized_name))
-        rescue Html2rss::Configs::ConfigNotFound
-          nil
+        def registry_feed_config(normalized_name)
+          Registry::Index.current.config_for(normalized_name)
         end
 
         # @param name [String, Symbol, #to_s]

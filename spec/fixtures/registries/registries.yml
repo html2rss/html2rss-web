@@ -1,0 +1,11 @@
+precedence:
+  - official
+  - private
+
+registries:
+  official:
+    path: spec/fixtures/registries/official
+    catalog: true
+  private:
+    path: spec/fixtures/registries/private
+    catalog: false
