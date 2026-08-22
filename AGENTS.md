@@ -64,7 +64,7 @@ Public feed-directory metadata from verified registry bundles and local `feeds.y
 | Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
 | Disabled response | `404` with `{ "error": "catalog_disabled" }` |
 | Registry entries | `Registry::Index.current.catalog_rows` — loads signed bundles from `config/registries.yml`; adds `source: registry`, `registry: <id>` |
-| Local entries | `Registry::LocalCatalog` includes `feeds.yml` feeds only when `directory.title` is set (`source: local`) |
+| Local entries | `Registry::Index` catalog rows include `feeds.yml` feeds only when `directory.title` is set (`source: local`) |
 | Per-registry privacy | `catalog: false` in `registries.yml` omits that registry from the API (feeds still served) |
 | Starter feeds (UI) | Frontend `selectStarterFeeds` when feed creation is disabled; catalog find uses full catalog when enabled |
 | Catalog find | `findCatalogEntries` → multi-hit list under create URL; links via `catalogFeedHref` (path + defaults) |

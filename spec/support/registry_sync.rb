@@ -4,11 +4,28 @@ require 'fileutils'
 require 'stringio'
 require 'yaml'
 
+module RegistryTestHelpers
+  FIXTURES_ROOT = File.expand_path('../fixtures/registries', __dir__)
+  DEFAULT_REGISTRIES_CONFIG = File.join(FIXTURES_ROOT, 'registries.yml')
+
+  module_function
+
+  def configure_registry_fixtures!
+    ENV['REGISTRIES_CONFIG'] = DEFAULT_REGISTRIES_CONFIG
+    ENV['REGISTRY_DATA_ROOT'] = File.join(Dir.pwd, 'tmp', 'test-registry-data')
+  end
+
+  def reset_registry!
+    Html2rss::Web::Registry::Index.reload!
+  end
+end
+
 module RegistrySyncTestHelpers
   FIXTURE_KEYS_ROOT = File.expand_path('../fixtures/registries/keys', __dir__)
   TEST_PUBLIC_KEY = File.read(File.join(FIXTURE_KEYS_ROOT, 'test-key.pub'))
   TEST_PRIVATE_KEY = File.read(File.join(FIXTURE_KEYS_ROOT, 'test-key.pem'))
   SYNC_FIXTURES_ROOT = File.expand_path('../fixtures/registries/sync', __dir__)
+  OFFICIAL_FIXTURES_ROOT = File.join(RegistryTestHelpers::FIXTURES_ROOT, 'official')
   SYNC_REGISTRIES_CONFIG = File.join(SYNC_FIXTURES_ROOT, 'registries.yml')
   SYNC_DATA_ROOT = File.join(Dir.pwd, 'tmp', 'sync-registry-data')
 
@@ -22,9 +39,13 @@ module RegistrySyncTestHelpers
     Html2rss::Web::Registry::Index.reload!
   end
 
-  def build_signed_tarball
+  def build_signed_tarball # rubocop:disable Metrics/MethodLength
     bundle_dir = Dir.mktmpdir('signed-registry-bundle')
-    FileUtils.cp_r(File.join(SYNC_FIXTURES_ROOT, 'bundle', '.'), bundle_dir)
+    FileUtils.cp_r(File.join(OFFICIAL_FIXTURES_ROOT, 'configs'), File.join(bundle_dir, 'configs'))
+    FileUtils.cp(
+      File.join(SYNC_FIXTURES_ROOT, 'bundle', Html2rss::Registry::Manifest::MANIFEST_FILE),
+      File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE)
+    )
     manifest = Html2rss::Registry::Manifest.parse(
       File.read(File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
     )
@@ -66,6 +87,11 @@ module RegistrySyncTestHelpers
 end
 
 RSpec.configure do |config|
+  config.before do
+    RegistryTestHelpers.configure_registry_fixtures!
+    RegistryTestHelpers.reset_registry!
+  end
+
   config.before do |example|
     next unless example.metadata[:registry_sync]
 
