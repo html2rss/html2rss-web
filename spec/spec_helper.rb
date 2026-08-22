@@ -14,8 +14,8 @@ if (ENV.fetch('CI', nil) || ENV.fetch('COVERAGE', nil)) && ENV['RUN_DOCKER_SPECS
     add_group 'App', 'app'
     add_group 'Config', 'config'
 
-    skip_filter %r{/spec/}
-    skip_filter %r{/config/}
+    add_filter %r{/spec/}
+    add_filter %r{/config/}
 
     minimum_coverage line: 80, branch: 70 unless ENV['OPENAPI']
     maximum_coverage_drop line: 5, branch: 5 unless ENV['OPENAPI']
