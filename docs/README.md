@@ -286,6 +286,8 @@ Tune alert thresholds from sustained `request.error` or `feed.render` failure sp
 
 ## Registry sync runbook
 
+For end-to-end release and deployment steps (maintainers and operators), see [registry-go-live.md](registry-go-live.md).
+
 Signed feed registries replace the embedded `html2rss-configs` gem. Each registry is defined in `config/registries.yml` (override path with `REGISTRIES_CONFIG`).
 
 ### Check sync status
