@@ -47,7 +47,7 @@ module Html2rss
           return {} unless raw_feeds.is_a?(Hash)
 
           raw_feeds.each_with_object({}) do |(name, config), memo|
-            memo[name.to_sym] = FeedConfig.new(name: name.to_sym, raw: deep_dup(config).freeze)
+            memo[name.to_sym] = FeedConfig.new(name: name.to_sym, raw: StructuredData.deep_dup(config).freeze)
           end
         end
 
@@ -68,7 +68,7 @@ module Html2rss
         # @param accounts [Array<AuthAccount>]
         # @return [Hash{Symbol=>Object}]
         def normalized_global_hash(global_hash, accounts)
-          normalized = deep_dup(global_hash)
+          normalized = StructuredData.deep_dup(global_hash)
           return normalized unless normalized.key?(:auth)
 
           normalized[:auth] = normalized_auth_hash(normalized[:auth], accounts)
@@ -84,35 +84,6 @@ module Html2rss
             { username: account.username, token: account.token, allowed_urls: account.allowed_urls.dup }
           end
           auth
-        end
-
-        # @param value [Object]
-        # @return [Object]
-        def deep_dup(value)
-          case value
-          when Hash
-            deep_dup_hash(value)
-          when Array
-            deep_dup_array(value)
-          when String
-            value.dup
-          else
-            value
-          end
-        end
-
-        # @param value [Hash]
-        # @return [Hash]
-        def deep_dup_hash(value)
-          value.each_with_object({}) do |(key, val), memo|
-            memo[key.is_a?(String) ? key.dup : key] = deep_dup(val)
-          end
-        end
-
-        # @param value [Array]
-        # @return [Array]
-        def deep_dup_array(value)
-          value.map { |element| deep_dup(element) }
         end
       end
     end

@@ -186,6 +186,18 @@ module Html2rss
             File.write(sync_state_path, JSON.generate(state))
           end
 
+          ##
+          # @param path [String, nil]
+          # @return [Time, nil]
+          def manifest_mtime(path)
+            return nil unless path && File.directory?(path)
+
+            manifest_path = File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE)
+            return nil unless File.file?(manifest_path)
+
+            File.mtime(manifest_path)
+          end
+
           private
 
           ##

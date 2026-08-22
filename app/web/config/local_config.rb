@@ -41,13 +41,13 @@ module Html2rss
         ##
         # @return [Hash<Symbol, Any>]
         def feeds
-          snapshot.feeds.transform_values { |feed| deep_dup(feed.raw) }
+          snapshot.feeds.transform_values { StructuredData.deep_dup(it.raw) }
         end
 
         ##
         # @return [Hash<Symbol, Any>]
         def global
-          deep_dup(snapshot.global)
+          StructuredData.deep_dup(snapshot.global)
         end
 
         ##
@@ -104,7 +104,7 @@ module Html2rss
           config = snapshot.feeds[normalized_name.to_sym]
           return nil unless config
 
-          deep_dup(config.raw)
+          StructuredData.deep_dup(config.raw)
         end
 
         # @param normalized_name [String]
@@ -117,21 +117,6 @@ module Html2rss
         # @return [String] path without feed extension for feed lookup.
         def normalize_name(name)
           name.to_s.delete_prefix('/').sub(FEED_EXTENSION_PATTERN, '')
-        end
-
-        # Deep-duplicates nested config structures to avoid mutating shared data.
-        #
-        # @param value [Object]
-        # @return [Object]
-        def deep_dup(value)
-          case value
-          when Hash
-            value.transform_values { |val| deep_dup(val) }
-          when Array
-            value.map { |element| deep_dup(element) }
-          else
-            value
-          end
         end
       end
     end
