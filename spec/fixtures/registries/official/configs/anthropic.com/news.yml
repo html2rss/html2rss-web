@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: anthropic.com/news
+directory:
+  topics:
+    - tech
+    - research
+  title: "Anthropic — News"
+  summary: "Product and research announcements from Anthropic."
+channel:
+  title: "Anthropic — News"
+  url: https://www.anthropic.com/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'ul[class*="PublicationList"] > li > a[href^="/news/"]'
+    enhance: false
+  title:
+    selector: '[class*="__title"]'
+  url:
+    extractor: href

@@ -27,7 +27,9 @@ module Html2rss
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_static(feed_request)
-            config = LocalConfig.find(feed_request.feed_name)
+            config = Registry::Index.current.config_for(feed_request.feed_name)
+            raise Html2rss::Web::NotFoundError unless config
+
             generator_input = static_generator_input(config, feed_request.params)
 
             resolved_source_for(
@@ -36,8 +38,6 @@ module Html2rss
               generator_input: generator_input,
               ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
-          rescue Html2rss::Web::LocalConfig::NotFound
-            raise Html2rss::Web::NotFoundError
           end
 
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]

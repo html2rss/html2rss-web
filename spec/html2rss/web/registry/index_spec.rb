@@ -8,9 +8,9 @@ require_relative '../../../../app'
 RSpec.describe Html2rss::Web::Registry::Index do
   describe '#config_for' do
     it 'returns registry configs by feed id' do
-      config = described_class.current.config_for('support.apple.com/en_gb_ht201222')
+      config = described_class.current.config_for('anthropic.com/news')
 
-      expect(config).to include(channel: hash_including(title: 'Apple Support — Security releases'))
+      expect(config).to include(channel: hash_including(title: 'Anthropic — News'))
     end
 
     it 'returns nil for unknown ids' do
@@ -27,12 +27,12 @@ RSpec.describe Html2rss::Web::Registry::Index do
   describe '#catalog_rows' do
     it 'includes registry rows with source and registry fields' do
       rows = described_class.current.catalog_rows
-      phys = rows.find { it.fetch(:id) == 'phys.org/weekly' }
+      anthropic = rows.find { it.fetch(:id) == 'anthropic.com/news' }
 
-      expect(phys).to include(
+      expect(anthropic).to include(
         source: 'registry',
         registry: 'official',
-        path: '/phys.org/weekly.rss'
+        path: '/anthropic.com/news.rss'
       )
     end
 
@@ -44,9 +44,9 @@ RSpec.describe Html2rss::Web::Registry::Index do
 
     it 'prefers the first registry in precedence for duplicate feed ids' do
       rows = described_class.current.catalog_rows
-      apple = rows.find { it.fetch(:id) == 'support.apple.com/en_gb_ht201222' }
+      deepmind = rows.find { it.fetch(:id) == 'deepmind.google/blog' }
 
-      expect(apple.fetch(:registry)).to eq('official')
+      expect(deepmind.fetch(:registry)).to eq('official')
     end
 
     it 'merges local feeds.yml rows after registry rows', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
@@ -77,7 +77,7 @@ RSpec.describe Html2rss::Web::Registry::Index do
 
       expect(official).to have_attributes(
         version: 'test-fixture',
-        sync_mode: :path
+        mode: :path
       )
     end
   end
@@ -99,14 +99,14 @@ RSpec.describe Html2rss::Web::Registry::Index do
             path: spec/fixtures/registries/official
             catalog: true
             allowed_channel_domains:
-              - phys.org
-              - apple.com
+              - anthropic.com
+              - deepmind.google
       YAML
       ENV['REGISTRIES_CONFIG'] = config_path
       described_class.reload!
 
-      expect(described_class.current.config_for('phys.org/weekly')).to include(
-        channel: hash_including(url: 'https://phys.org/weekly-news/')
+      expect(described_class.current.config_for('anthropic.com/news')).to include(
+        channel: hash_including(url: 'https://www.anthropic.com/news')
       )
     end
 
@@ -125,8 +125,8 @@ RSpec.describe Html2rss::Web::Registry::Index do
       ENV['REGISTRIES_CONFIG'] = config_path
       described_class.reload!
 
-      expect { described_class.current.config_for('phys.org/weekly') }
-        .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /phys.org/)
+      expect { described_class.current.config_for('anthropic.com/news') }
+        .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /anthropic\.com/)
     end
   end
 end

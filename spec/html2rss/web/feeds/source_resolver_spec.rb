@@ -27,7 +27,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       before do
-        allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
+        allow(Html2rss::Web::Registry::Index.current).to receive(:config_for).with('legacy').and_return(config)
       end
 
       it 'normalizes the static source into shared generator input without forcing a default strategy',

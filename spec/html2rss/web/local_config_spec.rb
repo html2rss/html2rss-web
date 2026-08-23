@@ -51,14 +51,6 @@ RSpec.describe Html2rss::Web::LocalConfig do
       expect(titles_for('example.json', 'example.rss', 'example.xml')).to eq(%w[Example Example Example])
     end
 
-    it 'falls back to registry configs when the feed is not in local yaml' do
-      allow(described_class).to receive(:snapshot).and_return(empty_snapshot)
-
-      config = described_class.find('support.apple.com/en_gb_ht201222.rss')
-
-      expect(config).to include(channel: hash_including(title: 'Apple Support — Security releases'))
-    end
-
     it 'returns not found for unknown feed ids' do
       allow(described_class).to receive(:snapshot).and_return(empty_snapshot)
 

@@ -57,7 +57,7 @@ module Html2rss
                   id: entry.id,
                   version: entry.version,
                   updated_at: entry.updated_at&.utc&.iso8601,
-                  sync_mode: entry.sync_mode.to_s
+                  sync_mode: entry.mode.to_s
                 }
               end
             end

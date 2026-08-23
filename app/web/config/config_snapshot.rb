@@ -47,7 +47,7 @@ module Html2rss
           return {} unless raw_feeds.is_a?(Hash)
 
           raw_feeds.each_with_object({}) do |(name, config), memo|
-            memo[name.to_sym] = FeedConfig.new(name: name.to_sym, raw: StructuredData.deep_dup(config).freeze)
+            memo[name.to_sym] = FeedConfig.new(name: name.to_sym, raw: Config::StructuredData.deep_dup(config).freeze)
           end
         end
 
@@ -68,7 +68,7 @@ module Html2rss
         # @param accounts [Array<AuthAccount>]
         # @return [Hash{Symbol=>Object}]
         def normalized_global_hash(global_hash, accounts)
-          normalized = StructuredData.deep_dup(global_hash)
+          normalized = Config::StructuredData.deep_dup(global_hash)
           return normalized unless normalized.key?(:auth)
 
           normalized[:auth] = normalized_auth_hash(normalized[:auth], accounts)

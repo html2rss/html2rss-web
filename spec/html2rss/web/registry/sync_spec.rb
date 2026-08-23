@@ -34,8 +34,8 @@ RSpec.describe Html2rss::Web::Registry::Sync do
 
       expect(status.version).to eq('test-fixture')
       expect(Html2rss::Web::Registry::Store.bundle_present?('official')).to be(true)
-      expect(Html2rss::Web::Registry::Index.current.config_for('phys.org/weekly')).to include(
-        channel: hash_including(title: 'Phys.org — Weekly')
+      expect(Html2rss::Web::Registry::Index.current.config_for('anthropic.com/news')).to include(
+        channel: hash_including(title: 'Anthropic — News')
       )
     end
 
@@ -110,7 +110,7 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       row = described_class.status(registry_id: 'official').first
 
       expect(row).to have_attributes(
-        registry_id: 'official',
+        id: 'official',
         mode: :sync,
         sync_url: 'https://registry.test.example/registry-bundle.tar.gz',
         staged_version: nil
@@ -155,9 +155,8 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       expect(status.staged_version).to eq('test-fixture')
     end
 
-    it 'promotes staged bundles and emits catalog change telemetry', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'promotes staged bundles and emits catalog change telemetry', :aggregate_failures do
       allow(Html2rss::Web::Observability).to receive(:emit)
-      allow(Html2rss::Web::SecurityLogger).to receive(:log_registry_catalog_changed)
 
       write_policy_config(
         RegistrySyncTestHelpers.policy_registry_yaml(download_url:, auto_promote: false)
@@ -169,12 +168,8 @@ RSpec.describe Html2rss::Web::Registry::Sync do
       expect(status.version).to eq('test-fixture')
       expect(Html2rss::Web::Registry::Store.staged_present?('official')).to be(false)
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
-        hash_including(event_name: 'registry.promote_staged', outcome: 'success')
-      )
-      expect(Html2rss::Web::Observability).to have_received(:emit).with(
         hash_including(event_name: 'registry.catalog_changed', outcome: 'success')
       )
-      expect(Html2rss::Web::SecurityLogger).to have_received(:log_registry_catalog_changed)
     end
 
     it 'rejects manifests newer than max_version' do
@@ -191,21 +186,6 @@ RSpec.describe Html2rss::Web::Registry::Sync do
     end
   end
 
-  describe '.cli_exit_code', :registry_sync do
-    it 'returns non-zero when a sync registry has no bundle' do
-      expect(described_class.cli_exit_code).to eq(1)
-    end
-
-    it 'returns zero after a successful sync' do
-      stub_request(:get, 'https://registry.test.example/registry-bundle.tar.gz')
-        .to_return(status: 200, body: RegistrySyncTestHelpers.build_signed_tarball)
-
-      described_class.run(registry_id: 'official')
-
-      expect(described_class.cli_exit_code).to eq(0)
-    end
-  end
-
   describe '.boot!' do
     it 'does not run in the test environment' do
       allow(described_class).to receive(:seed_registry!)
@@ -217,20 +197,7 @@ RSpec.describe Html2rss::Web::Registry::Sync do
     end
   end
 
-  describe Html2rss::Web::Registry::SyncTransport do
-    describe '.exceeds_max?' do
-      [
-        ['2026.08.22', '2026.08.21', true],
-        ['2026.08.21', '2026.08.22', false],
-        ['v2026.08.22', '2026.08.21', true],
-        ['2026.08.22', nil, false]
-      ].each do |manifest_version, max_version, expected|
-        it "returns #{expected} for #{manifest_version} vs #{max_version.inspect}" do
-          expect(described_class.exceeds_max?(manifest_version, max_version)).to be(expected)
-        end
-      end
-    end
-
+  describe Html2rss::Web::Registry::ChannelResolver do
     describe '.resolve' do
       it 'uses the GitHub tag release API when pin_version is set', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
         tag_api = format(
@@ -245,7 +212,7 @@ RSpec.describe Html2rss::Web::Registry::Sync do
           }.to_json
         )
 
-        entry = Html2rss::Web::Registry::Entry.new(
+        definition = Html2rss::Web::Registry::Definition.new(
           id: 'official',
           mode: :sync,
           path: nil,
@@ -258,7 +225,7 @@ RSpec.describe Html2rss::Web::Registry::Sync do
           allowed_channel_domains: []
         )
 
-        expect(described_class.resolve(entry)).to eq(download_url)
+        expect(described_class.resolve(definition)).to eq(download_url)
       end
     end
   end

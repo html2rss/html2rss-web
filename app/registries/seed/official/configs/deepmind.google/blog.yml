@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: deepmind.google/blog
+directory:
+  topics:
+    - science
+    - research
+  title: "Google DeepMind — Blog"
+  summary: "Research and product posts from Google DeepMind."
+
+channel:
+  title: "Google DeepMind — Blog"
+  url: https://deepmind.google/blog/
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: .card__inner
+    enhance: false
+  title:
+    selector: h3
+  url:
+    selector: .card__overlay-link
+    extractor: href
+  published_at:
+    selector: time

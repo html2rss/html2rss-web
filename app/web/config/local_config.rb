@@ -3,14 +3,12 @@
 require 'erb'
 require 'yaml'
 require_relative 'runtime_env'
+require_relative 'structured_data'
 
 module Html2rss
   module Web
     ##
-    # Loads and normalizes feed configuration from disk.
-    #
-    # Keeping lookup/defaulting here gives the rest of the app one predictable
-    # config shape instead of repeating file parsing and fallback logic.
+    # Loads and normalizes local feed configuration from disk.
     module LocalConfig
       @mutex = Mutex.new
       @snapshot = nil
@@ -28,26 +26,26 @@ module Html2rss
 
       class << self
         ##
-        # @param name [String, Symbol, #to_sym]
-        # @return [Hash<Symbol, Any>]
-        def find(name)
-          normalized_name = normalize_name(name)
-          config_hash = local_feed_config(normalized_name) || registry_feed_config(normalized_name)
-          raise NotFound, "Did not find local feed config at '#{normalized_name}'" unless config_hash
+        # @param feed_id [String, Symbol]
+        # @return [Hash{Symbol => Object}]
+        def find(feed_id)
+          normalized = feed_id.to_s.delete_prefix('/').sub(FEED_EXTENSION_PATTERN, '')
+          config = snapshot.feeds[normalized.to_sym]
+          raise NotFound, "Did not find local feed config at '#{normalized}'" unless config
 
-          config_hash
+          Config::StructuredData.deep_dup(config.raw)
         end
 
         ##
-        # @return [Hash<Symbol, Any>]
+        # @return [Hash{Symbol => Hash{Symbol => Object}}]
         def feeds
-          snapshot.feeds.transform_values { StructuredData.deep_dup(it.raw) }
+          snapshot.feeds.transform_values { Config::StructuredData.deep_dup(it.raw) }
         end
 
         ##
-        # @return [Hash<Symbol, Any>]
+        # @return [Hash{Symbol => Object}]
         def global
-          StructuredData.deep_dup(snapshot.global)
+          Config::StructuredData.deep_dup(snapshot.global)
         end
 
         ##
@@ -59,11 +57,7 @@ module Html2rss
         end
 
         ##
-        # Reparses the current config file without touching memoized runtime
-        # state. Health checks use this path so config drift shows up without
-        # forcing live request handlers onto a reload path.
-        #
-        # @return [Hash<Symbol, Any>]
+        # @return [Hash{Symbol => Object}]
         def load_yaml
           template = File.read(CONFIG_FILE)
           YAML.safe_load(ERB.new(template, trim_mode: '-').result, symbolize_names: true).freeze
@@ -72,9 +66,6 @@ module Html2rss
         end
 
         ##
-        # Reparses and normalizes the current config file without mutating the
-        # memoized runtime snapshot.
-        #
         # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
         def load_snapshot
           ConfigSnapshot.load(load_yaml)
@@ -94,29 +85,6 @@ module Html2rss
             details: { component: 'local_config', event: 'reload', reason: }
           )
           nil
-        end
-
-        private
-
-        # @param normalized_name [String]
-        # @return [Hash{Symbol=>Object}, nil]
-        def local_feed_config(normalized_name)
-          config = snapshot.feeds[normalized_name.to_sym]
-          return nil unless config
-
-          StructuredData.deep_dup(config.raw)
-        end
-
-        # @param normalized_name [String]
-        # @return [Hash{Symbol=>Object}, nil]
-        def registry_feed_config(normalized_name)
-          Registry::Index.current.config_for(normalized_name)
-        end
-
-        # @param name [String, Symbol, #to_s]
-        # @return [String] path without feed extension for feed lookup.
-        def normalize_name(name)
-          name.to_s.delete_prefix('/').sub(FEED_EXTENSION_PATTERN, '')
         end
       end
     end

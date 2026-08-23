@@ -1,10 +1,11 @@
 {
   "format": "registry.v1",
   "registry_id": "official",
-  "version": "test-fixture",
+  "version": "v2026.08.23",
   "public_key_id": "test",
   "files": {
-    "configs/phys.org/weekly.yml": "0e05fa9a95ec56bef4b4363b2f044ab69642fcda9acd91ebf8d28b39141a963d",
-    "configs/support.apple.com/en_gb_ht201222.yml": "53e38a6b7d088e0c79b19a7dd6db9b009c6b5c0b6690f504c7160b0c32b71e41"
+    "configs/anthropic.com/news.yml": "679b3c28b6dd7e08bbfdaf8564e077e7c2ac4140eacbc9543756591aaf0621f5",
+    "configs/deepmind.google/blog.yml": "3dbc30f109bb169f1de06372236a2d352584808d11be8243ba93befcd94a7b41"
   }
 }
+

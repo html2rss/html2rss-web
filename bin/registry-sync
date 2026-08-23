@@ -48,7 +48,7 @@ module RegistrySyncCLI
     puts headers.join("\t")
     rows.each do |row|
       puts [
-        row.registry_id,
+        row.id,
         row.mode,
         row.version || '-',
         row.staged_version || '-',
