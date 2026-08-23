@@ -81,9 +81,13 @@ module Html2rss
         end
 
         ##
+        # Wire rows for the catalog API (+source+ / +registry+ stamped here).
+        #
         # @return [Array<Hash{Symbol => Object}>]
         def catalog_rows
-          catalog_entries.map(&:to_h)
+          registry_rows = build_registry_catalog_rows
+          local_rows = build_local_catalog_rows
+          registry_rows.merge(local_rows).values.sort_by { it.fetch(:id) }
         end
 
         ##
@@ -128,7 +132,17 @@ module Html2rss
           @loaded_bundles ||= Config.precedence.to_h { [it, load_bundle(it)] }.compact
         end
 
-        def build_registry_catalog_entries # rubocop:disable Metrics/MethodLength
+        def build_registry_catalog_entries
+          merge_registry_catalog { |entry, _registry_id| entry }
+        end
+
+        def build_registry_catalog_rows
+          merge_registry_catalog do |entry, registry_id|
+            entry.to_h.merge(source: 'registry', registry: registry_id)
+          end
+        end
+
+        def merge_registry_catalog
           Config.precedence.each_with_object({}) do |registry_id, rows|
             next unless Config.catalog_enabled?(registry_id)
 
@@ -136,16 +150,7 @@ module Html2rss
             next unless bundle
 
             bundle.catalog_entries.each do |entry|
-              entry_id = entry.id
-              rows[entry_id] ||= Html2rss::Registry::CatalogEntry.new(
-                id: entry_id,
-                path: entry.path,
-                directory: entry.directory,
-                channel: entry.channel,
-                parameters: entry.parameters,
-                source: 'registry',
-                registry: registry_id
-              )
+              rows[entry.id] ||= yield(entry, registry_id)
             end
           end
         end
@@ -155,6 +160,10 @@ module Html2rss
             entry = build_local_catalog_entry(feed_name, feed_config)
             [entry.id, entry] if entry
           end.to_h
+        end
+
+        def build_local_catalog_rows
+          build_local_catalog_entries.transform_values { |entry| entry.to_h.merge(source: 'local') }
         end
 
         def load_bundle(registry_id) # rubocop:disable Metrics/MethodLength
@@ -228,11 +237,9 @@ module Html2rss
           Html2rss::Registry::CatalogEntry.new(
             id:,
             path: "/#{id}.rss",
-            source: 'local',
             directory: Html2rss::Registry::CatalogBuilder.directory_payload(directory, title),
             channel: Html2rss::Registry::CatalogBuilder.channel_payload(channel, title),
-            parameters: { schema: {}, defaults: {} },
-            registry: nil
+            parameters: { schema: {}, defaults: {} }
           )
         end
       end
