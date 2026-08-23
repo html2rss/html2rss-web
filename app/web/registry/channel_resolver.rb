@@ -18,11 +18,12 @@ module Html2rss
         # @param definition [Definition]
         # @return [String] download URL
         def resolve(definition)
-          return definition.sync_url if definition.sync_url && !definition.sync_url.empty?
+          sync_url = definition.sync_url
+          return sync_url if sync_url && !sync_url.empty?
 
           if definition.sync_channel == Config::DEFAULT_OFFICIAL_SYNC_CHANNEL
             pin = definition.sync_policy.pin_version
-            return Config::OFFICIAL_RELEASE_URL if pin.nil? || pin.empty?
+            return Config::OFFICIAL_RELEASE_URL if pin.to_s.empty?
 
             api_url = format(OFFICIAL_GITHUB_TAG_RELEASES_API, tag: pin)
             return resolve_github_asset(api_url, tag: pin)
@@ -35,17 +36,13 @@ module Html2rss
         # @param api_url [String]
         # @param tag [String, nil]
         # @return [String]
-        def resolve_github_asset(api_url, tag: nil) # rubocop:disable Metrics/MethodLength
-          body = HttpTransport.fetch!(api_url)
-          release = JSON.parse(body, symbolize_names: true)
-          asset = Array(release[:assets]).find { it[:name] == OFFICIAL_ASSET_NAME }
-          url = asset&.dig(:browser_download_url)
-          unless url
-            raise Errors::SyncError,
-                  "Official asset '#{OFFICIAL_ASSET_NAME}' not found#{" for #{tag}" if tag}"
-          end
+        def resolve_github_asset(api_url, tag: nil)
+          release = JSON.parse(HttpTransport.fetch!(api_url), symbolize_names: true)
+          url = Array(release[:assets]).find { it[:name] == OFFICIAL_ASSET_NAME }&.dig(:browser_download_url)
+          return url if url
 
-          url
+          tag_suffix = " for #{tag}" if tag
+          raise Errors::SyncError, "Official asset '#{OFFICIAL_ASSET_NAME}' not found#{tag_suffix}"
         rescue JSON::ParserError => error
           raise Errors::SyncError, "Invalid GitHub release metadata: #{error.message}"
         end

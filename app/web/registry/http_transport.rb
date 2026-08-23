@@ -27,7 +27,7 @@ module Html2rss
         # @param max_redirects [Integer]
         # @param allowed_hosts [Array<String>]
         # @return [String] response body
-        def fetch!(url, max_redirects: DEFAULT_MAX_REDIRECTS, allowed_hosts: default_allowed_hosts) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def fetch!(url, max_redirects: DEFAULT_MAX_REDIRECTS, allowed_hosts: default_allowed_hosts) # rubocop:disable Metrics/MethodLength
           uri = parse_https_uri!(url)
           hops = 0
 
@@ -40,16 +40,23 @@ module Html2rss
               hops += 1
               raise Errors::SyncError, 'Registry sync exceeded redirect limit' if hops > max_redirects
 
-              location = response['location']
-              raise Errors::SyncError, 'Registry sync redirect missing Location header' if location.to_s.empty?
-
-              uri = parse_https_uri!(URI.join(uri, location).to_s)
+              uri = handle_redirect(uri, response['location'])
             in Net::HTTPSuccess
               return read_body(response)
             else
               raise Errors::SyncError, "Registry sync fetch failed with HTTP #{response.code}"
             end
           end
+        end
+
+        ##
+        # @param current_uri [URI::HTTPS]
+        # @param location [String, nil]
+        # @return [URI::HTTPS]
+        def handle_redirect(current_uri, location)
+          raise Errors::SyncError, 'Registry sync redirect missing Location header' if location.to_s.empty?
+
+          parse_https_uri!(URI.join(current_uri, location).to_s)
         end
 
         ##

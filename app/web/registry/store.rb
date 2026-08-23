@@ -13,6 +13,8 @@ module Html2rss
         DEFAULT_SEED_ROOT = '/app/registries/seed'
         SYNC_STATE_FILE = '.sync-state.json'
 
+        ##
+        # Immutable registry sync state.
         SyncState = Data.define(:last_error, :last_sync_at)
 
         class << self
@@ -92,11 +94,11 @@ module Html2rss
             target = registry_dir(registry_id)
             FileUtils.mkdir_p(File.dirname(target))
             backup = "#{target}.backup.#{Process.pid}"
-            FileUtils.rm_rf(backup)
             FileUtils.mv(target, backup) if File.exist?(target)
             FileUtils.cp_r(source_dir, target)
-            FileUtils.rm_rf(backup)
             target
+          ensure
+            FileUtils.rm_rf(backup) if backup
           end
 
           ##
@@ -139,9 +141,10 @@ module Html2rss
           # @return [SyncState]
           def sync_state(registry_id)
             raw = read_sync_state.fetch(registry_id.to_s, {})
+            last_sync = raw['last_sync_at']
             SyncState.new(
               last_error: raw['last_error'],
-              last_sync_at: raw['last_sync_at'] ? Time.parse(raw['last_sync_at']) : nil
+              last_sync_at: last_sync ? Time.parse(last_sync) : nil
             )
           end
 

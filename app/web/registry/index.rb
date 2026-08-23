@@ -17,6 +17,14 @@ module Html2rss
         :sync_url,
         :last_error
       ) do
+        ##
+        # @param id [String, Symbol]
+        # @param mode [Symbol]
+        # @param version [String, nil]
+        # @param staged_version [String, nil]
+        # @param updated_at [Time, nil]
+        # @param sync_url [String, nil]
+        # @param last_error [String, nil]
         def initialize(id:, mode:, version: nil, staged_version: nil, updated_at: nil, sync_url: nil, last_error: nil)
           super
         end
@@ -25,6 +33,8 @@ module Html2rss
       ##
       # Sole feed repository combining registry bundles and local feeds.
       class Index # rubocop:disable Metrics/ClassLength
+        ##
+        # Immutable container holding a loaded registry bundle's manifest, configs, and catalog entries.
         RegistryBundle = Data.define(:registry_id, :manifest, :configs, :catalog_entries)
 
         @mutex = Mutex.new
@@ -56,7 +66,7 @@ module Html2rss
 
           loaded_bundles.each_value do |bundle|
             config = bundle.configs[id]
-            return Html2rss::Web::Config::StructuredData.deep_dup(config) if config
+            return StructuredData.deep_dup(config) if config
           end
 
           nil
@@ -64,31 +74,10 @@ module Html2rss
 
         ##
         # @return [Array<Html2rss::Registry::CatalogEntry>]
-        def catalog_entries # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
-          registry_entries = Config.precedence.each_with_object({}) do |registry_id, rows|
-            next unless Config.catalog_enabled?(registry_id)
-
-            bundle = loaded_bundles[registry_id]
-            next unless bundle
-
-            bundle.catalog_entries.each do |entry|
-              rows[entry.id] ||= Html2rss::Registry::CatalogEntry.new(
-                id: entry.id,
-                path: entry.path,
-                directory: entry.directory,
-                channel: entry.channel,
-                parameters: entry.parameters,
-                source: 'registry',
-                registry: registry_id
-              )
-            end
-          end
-
-          local_entries = LocalConfig.feeds.filter_map do |feed_name, feed_config|
-            build_local_catalog_entry(feed_name, feed_config)
-          end
-
-          registry_entries.merge(local_entries.to_h { [it.id, it] }).values.sort_by(&:id)
+        def catalog_entries
+          registry_entries = build_registry_catalog_entries
+          local_entries = build_local_catalog_entries
+          registry_entries.merge(local_entries).values.sort_by(&:id)
         end
 
         ##
@@ -106,16 +95,17 @@ module Html2rss
 
         ##
         # @return [Array<Status>]
-        def status # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+        def status # rubocop:disable Metrics/MethodLength
           Config.precedence.map do |registry_id|
             definition = Config.entry(registry_id)
             bundle = loaded_bundles[registry_id]
             sync_state = Store.sync_state(registry_id)
-            sync_url = definition.mode == :sync ? ChannelResolver.resolve(definition) : nil
+            mode = definition.mode
+            sync_url = mode == :sync ? ChannelResolver.resolve(definition) : nil
 
             Status.new(
               id: registry_id,
-              mode: definition.mode,
+              mode:,
               version: bundle&.manifest&.version,
               staged_version: Store.staged_version(registry_id),
               updated_at: Store.manifest_mtime(bundle_directory(definition)),
@@ -138,6 +128,35 @@ module Html2rss
           @loaded_bundles ||= Config.precedence.to_h { [it, load_bundle(it)] }.compact
         end
 
+        def build_registry_catalog_entries # rubocop:disable Metrics/MethodLength
+          Config.precedence.each_with_object({}) do |registry_id, rows|
+            next unless Config.catalog_enabled?(registry_id)
+
+            bundle = loaded_bundles[registry_id]
+            next unless bundle
+
+            bundle.catalog_entries.each do |entry|
+              entry_id = entry.id
+              rows[entry_id] ||= Html2rss::Registry::CatalogEntry.new(
+                id: entry_id,
+                path: entry.path,
+                directory: entry.directory,
+                channel: entry.channel,
+                parameters: entry.parameters,
+                source: 'registry',
+                registry: registry_id
+              )
+            end
+          end
+        end
+
+        def build_local_catalog_entries
+          LocalConfig.feeds.filter_map do |feed_name, feed_config|
+            entry = build_local_catalog_entry(feed_name, feed_config)
+            [entry.id, entry] if entry
+          end.to_h
+        end
+
         def load_bundle(registry_id) # rubocop:disable Metrics/MethodLength
           definition = Config.entry(registry_id)
           directory = bundle_directory(definition)
@@ -146,8 +165,7 @@ module Html2rss
           trust_opts = if definition.mode == :path
                          { trust: :integrity_only }
                        else
-                         { trust: :signed,
-                           public_keys: definition.public_keys }
+                         { trust: :signed, public_keys: definition.public_keys }
                        end
           bundle_data = Html2rss::Registry::Bundle.load(directory, **trust_opts)
           bundle = RegistryBundle.new(
@@ -162,16 +180,26 @@ module Html2rss
           raise Errors::LoadError, "Failed to load registry '#{registry_id}': #{error.message}"
         end
 
-        def enforce_scrape_policy!(definition, bundle) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity
+        def enforce_scrape_policy!(definition, bundle)
           allowed = definition.allowed_channel_domains
-          return if allowed.nil? || allowed.empty?
+          return if allowed.empty?
 
           bundle.configs.each do |feed_id, config|
-            host = URI.parse(config.dig(:channel, :url).to_s).host rescue nil # rubocop:disable Style/RescueModifier
-            next if host && allowed.any? { host.downcase == it.downcase || host.downcase.end_with?(".#{it.downcase}") }
+            next if host_allowed?(config.dig(:channel, :url), allowed)
 
             raise Errors::LoadError, "Registry '#{definition.id}' config '#{feed_id}' host not allowed"
           end
+        end
+
+        def host_allowed?(url, allowed)
+          host = URI.parse(url.to_s).host&.downcase rescue nil # rubocop:disable Style/RescueModifier
+          return false unless host
+
+          allowed.any? { |domain| domain_matches?(host, domain.downcase) }
+        end
+
+        def domain_matches?(host, domain)
+          host == domain || host.end_with?(".#{domain}")
         end
 
         def bundle_directory(definition)
@@ -183,8 +211,9 @@ module Html2rss
         end
 
         def local_config_for(feed_id)
-          feed = LocalConfig.feeds[feed_id.to_sym] || LocalConfig.feeds[feed_id]
-          feed ? Html2rss::Web::Config::StructuredData.deep_dup(feed) : nil
+          feeds = LocalConfig.feeds
+          feed = feeds[feed_id.to_sym] || feeds[feed_id]
+          feed ? StructuredData.deep_dup(feed) : nil
         rescue StandardError
           nil
         end
@@ -192,7 +221,7 @@ module Html2rss
         def build_local_catalog_entry(feed_name, feed_config) # rubocop:disable Metrics/MethodLength
           directory = feed_config[:directory] || {}
           title = directory[:title]&.to_s
-          return nil if title.nil? || title.strip.empty?
+          return nil if title.to_s.strip.empty?
 
           id = feed_name.to_s
           channel = feed_config[:channel] || {}

@@ -41,14 +41,13 @@ module RegistrySyncTestHelpers
 
   def build_signed_tarball # rubocop:disable Metrics/MethodLength
     bundle_dir = Dir.mktmpdir('signed-registry-bundle')
+    manifest_target = File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE)
     FileUtils.cp_r(File.join(OFFICIAL_FIXTURES_ROOT, 'configs'), File.join(bundle_dir, 'configs'))
     FileUtils.cp(
       File.join(SYNC_FIXTURES_ROOT, 'bundle', Html2rss::Registry::Manifest::MANIFEST_FILE),
-      File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE)
+      manifest_target
     )
-    manifest = Html2rss::Registry::Manifest.parse(
-      File.read(File.join(bundle_dir, Html2rss::Registry::Manifest::MANIFEST_FILE))
-    )
+    manifest = Html2rss::Registry::Manifest.parse(File.read(manifest_target))
     Html2rss::Registry::TestSupport.sign!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
 
     pack_bundle_dir(bundle_dir)

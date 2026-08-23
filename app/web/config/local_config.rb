@@ -33,19 +33,19 @@ module Html2rss
           config = snapshot.feeds[normalized.to_sym]
           raise NotFound, "Did not find local feed config at '#{normalized}'" unless config
 
-          Config::StructuredData.deep_dup(config.raw)
+          StructuredData.deep_dup(config.raw)
         end
 
         ##
         # @return [Hash{Symbol => Hash{Symbol => Object}}]
         def feeds
-          snapshot.feeds.transform_values { Config::StructuredData.deep_dup(it.raw) }
+          snapshot.feeds.transform_values { StructuredData.deep_dup(it.raw) }
         end
 
         ##
         # @return [Hash{Symbol => Object}]
         def global
-          Config::StructuredData.deep_dup(snapshot.global)
+          StructuredData.deep_dup(snapshot.global)
         end
 
         ##

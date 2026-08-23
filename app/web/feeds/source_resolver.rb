@@ -12,13 +12,14 @@ module Html2rss
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def call(feed_request)
-            case feed_request.target_kind
+            target_kind = feed_request.target_kind
+            case target_kind
             when :static
               resolve_static(feed_request)
             when :token
               resolve_token(feed_request)
             else
-              raise Html2rss::Web::BadRequestError, "Unsupported feed target: #{feed_request.target_kind}"
+              raise Html2rss::Web::BadRequestError, "Unsupported feed target: #{target_kind}"
             end
           end
 
@@ -27,15 +28,15 @@ module Html2rss
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_static(feed_request)
-            config = Registry::Index.current.config_for(feed_request.feed_name)
-            raise Html2rss::Web::NotFoundError unless config
-
-            generator_input = static_generator_input(config, feed_request.params)
+            feed_name = feed_request.feed_name
+            params = feed_request.params
+            config = Registry::Index.current.config_for(feed_name) || raise(Html2rss::Web::NotFoundError)
+            generator_input = static_generator_input(config, params)
 
             resolved_source_for(
               source_kind: :static,
-              cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
-              generator_input: generator_input,
+              cache_identity: static_cache_identity(feed_name, params),
+              generator_input:,
               ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl))
             )
           end
@@ -44,14 +45,14 @@ module Html2rss
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_token(feed_request)
             ensure_auto_source_enabled!
-            feed_token = authorize_feed_token!(feed_request.token)
-            strategy = resolved_strategy(feed_token)
-            generator_input = token_generator_input(feed_token.url, strategy)
+            token = feed_request.token
+            feed_token = authorize_feed_token!(token)
+            generator_input = token_generator_input(feed_token.url, resolved_strategy(feed_token))
 
             resolved_source_for(
               source_kind: :token,
-              cache_identity: token_cache_identity(feed_request.token),
-              generator_input: generator_input,
+              cache_identity: token_cache_identity(token),
+              generator_input:,
               ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300)
             )
           end

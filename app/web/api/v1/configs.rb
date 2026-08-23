@@ -25,10 +25,14 @@ module Html2rss
             private
 
             def build_entries
-              started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+              started = monotonic_now
               entries = Registry::Index.current.catalog_rows
-              duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+              duration_ms = ((monotonic_now - started) * 1000).round
               [entries, duration_ms]
+            end
+
+            def monotonic_now
+              Process.clock_gettime(Process::CLOCK_MONOTONIC)
             end
 
             def emit_success(count, duration_ms)

@@ -35,9 +35,10 @@ module Html2rss
 
             # @return [Hash{Symbol => Object}]
             def feed_creation_payload
+              auto_source = Flags.auto_source_enabled?
               {
-                enabled: Flags.auto_source_enabled?,
-                access_token_required: Flags.auto_source_enabled?
+                enabled: auto_source,
+                access_token_required: auto_source
               }
             end
 

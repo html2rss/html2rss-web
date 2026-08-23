@@ -40,8 +40,7 @@ module Html2rss
               definition = Config.entry(registry_id)
               raise Errors::SyncError, "Registry '#{registry_id}' is path mode" if definition.mode == :path
               unless Store.staged_present?(registry_id)
-                raise Errors::SyncError,
-                      "Registry '#{registry_id}' has no staged bundle"
+                raise Errors::SyncError, "Registry '#{registry_id}' has no staged bundle"
               end
 
               previous_bundle = Index.current.bundle_for(registry_id)
@@ -114,9 +113,10 @@ module Html2rss
 
             download_url = ChannelResolver.resolve(definition)
             tarball = HttpTransport.fetch!(download_url)
-            File.binwrite(File.join(staging_root, 'download.tar.gz'), tarball)
+            tarball_path = File.join(staging_root, 'download.tar.gz')
+            File.binwrite(tarball_path, tarball)
 
-            File.open(File.join(staging_root, 'download.tar.gz'), 'rb') do |io|
+            File.open(tarball_path, 'rb') do |io|
               Html2rss::Registry::Archive.extract!(io, into: staged_dir)
             end
 
@@ -137,13 +137,11 @@ module Html2rss
             end
 
             Index.current.status_entry_for(registry_id)
-          rescue Html2rss::Registry::VerificationError => error
-            log_signature_failure!(registry_id, error.message) if error.message.match?(/signature|public_key_id/i)
-            Store.write_sync_state!(registry_id, last_error: error.message) unless dry_run
-            raise Errors::SyncError, error.message
-          rescue Html2rss::Registry::ArchiveError => error
-            Store.write_sync_state!(registry_id, last_error: error.message) unless dry_run
-            raise Errors::SyncError, error.message
+          rescue Html2rss::Registry::Error => error
+            msg = error.message
+            log_signature_failure!(registry_id, msg) if msg.match?(/signature|public_key_id/i)
+            Store.write_sync_state!(registry_id, last_error: msg) unless dry_run
+            raise Errors::SyncError, msg
           rescue StandardError => error
             Store.write_sync_state!(registry_id, last_error: error.message) unless dry_run
             raise
@@ -159,28 +157,35 @@ module Html2rss
 
           def enforce_max_version!(definition, manifest)
             max = definition.sync_policy.max_version
-            return if max.nil? || max.empty?
-            return unless Html2rss::Registry::Manifest.exceeds_max?(manifest.version, max)
+            return if max.to_s.empty?
 
-            raise Errors::SyncError, "Manifest version '#{manifest.version}' exceeds max_version '#{max}'"
+            version = manifest.version
+            return unless Html2rss::Registry::Manifest.exceeds_max?(version, max)
+
+            raise Errors::SyncError, "Manifest version '#{version}' exceeds max_version '#{max}'"
           end
 
           def report_catalog_change!(registry_id, previous) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
             current = Index.current.bundle_for(registry_id)
             return unless current
 
+            current_version = current.manifest.version
             prev_ids = previous ? Set.new(previous.catalog_entries.map(&:id)) : Set.new
             curr_ids = Set.new(current.catalog_entries.map(&:id))
             added = (curr_ids - prev_ids).to_a.sort
             removed = (prev_ids - curr_ids).to_a.sort
-            return if added.empty? && removed.empty? && previous&.manifest&.version == current.manifest.version
+            return if added.empty? && removed.empty? && previous&.manifest&.version == current_version
 
             Observability.emit(
               event_name: 'registry.catalog_changed',
               outcome: 'success',
               level: :warn,
-              details: { registry_id:, version: current.manifest.version, added_count: added.size,
-                         removed_count: removed.size }
+              details: {
+                registry_id:,
+                version: current_version,
+                added_count: added.size,
+                removed_count: removed.size
+              }
             )
           end
 

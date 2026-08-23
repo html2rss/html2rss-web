@@ -33,7 +33,7 @@ module Html2rss
 
       ##
       # Parses registry configuration and applies zero-config defaults.
-      module Config
+      module Config # rubocop:disable Metrics/ModuleLength
         REGISTRIES_FILE = 'config/registries.yml'
         DEFAULT_PRECEDENCE = %w[official].freeze
         DEFAULT_OFFICIAL_SYNC_CHANNEL = 'html2rss-official'
@@ -44,6 +44,8 @@ module Html2rss
           -----END PUBLIC KEY-----
         PEM
 
+        ##
+        # Registry configuration document containing precedence order and registry definitions.
         Document = Data.define(:precedence, :entries)
 
         @mutex = Mutex.new
@@ -89,10 +91,9 @@ module Html2rss
 
           ##
           # @return [Document]
-          def parse_document # rubocop:disable Metrics/CyclomaticComplexity
+          def parse_document
             raw_doc = load_yaml
-            precedence = Array(raw_doc[:precedence]).map(&:to_s).reject(&:empty?)
-            precedence = DEFAULT_PRECEDENCE if precedence.empty?
+            precedence = parse_precedence(raw_doc[:precedence])
             registries = raw_doc[:registries] || {}
 
             entries = precedence.to_h do |id|
@@ -101,6 +102,11 @@ module Html2rss
             end
 
             Document.new(precedence:, entries:)
+          end
+
+          def parse_precedence(raw_precedence)
+            list = Array(raw_precedence).map(&:to_s).reject(&:empty?)
+            list.empty? ? DEFAULT_PRECEDENCE : list
           end
 
           ##
@@ -135,11 +141,11 @@ module Html2rss
           # @param raw [Hash{Symbol => Object}]
           # @return [Definition]
           def build_definition(id, raw) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
-            sync = raw[:sync].is_a?(Hash) ? raw[:sync] : {}
+            sync_raw = raw[:sync]
+            sync = sync_raw.is_a?(Hash) ? sync_raw : {}
             path = raw[:path]&.to_s
             mode = path && !path.empty? ? :path : :sync
-            key_pem = raw[:public_key]&.to_s
-            key = key_pem && !key_pem.strip.empty? ? parse_key(key_pem) : nil
+            public_key = parse_public_key(raw[:public_key]&.to_s)
 
             definition = Definition.new(
               id:,
@@ -149,16 +155,12 @@ module Html2rss
               sync_url: sync[:url]&.to_s,
               catalog: raw.fetch(:catalog, true),
               public_key_id: raw[:public_key_id]&.to_s || 'html2rss:registry:2026',
-              public_key: key,
-              sync_policy: SyncPolicy.new(
-                pin_version: sync[:pin_version]&.to_s,
-                max_version: sync[:max_version]&.to_s,
-                auto_promote: raw[:auto_promote] == true
-              ),
+              public_key:,
+              sync_policy: build_sync_policy(sync, raw),
               allowed_channel_domains: Array(raw[:allowed_channel_domains]).map(&:to_s).reject(&:empty?)
             )
 
-            if definition.mode == :sync && definition.public_key.nil?
+            if definition.mode == :sync && !definition.public_key
               raise Errors::ConfigError, "Sync registry '#{id}' requires a pinned public_key"
             end
 
@@ -166,10 +168,24 @@ module Html2rss
           end
 
           ##
-          # @param pem [String]
-          # @return [OpenSSL::PKey::PKey]
-          def parse_key(pem)
-            OpenSSL::PKey.read(pem)
+          # @param sync [Hash{Symbol => Object}]
+          # @param raw [Hash{Symbol => Object}]
+          # @return [SyncPolicy]
+          def build_sync_policy(sync, raw)
+            SyncPolicy.new(
+              pin_version: sync[:pin_version]&.to_s,
+              max_version: sync[:max_version]&.to_s,
+              auto_promote: raw[:auto_promote] == true
+            )
+          end
+
+          ##
+          # @param key_pem [String, nil]
+          # @return [OpenSSL::PKey::PKey, nil]
+          def parse_public_key(key_pem)
+            return nil if key_pem.to_s.strip.empty?
+
+            OpenSSL::PKey.read(key_pem)
           rescue OpenSSL::PKey::PKeyError => error
             raise Errors::ConfigError, "Invalid registry public_key: #{error.message}"
           end

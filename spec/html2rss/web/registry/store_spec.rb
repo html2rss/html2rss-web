@@ -66,9 +66,7 @@ RSpec.describe Html2rss::Web::Registry::Store do
         registry_id: 'store-test',
         version:,
         public_key_id: 'test',
-        files: {
-          'configs/example.com/feed.yml' => digest
-        }
+        files: { 'configs/example.com/feed.yml' => digest }
       }.to_json
     )
     dir
