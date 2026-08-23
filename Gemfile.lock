@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: da2b757d1f8aea4ef7abad65c9a5514c35430483
+  revision: 879bcdf1cd220825089dccc648b9b03ecc8d1d60
   branch: feat/registry-v1
   specs:
     html2rss (0.28.0)
