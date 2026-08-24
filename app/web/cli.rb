@@ -44,6 +44,7 @@ module Html2rss
         when 'status' then registry_status(args[1..] || [], out:)
         when 'sync' then registry_sync(args[1..] || [])
         when 'promote' then registry_promote(args[1..] || [])
+        when 'verify' then registry_verify(args[1..] || [], out:, err:)
         when '-h', '--help', 'help', nil
           print_registry_help(out:)
           0
@@ -102,6 +103,36 @@ module Html2rss
       end
 
       ##
+      # @param args [Array<String>]
+      # @param out [IO]
+      # @param err [IO]
+      # @return [Integer]
+      def registry_verify(args, out:, err:) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
+        options = { registry_id: 'official', dir: nil }
+        OptionParser.new do |opts|
+          opts.banner = 'Usage: html2rss-web registry verify [options]'
+          opts.on('--registry ID', 'Registry ID from config (default: official)') { options[:registry_id] = it }
+          opts.on('--dir PATH', 'Directory containing bundle to verify') { options[:dir] = it }
+        end.parse!(args)
+
+        registry_id = options[:registry_id]
+        definition = Registry::Config.entry(registry_id)
+        raise Registry::Errors::ConfigError, "Unknown registry '#{registry_id}'" unless definition
+
+        dir = options[:dir] || Registry::Store.active_dir(registry_id) || Registry::Store.embedded_dir(registry_id)
+        raise Registry::Errors::LoadError, "Bundle directory not found: #{dir}" unless dir && File.directory?(dir)
+
+        trust = definition.mode == :path ? :integrity_only : :signed
+        public_keys = definition.mode == :path ? {} : { definition.public_key_id => definition.public_key }.compact
+        manifest = Html2rss::Registry::Verifier.verify!(dir, trust:, public_keys:)
+        out.puts "Verified registry bundle '#{registry_id}' (#{manifest.version}) at #{dir}"
+        0
+      rescue StandardError => error
+        err.puts "Registry verification failed: #{error.message}"
+        1
+      end
+
+      ##
       # @param out [IO]
       # @param err [IO]
       # @return [Integer]
@@ -140,6 +171,7 @@ module Html2rss
             registry status [--registry ID]             Show status of configured registries
             registry sync [--registry ID] [--dry-run]   Fetch, verify, and sync registry bundles
             registry promote [--registry ID]            Promote verified staged bundle to active
+            registry verify [--registry ID] [--dir DIR] Verify registry bundle signature and integrity
             healthcheck                                 Verify container process liveness
             version                                     Print version and runtime information
         HELP
@@ -156,6 +188,7 @@ module Html2rss
             status    Show registry sync status table
             sync      Fetch and verify remote registry bundle(s)
             promote   Promote staged verified bundle to active
+            verify    Verify bundle signature and file integrity against pinned configuration
         HELP
       end
 
@@ -194,8 +227,8 @@ module Html2rss
       def format_time(value) = value ? value.utc.iso8601 : '-'
 
       private_class_method :run_registry, :registry_status, :registry_sync, :registry_promote,
-                           :run_healthcheck, :run_version, :print_root_help, :print_registry_help,
-                           :target_registry_ids, :print_status_table, :format_time
+                           :registry_verify, :run_healthcheck, :run_version, :print_root_help,
+                           :print_registry_help, :target_registry_ids, :print_status_table, :format_time
     end
   end
 end

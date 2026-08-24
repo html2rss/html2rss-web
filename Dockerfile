@@ -43,24 +43,19 @@ FROM ${RUBY_BASE_IMAGE} AS registry-builder
 
 ARG REGISTRY_BUNDLE_URL="https://github.com/html2rss/html2rss-configs/releases/latest/download/registry-bundle.tar.gz"
 
-WORKDIR /build
+WORKDIR /app
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
-COPY config/registries.yml ./config/registries.yml
+COPY bin ./bin
+COPY app ./app
+COPY config ./config
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache curl tar ca-certificates \
   && curl -fsSL -o registry-bundle.tar.gz "${REGISTRY_BUNDLE_URL}" \
   && mkdir -p /build/official \
   && tar -xzf registry-bundle.tar.gz -C /build/official \
-  && ruby -r html2rss -r yaml -e ' \
-    config = YAML.safe_load_file("config/registries.yml"); \
-    official = config.fetch("registries").fetch("official"); \
-    key_id = official.fetch("public_key_id"); \
-    pub_key = OpenSSL::PKey.read(official.fetch("public_key")); \
-    manifest = Html2rss::Registry::Verifier.verify!("/build/official", trust: :signed, public_keys: { key_id => pub_key }); \
-    puts "Official registry bundle successfully verified at build time: version=#{manifest.version}, key=#{key_id}" \
-  '
+  && bin/html2rss-web registry verify --registry official --dir /build/official
 
 # Stage 4: Runtime
 FROM ${RUBY_BASE_IMAGE}

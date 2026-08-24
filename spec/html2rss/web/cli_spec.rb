@@ -95,6 +95,26 @@ RSpec.describe Html2rss::Web::CLI do
         expect(Html2rss::Web::Registry::Sync).to have_received(:promote_staged!).with(registry_id: 'official')
       end
 
+      it 'verifies valid registry bundles', :aggregate_failures do
+        exit_code = described_class.run(
+          ['registry', 'verify', '--registry', 'official', '--dir', 'spec/fixtures/registries/official'],
+          out: stdout,
+          err: stderr
+        )
+        expect(exit_code).to eq(0)
+        expect(stdout.string).to include("Verified registry bundle 'official' (test-fixture)")
+      end
+
+      it 'reports failure on invalid registry verification', :aggregate_failures do
+        exit_code = described_class.run(
+          ['registry', 'verify', '--registry', 'official', '--dir', 'tmp/non-existent'],
+          out: stdout,
+          err: stderr
+        )
+        expect(exit_code).to eq(1)
+        expect(stderr.string).to include('Registry verification failed')
+      end
+
       it 'handles unknown registry subcommands', :aggregate_failures do
         exit_code = described_class.run(%w[registry invalid-sub], out: stdout, err: stderr)
         expect(exit_code).to eq(1)
