@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: cepal.org/press-releases
+directory:
+  topics:
+    - civic
+    - research
+  title: "ECLAC — Press releases"
+  summary: "Press releases from the UN Economic Commission for Latin America and the Caribbean."
+channel:
+  title: "ECLAC — Press releases"
+  url: https://www.cepal.org/en/list/cepal_pr
+  language: en
+  time_zone: America/Santiago
+  ttl: 360
+selectors:
+  items:
+    selector: 'h4 a[href*="/en/pressreleases/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

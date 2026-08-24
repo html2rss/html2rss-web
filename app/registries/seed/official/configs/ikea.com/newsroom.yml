@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: ikea.com/newsroom
+directory:
+  topics:
+    - consumer
+    - product
+  title: "IKEA — Newsroom"
+  summary: "Global newsroom announcements from IKEA."
+channel:
+  title: "IKEA — Newsroom"
+  url: https://www.ikea.com/global/en/newsroom/
+  language: en
+  time_zone: Europe/Stockholm
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.card[href*="/global/en/newsroom/"]'
+    enhance: true
+  title:
+    selector: span.skapa-typography-heading-m
+  url:
+    extractor: href

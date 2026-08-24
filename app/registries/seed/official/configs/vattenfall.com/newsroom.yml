@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: vattenfall.com/newsroom
+directory:
+  topics:
+    - energy
+    - environment
+  title: "Vattenfall — Newsroom"
+  summary: "Corporate and energy news from Vattenfall."
+channel:
+  title: "Vattenfall — Newsroom"
+  url: https://group.vattenfall.com/press-and-media/newsroom
+  language: en
+  time_zone: Europe/Stockholm
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.main-link[href*="/press-and-media/newsroom/20"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

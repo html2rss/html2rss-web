@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: fao.org/newsroom
+directory:
+  topics:
+    - environment
+    - civic
+  title: "FAO — Newsroom"
+  summary: "News from the Food and Agriculture Organization of the United Nations."
+channel:
+  title: "FAO — Newsroom"
+  url: https://www.fao.org/newsroom/en
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/newsroom/detail/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

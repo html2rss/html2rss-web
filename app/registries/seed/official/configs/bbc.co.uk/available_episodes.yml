@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: bbc.co.uk/available_episodes
+directory:
+  topics:
+    - entertainment
+  title: "BBC Sounds — Programme episodes"
+  summary: "Available episodes for a BBC programme on Sounds."
+parameters:
+  id:
+    type: string
+    default: "b006wkfp"
+
+channel:
+  language: en
+  title: "BBC Sounds — Programme episodes"
+  url: https://www.bbc.co.uk/programmes/%<id>s/episodes/player
+  time_zone: UTC
+  ttl: 720
+selectors:
+  items:
+    selector: ".highlight-box-wrapper > div"
+  title:
+    selector: ".programme__title"
+  url:
+    selector: ".programme__titles > a"
+    extractor: "href"
+  description:
+    selector: ".programme__synopsis"

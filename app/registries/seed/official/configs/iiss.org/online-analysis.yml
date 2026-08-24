@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: iiss.org/online-analysis
+directory:
+  topics:
+    - civic
+    - research
+  title: "IISS — Online analysis"
+  summary: "Strategic analysis from the International Institute for Strategic Studies."
+strategy: botasaurus
+
+channel:
+  title: "IISS — Online analysis"
+  url: https://www.iiss.org/online-analysis
+  language: en
+  time_zone: Europe/London
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.feature[href*="/online-analysis/"][href*="/20"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.feature[href*="/online-analysis/"][href*="/20"]'
+    enhance: false
+  title:
+    selector: h2
+  url:
+    extractor: href

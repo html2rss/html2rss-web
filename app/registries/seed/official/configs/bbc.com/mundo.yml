@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: bbc.com/mundo
+directory:
+  topics:
+    - news
+  title: "BBC — Mundo"
+  summary: "Noticias en español de BBC Mundo."
+channel:
+  title: "BBC — Mundo"
+  url: https://www.bbc.com/mundo
+  language: es
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: '[data-testid="topic-promos"] > li'
+  title:
+    selector: a
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: p

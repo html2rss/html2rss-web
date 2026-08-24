@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: philstar.com/nation
+directory:
+  topics:
+    - news
+  title: "Philippine Star — Nation"
+  summary: "National news from The Philippine Star."
+channel:
+  title: "Philippine Star — Nation"
+  url: https://www.philstar.com/nation
+  language: en
+  time_zone: Asia/Manila
+  ttl: 360
+selectors:
+  items:
+    selector: 'h2 a[href*="/nation/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

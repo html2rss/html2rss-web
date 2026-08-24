@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tno.nl/news
+directory:
+  topics:
+    - research
+    - tech
+  title: "TNO — News"
+  summary: "Research and innovation news from TNO in the Netherlands."
+channel:
+  title: "TNO — News"
+  url: https://www.tno.nl/en/newsroom/news/
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+selectors:
+  items:
+    selector: div.collage-card-content
+    enhance: false
+  title:
+    selector: h3
+  url:
+    selector: 'a[href*="/en/newsroom/20"]'
+    extractor: href

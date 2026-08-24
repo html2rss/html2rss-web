@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: carnegieendowment.org/research
+directory:
+  topics:
+    - civic
+    - research
+  title: "Carnegie Endowment — Research"
+  summary: "Foreign policy research and analysis from the Carnegie Endowment."
+strategy: botasaurus
+
+channel:
+  title: "Carnegie Endowment — Research"
+  url: https://carnegieendowment.org/research
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.min-w-0.flex-1[href^="/research/20"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.min-w-0.flex-1[href^="/research/20"]'
+    enhance: false
+  title:
+    selector: span.text-headlineH5
+  url:
+    extractor: href

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: softwareleadweekly.com/issues
+directory:
+  topics:
+    - tech
+  title: "Software Lead Weekly — Issues"
+  summary: "Weekly leadership newsletter issues from Software Lead Weekly."
+channel:
+  language: en
+  title: "Software Lead Weekly — Issues"
+  url: https://softwareleadweekly.com/issues
+  time_zone: UTC
+  ttl: 720
+selectors:
+  items:
+    selector: ".table-issue"
+  title:
+    selector: "a"
+  url:
+    selector: "a"
+    extractor: "href"

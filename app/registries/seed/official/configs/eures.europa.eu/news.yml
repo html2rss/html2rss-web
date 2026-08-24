@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: eures.europa.eu/news
+directory:
+  topics:
+    - jobs
+  title: "EURES — News"
+  summary: "Job mobility news from the European Employment Services network."
+channel:
+  title: "EURES — News"
+  url: https://eures.europa.eu/news_en
+  language: en
+  time_zone: Europe/Brussels
+  ttl: 360
+selectors:
+  items:
+    selector: 'article.ecl-content-item a[href$="_en"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: faa.gov/newsroom
+directory:
+  topics:
+    - civic
+  title: "FAA — Newsroom"
+  summary: "News and announcements from the U.S. Federal Aviation Administration."
+channel:
+  title: "FAA — Newsroom"
+  url: https://www.faa.gov/newsroom
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: '.views-row a[href^="/newsroom/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

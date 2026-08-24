@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: blog.mondediplo.net/feed
+directory:
+  topics:
+    - news
+  title: "Le Monde diplomatique — Blog feed"
+  summary: "Blog posts from Le Monde diplomatique with customizable blog path."
+parameters:
+  blog:
+    type: string
+    default: "-Defense-en-ligne-"
+
+channel:
+  language: en
+  url: https://blog.mondediplo.net/%<blog>s
+  time_zone: Europe/Paris
+  title: "Le Monde diplomatique — Blog feed"
+  ttl: 120
+selectors:
+  items:
+    selector: ".large > ul > li"
+  title:
+    selector: "h3"
+  description:
+    selector: ".intro"
+  url:
+    selector: "a"
+    extractor: "href"

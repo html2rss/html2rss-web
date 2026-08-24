@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: isro.gov.in/press
+directory:
+  topics:
+    - science
+    - research
+  title: "ISRO — Press"
+  summary: "Press releases from the Indian Space Research Organisation."
+channel:
+  title: "ISRO — Press"
+  url: https://www.isro.gov.in/Press.html
+  language: en
+  time_zone: Asia/Kolkata
+  ttl: 360
+selectors:
+  items:
+    selector: 'table tr a[href$=".html"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

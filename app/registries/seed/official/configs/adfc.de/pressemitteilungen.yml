@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: adfc.de/pressemitteilungen
+directory:
+  topics:
+    - civic
+  title: "ADFC — Pressemitteilungen"
+  summary: "Pressemitteilungen des Allgemeinen Deutschen Fahrrad-Clubs."
+channel:
+  title: "ADFC — Pressemitteilungen"
+  url: https://www.adfc.de/presse/pressemitteilungen/
+  time_zone: Europe/Berlin
+  ttl: 720
+  language: de
+selectors:
+  items:
+    selector: "#articleteasercontainer-columns .articleteaser"
+  title:
+    selector: ".articleteaser-header-container a"
+  url:
+    selector: "a:first"
+    extractor: "href"
+  description:
+    selector: ".articleteaser-header-container p"

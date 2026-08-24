@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: equinor.com/news
+directory:
+  topics:
+    - energy
+  title: "Equinor — News"
+  summary: "Corporate and energy news from Equinor."
+channel:
+  title: "Equinor — News"
+  url: https://www.equinor.com/news
+  language: en
+  time_zone: Europe/Oslo
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="/news/"]'
+    enhance: true
+  title:
+    selector: h2
+  url:
+    extractor: href

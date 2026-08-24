@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: formula1.com/latest
+directory:
+  topics:
+    - sports
+  title: "Formula 1 — Latest"
+  summary: "Latest Formula 1 news from the official Formula1.com site."
+channel:
+  language: en
+  title: "Formula 1 — Latest"
+  url: https://www.formula1.com/en/latest
+  time_zone: UTC
+  ttl: 120
+selectors:
+  items:
+    selector: 'a[class*="ArticleListCard-module_title"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: "href"

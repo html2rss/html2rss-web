@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: spektrum.de/meistgelesen
+directory:
+  topics:
+    - science
+  title: "Spektrum — Meistgelesen"
+  summary: "Most-read science articles from Spektrum."
+channel:
+  title: "Spektrum — Meistgelesen"
+  url: https://www.spektrum.de/
+  time_zone: Europe/Berlin
+  ttl: 60
+  language: de
+selectors:
+  items:
+    selector: ".teaser.teaser__list_box ol > li"
+  title:
+    selector: "a"
+  url:
+    selector: "a"
+    extractor: "href"

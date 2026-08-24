@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: notion.com/blog
+directory:
+  topics:
+    - tech
+    - product
+  title: "Notion — Blog"
+  summary: "Product updates and stories from the Notion blog."
+
+channel:
+  title: "Notion — Blog"
+  url: https://www.notion.com/blog
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: article.post-preview
+    enhance: false
+  title:
+    selector: h3 a[href*="/blog/"]
+  url:
+    selector: h3 a[href*="/blog/"]
+    extractor: href
+  description:
+    selector: '> a[href*="/blog/"]:not([title])'

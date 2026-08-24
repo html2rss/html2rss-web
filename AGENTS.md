@@ -111,6 +111,6 @@ Public feed-directory metadata from verified registry bundles and local `feeds.y
 | Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` and `instance.registries` sync status |
 | Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
 
-Registry sync: `bin/registry-sync --status`; boot seed + optional sync via `Registry::Sync.boot!`. See [docs/README.md](docs/README.md#registry-sync-runbook).
+Registry sync: `bin/html2rss-web registry status`; boot seed + optional sync via `Registry::Sync.boot!`. See [docs/README.md](docs/README.md#registry-sync-runbook).
 
 After handler or envelope changes: `make openapi` and `make ci-ready`.

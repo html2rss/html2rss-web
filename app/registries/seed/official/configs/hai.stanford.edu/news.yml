@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: hai.stanford.edu/news
+directory:
+  topics:
+    - science
+    - research
+  title: "Stanford HAI — News"
+  summary: "News from the Stanford Institute for Human-Centered Artificial Intelligence."
+channel:
+  title: "Stanford HAI — News"
+  url: https://hai.stanford.edu/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[class*="titleLink"][href*="/news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

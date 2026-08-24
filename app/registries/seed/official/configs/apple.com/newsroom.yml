@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: apple.com/newsroom
+directory:
+  topics:
+    - tech
+    - product
+  title: "Apple — Newsroom"
+  summary: "Product announcements and press releases from Apple."
+strategy: botasaurus
+
+channel:
+  title: "Apple — Newsroom"
+  url: https://www.apple.com/newsroom/
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: "li.tile-item"
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: "li.tile-item a.tile"
+    enhance: false
+  title:
+    selector: .tile__headline
+  url:
+    extractor: href
+  published_at:
+    selector: .tile__timestamp

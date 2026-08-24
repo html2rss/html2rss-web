@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: icrc.org/news
+directory:
+  topics:
+    - civic
+  title: "ICRC — News"
+  summary: "Humanitarian news from the International Committee of the Red Cross."
+channel:
+  title: "ICRC — News"
+  url: https://www.icrc.org/en/news
+  language: en
+  time_zone: Europe/Zurich
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="/en/article/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: dsw-info.de/presse
+directory:
+  topics:
+    - civic
+    - consumer
+  title: "Deutsche Stiftung Weltbevölkerung — Presse"
+  summary: "Pressemitteilungen der Deutschen Stiftung Weltbevölkerung."
+channel:
+  title: "Deutsche Stiftung Weltbevölkerung — Presse"
+  url: https://www.dsw-info.de/presse/pressemitteilungen-2026/
+  time_zone: Europe/Berlin
+  ttl: 720
+  language: de
+selectors:
+  items:
+    selector: "main .frame.cet-menu ul > li"
+    enhance: false
+  title:
+    selector: "a"
+  url:
+    selector: "a"
+    extractor: "href"
+  published_at:
+    selector: ".vd small"
+    post_process:
+      - name: parse_time
+  description:
+    selector: ".bt small"

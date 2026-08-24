@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: news24.com/top-stories
+directory:
+  topics:
+    - news
+  title: "News24 — Top stories"
+  summary: "Top stories from South African news site News24."
+channel:
+  title: "News24 — Top stories"
+  url: https://www.news24.com/
+  language: en
+  time_zone: Africa/Johannesburg
+  ttl: 180
+selectors:
+  items:
+    selector: "a.article-item__title"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

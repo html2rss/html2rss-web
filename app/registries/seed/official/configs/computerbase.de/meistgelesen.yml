@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: computerbase.de/meistgelesen
+directory:
+  topics:
+    - tech
+  title: "ComputerBase — Meistgelesen"
+  summary: "Most-read tech articles from ComputerBase."
+channel:
+  title: "ComputerBase — Meistgelesen"
+  url: https://www.computerbase.de
+  time_zone: Europe/Berlin
+  ttl: 360
+  language: de
+selectors:
+  items:
+    selector: ".charts > li"
+  title:
+    selector: ".charts__title"
+    post_process:
+      - name: "template"
+        string: "%{context}: %{self}"
+  context:
+    selector: ".charts__context"
+  url:
+    selector: ".charts__link"
+    extractor: "href"

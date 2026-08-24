@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: brookings.edu/articles
+directory:
+  topics:
+    - civic
+    - research
+  title: "Brookings — Articles"
+  summary: "Policy research and commentary from the Brookings Institution."
+channel:
+  title: "Brookings — Articles"
+  url: https://www.brookings.edu/
+  language: en
+  time_zone: America/New_York
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.overlay-link[href*="/articles/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

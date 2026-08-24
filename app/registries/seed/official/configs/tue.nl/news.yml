@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tue.nl/news
+directory:
+  topics:
+    - science
+    - research
+  title: "TU Eindhoven — News"
+  summary: "University and research news from Eindhoven University of Technology."
+channel:
+  title: "TU Eindhoven — News"
+  url: https://www.tue.nl/en/news-and-events/news-overview
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.entryBlock[href*="/en/news-and-events/news-overview/"]'
+    enhance: true
+  title:
+    selector: h3.entryBlock-title
+  url:
+    extractor: href

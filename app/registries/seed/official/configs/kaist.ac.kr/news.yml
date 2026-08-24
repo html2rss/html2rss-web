@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: kaist.ac.kr/news
+directory:
+  topics:
+    - science
+    - research
+  title: "KAIST — News"
+  summary: "University and research news from KAIST."
+channel:
+  title: "KAIST — News"
+  url: https://news.kaist.ac.kr/newsen/html/news/
+  language: en
+  time_zone: Asia/Seoul
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.lay[href*="mng_no="]'
+    enhance: false
+  title:
+    selector: strong.tis
+  url:
+    extractor: href

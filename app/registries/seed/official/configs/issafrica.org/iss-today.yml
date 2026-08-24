@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: issafrica.org/iss-today
+directory:
+  topics:
+    - civic
+    - research
+  title: "ISS Africa — ISS Today"
+  summary: "Daily analysis from the Institute for Security Studies Africa."
+channel:
+  title: "ISS Africa — ISS Today"
+  url: https://issafrica.org/iss-today
+  language: en
+  time_zone: Africa/Johannesburg
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.card[href^="/iss-today/"]'
+    enhance: false
+  title:
+    selector: h6.card-subtitle
+  url:
+    extractor: href

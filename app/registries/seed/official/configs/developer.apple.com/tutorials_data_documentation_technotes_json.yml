@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: developer.apple.com/tutorials_data_documentation_technotes_json
+directory:
+  topics:
+    - tech
+    - product
+  title: "Apple Developer — Technotes"
+  summary: "Apple Developer Technotes documentation feed (JSON source)."
+channel:
+  language: en
+  json: true
+  title: "Apple Developer — Technotes"
+  url: https://developer.apple.com/tutorials/data/documentation/Technotes.json
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: "references > object > * > object:has(url)"
+  title:
+    selector: title
+  url:
+    selector: url
+    post_process:
+      - name: parse_uri
+  description:
+    selector: abstract text

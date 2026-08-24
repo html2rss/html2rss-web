@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: ethz.ch/eth-news
+directory:
+  topics:
+    - science
+    - research
+  title: "ETH Zurich — News"
+  summary: "Research and university news from ETH Zurich."
+strategy: botasaurus
+
+channel:
+  title: "ETH Zurich — News"
+  url: https://ethz.ch/en/news-and-events/eth-news.html
+  language: en
+  time_zone: Europe/Zurich
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a[href*="/eth-news/news/20"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a[href*="/eth-news/news/20"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

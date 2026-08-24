@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: icj-cij.org/press-releases
+directory:
+  topics:
+    - civic
+  title: "ICJ — Press releases"
+  summary: "Press releases from the International Court of Justice."
+channel:
+  title: "ICJ — Press releases"
+  url: https://www.icj-cij.org/press-releases
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: .views-row
+    enhance: false
+  title:
+    selector: .views-field-field-document-long-title
+  url:
+    selector: ".views-field-field-press-release-number a"
+    extractor: href

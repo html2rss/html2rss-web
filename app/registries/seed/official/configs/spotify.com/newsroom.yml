@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: spotify.com/newsroom
+directory:
+  topics:
+    - entertainment
+  title: "Spotify — Newsroom"
+  summary: "Corporate and product announcements from Spotify Newsroom."
+
+channel:
+  title: "Spotify — Newsroom"
+  url: https://newsroom.spotify.com/
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: ".post-box.v2"
+    enhance: false
+  title:
+    selector: 'h3 a[href*="/20"]'
+  url:
+    selector: 'h3 a[href*="/20"]'
+    extractor: href

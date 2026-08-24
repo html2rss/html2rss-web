@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: aspi.org.au/strategist
+directory:
+  topics:
+    - civic
+    - research
+  title: "ASPI — The Strategist"
+  summary: "Strategic analysis and commentary from the Australian Strategic Policy Institute."
+strategy: botasaurus
+
+channel:
+  title: "ASPI — The Strategist"
+  url: https://www.aspi.org.au/strategist-posts/
+  language: en
+  time_zone: Australia/Sydney
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a[rel="bookmark"][href*="/strategist-posts/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a[rel="bookmark"][href*="/strategist-posts/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

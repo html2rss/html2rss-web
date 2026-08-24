@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: microsoft.com/azure-products
+directory:
+  topics:
+    - tech
+    - product
+  title: "Microsoft — Azure Products"
+  summary: "Product updates and announcements from Microsoft Azure."
+channel:
+  title: "Microsoft — Azure Products"
+  url: https://azure.microsoft.com/en-us/products
+  language: en
+  time_zone: US/Pacific
+  ttl: 3600
+selectors:
+  items:
+    selector: ".card-body"
+  title:
+    selector: ".h5"
+  url:
+    selector: ".link-group a:first-of-type"
+    extractor: "href"
+  description:
+    selector: "p"

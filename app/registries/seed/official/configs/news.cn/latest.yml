@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: news.cn/latest
+directory:
+  topics:
+    - news
+  title: "Xinhua — Latest news"
+  summary: "Latest English news from Xinhua News Agency."
+channel:
+  title: "Xinhua — Latest news"
+  url: https://english.news.cn/list/latestnews.htm
+  language: en
+  time_zone: Asia/Shanghai
+  ttl: 360
+selectors:
+  items:
+    selector: "#list .item .tit a"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

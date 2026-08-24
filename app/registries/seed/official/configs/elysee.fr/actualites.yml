@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: elysee.fr/actualites
+directory:
+  topics:
+    - civic
+  title: "Élysée — Actualités"
+  summary: "Actualités officielles de la Présidence de la République française."
+channel:
+  title: "Élysée — Actualités"
+  url: https://www.elysee.fr/toutes-les-actualites
+  language: fr
+  time_zone: Europe/Paris
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/emmanuel-macron/20"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

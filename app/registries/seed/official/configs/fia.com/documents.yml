@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: fia.com/documents
+directory:
+  topics:
+    - sports
+  title: "FIA — Formula 1 documents"
+  summary: "Official Formula 1 championship documents from the FIA."
+channel:
+  language: en
+  title: "FIA — Formula 1 documents"
+  url: https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/season/season-2026-2072
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: ".decision-document-list .document-row"
+  title:
+    selector: ".title"
+  url:
+    selector: a
+    extractor: href
+  description:
+    selector: a
+    extractor: html

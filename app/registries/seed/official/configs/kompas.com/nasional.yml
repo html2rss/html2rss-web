@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: kompas.com/nasional
+directory:
+  topics:
+    - news
+    - civic
+  title: "Kompas — Nasional"
+  summary: "Berita nasional dari Kompas.com."
+channel:
+  title: "Kompas — Nasional"
+  url: https://nasional.kompas.com/
+  language: id
+  time_zone: Asia/Jakarta
+  ttl: 360
+selectors:
+  items:
+    selector: '.articleList a[href*="/read/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

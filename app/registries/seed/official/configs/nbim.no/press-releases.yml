@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: nbim.no/press-releases
+directory:
+  topics:
+    - finance
+  title: "Norges Bank Investment Management — Press releases"
+  summary: "Press releases from Norway’s sovereign wealth fund manager."
+channel:
+  title: "Norges Bank Investment Management — Press releases"
+  url: https://www.nbim.no/en/news-and-insights/the-press/press-releases/
+  language: en
+  time_zone: Europe/Oslo
+  ttl: 360
+selectors:
+  items:
+    selector: div.content-featured-content
+    enhance: true
+  title:
+    selector: h3
+  url:
+    selector: a.chevron-link
+    extractor: href

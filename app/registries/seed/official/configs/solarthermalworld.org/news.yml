@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: solarthermalworld.org/news
+directory:
+  topics:
+    - energy
+  title: "Solarthermalworld — News"
+  summary: "Global news on solar thermal energy and heat."
+channel:
+  language: en
+  title: "Solarthermalworld — News"
+  url: https://solarthermalworld.org/news
+  time_zone: UTC
+  ttl: 180
+selectors:
+  items:
+    selector: "article.post-wrapper"
+  title:
+    selector: "h2 a"
+  url:
+    selector: "h2 a"
+    extractor: "href"
+  description:
+    selector: '[property="content:encoded"]'
+    extractor: html

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: novonordisk.com/latest-news
+directory:
+  topics:
+    - science
+    - product
+  title: "Novo Nordisk — Latest news"
+  summary: "Latest corporate and product news from Novo Nordisk."
+channel:
+  title: "Novo Nordisk — Latest news"
+  url: https://www.novonordisk.com/news-and-media/latest-news.html
+  language: en
+  time_zone: Europe/Copenhagen
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.ln-link-item[href*="news-details.html"]'
+    enhance: false
+  title:
+    selector: .location-info p.paragraph-s
+  url:
+    extractor: href

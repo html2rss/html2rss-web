@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: s3.amazonaws.com/popular_movies
+directory:
+  topics:
+    - entertainment
+  title: "Popular movies — JSON list"
+  summary: "Popular movies listing from a public JSON feed on Amazon S3."
+# This generates a RSS of the daily updated
+# https://github.com/sjlu/popular-movies
+channel:
+  language: en
+  title: "Popular movies — JSON list"
+  url: https://s3.amazonaws.com/popular-movies/movies.json
+  time_zone: UTC
+  ttl: 1440
+  json: true
+selectors:
+  items:
+    selector: "array > object"
+  title:
+    selector: "title"
+  imdb_id:
+    selector: "imdb_id"
+  poster_url:
+    selector: "poster_url"
+  url:
+    post_process:
+      - name: template
+        string: "https://imdb.com/title/%{imdb_id}"
+  description:
+    post_process:
+      - name: template
+        string: "![](%{poster_url})"
+      - name: markdown_to_html

@@ -13,6 +13,7 @@ module RegistryTestHelpers
   def configure_registry_fixtures!
     ENV['REGISTRIES_CONFIG'] = DEFAULT_REGISTRIES_CONFIG
     ENV['REGISTRY_DATA_ROOT'] = File.join(Dir.pwd, 'tmp', 'test-registry-data')
+    FileUtils.rm_rf(ENV.fetch('REGISTRY_DATA_ROOT', nil))
   end
 
   def reset_registry!

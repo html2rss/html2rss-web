@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tudelft.nl/news
+directory:
+  topics:
+    - science
+    - research
+  title: "TU Delft — News"
+  summary: "University and research news from Delft University of Technology."
+channel:
+  title: "TU Delft — News"
+  url: https://www.tudelft.nl/en/about-tu-delft/current
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.card[href*="/en/20"]'
+    enhance: true
+  title:
+    selector: h3
+  url:
+    extractor: href

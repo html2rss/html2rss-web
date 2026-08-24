@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: nomanssky.com/news
+directory:
+  topics:
+    - entertainment
+  title: "No Man’s Sky — News"
+  summary: "Game updates and news for No Man’s Sky."
+channel:
+  title: "No Man’s Sky — News"
+  url: https://www.nomanssky.com/news/
+  language: en-GB
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: article
+  title:
+    selector: ".post-title"
+  url:
+    selector: a.view-article
+    extractor: href
+  description:
+    selector: p:first
+    post_process:
+      - name: substring
+        start: 0
+        end: -14

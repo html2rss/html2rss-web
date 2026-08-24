@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: diis.dk/research
+directory:
+  topics:
+    - civic
+    - research
+  title: "DIIS — Research"
+  summary: "Research and analysis from the Danish Institute for International Studies."
+channel:
+  title: "DIIS — Research"
+  url: https://www.diis.dk/en
+  language: en
+  time_zone: Europe/Copenhagen
+  ttl: 360
+selectors:
+  items:
+    selector: 'h3 a[href^="/en/research/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

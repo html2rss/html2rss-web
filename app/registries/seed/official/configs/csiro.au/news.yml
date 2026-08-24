@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: csiro.au/news
+directory:
+  topics:
+    - science
+    - research
+  title: "CSIRO — News"
+  summary: "Science and innovation news from Australia’s national science agency."
+channel:
+  title: "CSIRO — News"
+  url: https://www.csiro.au/en/news
+  language: en
+  time_zone: Australia/Sydney
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/en/news/All/Articles/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

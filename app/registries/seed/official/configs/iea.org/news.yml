@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: iea.org/news
+directory:
+  topics:
+    - energy
+    - environment
+  title: "IEA — News"
+  summary: "Energy news and analysis from the International Energy Agency."
+channel:
+  title: "IEA — News"
+  url: https://www.iea.org/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.m-news-detailed-listing__link[href^="/news/"]'
+    enhance: false
+  title:
+    selector: .m-news-detailed-listing__title
+  url:
+    extractor: href

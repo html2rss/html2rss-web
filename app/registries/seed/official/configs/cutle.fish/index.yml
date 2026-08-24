@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: cutle.fish/index
+directory:
+  topics:
+    - tech
+  title: "cutle.fish — Posts"
+  summary: "Personal writing and notes from cutle.fish."
+channel:
+  language: en
+  title: "cutle.fish — Posts"
+  url: https://cutle.fish/
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: main > div > div
+  title:
+    selector: a
+  url:
+    selector: a
+    extractor: href
+  description:
+    selector: a

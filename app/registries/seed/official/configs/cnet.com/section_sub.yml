@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: cnet.com/section_sub
+directory:
+  topics:
+    - tech
+    - news
+  title: "CNET — Section"
+  summary: "Tech news and reviews from a selectable CNET section."
+parameters:
+  section:
+    type: string
+    default: "tech"
+
+channel:
+  title: "CNET — Section"
+  url: https://www.cnet.com/%<section>s/
+  language: en
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: "article.list-entry"
+    enhance: false
+  title:
+    selector: "h3.list-entry__title a"
+  url:
+    selector: "h3.list-entry__title a"
+    extractor: href

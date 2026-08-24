@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: panapress.com/latest
+directory:
+  topics:
+    - news
+  title: "PANA Press — Latest"
+  summary: "Latest African news from the Pan African News Agency."
+strategy: botasaurus
+
+channel:
+  title: "PANA Press — Latest"
+  url: https://www.panapress.com/
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'h4 a[href*="lang2.html"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'h4 a[href*="lang2.html"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

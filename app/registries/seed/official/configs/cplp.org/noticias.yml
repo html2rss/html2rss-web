@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: cplp.org/noticias
+directory:
+  topics:
+    - civic
+    - news
+  title: "CPLP — Notícias"
+  summary: "Notícias da Comunidade dos Países de Língua Portuguesa."
+channel:
+  title: "CPLP — Notícias"
+  url: https://www.cplp.org/
+  language: pt
+  time_zone: Europe/Lisbon
+  ttl: 360
+selectors:
+  items:
+    selector: 'ul.news-to-show-list a[href*="/noticias/noticias-detalhe/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

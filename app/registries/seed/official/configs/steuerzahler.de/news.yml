@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: steuerzahler.de/news
+directory:
+  topics:
+    - civic
+  title: "Bund der Steuerzahler — News"
+  summary: "Nachrichten vom Bund der Steuerzahler Deutschland."
+channel:
+  title: "Bund der Steuerzahler — News"
+  url: https://www.steuerzahler.de/news/
+  time_zone: Europe/Berlin
+  ttl: 720
+  language: de
+selectors:
+  items:
+    selector: ".bdst_presslist .bdst_presslist__block"
+    enhance: false
+  title:
+    selector: "a"
+  url:
+    selector: "a"
+    extractor: "href"
+  description:
+    selector: ".bdst_presslist__block__teaser"
+  published_at:
+    selector: ".bdst_presslist__block__date"
+    post_process:
+      - name: "parse_time"

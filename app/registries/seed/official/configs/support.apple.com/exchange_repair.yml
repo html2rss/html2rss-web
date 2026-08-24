@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: support.apple.com/exchange_repair
+directory:
+  topics:
+    - tech
+    - security
+  title: "Apple Support — Service programs"
+  summary: "Apple repair and exchange service program announcements."
+channel:
+  language: en
+  title: "Apple Support — Service programs"
+  url: https://support.apple.com/service-programs
+  time_zone: America/Los_Angeles
+  ttl: 720
+selectors:
+  items:
+    selector: ".as-columns--2up-extended"
+    enhance: false
+  title:
+    selector: "a"
+  url:
+    selector: "a"
+    extractor: "href"
+  img:
+    selector: "img"
+    extractor: "attribute"
+    attribute: "src"
+  description:
+    post_process:
+      - name: template
+        string: |
+          # ![](%{img})
+      - name: markdown_to_html

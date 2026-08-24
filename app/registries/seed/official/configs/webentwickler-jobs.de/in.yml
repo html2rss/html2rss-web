@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: webentwickler-jobs.de/in
+directory:
+  topics:
+    - jobs
+  title: "Webentwickler-Jobs — Region"
+  summary: "Webentwickler-Stellenangebote für eine wählbare Region in Deutschland."
+parameters:
+  region:
+    type: string
+    default: "berlin"
+
+channel:
+  title: "Webentwickler-Jobs — Region"
+  url: https://www.webentwickler-jobs.de/in/%<region>s
+  language: de
+  ttl: 360
+  time_zone: Europe/Berlin
+selectors:
+  items:
+    selector: ".job-item"
+  title:
+    selector: ".job-title"
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: "> div"
+    extractor: html

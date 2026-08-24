@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: kinocheck.de/filmstarts
+directory:
+  topics:
+    - entertainment
+  title: "KinoCheck — Filmstarts"
+  summary: "Kommende und aktuelle Filmstarts in Deutschland."
+channel:
+  title: "KinoCheck — Filmstarts"
+  url: https://kinocheck.de/filmstarts
+  time_zone: Europe/Berlin
+  ttl: 1440
+  language: de
+selectors:
+  items:
+    selector: ".list-movies-wide-item .wrapper-content"
+  title:
+    selector: "h2"
+    post_process:
+      - name: "template"
+        string: "%{self} (%{start_date})"
+  url:
+    selector: "a"
+    extractor: "href"
+  description:
+    selector: ".information"
+    extractor: "html"
+  start_date:
+    selector: ".release-date .highlight"

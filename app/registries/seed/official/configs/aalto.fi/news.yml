@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: aalto.fi/news
+directory:
+  topics:
+    - science
+    - research
+  title: "Aalto University — News"
+  summary: "Research and campus news from Aalto University in Finland."
+strategy: botasaurus
+channel:
+  title: "Aalto University — News"
+  url: https://www.aalto.fi/en/news
+  language: en
+  time_zone: Europe/Helsinki
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a[href^="/en/news/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.hub-listing__results__item__link[href^="/en/news/"]'
+    enhance: true
+  title:
+    selector: .hub-listing__results__item__heading
+  url:
+    extractor: href

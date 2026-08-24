@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: canarianweekly.com/front
+directory:
+  topics:
+    - news
+    - travel
+  title: "Canarian Weekly — Front page"
+  summary: "English-language news from the Canary Islands."
+channel:
+  title: "Canarian Weekly — Front page"
+  url: https://www.canarianweekly.com/
+  time_zone: Europe/London
+  ttl: 720
+  language: en
+selectors:
+  items:
+    selector: "h5.post-title a"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: "href"

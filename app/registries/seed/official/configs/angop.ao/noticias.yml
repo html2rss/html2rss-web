@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: angop.ao/noticias
+directory:
+  topics:
+    - news
+    - civic
+  title: "ANGOP — Notícias"
+  summary: "Notícias oficiais da Agência Angola Press."
+channel:
+  title: "ANGOP — Notícias"
+  url: https://www.angop.ao/
+  language: pt
+  time_zone: Africa/Luanda
+  ttl: 360
+selectors:
+  items:
+    selector: 'h2 a[href*="/noticias/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

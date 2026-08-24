@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: ingenieur.de/karriere_arbeitsleben_heiko_mell
+directory:
+  topics:
+    - jobs
+  title: "ingenieur.de — Heiko Mell"
+  summary: "Karriere-Kolumnen von Heiko Mell auf ingenieur.de."
+channel:
+  title: "ingenieur.de — Heiko Mell"
+  url: https://www.ingenieur.de/karriere/arbeitsleben/heiko-mell/
+  language: de-DE
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: ".section > .ing-teaser"
+  title:
+    selector: ".ing-teaser__headline"
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: ".ing-teaser__excerpt"

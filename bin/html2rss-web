@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+
+ENV['RACK_ENV'] ||= 'development'
+
+require_relative '../app'
+require_relative '../app/web/cli'
+
+exit Html2rss::Web::CLI.run(ARGV) if $PROGRAM_NAME == __FILE__

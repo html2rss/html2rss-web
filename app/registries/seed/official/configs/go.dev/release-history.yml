@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: go.dev/release-history
+directory:
+  topics:
+    - tech
+    - product
+  title: "Go — Release history"
+  summary: "Official Go language release history and notes."
+channel:
+  title: "Go — Release history"
+  url: https://go.dev/doc/devel/release
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="/doc/go1."]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

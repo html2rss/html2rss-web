@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: dfs.de/pressemitteilungen
+directory:
+  topics:
+    - civic
+  title: "DFS — Pressemitteilungen"
+  summary: "Pressemitteilungen der Deutschen Flugsicherung (DFS)."
+channel:
+  title: "DFS — Pressemitteilungen"
+  url: https://www.dfs.de/homepage/de/medien/presse/
+  time_zone: Europe/Berlin
+  ttl: 1440
+  language: de
+selectors:
+  items:
+    selector: ".article-teaser-list article"
+  title:
+    selector: ".headline"
+  url:
+    selector: "a"
+    extractor: "href"
+  published_at:
+    selector: "time"
+    extractor: "attribute"
+    attribute: "datetime"
+    post_process:
+      - name: "parse_time"

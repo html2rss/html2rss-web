@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: rbb24.de/meistgeklickt
+directory:
+  topics:
+    - news
+  title: "rbb24 — Meistgeklickt"
+  summary: "Most-clicked stories from rbb24."
+channel:
+  title: "rbb24 — Meistgeklickt"
+  url: https://www.rbb24.de/das-beste/
+  time_zone: Europe/Berlin
+  ttl: 30
+  language: de
+selectors:
+  items:
+    selector: "article.top-teaser a.top-teaser__text-container"
+    enhance: false
+  title:
+    extractor: "text"
+  url:
+    extractor: "href"

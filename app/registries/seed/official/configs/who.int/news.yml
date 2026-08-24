@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: who.int/news
+directory:
+  topics:
+    - science
+    - civic
+  title: "WHO — News"
+  summary: "Official news and statements from the World Health Organization."
+strategy: botasaurus
+
+channel:
+  title: "WHO — News"
+  url: https://www.who.int/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.link-container[href*="/news/item/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.link-container[href*="/news/item/"]'
+    enhance: false
+  title:
+    extractor: attribute
+    attribute: aria-label
+  url:
+    extractor: href

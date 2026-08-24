@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: nikkei.com/asia-technology
+directory:
+  topics:
+    - news
+    - tech
+  title: "Nikkei Asia — Technology"
+  summary: "Asia technology business coverage from Nikkei Asia."
+channel:
+  title: "Nikkei Asia — Technology"
+  url: https://asia.nikkei.com/business/technology
+  language: en
+  time_zone: Asia/Tokyo
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[data-trackable="headline"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: akorda.kz/events
+directory:
+  topics:
+    - civic
+    - news
+  title: "Akorda — Events"
+  summary: "Official events and statements from the President of Kazakhstan."
+channel:
+  title: "Akorda — Events"
+  url: https://www.akorda.kz/en/events
+  language: en
+  time_zone: Asia/Almaty
+  ttl: 360
+selectors:
+  items:
+    selector: ".card h3 a"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

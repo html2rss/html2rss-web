@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: forumsec.org/publications
+directory:
+  topics:
+    - civic
+    - news
+  title: "Pacific Islands Forum — Publications"
+  summary: "Publications from the Pacific Islands Forum Secretariat."
+channel:
+  title: "Pacific Islands Forum — Publications"
+  url: https://forumsec.org/publications
+  language: en
+  time_zone: Pacific/Fiji
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.card__image[href^="/publications/"][aria-label]'
+    enhance: false
+  title:
+    extractor: attribute
+    attribute: aria-label
+  url:
+    extractor: href

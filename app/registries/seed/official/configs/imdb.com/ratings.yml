@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: imdb.com/ratings
+directory:
+  topics:
+    - entertainment
+  title: "IMDb — User ratings"
+  summary: "Film and TV ratings from a selectable IMDb user list."
+strategy: botasaurus
+
+parameters:
+  user_id:
+    type: string
+    default: "ur7019649"
+
+channel:
+  language: en
+  title: "IMDb — User ratings"
+  url: https://www.imdb.com/user/%<user_id>s/ratings
+  time_zone: UTC
+  ttl: 1440
+request:
+  botasaurus:
+    wait_timeout_seconds: 20
+    wait_for_selector: "li.ipc-metadata-list-summary-item"
+selectors:
+  items:
+    selector: "li.ipc-metadata-list-summary-item"
+    enhance: false
+  title:
+    selector: ".ipc-title__text"
+    post_process:
+      - name: gsub
+        pattern: "/^(\\d+.)\\s/"
+        replacement: ""
+      - name: template
+        string: 'Rated: "%{self}" %{user_rating} [IMDb: %{global_rating}]'
+  url:
+    selector: "a.ipc-title-link-wrapper"
+    extractor: "href"
+  description:
+    selector: ".ipc-html-content-inner-div"
+  global_rating:
+    selector: ".ipc-rating-star--imdb .ipc-rating-star--rating"
+  user_rating:
+    selector: ".dli-ratings-container .ipc-rating-star--otherUser span"
+  enclosure:
+    selector: ".ipc-image"
+    extractor: "attribute"
+    attribute: "src"

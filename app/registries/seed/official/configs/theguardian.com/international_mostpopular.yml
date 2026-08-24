@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: theguardian.com/international_mostpopular
+directory:
+  topics:
+    - news
+  title: "The Guardian — International most popular"
+  summary: "Most-read international stories from The Guardian."
+channel:
+  language: en
+  title: "The Guardian — International most popular"
+  url: https://www.theguardian.com/international
+  time_zone: Europe/London
+  ttl: 60
+selectors:
+  items:
+    selector: '[data-link-name="most-viewed"] > ol > li'
+  title:
+    selector: "h4 span"
+  url:
+    selector: "a"
+    extractor: "href"

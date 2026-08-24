@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: nokia.com/newsroom
+directory:
+  topics:
+    - tech
+    - product
+  title: "Nokia — Newsroom"
+  summary: "Corporate newsroom announcements from Nokia."
+channel:
+  title: "Nokia — Newsroom"
+  url: https://www.nokia.com/newsroom/
+  language: en
+  time_zone: Europe/Helsinki
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.pp-block-item-container[href*="/newsroom/"]'
+    enhance: false
+  title:
+    selector: h3.pp-block-item-heading
+  url:
+    extractor: href

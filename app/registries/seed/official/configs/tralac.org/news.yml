@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tralac.org/news
+directory:
+  topics:
+    - civic
+    - research
+  title: "tralac — News"
+  summary: "Trade law and policy news from the Trade Law Centre (tralac)."
+channel:
+  title: "tralac — News"
+  url: https://www.tralac.org/news.html
+  language: en
+  time_zone: Africa/Johannesburg
+  ttl: 360
+selectors:
+  items:
+    selector: 'h3 a[href*="/news/article/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

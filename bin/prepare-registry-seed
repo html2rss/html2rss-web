@@ -21,7 +21,7 @@ fi
 echo "Building registry seed bundle from $CONFIGS_REPO"
 (
   cd "$CONFIGS_REPO"
-  BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
+  REGISTRY_VERSION=seed BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
 )
 
 rm -rf "$SEED_DIR"

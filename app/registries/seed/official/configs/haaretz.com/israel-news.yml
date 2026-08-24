@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: haaretz.com/israel-news
+directory:
+  topics:
+    - news
+  title: "Haaretz — Israel news"
+  summary: "Israel news coverage from Haaretz in English."
+channel:
+  title: "Haaretz — Israel news"
+  url: https://www.haaretz.com/israel-news
+  language: en
+  time_zone: Asia/Jerusalem
+  ttl: 360
+selectors:
+  items:
+    selector: 'h3 a[href*="/ty-article"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

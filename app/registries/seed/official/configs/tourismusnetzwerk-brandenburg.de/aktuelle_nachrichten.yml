@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tourismusnetzwerk-brandenburg.de/aktuelle_nachrichten
+directory:
+  topics:
+    - travel
+  title: "Tourismusnetzwerk Brandenburg — Aktuelle Nachrichten"
+  summary: "Aktuelle Nachrichten für den Tourismus in Brandenburg."
+channel:
+  title: "Tourismusnetzwerk Brandenburg — Aktuelle Nachrichten"
+  url: https://tourismusnetzwerk-brandenburg.de/
+  time_zone: Europe/Berlin
+  ttl: 720
+  language: de
+enhance: false
+selectors:
+  items:
+    selector: "article.node.article.wall-floating"
+  title:
+    selector: "h3.title a[rel='bookmark']"
+  url:
+    selector: "h3.title a[rel='bookmark']"
+    extractor: "href"

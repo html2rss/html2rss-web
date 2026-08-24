@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: lego.com/press-releases
+directory:
+  topics:
+    - entertainment
+    - product
+  title: "LEGO — Press releases"
+  summary: "Official press releases from the LEGO Group."
+channel:
+  title: "LEGO — Press releases"
+  url: https://www.lego.com/en-gb/aboutus/newsroom/press-releases
+  language: en-GB
+  time_zone: Europe/Copenhagen
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.c-card--article[href*="/aboutus/news/20"]'
+    enhance: true
+  title:
+    selector: h2.c-card__title
+  url:
+    extractor: href

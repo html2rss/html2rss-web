@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: ai.meta.com/blog
+directory:
+  topics:
+    - tech
+    - research
+  title: "Meta AI — Blog"
+  summary: "Research posts and product updates from Meta AI."
+channel:
+  title: "Meta AI — Blog"
+  url: https://ai.meta.com/blog/
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/blog/"][aria-label^="Read "]'
+    enhance: false
+  title:
+    extractor: attribute
+    attribute: aria-label
+    post_process:
+      - name: gsub
+        pattern: "/^Read\\s+/"
+        replacement: ""
+  url:
+    extractor: href

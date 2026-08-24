@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: mozilla.org/security-advisories
+directory:
+  topics:
+    - security
+    - tech
+  title: "Mozilla — Security advisories"
+  summary: "Security advisories for Mozilla products."
+channel:
+  title: "Mozilla — Security advisories"
+  url: https://www.mozilla.org/en-US/security/advisories/
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: "main li"
+    enhance: false
+  title:
+    selector: 'a[href*="/security/advisories/mfsa"]'
+  url:
+    selector: 'a[href*="/security/advisories/mfsa"]'
+    extractor: href

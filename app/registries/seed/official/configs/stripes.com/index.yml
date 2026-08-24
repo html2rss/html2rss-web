@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: stripes.com/index
+directory:
+  topics:
+    - news
+  title: "Stars and Stripes — Front page"
+  summary: "Independent news for the U.S. military community from Stars and Stripes."
+channel:
+  title: "Stars and Stripes — Front page"
+  url: https://www.stripes.com/
+  language: en
+  ttl: 360
+  time_zone: America/New_York
+selectors:
+  items:
+    selector: '[class$="teaser"]'
+  title:
+    selector: a
+  url:
+    selector: a
+    extractor: href
+  description:
+    selector: img
+    extractor: attribute
+    attribute: alt

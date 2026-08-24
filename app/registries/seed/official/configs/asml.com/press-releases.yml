@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: asml.com/press-releases
+directory:
+  topics:
+    - tech
+    - product
+  title: "ASML — Press releases"
+  summary: "Corporate press releases from semiconductor equipment maker ASML."
+channel:
+  title: "ASML — Press releases"
+  url: https://www.asml.com/en/news/press-releases
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.related-content-card[href*="/en/news/press-releases/20"]'
+    enhance: false
+  title:
+    selector: span.related-content-card-title
+  url:
+    extractor: href

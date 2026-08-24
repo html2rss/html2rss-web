@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: cleanenergywire.org/news
+directory:
+  topics:
+    - energy
+    - environment
+  title: "Clean Energy Wire — News"
+  summary: "Journalism on Germany’s energy transition and climate policy."
+channel:
+  language: en
+  title: "Clean Energy Wire — News"
+  url: https://www.cleanenergywire.org/news
+  time_zone: "Europe/Berlin"
+  ttl: 360
+selectors:
+  items:
+    selector: ".views-row"
+    enhance: false
+  title:
+    selector: "h2 a"
+  url:
+    selector: "h2 a"
+    extractor: "href"
+  published_at:
+    selector: "time"
+    post_process:
+      - name: parse_time

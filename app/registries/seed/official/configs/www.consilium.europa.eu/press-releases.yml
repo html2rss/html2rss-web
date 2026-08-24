@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: consilium.europa.eu/press-releases
+directory:
+  topics:
+    - civic
+  title: "Council of the EU — Press releases"
+  summary: "Press releases from the Council of the European Union."
+strategy: botasaurus
+
+channel:
+  title: "Council of the EU — Press releases"
+  url: https://www.consilium.europa.eu/en/press/press-releases/
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.gsc-excerpt-item__link[href*="/press/press-releases/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.gsc-excerpt-item__link[href*="/en/press/press-releases/20"]'
+    enhance: false
+  title:
+    selector: span.gsc-excerpt-item__title
+  url:
+    extractor: href

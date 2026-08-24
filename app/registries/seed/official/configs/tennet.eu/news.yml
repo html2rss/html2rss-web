@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tennet.eu/news
+directory:
+  topics:
+    - energy
+  title: "TenneT — News"
+  summary: "Grid and energy news from transmission operator TenneT."
+channel:
+  title: "TenneT — News"
+  url: https://www.tennet.eu/news
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="/news/"]'
+    enhance: false
+  title:
+    selector: "h3, h4"
+  url:
+    extractor: href

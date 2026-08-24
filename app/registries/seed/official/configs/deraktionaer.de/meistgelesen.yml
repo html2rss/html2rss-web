@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: deraktionaer.de/meistgelesen
+directory:
+  topics:
+    - finance
+  title: "Der Aktionär — Meistgelesen"
+  summary: "Most-read stock market news from Der Aktionär."
+channel:
+  title: "Der Aktionär — Meistgelesen"
+  url: https://www.deraktionaer.de/
+  time_zone: Europe/Berlin
+  ttl: 360
+  language: de
+enhance: false
+selectors:
+  items:
+    selector: "section#top-articles article.top-article a.top-article-content[href^='/artikel/']"
+  title:
+    extractor: "text"
+  url:
+    extractor: "href"

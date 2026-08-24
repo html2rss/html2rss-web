@@ -120,7 +120,7 @@ registries:
 
 - `public_key_id` must match the value in signed `manifest.json` (default in `tool/registry-build`: `html2rss:registry:2026`).
 - Network sync uses `:signed` trust and requires this pin. Seed bundles copied from the Docker image use `:integrity_only` trust (no signature check on load).
-- **`auto_promote: false`** (default) writes verified bundles to `REGISTRY_DATA_ROOT/<id>/.staging/` without changing the active catalog. Promote after review with `bin/registry-sync --promote --registry official`.
+- **`auto_promote: false`** (default) writes verified bundles to `REGISTRY_DATA_ROOT/<id>/.staging/` without changing the active catalog. Promote after review with `bin/html2rss-web registry promote --registry official`.
 - **`pin_version`** resolves the GitHub tag release API instead of `/releases/latest`.
 - **`max_version`** rejects sync when the verified manifest version is newer than the cap (incident freeze).
 - **`allowed_channel_domains`** rejects bundle load when any config `channel.url` host is outside the suffix allowlist.
@@ -261,7 +261,7 @@ Allowed outbound hosts (built-in): `api.github.com`, `github.com`, `objects.gith
 The named volume preserves synced bundles across container restarts and image upgrades. After pull + restart:
 
 - Old bundle stays active until a successful sync swaps it.
-- Use `bin/registry-sync` or wait for background refresh to pick up a new configs release without rebuilding the image (section 7).
+- Use `bin/html2rss-web registry sync` or wait for background refresh to pick up a new configs release without rebuilding the image (section 7).
 
 ---
 
@@ -330,7 +330,7 @@ Run these checks after deploy or sync.
 Inside the running container (or Dev Container):
 
 ```bash
-bin/registry-sync --status
+bin/html2rss-web registry status
 ```
 
 Tab-separated columns: `registry`, `mode`, `version`, `staged_version`, `updated_at`, `sync_url`, `last_error`.
@@ -341,9 +341,9 @@ Tab-separated columns: `registry`, `mode`, `version`, `staged_version`, `updated
 Single registry, dry-run, or promote staged bundle:
 
 ```bash
-bin/registry-sync --registry official
-bin/registry-sync --registry official --dry-run
-bin/registry-sync --promote --registry official
+bin/html2rss-web registry sync --registry official
+bin/html2rss-web registry sync --registry official --dry-run
+bin/html2rss-web registry promote --registry official
 ```
 
 ### 6.2 Instance metadata API
@@ -388,9 +388,9 @@ Configs releases are independent of web image releases. To refresh feeds on a ru
 Production recommendation: keep `auto_promote: false`, set `sync.pin_version` to the approved tag, fetch with sync, then promote manually after review.
 
 ```bash
-bin/registry-sync --registry official
-bin/registry-sync --status          # staged_version shows verified bundle
-bin/registry-sync --promote --registry official
+bin/html2rss-web registry sync --registry official
+bin/html2rss-web registry status          # staged_version shows verified bundle
+bin/html2rss-web registry promote --registry official
 ```
 
 Fetches the pinned or latest signed tarball, verifies signature + digests, and either stages (`auto_promote: false`) or atomically swaps the active bundle (`auto_promote: true`).
@@ -410,27 +410,23 @@ registries:
 
 Set `REGISTRY_SYNC_INTERVAL_HOURS=0` to pause background refresh while investigating.
 
-### 7.3 Automatic refresh
+### 7.3 Automatic refresh & production Puma cluster mode
 
 | Mechanism | Env var | Default | Behavior |
 | --- | --- | --- | --- |
 | Sync on boot | `REGISTRY_SYNC_ON_BOOT` | `false` | When `true`, network sync on every boot (in addition to missing-bundle sync) |
-| Background timer | `REGISTRY_SYNC_INTERVAL_HOURS` | `24` | Jittered periodic re-sync; `0` disables |
+| Background timer | `REGISTRY_SYNC_INTERVAL_HOURS` | `24` | Periodic re-sync; `0` disables |
 | Missing bundle | — | — | Always syncs on boot when no on-disk bundle exists |
 
-Example — force sync every boot (use sparingly):
+> [!TIP]
+> **Production Puma Cluster Mode (Kubernetes / Sidecar)**:
+> In production cluster mode (`workers > 0` with `preload_app!`), child worker processes do not execute background timer threads spawned in the master process. Because `Index.current` detects changes on disk via `manifest.json` mtimes, the recommended production pattern for Kubernetes or Compose is to run periodic sync via a lightweight sidecar container or CronJob executing `bin/html2rss-web registry sync`.
 
-```bash
-REGISTRY_SYNC_ON_BOOT=true
-```
-
-Example — disable background refresh:
+Example — disable in-process background timer when using external cron:
 
 ```bash
 REGISTRY_SYNC_INTERVAL_HOURS=0
 ```
-
-**Note:** Pulling a new web image updates the embedded seed but does **not** replace an existing volume bundle until sync succeeds.
 
 ---
 
@@ -438,7 +434,7 @@ REGISTRY_SYNC_INTERVAL_HOURS=0
 
 ### 8.1 Signature verification failure
 
-Symptoms in `bin/registry-sync --status`:
+Symptoms in `bin/html2rss-web registry status`:
 
 - `last_error` contains `Unknown public_key_id`, `Invalid manifest signature`, or `Missing manifest.sig`
 
@@ -453,7 +449,7 @@ Signature-related failures are logged via `SecurityLogger.log_registry_signature
 Verify without swapping the active bundle:
 
 ```bash
-bin/registry-sync --registry official --dry-run
+bin/html2rss-web registry sync --registry official --dry-run
 ```
 
 ### 8.2 Sync failure keeps the old bundle
@@ -464,7 +460,7 @@ By design:
 - On failure, `last_error` is recorded; the previous bundle under `REGISTRY_DATA_ROOT/<registry_id>/` remains served.
 - `Store.promote_bundle!` rolls back on swap failure.
 
-If sync fails on first boot with no prior bundle, the instance may have only the unsigned seed (integrity-only) until a signed sync succeeds.
+If sync fails on first boot with no prior bundle, the instance serves the embedded seed bundle (144 feeds) until a signed sync succeeds.
 
 ### 8.3 Network / host errors
 
@@ -475,7 +471,7 @@ If sync fails on first boot with no prior bundle, the instance may have only the
 | `Registry sync fetch failed with HTTP …` | Release missing, URL wrong, or GitHub outage |
 | `Registry sync requires HTTPS URLs` | Use `https://` in `sync.url` |
 
-Default allowed hosts cover official GitHub release downloads only.
+Default allowed hosts cover official GitHub release downloads (`api.github.com`, `github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`).
 
 ### 8.4 Air-gapped / offline (`path` mode)
 
@@ -491,8 +487,8 @@ registries:
 Requirements:
 
 - Directory contains `manifest.json`, `configs/`, and optionally `manifest.sig`
-- `bin/registry-sync` is not applicable (`path mode; sync is not applicable`)
-- `bin/registry-sync --status` should show `mode: path`
+- `bin/html2rss-web registry sync` is not applicable (`path mode; sync is not applicable`)
+- `bin/html2rss-web registry status` should show `mode: path`
 
 Load path uses `:integrity_only` trust (disk/image trust boundary).
 
@@ -507,11 +503,11 @@ environment:
 
 ### 8.5 CLI exit code non-zero with empty `last_error`
 
-`bin/registry-sync --status` exits **1** when a sync-mode registry has **no on-disk bundle**. Run a sync or confirm seed copy succeeded:
+`bin/html2rss-web registry status` exits **1** when a sync-mode registry has **no on-disk bundle**. Run a sync or confirm seed copy succeeded:
 
 ```bash
-bin/registry-sync --registry official
-bin/registry-sync --status
+bin/html2rss-web registry sync --registry official
+bin/html2rss-web registry status
 ```
 
 ### 8.6 Seed missing or stale in image

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: elastic.co/elasticsearch-release-notes
+directory:
+  topics:
+    - tech
+    - product
+  title: "Elastic — Elasticsearch release notes"
+  summary: "Release notes for Elasticsearch from Elastic."
+channel:
+  title: "Elastic — Elasticsearch release notes"
+  url: https://www.elastic.co/docs/release-notes/elasticsearch
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="#elasticsearch-"][href$="-release-notes"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

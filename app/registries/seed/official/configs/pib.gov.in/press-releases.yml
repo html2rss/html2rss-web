@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: pib.gov.in/press-releases
+directory:
+  topics:
+    - civic
+    - news
+  title: "PIB India — Press releases"
+  summary: "Press releases from India’s Press Information Bureau."
+channel:
+  title: "PIB India — Press releases"
+  url: https://www.pib.gov.in/AllRel.aspx?reg=3&lang=1
+  language: en
+  time_zone: Asia/Kolkata
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="PressReleaseDetail.aspx"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

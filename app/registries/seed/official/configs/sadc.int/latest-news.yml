@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: sadc.int/latest-news
+directory:
+  topics:
+    - civic
+    - news
+  title: "SADC — Latest news"
+  summary: "Latest news from the Southern African Development Community."
+channel:
+  title: "SADC — Latest news"
+  url: https://www.sadc.int/latest-news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'span.field-content a[href^="/latest-news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

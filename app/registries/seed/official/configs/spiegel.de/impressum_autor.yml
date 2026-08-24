@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: spiegel.de/impressum_autor
+directory:
+  topics:
+    - news
+  title: "DER SPIEGEL — Author articles"
+  summary: "Articles by a selectable DER SPIEGEL author profile."
+parameters:
+  id:
+    type: string
+    default: "975b6ae0-0001-0003-0000-000000018282"
+
+channel:
+  title: "DER SPIEGEL — Author articles"
+  url: "https://www.spiegel.de/impressum/autor-%<id>s"
+  time_zone: Europe/Berlin
+  ttl: 180
+  language: de
+selectors:
+  items:
+    selector: '[data-block-el="articleTeaser"] > article'
+  title:
+    selector: "h2"
+  prefixed_title:
+    selector: "h2"
+  url:
+    selector: "section > a"
+    extractor: "href"
+  description:
+    selector: ".leading-loose"
+  published_at:
+    selector: "footer"
+    extractor: text
+    post_process:
+      - name: substring
+        start: 0
+        end: -5
+      - name: parse_time

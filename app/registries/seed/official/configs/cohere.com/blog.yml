@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: cohere.com/blog
+directory:
+  topics:
+    - tech
+    - research
+  title: "Cohere — Blog"
+  summary: "Product and research updates from Cohere."
+channel:
+  title: "Cohere — Blog"
+  url: https://cohere.com/blog
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href^="/blog/"][class*="flex-1"]'
+    enhance: false
+  title:
+    selector: "> p:first-of-type"
+  url:
+    extractor: href

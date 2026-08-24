@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: iaapa.org/news
+directory:
+  topics:
+    - entertainment
+  title: "IAAPA — News"
+  summary: "Industry news from the International Association of Amusement Parks."
+channel:
+  language: en
+  title: "IAAPA — News"
+  url: https://iaapa.org/news-funworld
+  time_zone: UTC
+  ttl: 720
+enhance: false
+selectors:
+  items:
+    selector: ".views-row > article"
+  title:
+    selector: h3
+  url:
+    selector: "a"
+    extractor: "href"

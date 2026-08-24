@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: figma.com/blog
+directory:
+  topics:
+    - tech
+    - product
+  title: "Figma — Blog"
+  summary: "Product updates and design stories from Figma."
+channel:
+  title: "Figma — Blog"
+  url: https://www.figma.com/blog/
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: article[aria-label]
+    enhance: false
+  title:
+    extractor: attribute
+    attribute: aria-label
+  url:
+    selector: 'a[href*="/blog/"]'
+    extractor: href

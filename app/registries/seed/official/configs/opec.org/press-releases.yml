@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: opec.org/press-releases
+directory:
+  topics:
+    - energy
+    - civic
+  title: "OPEC — Press releases"
+  summary: "Official press releases from OPEC."
+strategy: botasaurus
+
+channel:
+  title: "OPEC — Press releases"
+  url: https://www.opec.org/press-releases.html
+  language: en
+  time_zone: Europe/Vienna
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'div.pritem a[href*="pr-detail"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: div.pritem
+    enhance: false
+  title:
+    selector: h1
+  url:
+    selector: 'a[href*="pr-detail"]'
+    extractor: href

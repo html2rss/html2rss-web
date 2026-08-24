@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: gob.mx/profeco-prensa
+directory:
+  topics:
+    - consumer
+    - civic
+  title: "PROFECO — Prensa"
+  summary: "Comunicados de prensa de la Procuraduría Federal del Consumidor (México)."
+channel:
+  title: "PROFECO — Prensa"
+  url: https://www.gob.mx/profeco/es/archivo/prensa
+  language: es
+  time_zone: America/Mexico_City
+  ttl: 360
+selectors:
+  items:
+    selector: article
+    enhance: false
+  title:
+    selector: h2
+  url:
+    selector: 'a.small-link[href*="/profeco/prensa/"]'
+    extractor: href

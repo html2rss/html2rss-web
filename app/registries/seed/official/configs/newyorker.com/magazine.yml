@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: newyorker.com/magazine
+directory:
+  topics:
+    - news
+  title: "The New Yorker — Magazine"
+  summary: "Current magazine stories from The New Yorker."
+channel:
+  title: "The New Yorker — Magazine"
+  url: https://www.newyorker.com/magazine
+  language: en
+  ttl: 360
+  time_zone: UTC
+selectors:
+  items:
+    selector: .summary-item
+  title:
+    selector: h3
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: .summary-item__dek

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: support.apple.com/en_gb_ht201222
+directory:
+  topics:
+    - tech
+    - security
+  title: "Apple Support — Security releases"
+  summary: "Apple security update and release notes (HT201222 / related)."
+strategy: botasaurus
+
+channel:
+  title: "Apple Support — Security releases"
+  url: https://support.apple.com/en-gb/100100
+  language: en
+  ttl: 360
+  time_zone: UTC
+request:
+  botasaurus:
+    wait_for_selector: ".table-wrapper table tbody tr a"
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: ".table-wrapper table tbody > tr:not(:first-child)"
+    enhance: false
+  title:
+    selector: a
+  url:
+    selector: a
+    extractor: href
+  description:
+    selector: "td:nth-child(2)"
+  published_at:
+    selector: "td:nth-child(3)"
+    post_process:
+      - name: parse_time

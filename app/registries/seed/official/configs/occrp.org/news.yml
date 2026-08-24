@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: occrp.org/news
+directory:
+  topics:
+    - news
+    - civic
+  title: "OCCRP — News"
+  summary: "Investigative journalism from the Organized Crime and Corruption Reporting Project."
+strategy: botasaurus
+
+channel:
+  title: "OCCRP — News"
+  url: https://www.occrp.org/en/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: article.news-item
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: article.news-item
+    enhance: false
+  title:
+    selector: h3.news-item__title a
+  url:
+    selector: h3.news-item__title a
+    extractor: href

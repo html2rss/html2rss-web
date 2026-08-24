@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: dirco.gov.za/media-statements
+directory:
+  topics:
+    - civic
+    - news
+  title: "DIRCO — Media statements"
+  summary: "Media statements from South Africa’s Department of International Relations."
+channel:
+  title: "DIRCO — Media statements"
+  url: https://dirco.gov.za/media-statements/
+  language: en
+  time_zone: Africa/Johannesburg
+  ttl: 360
+selectors:
+  items:
+    selector: "div.pgafu-post-grid-content h2 a"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

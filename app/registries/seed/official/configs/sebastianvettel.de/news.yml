@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: sebastianvettel.de/news
+directory:
+  topics:
+    - sports
+  title: "Sebastian Vettel — News"
+  summary: "Neuigkeiten von der Website von Sebastian Vettel."
+channel:
+  title: "Sebastian Vettel — News"
+  url: https://sebastianvettel.de/
+  language: de-DE
+  ttl: 8640
+  time_zone: Europe/Berlin
+selectors:
+  items:
+    selector: ".gb-loop-item:has(a[href*='/news/'])"
+    enhance: false
+  title:
+    selector: ".gb-text:first-child"
+  url:
+    selector: "a[href*='/news/']"
+    extractor: href

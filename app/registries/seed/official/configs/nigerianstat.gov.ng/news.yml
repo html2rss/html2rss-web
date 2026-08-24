@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: nigerianstat.gov.ng/news
+directory:
+  topics:
+    - civic
+    - research
+  title: "Nigeria Bureau of Statistics — News"
+  summary: "Official statistical releases and news from Nigeria’s NBS."
+channel:
+  title: "Nigeria Bureau of Statistics — News"
+  url: https://nigerianstat.gov.ng/
+  language: en
+  time_zone: Africa/Lagos
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: pankow.lebensmittel-kontrollergebnisse.de/search
+directory:
+  topics:
+    - consumer
+    - civic
+  title: "Berlin-Pankow — Lebensmittelkontrollen"
+  summary: "Veröffentlichte Lebensmittel-Kontrollergebnisse für Berlin-Pankow."
+channel:
+  title: "Berlin-Pankow — Lebensmittelkontrollen"
+  url: https://pankow.lebensmittel-kontrollergebnisse.de/Search
+  language: de
+  ttl: 360
+  time_zone: Europe/Berlin
+selectors:
+  items:
+    selector: main .card
+  title:
+    selector: h5
+    post_process:
+      - name: template
+        string: |
+          %{self}: %{ergebnis} (%{punkte}/80 Punkte)
+  url:
+    selector: a
+    extractor: href
+  description:
+    selector: ".row"
+    extractor: html
+    post_process:
+      - name: html_to_markdown
+      - name: markdown_to_html
+  ergebnis:
+    selector: ".bewertung-panel .row:nth-child(3)"
+    post_process:
+      - name: substring
+        start: 9
+  punkte:
+    selector: ".bewertung-panel .row:nth-child(2)"
+    post_process:
+      - name: substring
+        start: 10
+  published_at:
+    selector: ".bewertung-panel .row:nth-child(1)"
+    post_process:
+      - name: substring
+        start: -10
+      - name: parse_time
+  categories:
+    - ergebnis
+    - punkte

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: issafrica.org/press-releases
+directory:
+  topics:
+    - civic
+    - research
+  title: "ISS Africa — Press releases"
+  summary: "Press releases from the Institute for Security Studies Africa."
+channel:
+  title: "ISS Africa — Press releases"
+  url: https://issafrica.org/about-us/press-releases
+  language: en
+  time_zone: Africa/Johannesburg
+  ttl: 720
+selectors:
+  items:
+    selector: 'a.card[href^="/about-us/press-releases/"]'
+    enhance: false
+  title:
+    selector: h6.card-subtitle
+  url:
+    extractor: href

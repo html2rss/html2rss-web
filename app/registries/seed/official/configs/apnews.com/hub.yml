@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: apnews.com/hub
+directory:
+  topics:
+    - news
+  title: "AP News — Hub"
+  summary: "Top stories from a selectable Associated Press news hub."
+parameters:
+  section:
+    type: string
+    default: "news"
+
+channel:
+  title: "AP News — Hub"
+  url: https://apnews.com/%<section>s
+  language: en
+  ttl: 120
+  time_zone: UTC
+selectors:
+  items:
+    selector: ".PagePromo"
+  title:
+    selector: h3
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: .PagePromoContentIcons-text

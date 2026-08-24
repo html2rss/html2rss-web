@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: caricom.org/news
+directory:
+  topics:
+    - civic
+    - news
+  title: "CARICOM — News"
+  summary: "News and updates from the Caribbean Community (CARICOM)."
+channel:
+  title: "CARICOM — News"
+  url: https://caricom.org/
+  language: en
+  time_zone: America/Jamaica
+  ttl: 360
+selectors:
+  items:
+    selector: a.eael-grid-post-link
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

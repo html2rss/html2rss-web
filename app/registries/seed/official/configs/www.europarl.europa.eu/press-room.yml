@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: europarl.europa.eu/press-room
+directory:
+  topics:
+    - civic
+  title: "European Parliament — Press room"
+  summary: "Press room releases from the European Parliament."
+strategy: botasaurus
+
+channel:
+  title: "European Parliament — Press room"
+  url: https://www.europarl.europa.eu/news/en/press-room
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a[href*="/news/en/press-room/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a[href*="/news/en/press-room/"][title="Read more"]'
+    enhance: false
+  title:
+    selector: span.ep_name
+  url:
+    extractor: href

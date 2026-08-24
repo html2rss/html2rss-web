@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: thenationalnews.com/news
+directory:
+  topics:
+    - news
+  title: "The National — News"
+  summary: "News from The National (UAE)."
+channel:
+  title: "The National — News"
+  url: https://www.thenationalnews.com/news/
+  language: en
+  time_zone: Asia/Dubai
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/news/"][href*="/202"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

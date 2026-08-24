@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: teneriffa-news.com/news
+directory:
+  topics:
+    - news
+    - travel
+  title: "Teneriffa News — News"
+  summary: "Deutschsprachige Nachrichten von Teneriffa und den Kanaren."
+channel:
+  title: "Teneriffa News — News"
+  url: https://www.teneriffa-news.com/news
+  time_zone: "Europe/Lisbon"
+  ttl: 720
+  language: de
+selectors:
+  items:
+    selector: ".main-content article"
+  title:
+    selector: "h2"
+  url:
+    selector: "a"
+    extractor: "href"
+  img_url:
+    selector: "img"
+    extractor: "attribute"
+    attribute: "data-lazy-src"
+  description:
+    selector: ".excerpt"
+    post_process:
+      - name: template
+        string: |
+          ![](%{img_url})
+
+          %{self}
+      - name: markdown_to_html

@@ -295,10 +295,10 @@ Signed feed registries replace the embedded `html2rss-configs` gem. Each registr
 
 ### Check sync status
 
-Inside the Dev Container:
+Inside the Dev Container or Docker container:
 
 ```bash
-bin/registry-sync --status
+bin/html2rss-web registry status
 ```
 
 Columns: `registry`, `mode`, `version`, `staged_version`, `updated_at`, `sync_url`, `last_error`. Exit code is non-zero when any sync-mode registry lacks a usable on-disk bundle.
@@ -306,9 +306,9 @@ Columns: `registry`, `mode`, `version`, `staged_version`, `updated_at`, `sync_ur
 Sync, dry-run, or promote a staged bundle:
 
 ```bash
-bin/registry-sync --registry official
-bin/registry-sync --registry official --dry-run
-bin/registry-sync --promote --registry official
+bin/html2rss-web registry sync --registry official
+bin/html2rss-web registry sync --registry official --dry-run
+bin/html2rss-web registry promote --registry official
 ```
 
 Production recommendation: keep `auto_promote: false` (default), pin `sync.pin_version` to the approved configs tag, run sync to stage a verified bundle, then promote manually after review. Use `sync.max_version` as an incident freeze cap and set `REGISTRY_SYNC_INTERVAL_HOURS=0` to pause background refresh.
@@ -360,7 +360,7 @@ registries:
 - **`precedence`** — merge order for feed lookup; first match wins.
 - **`sync.url`** — direct tarball URL, or use `sync.channel: html2rss-official` for the default GitHub release asset.
 - **`sync.pin_version` / `sync.max_version`** — fetch a specific tag or reject manifests newer than the cap.
-- **`auto_promote: false`** — default; verified bundles land in `REGISTRY_DATA_ROOT/<id>/.staging/` until `bin/registry-sync --promote`.
+- **`auto_promote: false`** — default; verified bundles land in `REGISTRY_DATA_ROOT/<id>/.staging/` until `bin/html2rss-web registry promote`.
 - **`allowed_channel_domains`** — optional suffix allowlist enforced when the bundle loads.
 - **`catalog: false`** — private registry: configs are served at `/{registry.id}.rss` but excluded from the public catalog API (privacy for internal feeds).
 - Restrict outbound hosts with `REGISTRY_SYNC_ALLOWED_HOSTS` (comma-separated hostnames).
@@ -376,13 +376,13 @@ registries:
     catalog: true
 ```
 
-The directory must contain `manifest.json`, optional `manifest.sig`, and `configs/`. Path mode skips network sync; run `bin/registry-sync --status` to confirm `mode` is `path`.
+The directory must contain `manifest.json`, optional `manifest.sig`, and `configs/`. Path mode skips network sync; run `bin/html2rss-web registry status` to confirm `mode` is `path`.
 
 ### Key rotation
 
 1. Publish a new bundle signed with the new key (`public_key_id` in `manifest.json`).
 2. Update `public_key_id` and `public_key` in `registries.yml` on every instance **before** or together with the first release that requires the new key.
-3. Re-sync (`bin/registry-sync`) and promote when `auto_promote: false` (`bin/registry-sync --promote`). Failed verification leaves the previous bundle active and records `last_error`.
+3. Re-sync (`bin/html2rss-web registry sync`) and promote when `auto_promote: false` (`bin/html2rss-web registry promote`). Failed verification leaves the previous bundle active and records `last_error`.
 
 ---
 

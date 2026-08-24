@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: shopify.com/blog
+directory:
+  topics:
+    - tech
+    - product
+  title: "Shopify — Blog"
+  summary: "Commerce tips and product updates from the Shopify blog."
+
+channel:
+  language: en
+  title: "Shopify — Blog"
+  url: https://www.shopify.com/blog/latest
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: article.article--index
+    enhance: false
+  title:
+    selector: '.blogPost a[href*="/blog/"]:not([href*="/topics/"])'
+  url:
+    selector: '.blogPost a[href*="/blog/"]:not([href*="/topics/"])'
+    extractor: href

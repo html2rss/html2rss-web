@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: sacu.int/news
+directory:
+  topics:
+    - civic
+    - news
+  title: "SACU — News"
+  summary: "News from the Southern African Customs Union."
+channel:
+  title: "SACU — News"
+  url: https://www.sacu.int/news/
+  language: en
+  time_zone: Africa/Windhoek
+  ttl: 360
+selectors:
+  items:
+    selector: ".card"
+    enhance: false
+  title:
+    selector: h3
+  url:
+    selector: 'a[href*="/articles/latest-news/"]'
+    extractor: href

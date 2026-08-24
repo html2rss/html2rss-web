@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: cinemascore.com/index
+directory:
+  topics:
+    - entertainment
+  title: "CinemaScore — Audience grades"
+  summary: "Opening-night audience grades for new theatrical releases."
+channel:
+  language: en
+  title: "CinemaScore — Audience grades"
+  url: https://webapp.cinemascore.com/guest/surveys
+  ttl: 720
+  json: true
+  time_zone: America/Los_Angeles
+selectors:
+  items:
+    selector: "new > array > object, recent > array > object"
+  title:
+    selector: "title"
+    post_process:
+      - name: "template"
+        string: "%{self} (%{grade}) [Rated %{mpaa_rating}] (%{year})"
+  grade:
+    selector: "grade"
+  movie_title:
+    selector: "movie_title"
+  url:
+    post_process:
+      - name: "template"
+        string: "https://www.metacritic.com/search/movie/%{movie_title}/results"
+  mpaa_rating:
+    selector: "mpaa_rating"
+  distributor:
+    selector: "distributor"
+  year:
+    selector: "year"
+  categories:
+    - mpaa_rating
+    - grade
+    - year
+  description:
+    post_process:
+      - name: template
+        string: |
+          # %{movie_title}
+
+          Grade: %{grade}
+
+          MPAA Rating: %{mpaa_rating}
+
+          Distributor: %{distributor}
+
+          Year: %{year}
+      - name: markdown_to_html

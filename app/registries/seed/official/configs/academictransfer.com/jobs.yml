@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: academictransfer.com/jobs
+directory:
+  topics:
+    - jobs
+  title: "AcademicTransfer — Jobs"
+  summary: "Academic and research job listings in the Netherlands and beyond."
+strategy: botasaurus
+channel:
+  title: "AcademicTransfer — Jobs"
+  url: https://www.academictransfer.com/en/jobs/
+  language: en
+  time_zone: Europe/Amsterdam
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'article a[href*="/en/jobs/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: article
+    enhance: true
+  title:
+    selector: h3
+  url:
+    selector: 'a[href*="/en/jobs/"]'
+    extractor: href

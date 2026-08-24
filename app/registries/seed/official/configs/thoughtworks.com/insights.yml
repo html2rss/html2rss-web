@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: thoughtworks.com/insights
+directory:
+  topics:
+    - tech
+    - research
+  title: "Thoughtworks — Insights"
+  summary: "Technology and business insights from the Thoughtworks blog."
+strategy: botasaurus
+
+channel:
+  title: "Thoughtworks — Insights"
+  url: https://www.thoughtworks.com/insights/blog
+  language: en
+  ttl: 360
+  time_zone: UTC
+request:
+  botasaurus:
+    wait_timeout_seconds: 20
+    wait_for_selector: 'a[href*="/insights/blog/"]'
+selectors:
+  items:
+    selector: 'a[href*="/insights/blog/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

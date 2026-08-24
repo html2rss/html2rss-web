@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: imperial.ac.uk/news
+directory:
+  topics:
+    - science
+    - research
+  title: "Imperial College London — News"
+  summary: "Research and university news from Imperial College London."
+channel:
+  title: "Imperial College London — News"
+  url: https://www.imperial.ac.uk/news/articles/
+  language: en
+  time_zone: Europe/London
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.listing-item[href*="/news/articles/"]'
+    enhance: false
+  title:
+    selector: .listing-item__title
+  url:
+    extractor: href

@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: chalmers.se/news
+directory:
+  topics:
+    - science
+    - research
+  title: "Chalmers — News"
+  summary: "Research and university news from Chalmers University of Technology."
+strategy: botasaurus
+channel:
+  title: "Chalmers — News"
+  url: https://www.chalmers.se/en/current/news/
+  language: en
+  time_zone: Europe/Stockholm
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a[href*="/en/current/news/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a[data-component="NewsListItem"]'
+    enhance: true
+  title:
+    selector: p.line-clamp-2
+  url:
+    extractor: href

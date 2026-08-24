@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: nupi.no/news
+directory:
+  topics:
+    - civic
+    - research
+  title: "NUPI — News"
+  summary: "News from the Norwegian Institute of International Affairs."
+channel:
+  title: "NUPI — News"
+  url: https://www.nupi.no/en
+  language: en
+  time_zone: Europe/Oslo
+  ttl: 360
+selectors:
+  items:
+    selector: 'h2 a[href^="/en/news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

@@ -1,0 +1,33 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: github.com/releases
+directory:
+  topics:
+    - tech
+    - product
+  title: "GitHub — Releases"
+  summary: "Release notes for a GitHub repository (owner and name as parameters)."
+parameters:
+  username:
+    type: string
+    default: "nuxt"
+  repository:
+    type: string
+    default: "nuxt"
+
+channel:
+  language: en
+  title: "GitHub — Releases"
+  url: https://github.com/%<username>s/%<repository>s/releases
+  time_zone: UTC
+  ttl: 720
+  description: "Releases of %<username>s/%<repository>s on github.com."
+selectors:
+  items:
+    selector: ".repository-content section"
+    enhance: false
+  title:
+    selector: 'a[href*="/releases/tag/"]'
+  url:
+    selector: 'a[href*="/releases/tag/"]'
+    extractor: "href"

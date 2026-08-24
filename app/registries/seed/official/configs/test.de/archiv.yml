@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+---
+registry:
+  id: test.de/archiv
+directory:
+  topics:
+    - consumer
+  title: "Stiftung Warentest — Archiv"
+  summary: "Archivierte Tests und Meldungen von Stiftung Warentest."
+channel:
+  title: "Stiftung Warentest — Archiv"
+  url: https://www.test.de/archiv/
+  language: de
+  ttl: 360
+  time_zone: Europe/Berlin
+selectors:
+  items:
+    selector: ".archive__list > li"
+  title:
+    selector: a
+  url:
+    selector: a:first
+    extractor: href
+  description:
+    selector: p

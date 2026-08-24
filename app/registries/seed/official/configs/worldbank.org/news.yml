@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: worldbank.org/news
+directory:
+  topics:
+    - finance
+    - civic
+  title: "World Bank — News"
+  summary: "Development and policy news from the World Bank."
+strategy: botasaurus
+
+channel:
+  title: "World Bank — News"
+  url: https://www.worldbank.org/ext/en/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.button[href*="/news/press-release/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.button[href*="/news/press-release/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

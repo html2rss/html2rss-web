@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: ahram.org.eg/egypt
+directory:
+  topics:
+    - news
+  title: "Al-Ahram — Egypt"
+  summary: "Egypt news coverage from Al-Ahram in English."
+channel:
+  title: "Al-Ahram — Egypt"
+  url: https://english.ahram.org.eg/Portal/1/Egypt.aspx
+  language: en
+  time_zone: Africa/Cairo
+  ttl: 360
+selectors:
+  items:
+    selector: 'h4.title a[href*="/News/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

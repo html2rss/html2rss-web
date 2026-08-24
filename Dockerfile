@@ -51,13 +51,14 @@ ARG GIT_SHA
 ENV PORT=4000 \
   RACK_ENV=production \
   RUBY_YJIT_ENABLE=1 \
+  PATH="/app/bin:$PATH" \
   BUILD_TAG=${BUILD_TAG} \
   GIT_SHA=${GIT_SHA}
 
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD ["/app/bin/docker-healthcheck"]
+  CMD ["/app/bin/html2rss-web", "healthcheck"]
 
 ARG USER=html2rss
 ARG UID=991
@@ -86,7 +87,7 @@ WORKDIR /app
 USER 991
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
-COPY --chown=$USER:$USER bin/docker-healthcheck ./bin/docker-healthcheck
+COPY --chown=$USER:$USER bin ./bin
 COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config

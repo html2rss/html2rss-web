@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: bundesregierung.de/pressemitteilungen
+directory:
+  topics:
+    - civic
+  title: "Bundesregierung — Pressemitteilungen"
+  summary: "Offizielle Pressemitteilungen der deutschen Bundesregierung."
+strategy: botasaurus
+
+channel:
+  title: "Bundesregierung — Pressemitteilungen"
+  url: https://www.bundesregierung.de/breg-de/aktuelles/pressemitteilungen
+  language: de
+  time_zone: Europe/Berlin
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: 'a.bpa-link[href*="/aktuelles/pressemitteilungen/"]'
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: 'a.bpa-link[href*="/breg-de/aktuelles/pressemitteilungen/"]'
+    enhance: false
+  title:
+    selector: span.bpa-teaser-title-text-inner
+  url:
+    extractor: href

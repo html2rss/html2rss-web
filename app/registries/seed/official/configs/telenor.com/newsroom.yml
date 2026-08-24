@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: telenor.com/newsroom
+directory:
+  topics:
+    - tech
+  title: "Telenor — Newsroom"
+  summary: "Corporate newsroom updates from Telenor."
+channel:
+  title: "Telenor — Newsroom"
+  url: https://www.telenor.com/media/newsroom/
+  language: en
+  time_zone: Europe/Oslo
+  ttl: 360
+selectors:
+  items:
+    selector: 'a.link-wrap.teaser-wrap[href*="/media/newsroom/"]'
+    enhance: false
+  title:
+    selector: h2
+  url:
+    extractor: href

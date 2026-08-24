@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: tap.info.tn/politics
+directory:
+  topics:
+    - news
+    - civic
+  title: "TAP — Politics"
+  summary: "Political news from Tunisia’s official news agency (TAP)."
+strategy: botasaurus
+
+channel:
+  title: "TAP — Politics"
+  url: https://www.tap.info.tn/en
+  language: en
+  time_zone: Africa/Tunis
+  ttl: 360
+request:
+  botasaurus:
+    wait_for_selector: "td.NewsItemHeadline a"
+    wait_timeout_seconds: 20
+selectors:
+  items:
+    selector: "td.NewsItemHeadline a"
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

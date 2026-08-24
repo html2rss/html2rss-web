@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: enisa.europa.eu/news
+directory:
+  topics:
+    - security
+    - civic
+  title: "ENISA — News"
+  summary: "Cybersecurity news from the EU Agency for Cybersecurity (ENISA)."
+channel:
+  title: "ENISA — News"
+  url: https://www.enisa.europa.eu/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'h3 a[href^="/news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

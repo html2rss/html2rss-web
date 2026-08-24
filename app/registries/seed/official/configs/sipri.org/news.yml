@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: sipri.org/news
+directory:
+  topics:
+    - civic
+    - research
+  title: "SIPRI — News"
+  summary: "News from the Stockholm International Peace Research Institute."
+channel:
+  title: "SIPRI — News"
+  url: https://www.sipri.org/news
+  language: en
+  time_zone: UTC
+  ttl: 360
+selectors:
+  items:
+    selector: 'h3.field-content a[href^="/news/20"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

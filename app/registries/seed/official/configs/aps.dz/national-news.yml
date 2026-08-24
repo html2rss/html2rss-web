@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: aps.dz/national-news
+directory:
+  topics:
+    - news
+    - civic
+  title: "APS — National news"
+  summary: "National news from Algeria’s official press agency (APS)."
+channel:
+  title: "APS — National news"
+  url: https://www.aps.dz/en
+  language: en
+  time_zone: Africa/Algiers
+  ttl: 360
+selectors:
+  items:
+    selector: 'a[href*="/en/algeria/national-news/"]'
+    enhance: false
+  title:
+    extractor: text
+  url:
+    extractor: href

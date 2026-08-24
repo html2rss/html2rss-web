@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: maersk.com/press-releases
+directory:
+  topics:
+    - finance
+  title: "Maersk — Press releases"
+  summary: "Corporate press releases from Maersk."
+channel:
+  title: "Maersk — Press releases"
+  url: https://www.maersk.com/news/category/press-releases
+  language: en
+  time_zone: Europe/Copenhagen
+  ttl: 360
+selectors:
+  items:
+    selector: div.p-section__news__teaser
+    enhance: false
+  title:
+    selector: a.p-section__news__teaser__title
+  url:
+    selector: a.p-section__news__teaser__title
+    extractor: href

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: phys.org/weekly
+directory:
+  topics:
+    - science
+  title: "Phys.org — Weekly"
+  summary: "Top science news of the week from Phys.org."
+channel:
+  language: en
+  title: "Phys.org — Weekly"
+  url: https://phys.org/weekly-news/
+  time_zone: Europe/London
+  ttl: 1440
+selectors:
+  items:
+    selector: ".sorted-news-list .sorted-article-content"
+  title:
+    selector: "h4"
+  category:
+    selector: ".text-info"
+  categories:
+    - category
+  url:
+    selector: ".news-link"
+    extractor: "href"

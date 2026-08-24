@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/html2rss/html2rss/refs/heads/master/schema/html2rss-config.schema.json
+registry:
+  id: stackoverflow.com/hot_network_questions
+directory:
+  topics:
+    - tech
+  title: "Stack Overflow — Hot Network Questions"
+  summary: "Trending developer questions from the Stack Overflow network."
+strategy: botasaurus
+
+channel:
+  language: en
+  title: "Stack Overflow — Hot Network Questions"
+  url: https://stackoverflow.com/questions
+  time_zone: America/New_York
+  ttl: 30
+request:
+  botasaurus:
+    wait_timeout_seconds: 20
+    wait_for_selector: "#hot-network-questions"
+selectors:
+  items:
+    selector: "#hot-network-questions ul > li"
+    enhance: false
+  title:
+    selector: a
+  url:
+    selector: a
+    extractor: href
+  network:
+    selector: ".favicon"
+    extractor: attribute
+    attribute: title
+  categories:
+    - network
