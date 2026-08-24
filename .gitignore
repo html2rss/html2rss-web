@@ -60,3 +60,7 @@ frontend/.astro
 
 # Bundler/vendored dependencies
 /vendor/
+
+# Local bundle builds
+/dist/
+

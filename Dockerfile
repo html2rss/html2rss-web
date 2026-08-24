@@ -38,7 +38,20 @@ RUN apk add --no-cache \
     /usr/local/bundle/bundler/gems/*/.git \
     /usr/local/bundle/cache/bundler/git
 
-# Stage 3: Runtime
+# Stage 3: Official Registry Artifact Builder
+FROM ${RUBY_BASE_IMAGE} AS registry-builder
+
+ARG REGISTRY_BUNDLE_URL="https://github.com/html2rss/html2rss-configs/releases/latest/download/registry-bundle.tar.gz"
+
+WORKDIR /build
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache curl tar ca-certificates \
+  && curl -fsSL -o registry-bundle.tar.gz "${REGISTRY_BUNDLE_URL}" \
+  && mkdir -p /build/official \
+  && tar -xzf registry-bundle.tar.gz -C /build/official
+
+# Stage 4: Runtime
 FROM ${RUBY_BASE_IMAGE}
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
@@ -91,7 +104,7 @@ COPY --chown=$USER:$USER bin ./bin
 COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config
-COPY --chown=$USER:$USER app/registries/seed ./app/registries/seed
+COPY --from=registry-builder --chown=$USER:$USER /build/official ./registries/official
 COPY --chown=$USER:$USER public ./public
 COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./frontend/dist
 

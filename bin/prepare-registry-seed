@@ -5,27 +5,19 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 CONFIGS_REPO="${HTML2RSS_CONFIGS_ROOT:-$ROOT_DIR/../html2rss-configs}"
-SEED_DIR="$ROOT_DIR/app/registries/seed/official"
-OUTPUT_TAR="$(mktemp -t registry-seed.XXXXXX.tar.gz)"
-
-cleanup() {
-  rm -f "$OUTPUT_TAR"
-}
-trap cleanup EXIT
+OUTPUT_TAR="${1:-$ROOT_DIR/dist/registry-bundle.tar.gz}"
 
 if [[ ! -d "$CONFIGS_REPO/configs" ]]; then
   echo "Missing configs tree at $CONFIGS_REPO/configs" >&2
   exit 1
 fi
 
-echo "Building registry seed bundle from $CONFIGS_REPO"
+mkdir -p "$(dirname "$OUTPUT_TAR")"
+echo "Building registry bundle from $CONFIGS_REPO into $OUTPUT_TAR"
 (
   cd "$CONFIGS_REPO"
-  REGISTRY_VERSION=seed BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
+  BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
 )
 
-rm -rf "$SEED_DIR"
-mkdir -p "$SEED_DIR"
-tar -xzf "$OUTPUT_TAR" -C "$SEED_DIR"
+echo "Registry bundle ready at $OUTPUT_TAR"
 
-echo "Seed bundle prepared at $SEED_DIR"
