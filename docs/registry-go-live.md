@@ -177,7 +177,7 @@ make registry-build    # writes dist/registry-bundle.tar.gz without manifest.sig
 
 | Step | What happens |
 | --- | --- |
-| `Dockerfile` (`registry-builder`) | Downloads the official release `registry-bundle.tar.gz` and extracts it to `/build/official/` |
+| `Dockerfile` (`registry-builder`) | Downloads the official release `registry-bundle.tar.gz`, extracts it, and verifies its Ed25519 signature & file digests against `config/registries.yml` |
 | `Dockerfile` (Runtime) | `COPY --from=registry-builder /build/official /app/registries/official` |
 | Boot | `Registry::Index.current` loads `/app/registries/official` directly. Zero copying, zero network calls. |
 
