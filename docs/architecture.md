@@ -58,3 +58,23 @@ Strategies are defined by the `html2rss` gem but can be configured here.
 - **Botasaurus**: Used for JavaScript-heavy websites or anti-bot protected pages (`BOTASAURUS_SCRAPER_URL`).
 
 To add or configure strategies, see `app/web/feeds/source_resolver.rb` and the `html2rss` gem documentation.
+
+## Feed Registries & Storage Architecture
+
+Feed configs are dynamically resolved from curated registry bundles and local feeds via `Registry::Index`:
+
+```mermaid
+flowchart TD
+    req["Request (/{feed_id}.rss or /api/v1/configs)"] --> index["Registry::Index.current"]
+    index --> store["Registry::Store.active_dir(id)"]
+    store --> synced{"Synced Bundle in data_root?"}
+    synced -- Yes --> data["/app/data/registries/<id>"]
+    synced -- No --> embedded["/app/registries/<id> (Baked Image Bundle)"]
+    data --> bundle["Html2rss::Registry::Bundle.load"]
+    embedded --> bundle
+    bundle --> config["Feed Config"]
+```
+
+- **Baked Embedded Bundles:** Immutable image layers at `/app/registries/official` provide offline, instant-boot feeds without startup copying.
+- **Runtime Synced Bundles:** Periodic synchronization writes verified bundles to `/app/data/registries/<id>`, dynamically taking precedence over the baked image bundle.
+

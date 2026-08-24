@@ -59,7 +59,7 @@ Shared emit plumbing for both channels (`RequestContext`, `LogSanitizer`, `AppLo
 Backend merge owner for registry bundles and local `feeds.yml` feeds. Builds catalog wire rows (`Registry::Index::CatalogRow`), enforces load-time trust and channel-domain allowlists, and serves `config_for` / `catalog_rows` / `status`.
 
 ### Registry Sync
-Backend orchestration for fetch → verify → stage/promote of signed registry bundles. Owns boot seeding, background refresh, CLI exit codes, and catalog-change telemetry after promotion.
+Backend orchestration for fetch → verify → stage/promote of signed registry bundles. Owns boot initialization, background refresh, CLI exit codes, and catalog-change telemetry after promotion.
 
 ### Sync Transport
 Backend HTTPS fetch, sync URL resolution (GitHub releases and channel defaults), and manifest version gating used by `Registry::Sync` and parse-time config resolution.

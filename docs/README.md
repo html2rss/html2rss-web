@@ -321,11 +321,11 @@ Optional hardening: `allowed_channel_domains` suffix-matches every registry conf
 
 `Registry::Sync.boot!` runs during app boot (see `app/web/boot/setup.rb`):
 
-1. **Seed** — copies the image-embedded official bundle (144 feeds) when no on-disk bundle exists.
-2. **Sync on boot** — when `REGISTRY_SYNC_ON_BOOT=true`, or when the bundle is missing, fetches and verifies the latest release.
-3. **Background refresh** — in standalone single-process mode, `REGISTRY_SYNC_INTERVAL_HOURS` (default `24`) re-syncs on a periodic timer. Set to `0` when using the `registry-sync` Compose service.
+1. **Instant index** — loads the embedded official bundle (140+ feeds) directly from `/app/registries/official` (or `REGISTRY_DATA_ROOT/official` if an updated synced bundle exists). Zero copying, zero startup network traffic.
+2. **Sync on boot** — when `REGISTRY_SYNC_ON_BOOT=true`, triggers an asynchronous background sync.
+3. **Background refresh** — in standalone single-process mode, `REGISTRY_SYNC_INTERVAL_HOURS` (default `24`) re-syncs on a periodic timer. Set to `0` when using the `registry-sync` Compose service or in static/offline environments.
 
-Network sync verifies Ed25519 signatures using the `public_key` pinned in `registries.yml`. Seed bundles from the Docker image use integrity-only verification.
+Network sync and embedded bundle verification verify Ed25519 signatures using the `public_key` pinned in `registries.yml`. Local `path:` mounts use integrity-only verification.
 
 ### Add a corporate registry
 

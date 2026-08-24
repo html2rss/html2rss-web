@@ -48,11 +48,11 @@ Source of truth for feed YAML and signed release artifacts.
 
 ### 1.3 `html2rss-web` (runtime + Docker image)
 
-Consumes verified bundles; ships an unsigned seed copy in the image.
+Consumes verified bundles; bakes the official release bundle into the Docker image at build time.
 
 1. Bump the `html2rss` gem dependency if the core contract changed.
 2. Update `config/registries.yml` when the signing key or sync channel changes (see sections 2 and 5).
-3. Build the image with a fresh seed (section 3).
+3. Build the image with the official release artifact baked (section 3).
 4. Merge to `main`, wait for CI (`ci` workflow) to pass.
 5. Publish a GitHub Release on `html2rss-web` — [`.github/workflows/release.yml`](../../html2rss-web/.github/workflows/release.yml) builds and pushes `html2rss/web` tags (`latest`, semver, major, commit SHA).
 
@@ -119,7 +119,7 @@ registries:
 ```
 
 - `public_key_id` must match the value in signed `manifest.json` (default in `tool/registry-build`: `html2rss:registry:2026`).
-- Network sync uses `:signed` trust and requires this pin. Seed bundles copied from the Docker image use `:integrity_only` trust (no signature check on load).
+- Network sync and embedded bundle loading use `:signed` trust and require this pin. Local `path:` mounts use `:integrity_only` trust (no signature check on load).
 - **`auto_promote: false`** (default) writes verified bundles to `REGISTRY_DATA_ROOT/<id>/.staging/` without changing the active catalog. Promote after review with `bin/html2rss-web registry promote --registry official`.
 - **`pin_version`** resolves the GitHub tag release API instead of `/releases/latest`.
 - **`max_version`** rejects sync when the verified manifest version is newer than the cap (incident freeze).
@@ -162,7 +162,7 @@ mise exec -- bundle exec ruby -rhtml2rss -ropenssl -e "
 "
 ```
 
-Unsigned local builds (no `--sign`) are valid for seed/integrity-only use only:
+Unsigned local builds (no `--sign`) are valid for integrity-only use only:
 
 ```bash
 cd html2rss-configs
@@ -171,44 +171,31 @@ make registry-build    # writes dist/registry-bundle.tar.gz without manifest.sig
 
 ---
 
-## 3. Web image build — seed preparation and Docker
+## 3. Web image build — artifact baking and Docker
 
-### 3.1 How seed gets into the image
+### 3.1 How the official registry gets into the image
 
 | Step | What happens |
 | --- | --- |
-| `bin/prepare-registry-seed` | Builds an **unsigned** bundle from `html2rss-configs` and extracts it to `app/registries/seed/official/` |
-| `bin/docker-build` | Runs `prepare-registry-seed`, then `docker build --no-cache -t html2rss/web` |
-| `Dockerfile` | `COPY app/registries/seed ./app/registries/seed` (image path `/app/registries/seed`) |
-| Boot | `Registry::Sync.boot!` copies seed → `REGISTRY_DATA_ROOT/<registry_id>` when no on-disk bundle exists |
-
-`prepare-registry-seed` details:
-
-- Configs source: `HTML2RSS_CONFIGS_ROOT` (default: sibling `../html2rss-configs`)
-- Runs `tool/registry-build` **without** `--sign` (integrity-only seed)
-- Output directory: `app/registries/seed/official/`
+| `Dockerfile` (`registry-builder`) | Downloads the official release `registry-bundle.tar.gz` and extracts it to `/build/official/` |
+| `Dockerfile` (Runtime) | `COPY --from=registry-builder /build/official /app/registries/official` |
+| Boot | `Registry::Index.current` loads `/app/registries/official` directly. Zero copying, zero network calls. |
 
 ### 3.2 Build locally
 
-From a workspace with both repos checked out as siblings:
+To build a production image fetching the latest official release:
 
 ```bash
 cd html2rss-web
-bin/docker-build
+docker build -t html2rss/web -f Dockerfile .
 ```
 
-Or prepare seed only:
-
-```bash
-cd html2rss-web
-HTML2RSS_CONFIGS_ROOT=/path/to/html2rss-configs bin/prepare-registry-seed
-docker build --no-cache -t html2rss/web -f Dockerfile .
-```
-
-Set build metadata for production parity:
+To build pinning a specific configs release tag:
 
 ```bash
 docker build \
+  --build-arg REGISTRY_RELEASE_TAG=v2026.08.22 \
+  --build-arg REGISTRY_BUNDLE_URL=https://github.com/html2rss/html2rss-configs/releases/download/v2026.08.22/registry-bundle.tar.gz \
   --build-arg BUILD_TAG=1.2.3 \
   --build-arg GIT_SHA="$(git rev-parse HEAD)" \
   -t html2rss/web \
@@ -217,9 +204,9 @@ docker build \
 
 ### 3.3 What operators get in the image
 
-- **`/app/registries/seed/official/`** — unsigned bundle baked at build time (offline-first bootstrap).
-- **`/app/config/registries.yml`** — default official registry with `sync.channel: html2rss-official`.
-- **`/app/data/registries`** — empty at build; populated at runtime (seed copy + network sync).
+- **`/app/registries/official/`** — Pre-verified official release bundle baked at build time (immutable image layer).
+- **`/app/config/registries.yml`** — Default official registry configuration with pinned public key.
+- **`/app/data/registries`** — Empty at build; used at runtime for network synchronization.
 
 ---
 
@@ -237,7 +224,7 @@ docker compose pull html2rss-web
 docker compose up -d html2rss-web
 ```
 
-A new image updates the **seed** inside the container. Existing data in the volume is kept until sync replaces it.
+A new image updates the **embedded bundle** inside the container layers.
 
 ### 4.2 Zero-config first boot
 
@@ -245,9 +232,9 @@ With the stock `config/registries.yml`, no extra registry env vars are required.
 
 On boot (`Registry::Sync.boot!`):
 
-1. **Seed** — if `REGISTRY_DATA_ROOT/official/` is empty, copy from `/app/registries/seed/official/`.
-2. **Sync on boot** — runs when `REGISTRY_SYNC_ON_BOOT=true` **or** when no bundle is present on disk (after seed attempt).
-3. **Background refresh** — when `REGISTRY_SYNC_INTERVAL_HOURS` > 0 (default **24**), re-sync on a jittered timer. Set to `0` to disable.
+1. **Instant index** — loads directly from `/app/registries/official` (or `REGISTRY_DATA_ROOT/official` if an updated synced bundle exists).
+2. **Sync on boot** — runs only when `REGISTRY_SYNC_ON_BOOT=true`.
+3. **Background refresh** — when `REGISTRY_SYNC_INTERVAL_HOURS` > 0 (default **24**), re-syncs on a periodic timer. Set to `0` to disable.
 
 Official sync URL (from `config/registries.yml` + `Registry::Config`):
 
@@ -257,7 +244,7 @@ Allowed outbound hosts (built-in): `api.github.com`, `github.com`, `objects.gith
 
 ### 4.3 Existing instance — volume retained
 
-The named volume preserves synced bundles across container restarts and image upgrades. After pull + restart:
+The named volume preserves runtime-synced bundles across container restarts. When present and valid, `Store.active_dir` prefers the volume copy over the embedded image copy.
 
 - Old bundle stays active until a successful sync swaps it.
 - Use `bin/html2rss-web registry sync` or wait for background refresh to pick up a new configs release without rebuilding the image (section 7).
@@ -466,7 +453,7 @@ By design:
 - On failure, `last_error` is recorded; the previous bundle under `REGISTRY_DATA_ROOT/<registry_id>/` remains served.
 - `Store.promote_bundle!` rolls back on swap failure.
 
-If sync fails on first boot with no prior bundle, the instance serves the embedded seed bundle (144 feeds) until a signed sync succeeds.
+If sync fails on first boot with no prior bundle in the volume, the instance serves the embedded official bundle (140+ feeds) directly from the container image.
 
 ### 8.3 Network / host errors
 
@@ -509,22 +496,10 @@ environment:
 
 ### 8.5 CLI exit code non-zero with empty `last_error`
 
-`bin/html2rss-web registry status` exits **1** when a sync-mode registry has **no on-disk bundle**. Run a sync or confirm seed copy succeeded:
+`bin/html2rss-web registry status` exits **1** when a sync-mode registry has **no usable bundle** (neither in the volume nor embedded in the image). Run a sync or verify the embedded bundle is present:
 
 ```bash
 bin/html2rss-web registry sync --registry official
 bin/html2rss-web registry status
 ```
 
-### 8.6 Seed missing or stale in image
-
-If `app/registries/seed/official/` was not populated before `docker build`, first boot may have nothing to seed.
-
-Fix for maintainers:
-
-```bash
-cd html2rss-web
-bin/prepare-registry-seed   # or bin/docker-build
-```
-
-Ensure `HTML2RSS_CONFIGS_ROOT` points at the configs checkout used for the release.
