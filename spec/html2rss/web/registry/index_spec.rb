@@ -155,4 +155,61 @@ RSpec.describe Html2rss::Web::Registry::Index do
         .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /anthropic\.com/)
     end
   end
+
+  describe 'embedded bundle resolution' do
+    let(:embedded_config_path) { File.join(Dir.pwd, 'tmp', 'embedded-registries.yml') }
+    let(:embedded_root) { File.join(Dir.pwd, 'tmp', 'embedded-root') }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(embedded_config_path))
+      File.write(
+        embedded_config_path,
+        YAML.dump(
+          'precedence' => ['official'],
+          'registries' => {
+            'official' => {
+              'sync' => { 'channel' => 'html2rss-official' },
+              'catalog' => true,
+              'public_key_id' => 'test-key',
+              'public_key' => RegistrySyncTestHelpers::TEST_PUBLIC_KEY
+            }
+          }
+        )
+      )
+      ENV['REGISTRIES_CONFIG'] = embedded_config_path
+      ENV['REGISTRY_DATA_ROOT'] = File.join(Dir.pwd, 'tmp', 'empty-data-root')
+      ENV['REGISTRY_EMBEDDED_ROOT'] = embedded_root
+      FileUtils.rm_rf(ENV.fetch('REGISTRY_DATA_ROOT'))
+      FileUtils.rm_rf(embedded_root)
+
+      embedded_official = File.join(embedded_root, 'official')
+      FileUtils.mkdir_p(embedded_official)
+      FileUtils.cp_r(File.join(RegistryTestHelpers::FIXTURES_ROOT, 'official', 'configs'), embedded_official)
+      FileUtils.cp(
+        File.join(RegistrySyncTestHelpers::SYNC_FIXTURES_ROOT, 'bundle', Html2rss::Registry::Manifest::MANIFEST_FILE),
+        File.join(embedded_official, Html2rss::Registry::Manifest::MANIFEST_FILE)
+      )
+      manifest = Html2rss::Registry::Manifest.parse(
+        File.read(File.join(embedded_official, Html2rss::Registry::Manifest::MANIFEST_FILE))
+      )
+      Html2rss::Registry::Signer.sign!(
+        manifest,
+        key_pem: RegistrySyncTestHelpers::TEST_PRIVATE_KEY,
+        bundle_dir: embedded_official
+      )
+      described_class.reload!
+    end
+
+    after do
+      FileUtils.rm_f(embedded_config_path)
+      FileUtils.rm_rf(embedded_root)
+      FileUtils.rm_rf(ENV.fetch('REGISTRY_DATA_ROOT', nil))
+    end
+
+    it 'loads configs directly from the embedded root when no runtime sync data exists' do
+      expect(described_class.current.config_for('anthropic.com/news')).to include(
+        channel: hash_including(title: 'Anthropic — News')
+      )
+    end
+  end
 end

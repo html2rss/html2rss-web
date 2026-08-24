@@ -11,9 +11,13 @@ RSpec.describe Html2rss::Web::Registry::Store do
   let(:registry_id) { 'store-test' }
   let(:data_root) { File.join(Dir.pwd, 'tmp', 'store-spec-data') }
 
+  let(:embedded_root) { File.join(Dir.pwd, 'tmp', 'store-spec-embedded') }
+
   before do
     ENV['REGISTRY_DATA_ROOT'] = data_root
+    ENV['REGISTRY_EMBEDDED_ROOT'] = embedded_root
     FileUtils.rm_rf(data_root)
+    FileUtils.rm_rf(embedded_root)
   end
 
   describe '.stage_bundle! and .promote_staged!' do
@@ -44,12 +48,45 @@ RSpec.describe Html2rss::Web::Registry::Store do
 
       FileUtils.rm_rf(path)
       FileUtils.mkdir_p(path)
-      File.write(File.join(path, 'placeholder.txt'), 'seed')
+      File.write(File.join(path, 'placeholder.txt'), 'content')
 
       expect(described_class.bundle_present?(registry_id)).to be(false)
 
       File.write(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE), '{}')
       expect(described_class.bundle_present?(registry_id)).to be(true)
+    end
+  end
+
+  describe '.active_dir' do
+    let(:embedded_root) { File.join(Dir.pwd, 'tmp', 'store-spec-embedded') }
+
+    before do
+      ENV['REGISTRY_EMBEDDED_ROOT'] = embedded_root
+      FileUtils.rm_rf(embedded_root)
+    end
+
+    it 'returns nil when neither synced nor embedded bundle exists' do
+      expect(described_class.active_dir(registry_id)).to be_nil
+    end
+
+    it 'falls back to embedded bundle directory when synced bundle is absent' do
+      embedded_dir = described_class.embedded_dir(registry_id)
+      FileUtils.mkdir_p(embedded_dir)
+      File.write(File.join(embedded_dir, Html2rss::Registry::Manifest::MANIFEST_FILE), '{}')
+
+      expect(described_class.active_dir(registry_id)).to eq(embedded_dir)
+    end
+
+    it 'prefers synced runtime bundle over embedded bundle' do
+      embedded_dir = described_class.embedded_dir(registry_id)
+      FileUtils.mkdir_p(embedded_dir)
+      File.write(File.join(embedded_dir, Html2rss::Registry::Manifest::MANIFEST_FILE), '{}')
+
+      synced_dir = described_class.registry_dir(registry_id)
+      FileUtils.mkdir_p(synced_dir)
+      File.write(File.join(synced_dir, Html2rss::Registry::Manifest::MANIFEST_FILE), '{}')
+
+      expect(described_class.active_dir(registry_id)).to eq(synced_dir)
     end
   end
 

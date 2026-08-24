@@ -216,12 +216,11 @@ RSpec.describe Html2rss::Web::Registry::Sync do
 
   describe '.boot!' do
     it 'does not run in the test environment' do
-      allow(described_class).to receive(:seed_registry!)
       allow(described_class).to receive(:start_background_timer!)
 
       described_class.boot!
 
-      expect(described_class).not_to have_received(:seed_registry!)
+      expect(described_class).not_to have_received(:start_background_timer!)
     end
   end
 

@@ -235,7 +235,7 @@ module Html2rss
         end
 
         def bundle_directory(definition)
-          definition.mode == :path ? definition.path : Store.registry_dir(definition.id)
+          definition.mode == :path ? definition.path : Store.active_dir(definition.id)
         end
 
         def normalize_feed_id(feed_id)

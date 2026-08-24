@@ -10,7 +10,7 @@ module Html2rss
       # Transactional storage engine for registry bundles and sync state.
       module Store # rubocop:disable Metrics/ModuleLength
         DEFAULT_DATA_ROOT = 'tmp/registry-data'
-        DEFAULT_SEED_ROOT = '/app/registries/seed'
+        DEFAULT_EMBEDDED_ROOT = '/app/registries'
         SYNC_STATE_FILE = '.sync-state.json'
 
         ##
@@ -26,8 +26,8 @@ module Html2rss
 
           ##
           # @return [String]
-          def seed_root
-            File.expand_path(ENV.fetch('REGISTRY_SEED_ROOT', DEFAULT_SEED_ROOT))
+          def embedded_root
+            File.expand_path(ENV.fetch('REGISTRY_EMBEDDED_ROOT', DEFAULT_EMBEDDED_ROOT))
           end
 
           ##
@@ -35,6 +35,29 @@ module Html2rss
           # @return [String]
           def registry_dir(registry_id)
             File.join(data_root, registry_id.to_s)
+          end
+
+          ##
+          # @param registry_id [String, Symbol]
+          # @return [String]
+          def embedded_dir(registry_id)
+            File.join(embedded_root, registry_id.to_s)
+          end
+
+          ##
+          # Resolves the active bundle directory, preferring synced runtime data
+          # and falling back to the baked image bundle.
+          #
+          # @param registry_id [String, Symbol]
+          # @return [String, nil]
+          def active_dir(registry_id)
+            synced = registry_dir(registry_id)
+            return synced if bundle_present_at?(synced)
+
+            embedded = embedded_dir(registry_id)
+            return embedded if bundle_present_at?(embedded)
+
+            nil
           end
 
           ##
@@ -48,13 +71,15 @@ module Html2rss
           # @param registry_id [String, Symbol]
           # @return [Boolean]
           def bundle_present?(registry_id)
-            bundle_present_at?(registry_dir(registry_id))
+            bundle_present_at?(registry_dir(registry_id)) || bundle_present_at?(embedded_dir(registry_id))
           end
 
           ##
-          # @param path [String]
+          # @param path [String, nil]
           # @return [Boolean]
           def bundle_present_at?(path)
+            return false unless path && File.directory?(path)
+
             File.file?(File.join(path, Html2rss::Registry::Manifest::MANIFEST_FILE))
           end
 
@@ -121,22 +146,6 @@ module Html2rss
             registry_dir(registry_id)
           ensure
             FileUtils.rm_rf(temp_root) if temp_root
-          end
-
-          ##
-          # Copies seed bundle into data root if active bundle is missing.
-          #
-          # @param registry_id [String, Symbol]
-          # @param seed_path [String]
-          # @return [Boolean]
-          def seed_if_empty!(registry_id, seed_path:) # rubocop:disable Naming/PredicateMethod
-            return false if bundle_present?(registry_id)
-            raise Errors::LoadError, "Seed bundle missing: #{seed_path}" unless File.directory?(seed_path)
-
-            target = registry_dir(registry_id)
-            FileUtils.mkdir_p(File.dirname(target))
-            FileUtils.cp_r(seed_path, target)
-            true
           end
 
           ##

@@ -79,12 +79,13 @@ module Html2rss
             end
             return if ENV.fetch('RACK_ENV', 'development') == 'test'
 
-            Config.precedence.each do |id|
-              definition = Config.entry(id)
-              next unless definition.mode == :sync
+            if ENV.fetch('REGISTRY_SYNC_ON_BOOT', 'false') == 'true'
+              Config.precedence.each do |id|
+                definition = Config.entry(id)
+                next unless definition.mode == :sync
 
-              seed_registry!(id)
-              Thread.new { run(registry_id: id) } if boot_sync?(id) # rubocop:disable ThreadSafety/NewThread
+                Thread.new { run(registry_id: id) } # rubocop:disable ThreadSafety/NewThread
+              end
             end
 
             start_background_timer!
@@ -196,22 +197,6 @@ module Html2rss
                 removed_count: removed.size
               }
             )
-          end
-
-          def seed_registry!(registry_id)
-            seed_path = Store.seed_path_for(registry_id)
-            Index.reload! if File.directory?(seed_path) && Store.seed_if_empty!(registry_id, seed_path:)
-          rescue StandardError
-            nil
-          end
-
-          def boot_sync?(registry_id)
-            return true if ENV.fetch('REGISTRY_SYNC_ON_BOOT', 'false') == 'true'
-
-            bundle = Index.current.bundle_for(registry_id)
-            return true unless bundle
-
-            %w[seed test-fixture].include?(bundle.manifest.version)
           end
         end
       end
