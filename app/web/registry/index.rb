@@ -44,7 +44,13 @@ module Html2rss
           ##
           # @return [Index]
           def current
-            @mutex.synchronize { @current ||= new }
+            @mutex.synchronize do
+              if @current.nil? || @current.stale?
+                @current = new
+              else
+                @current
+              end
+            end
           end
 
           ##
@@ -54,6 +60,17 @@ module Html2rss
             Config.reload!
             nil
           end
+        end
+
+        def initialize
+          @loaded_bundles = Config.precedence.to_h { [it, load_bundle(it)] }.compact
+          @manifest_mtimes = current_manifest_mtimes
+        end
+
+        ##
+        # @return [Boolean]
+        def stale?
+          @manifest_mtimes != current_manifest_mtimes
         end
 
         ##
@@ -128,8 +145,14 @@ module Html2rss
 
         private
 
-        def loaded_bundles
-          @loaded_bundles ||= Config.precedence.to_h { [it, load_bundle(it)] }.compact
+        attr_reader :loaded_bundles, :manifest_mtimes
+
+        def current_manifest_mtimes
+          Config.precedence.to_h do |registry_id|
+            definition = Config.entry(registry_id)
+            directory = bundle_directory(definition)
+            [registry_id, Store.manifest_mtime(directory)]
+          end
         end
 
         def build_registry_catalog_entries

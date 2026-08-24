@@ -20,6 +20,34 @@ RSpec.describe Html2rss::Web::Registry::Sync do
     end
   end
 
+  describe '.cli_exit_code', :registry_sync do
+    let(:download_url) { 'https://registry.test.example/registry-bundle.tar.gz' }
+    let(:tarball) { RegistrySyncTestHelpers.build_signed_tarball }
+
+    before do
+      stub_request(:get, download_url)
+        .to_return(status: 200, body: tarball, headers: { 'Content-Type' => 'application/octet-stream' })
+    end
+
+    it 'returns 1 when a sync registry is not yet synced' do
+      expect(described_class.cli_exit_code).to eq(1)
+    end
+
+    it 'returns 0 when all registries are synced and healthy' do
+      described_class.run(registry_id: 'official')
+      expect(described_class.cli_exit_code).to eq(0)
+    end
+
+    it 'returns 1 when any registry has last_error' do
+      described_class.run(registry_id: 'official')
+      allow(Html2rss::Web::Registry::Store).to receive(:sync_state).and_return(
+        Html2rss::Web::Registry::Store::SyncState.new(last_error: 'Boom', last_sync_at: nil)
+      )
+
+      expect(described_class.cli_exit_code).to eq(1)
+    end
+  end
+
   describe '.run', :registry_sync do
     let(:download_url) { 'https://registry.test.example/registry-bundle.tar.gz' }
     let(:tarball) { RegistrySyncTestHelpers.build_signed_tarball }

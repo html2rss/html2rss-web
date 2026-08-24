@@ -17,10 +17,36 @@ RSpec.describe Html2rss::Web::Registry::Index do
       expect(described_class.current.config_for('missing.example/feed')).to be_nil
     end
 
+    it 'resolves feeds by alias' do # rubocop:disable RSpec/ExampleLength
+      fake_bundle = described_class::RegistryBundle.new(
+        registry_id: 'official',
+        manifest: nil,
+        configs: {
+          'anthropic.com/news' => { channel: { title: 'Anthropic — News' } },
+          'anthropic.com/legacy-news' => { channel: { title: 'Anthropic — News' } }
+        },
+        catalog_entries: []
+      )
+      allow(described_class.current).to receive(:loaded_bundles).and_return('official' => fake_bundle)
+
+      expect(described_class.current.config_for('anthropic.com/legacy-news')).to include(
+        channel: hash_including(title: 'Anthropic — News')
+      )
+    end
+
     it 'still resolves catalog-disabled registry feeds by id' do
       config = described_class.current.config_for('secret.example/private')
 
       expect(config).to include(channel: hash_including(url: 'https://secret.example/private'))
+    end
+  end
+
+  describe '.current' do
+    it 'reloads when manifest mtime changes' do
+      initial_index = described_class.current
+      allow(Html2rss::Web::Registry::Store).to receive(:manifest_mtime).and_return('2099-01-01T00:00:00Z')
+
+      expect(described_class.current).not_to be(initial_index)
     end
   end
 

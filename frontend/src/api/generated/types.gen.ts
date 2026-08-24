@@ -34,8 +34,8 @@ export type GetApiMetadataResponses = {
                 registries: Array<{
                     id: string;
                     sync_mode: string;
-                    updated_at: string;
-                    version: string;
+                    updated_at?: string;
+                    version?: string;
                 }>;
             };
         };

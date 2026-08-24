@@ -17,7 +17,7 @@ module Html2rss
         # Immutable registry sync state.
         SyncState = Data.define(:last_error, :last_sync_at)
 
-        class << self
+        class << self # rubocop:disable Metrics/ClassLength
           ##
           # @return [String]
           def data_root
@@ -93,12 +93,15 @@ module Html2rss
           def swap!(registry_id, source_dir)
             target = registry_dir(registry_id)
             FileUtils.mkdir_p(File.dirname(target))
-            backup = "#{target}.backup.#{Process.pid}"
-            FileUtils.mv(target, backup) if File.exist?(target)
-            FileUtils.cp_r(source_dir, target)
+
+            temp_target = staging_swap_dir(registry_id)
+            FileUtils.rm_rf(temp_target)
+            FileUtils.cp_r(source_dir, temp_target)
+
+            replace_directory!(temp_target, target)
             target
           ensure
-            FileUtils.rm_rf(backup) if backup
+            FileUtils.rm_rf(temp_target)
           end
 
           ##
@@ -194,6 +197,24 @@ module Html2rss
             Html2rss::Registry::Manifest.parse(File.read(manifest_file)).version
           rescue Html2rss::Registry::ManifestError
             nil
+          end
+
+          def replace_directory!(source, target)
+            backup = "#{target}.backup.#{Process.pid}"
+            FileUtils.mv(target, backup) if File.exist?(target)
+            begin
+              File.rename(source, target)
+            rescue StandardError
+              FileUtils.mv(backup, target) if File.exist?(backup) && !File.exist?(target)
+              raise
+            ensure
+              FileUtils.rm_rf(backup)
+            end
+          end
+
+          def staging_swap_dir(registry_id)
+            stamp = Process.clock_gettime(Process::CLOCK_MONOTONIC_RAW, :nanosecond)
+            File.join(data_root, ".tmp-swap-#{registry_id}-#{Process.pid}-#{stamp}")
           end
         end
       end

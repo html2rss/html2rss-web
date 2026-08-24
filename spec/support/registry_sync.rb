@@ -48,7 +48,7 @@ module RegistrySyncTestHelpers
       manifest_target
     )
     manifest = Html2rss::Registry::Manifest.parse(File.read(manifest_target))
-    Html2rss::Registry::TestSupport.sign!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
+    Html2rss::Registry::Signer.sign!(manifest, key_pem: TEST_PRIVATE_KEY, bundle_dir:)
 
     pack_bundle_dir(bundle_dir)
   ensure

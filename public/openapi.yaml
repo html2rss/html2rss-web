@@ -73,12 +73,12 @@ paths:
                                   type: string
                                 updated_at:
                                   type: string
+                                  nullable: true
                                 version:
                                   type: string
+                                  nullable: true
                               required:
                               - id
-                              - version
-                              - updated_at
                               - sync_mode
                               type: object
                             type: array

@@ -4,7 +4,7 @@ Step-by-step guide to ship and operate signed `registry.v1` bundles across the h
 
 **Related docs**
 
-- Bundle format: [`html2rss/docs/registry-v1.md`](../../html2rss/docs/registry-v1.md)
+- Bundle format: [`html2rss/lib/html2rss/registry/README.md`](../../html2rss/lib/html2rss/registry/README.md)
 - Operator runbook (sync flags, custom registries): [README.md — Registry sync runbook](./README.md#registry-sync-runbook)
 
 ---

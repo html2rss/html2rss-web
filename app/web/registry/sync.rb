@@ -61,6 +61,15 @@ module Html2rss
           end
 
           ##
+          # Returns process exit code for CLI invocations: 0 on success, 1 on failure.
+          #
+          # @return [Integer]
+          def cli_exit_code
+            unusable = Index.current.status.any? { it.last_error || (it.mode == :sync && it.version.nil?) }
+            unusable ? 1 : 0
+          end
+
+          ##
           # @return [void]
           def boot! # rubocop:disable Metrics/MethodLength
             @boot_mutex.synchronize do
@@ -197,7 +206,12 @@ module Html2rss
           end
 
           def boot_sync?(registry_id)
-            ENV.fetch('REGISTRY_SYNC_ON_BOOT', 'false') == 'true' || !Store.bundle_present?(registry_id)
+            return true if ENV.fetch('REGISTRY_SYNC_ON_BOOT', 'false') == 'true'
+
+            bundle = Index.current.bundle_for(registry_id)
+            return true unless bundle
+
+            %w[seed test-fixture].include?(bundle.manifest.version)
           end
         end
       end
