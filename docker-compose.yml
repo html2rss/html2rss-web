@@ -57,5 +57,18 @@ services:
     ports:
       - "127.0.0.1:4010:4010"
 
+  registry-sync:
+    image: html2rss/web
+    restart: unless-stopped
+    command: ["sh", "-c", "while true; do html2rss-web registry sync; sleep $${REGISTRY_SYNC_INTERVAL_SECONDS:-86400}; done"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REGISTRY_DATA_ROOT: /app/data/registries
+      REGISTRY_SYNC_INTERVAL_SECONDS: ${REGISTRY_SYNC_INTERVAL_SECONDS:-86400}
+    volumes:
+      - registry-data:/app/data/registries
+
 volumes:
   registry-data:

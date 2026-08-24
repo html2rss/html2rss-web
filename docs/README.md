@@ -311,7 +311,9 @@ bin/html2rss-web registry sync --registry official --dry-run
 bin/html2rss-web registry promote --registry official
 ```
 
-Production recommendation: keep `auto_promote: false` (default), pin `sync.pin_version` to the approved configs tag, run sync to stage a verified bundle, then promote manually after review. Use `sync.max_version` as an incident freeze cap and set `REGISTRY_SYNC_INTERVAL_HOURS=0` to pause background refresh.
+Production recommendation: keep `auto_promote: false` (default), pin `sync.pin_version` to the approved configs tag, run sync to stage a verified bundle, then promote manually after review. Use `sync.max_version` as an incident freeze cap.
+
+In Docker Compose, the dedicated `registry-sync` service runs periodic background updates cleanly outside Puma/Ruby.
 
 Optional hardening: `allowed_channel_domains` suffix-matches every registry config `channel.url` host at bundle load time.
 
@@ -319,9 +321,9 @@ Optional hardening: `allowed_channel_domains` suffix-matches every registry conf
 
 `Registry::Sync.boot!` runs during app boot (see `app/web/boot/setup.rb`):
 
-1. **Seed** — copies the image-embedded official bundle when no on-disk bundle exists.
+1. **Seed** — copies the image-embedded official bundle (144 feeds) when no on-disk bundle exists.
 2. **Sync on boot** — when `REGISTRY_SYNC_ON_BOOT=true`, or when the bundle is missing, fetches and verifies the latest release.
-3. **Background refresh** — when `REGISTRY_SYNC_INTERVAL_HOURS` is greater than zero (default `24`), re-syncs on a jittered timer. Set to `0` to disable.
+3. **Background refresh** — in standalone single-process mode, `REGISTRY_SYNC_INTERVAL_HOURS` (default `24`) re-syncs on a periodic timer. Set to `0` when using the `registry-sync` Compose service.
 
 Network sync verifies Ed25519 signatures using the `public_key` pinned in `registries.yml`. Seed bundles from the Docker image use integrity-only verification.
 

@@ -410,22 +410,29 @@ registries:
 
 Set `REGISTRY_SYNC_INTERVAL_HOURS=0` to pause background refresh while investigating.
 
-### 7.3 Automatic refresh & production Puma cluster mode
+### 7.3 Automatic refresh via Docker Compose
 
-| Mechanism | Env var | Default | Behavior |
-| --- | --- | --- | --- |
-| Sync on boot | `REGISTRY_SYNC_ON_BOOT` | `false` | When `true`, network sync on every boot (in addition to missing-bundle sync) |
-| Background timer | `REGISTRY_SYNC_INTERVAL_HOURS` | `24` | Periodic re-sync; `0` disables |
-| Missing bundle | — | — | Always syncs on boot when no on-disk bundle exists |
+In production Compose environments, registry synchronization is handled cleanly outside the Ruby/Puma process lifecycle via the dedicated `registry-sync` Compose service in `docker-compose.yml`:
 
-> [!TIP]
-> **Production Puma Cluster Mode (Kubernetes / Sidecar)**:
-> In production cluster mode (`workers > 0` with `preload_app!`), child worker processes do not execute background timer threads spawned in the master process. Because `Index.current` detects changes on disk via `manifest.json` mtimes, the recommended production pattern for Kubernetes or Compose is to run periodic sync via a lightweight sidecar container or CronJob executing `bin/html2rss-web registry sync`.
+```yaml
+  registry-sync:
+    image: html2rss/web
+    restart: unless-stopped
+    command: ["sh", "-c", "while true; do html2rss-web registry sync; sleep $${REGISTRY_SYNC_INTERVAL_SECONDS:-86400}; done"]
+    environment:
+      REGISTRY_DATA_ROOT: /app/data/registries
+      REGISTRY_SYNC_INTERVAL_SECONDS: 86400
+    volumes:
+      - registry-data:/app/data/registries
+```
 
-Example — disable in-process background timer when using external cron:
+When new bundles are synced to disk, the `html2rss-web` server detects the updated `manifest.json` mtimes automatically on subsequent requests.
+
+To run an on-demand sync or check status with Docker Compose:
 
 ```bash
-REGISTRY_SYNC_INTERVAL_HOURS=0
+docker compose exec html2rss-web html2rss-web registry status
+docker compose exec html2rss-web html2rss-web registry sync --registry official
 ```
 
 ---
