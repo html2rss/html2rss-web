@@ -231,7 +231,6 @@ docker build \
 
 - Image: `html2rss/web`
 - Volume: `registry-data:/app/data/registries` (`REGISTRY_DATA_ROOT`)
-- Watchtower optional: checks for new images every 7200s
 
 ```bash
 docker compose pull html2rss-web
