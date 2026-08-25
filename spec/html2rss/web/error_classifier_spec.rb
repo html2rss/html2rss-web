@@ -82,6 +82,22 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
     end
 
+    it 'returns gateway timeout for RequestTimedOut (Botasaurus/Faraday wall-clock)' do
+      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::RequestTimedOut.new('Botasaurus scrape timed out')
+
+      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'detects RequestTimedOut through Exception#cause' do
+      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      root = Html2rss::RequestService::RequestTimedOut.new('timed out')
+      wrapped = StandardError.new('wrapped')
+      allow(wrapped).to receive(:cause).and_return(root)
+
+      expect(described_class.classify(wrapped)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
     it 'returns internal server error decision for unrelated errors' do
       expect(described_class.classify(StandardError.new('boom'))).to eq(described_class::INTERNAL_SERVER_ERROR)
     end

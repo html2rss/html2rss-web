@@ -213,6 +213,11 @@ module Html2rss
            defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
              c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
          }, SCRAPER_UNAVAILABLE],
+        [lambda { |c, _|
+           # Gem wall-clock timeout (Botasaurus 504 / Faraday timeout) — not Timeout::Error.
+           defined?(::Html2rss::RequestService::RequestTimedOut) &&
+             c.any?(::Html2rss::RequestService::RequestTimedOut)
+         }, GATEWAY_TIMEOUT],
         [lambda { |_, err|
            defined?(::Rack::Timeout::RequestTimeoutException) && err.is_a?(::Rack::Timeout::RequestTimeoutException)
          }, SERVICE_UNAVAILABLE],
