@@ -75,9 +75,15 @@ RSpec.describe 'public/rss.xsl' do
     expect(copy_action.text.strip).to eq('Copy feed URL')
     expect(copy_action.name).to eq('button')
     expect(copy_action['type']).to eq('button')
-    expect(doc.at_css('[data-copy-feed-url-status]')).not_to be_nil
-    expect(doc.at_css('[data-copy-feed-url-status]')['aria-live']).to eq('polite')
-    expect(copy_action['aria-live']).to be_nil
+    expect(copy_action['aria-live']).to eq('polite')
+    expect(doc.at_css('[data-copy-feed-url-status]')).to be_nil
+  end
+
+  it 'uses ui-lede for the hero channel description' do
+    doc = Nokogiri::HTML(rendered_html)
+
+    expect(doc.at_css('.feed-hero .ui-lede.layout-rail-copy')).not_to be_nil
+    expect(doc.css('.feed-description')).to be_empty
   end
 
   it 'uses ui-headline-row with a right-aligned badge outside ui-actions' do
@@ -103,7 +109,7 @@ RSpec.describe 'public/rss.xsl' do
 
   it 'uses the shared ui-actions row for hero controls' do
     doc = Nokogiri::HTML(rendered_html)
-    actions = doc.css('.feed-hero .ui-actions.layout-rail-reading').first
+    actions = doc.css('.feed-hero .ui-actions').first
 
     expect(actions).not_to be_nil
     expect(actions.at_css('[data-feed-reader-link]')).not_to be_nil
@@ -133,6 +139,7 @@ RSpec.describe 'public/rss.xsl' do
     expect(doc.css('.ui-item__title > a').length).to eq(4)
     expect(doc.at_css('.feed-section .ui-eyebrow').text.strip).to eq('4 items')
     expect(doc.css('.feed-meta .ui-eyebrow').map { |node| node.text.strip }).not_to include('Items')
+    expect(doc.css('.ui-meta-row').length).to eq(2)
   end
 
   it 'suppresses excerpts for title-less items' do
@@ -229,6 +236,29 @@ RSpec.describe 'public/rss.xsl' do
     expect(lockup.name).to eq('a')
     expect(lockup['href']).to eq('/')
     expect(doc.at_css('.brand-lockup__wordmark').text.strip).to eq('html2rss')
+  end
+
+  context 'when channel metadata is minimal' do
+    let(:feed_xml) do
+      <<~XML
+        <?xml version="1.0" encoding="utf-8"?>
+        <rss version="2.0">
+          <channel>
+            <title>Minimal Feed</title>
+            <item>
+              <title>Only item</title>
+              <link>https://example.com/only</link>
+            </item>
+          </channel>
+        </rss>
+      XML
+    end
+
+    it 'omits the bottom metadata block when source and generator are absent' do
+      doc = Nokogiri::HTML(rendered_html)
+
+      expect(doc.at_css('.feed-meta')).to be_nil
+    end
   end
 end
 # rubocop:enable RSpec/MultipleExpectations

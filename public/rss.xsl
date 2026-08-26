@@ -39,7 +39,7 @@
             </div>
 
             <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
-              <p class="feed-description layout-rail-copy">
+              <p class="ui-lede layout-rail-copy">
                 <xsl:call-template name="truncate-text">
                   <xsl:with-param name="text">
                     <xsl:call-template name="clean-text">
@@ -70,10 +70,9 @@
               </p>
             </xsl:if>
 
-            <div class="ui-actions layout-rail-reading">
+            <div class="ui-actions">
               <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true" href="#">Open in feed reader</a>
-              <button type="button" class="btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
-              <span class="ui-eyebrow ui-eyebrow--ghost" data-copy-feed-url-status="true" aria-live="polite"></span>
+              <button type="button" class="btn btn--ghost" data-copy-feed-url="true" aria-live="polite">Copy feed URL</button>
               <a class="btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
               <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                 <a class="btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
@@ -107,95 +106,103 @@
                 <ul class="ui-item-list" role="list">
                   <xsl:for-each select="rss/channel/item">
                     <li class="ui-item">
-                      <xsl:variable name="cleanTitle">
-                        <xsl:call-template name="clean-text">
-                          <xsl:with-param name="text" select="string(title)" />
-                        </xsl:call-template>
-                      </xsl:variable>
-                      <xsl:variable name="cleanDescription">
-                        <xsl:call-template name="clean-text">
-                          <xsl:with-param name="text" select="string(description)" />
-                        </xsl:call-template>
-                      </xsl:variable>
-                      <xsl:variable name="displayTitle">
-                        <xsl:choose>
-                          <xsl:when test="normalize-space(string($cleanTitle)) != ''">
-                            <xsl:value-of select="$cleanTitle" />
-                          </xsl:when>
-                          <xsl:when test="normalize-space(string($cleanDescription)) != ''">
-                            <xsl:call-template name="truncate-text">
-                              <xsl:with-param name="text" select="string($cleanDescription)" />
-                              <xsl:with-param name="limit" select="72" />
-                            </xsl:call-template>
-                          </xsl:when>
-                          <xsl:otherwise>Untitled item</xsl:otherwise>
-                        </xsl:choose>
-                      </xsl:variable>
-                      <xsl:variable name="hasSummary" select="normalize-space(string($cleanTitle)) != '' and normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
-
-                      <xsl:if test="normalize-space(string(pubDate)) != ''">
-                        <p class="ui-item__meta">
-                          <time><xsl:value-of select="pubDate" /></time>
-                        </p>
-                      </xsl:if>
-
-                      <h2 class="ui-item__title">
-                        <xsl:choose>
-                          <xsl:when test="normalize-space(string(link)) != ''">
-                            <a href="{link}" target="_blank" rel="noopener noreferrer">
-                              <xsl:value-of select="$displayTitle" />
-                            </a>
-                          </xsl:when>
-                          <xsl:otherwise>
-                            <xsl:value-of select="$displayTitle" />
-                          </xsl:otherwise>
-                        </xsl:choose>
-                      </h2>
-
-                      <xsl:if test="$hasSummary">
-                        <p class="ui-item__excerpt">
-                          <xsl:call-template name="truncate-text">
-                            <xsl:with-param name="text" select="string($cleanDescription)" />
-                            <xsl:with-param name="limit" select="96" />
-                          </xsl:call-template>
-                        </p>
-                      </xsl:if>
+                      <xsl:call-template name="render-item" />
                     </li>
                   </xsl:for-each>
                 </ul>
               </xsl:when>
               <xsl:otherwise>
-                <div class="feed-empty ui-card ui-card--padded">This feed does not have any items yet.</div>
+                <div class="ui-card ui-card--padded">
+                  <p class="ui-lede">This feed does not have any items yet.</p>
+                </div>
               </xsl:otherwise>
             </xsl:choose>
           </section>
 
-          <div class="feed-meta layout-rail-reading layout-stack layout-section-divided">
-            <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
-              <div class="feed-meta__row">
-                <span class="ui-eyebrow">Source</span>
-                <span class="feed-meta__value">
-                  <a href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">
-                    <xsl:value-of select="rss/channel/link" />
-                  </a>
-                </span>
-              </div>
-            </xsl:if>
+          <xsl:if test="normalize-space(string(rss/channel/link)) != '' or normalize-space(string(rss/channel/generator)) != ''">
+            <div class="feed-meta layout-rail-reading layout-stack layout-section-divided">
+              <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
+                <div class="ui-meta-row">
+                  <span class="ui-eyebrow">Source</span>
+                  <span>
+                    <a href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">
+                      <xsl:value-of select="rss/channel/link" />
+                    </a>
+                  </span>
+                </div>
+              </xsl:if>
 
-            <xsl:if test="normalize-space(string(rss/channel/generator)) != ''">
-              <div class="feed-meta__row">
-                <span class="ui-eyebrow">Generated by</span>
-                <span class="feed-meta__value">
-                  <xsl:call-template name="clean-text">
-                    <xsl:with-param name="text" select="string(rss/channel/generator)" />
-                  </xsl:call-template>
-                </span>
-              </div>
-            </xsl:if>
-          </div>
+              <xsl:if test="normalize-space(string(rss/channel/generator)) != ''">
+                <div class="ui-meta-row">
+                  <span class="ui-eyebrow">Generated by</span>
+                  <span>
+                    <xsl:call-template name="clean-text">
+                      <xsl:with-param name="text" select="string(rss/channel/generator)" />
+                    </xsl:call-template>
+                  </span>
+                </div>
+              </xsl:if>
+            </div>
+          </xsl:if>
         </main>
       </body>
     </html>
+  </xsl:template>
+
+  <xsl:template name="render-item">
+    <xsl:variable name="cleanTitle">
+      <xsl:call-template name="clean-text">
+        <xsl:with-param name="text" select="string(title)" />
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="cleanDescription">
+      <xsl:call-template name="clean-text">
+        <xsl:with-param name="text" select="string(description)" />
+      </xsl:call-template>
+    </xsl:variable>
+    <xsl:variable name="displayTitle">
+      <xsl:choose>
+        <xsl:when test="normalize-space(string($cleanTitle)) != ''">
+          <xsl:value-of select="$cleanTitle" />
+        </xsl:when>
+        <xsl:when test="normalize-space(string($cleanDescription)) != ''">
+          <xsl:call-template name="truncate-text">
+            <xsl:with-param name="text" select="string($cleanDescription)" />
+            <xsl:with-param name="limit" select="72" />
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:otherwise>Untitled item</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="hasSummary" select="normalize-space(string($cleanTitle)) != '' and normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
+
+    <xsl:if test="normalize-space(string(pubDate)) != ''">
+      <p class="ui-item__meta">
+        <time><xsl:value-of select="pubDate" /></time>
+      </p>
+    </xsl:if>
+
+    <h2 class="ui-item__title">
+      <xsl:choose>
+        <xsl:when test="normalize-space(string(link)) != ''">
+          <a href="{link}" target="_blank" rel="noopener noreferrer">
+            <xsl:value-of select="$displayTitle" />
+          </a>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$displayTitle" />
+        </xsl:otherwise>
+      </xsl:choose>
+    </h2>
+
+    <xsl:if test="$hasSummary">
+      <p class="ui-item__excerpt">
+        <xsl:call-template name="truncate-text">
+          <xsl:with-param name="text" select="string($cleanDescription)" />
+          <xsl:with-param name="limit" select="96" />
+        </xsl:call-template>
+      </p>
+    </xsl:if>
   </xsl:template>
 
   <xsl:template name="truncate-text">

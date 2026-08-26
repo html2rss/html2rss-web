@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
 import { DominantField } from './DominantField';
+import { PreviewItem } from './PreviewItem';
 
 interface ResultDisplayProperties {
   viewModel: Extract<AppViewModel, { kind: 'result' }>;
@@ -114,21 +115,12 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
           <ul class="ui-item-list" role="list">
             {preview.items.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
-                {item.publishedLabel && (
-                  <div class="ui-item__meta">
-                    <span>{item.publishedLabel}</span>
-                  </div>
-                )}
-                <h2 class="ui-item__title">
-                  {item.url ? (
-                    <a href={item.url} target="_blank" rel="noopener noreferrer">
-                      {item.title}
-                    </a>
-                  ) : (
-                    item.title
-                  )}
-                </h2>
-                {item.title && item.excerpt && <p class="ui-item__excerpt">{item.excerpt}</p>}
+                <PreviewItem
+                  title={item.title}
+                  excerpt={item.excerpt}
+                  url={item.url}
+                  publishedLabel={item.publishedLabel}
+                />
               </li>
             ))}
           </ul>

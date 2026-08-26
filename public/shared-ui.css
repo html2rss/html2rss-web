@@ -218,6 +218,13 @@ textarea {
   align-items: start;
 }
 
+.ui-meta-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, max-content) 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
 .ui-card {
   border: var(--border-default);
   border-radius: var(--radius-lg);

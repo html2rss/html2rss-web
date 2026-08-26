@@ -21,19 +21,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
       copyButton.hidden = true;
     } else {
-      var copyStatus = document.querySelector('[data-copy-feed-url-status]');
       var copyLabel = copyButton.textContent;
       copyButton.addEventListener('click', function () {
         navigator.clipboard.writeText(window.location.href).then(function () {
           copyButton.textContent = 'Copied!';
-          if (copyStatus) {
-            copyStatus.textContent = 'Copied!';
-          }
           globalThis.setTimeout(function () {
             copyButton.textContent = copyLabel;
-            if (copyStatus) {
-              copyStatus.textContent = '';
-            }
           }, 2500);
         }).catch(function () {});
       });

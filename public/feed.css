@@ -24,42 +24,15 @@
   background: var(--surface-reader-strong);
 }
 
-.feed-description {
-  margin: 0;
-  color: var(--text-body);
-  font-size: var(--font-size-1);
-}
-
 .feed-meta {
   --stack-gap: var(--space-2);
-}
-
-.feed-meta__row {
-  display: grid;
-  grid-template-columns: minmax(6rem, max-content) 1fr;
-  gap: var(--space-2);
-  align-items: baseline;
-}
-
-.feed-meta__value,
-.feed-meta__value a {
-  color: var(--text-body);
-  font-size: var(--font-size-0);
 }
 
 .feed-notice {
   margin-top: var(--section-gap-tight);
 }
 
-.feed-notice p {
-  margin: 0;
-}
-
 .feed-notice p + p {
   margin-top: var(--space-2);
-  color: var(--text-muted);
-}
-
-.feed-empty {
   color: var(--text-muted);
 }
