@@ -1,0 +1,38 @@
+.feed-page {
+  min-height: 100vh;
+}
+
+.feed-page__brand {
+  display: grid;
+  width: 100%;
+  text-align: center;
+  place-items: center;
+}
+
+.feed-hero__icon {
+  width: clamp(2.6rem, 6vw, 3.25rem);
+  height: auto;
+  display: block;
+}
+
+.feed-hero {
+  --stack-gap: var(--space-3);
+}
+
+.feed-hero__action--primary {
+  border-color: var(--border-reader-strong);
+  background: var(--surface-reader-strong);
+}
+
+.feed-meta {
+  --stack-gap: var(--space-2);
+}
+
+.feed-notice {
+  margin-top: var(--section-gap-tight);
+}
+
+.feed-notice p + p {
+  margin-top: var(--space-2);
+  color: var(--text-muted);
+}

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { AppViewModel } from '../feed';
 import { COPY } from '../journey/copy';
 import { DominantField } from './DominantField';
+import { PreviewItem } from './PreviewItem';
 
 interface ResultDisplayProperties {
   viewModel: Extract<AppViewModel, { kind: 'result' }>;
@@ -12,13 +13,14 @@ interface ResultDisplayProperties {
 
 interface PreviewSectionProperties {
   ariaLabel: string;
+  eyebrow?: string;
   children: ComponentChildren;
 }
 
-function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {
+function PreviewSection({ ariaLabel, eyebrow, children }: PreviewSectionProperties) {
   return (
-    <section class="result-preview layout-rail-reading layout-stack" aria-label={ariaLabel}>
-      <p class="ui-eyebrow">{COPY.previewLatest}</p>
+    <section class="layout-rail-reading layout-stack layout-section-divided" aria-label={ariaLabel}>
+      {eyebrow && <p class="ui-eyebrow">{eyebrow}</p>}
       {children}
     </section>
   );
@@ -82,7 +84,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
         onAction={() => void copyToClipboard(fullUrl)}
       />
 
-      <div class="result-actions layout-rail-reading">
+      <div class="ui-actions layout-rail-reading">
         <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           {COPY.openFeed}
         </a>
@@ -109,26 +111,16 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       )}
 
       {!preview.isLoading && hasPreviewItems && (
-        <PreviewSection ariaLabel={COPY.previewRegion}>
+        <PreviewSection ariaLabel={COPY.previewRegion} eyebrow={COPY.previewItemCount(preview.items.length)}>
           <ul class="ui-item-list" role="list">
             {preview.items.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
-                <article class="layout-stack layout-stack--tight">
-                  {item.publishedLabel && (
-                    <div class="ui-item__meta">
-                      <span>{item.publishedLabel}</span>
-                    </div>
-                  )}
-                  <h2 class="ui-item__title">{item.title}</h2>
-                  {item.excerpt && <p class="ui-item__excerpt">{item.excerpt}</p>}
-                  {item.url && (
-                    <p class="ui-item__actions">
-                      <a href={item.url} target="_blank" rel="noopener noreferrer">
-                        {COPY.openOriginal}
-                      </a>
-                    </p>
-                  )}
-                </article>
+                <PreviewItem
+                  title={item.title}
+                  excerpt={item.excerpt}
+                  url={item.url}
+                  publishedLabel={item.publishedLabel}
+                />
               </li>
             ))}
           </ul>

@@ -48,12 +48,9 @@
   --bg-danger: rgb(var(--color-rgb-danger) / 10%);
   --border-success: rgb(var(--color-rgb-success) / 20%);
   --border-danger: rgb(var(--color-rgb-danger) / 20%);
-  --surface-reader: rgb(var(--color-rgb-reader) / 10%);
-  --border-reader: rgb(var(--color-rgb-reader) / 20%);
   --surface-reader-strong: rgb(var(--color-rgb-reader) / 12%);
   --border-reader-strong: rgb(var(--color-rgb-reader) / 24%);
   --overlay-top-light: rgb(var(--color-rgb-white) / 4%);
-  --overlay-hero-accent: rgb(var(--color-rgb-reader) / 12%);
   --overlay-icon-top: rgb(var(--color-rgb-white) / 8%);
   --overlay-icon-base: rgb(var(--color-rgb-white) / 3%);
   --overlay-scrim: rgb(var(--color-rgb-black) / 64%);
@@ -183,6 +180,13 @@ textarea {
   margin: 0 auto;
 }
 
+.layout-shell-padding {
+  padding:
+    clamp(0.85rem, 3vh, 2rem)
+    clamp(var(--space-3), 3vw, var(--space-4))
+    var(--layout-shell-padding-bottom, var(--space-5));
+}
+
 .layout-rail-reading {
   width: min(100%, var(--layout-rail-reading));
   margin: 0 auto;
@@ -199,6 +203,26 @@ textarea {
 
 .layout-stack--tight {
   --stack-gap: var(--space-3);
+}
+
+.layout-section-divided {
+  justify-items: start;
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.ui-headline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.ui-meta-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, max-content) 1fr;
+  gap: var(--space-2);
+  align-items: baseline;
 }
 
 .ui-card {
@@ -225,58 +249,7 @@ textarea {
   box-shadow: var(--shadow-elevated);
 }
 
-.ui-hero {
-  justify-items: start;
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-elevated);
-}
-
-.ui-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(135deg, var(--overlay-hero-accent), transparent 46%),
-    linear-gradient(180deg, var(--overlay-top-light), transparent 32%);
-}
-
-.ui-hero > * {
-  position: relative;
-  z-index: 1;
-}
-
-.ui-hero__masthead {
-  width: 100%;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.ui-hero__icon-wrap {
-  width: clamp(3.6rem, 8vw, 4.6rem);
-  height: clamp(3.6rem, 8vw, 4.6rem);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: var(--border-width) solid var(--border-muted);
-  border-radius: 1.15rem;
-  background:
-    linear-gradient(180deg, var(--overlay-icon-top), var(--surface-base)),
-    var(--overlay-icon-base);
-  box-shadow: inset 0 1px 0 var(--border-subtle);
-}
-
-.ui-hero__icon {
-  width: 62%;
-  height: 62%;
-  display: block;
-}
-
-.ui-hero__actions {
+.ui-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
@@ -331,13 +304,8 @@ textarea {
 
 .ui-item {
   min-width: 0;
-  padding: var(--space-4) 0;
+  padding: var(--space-3) 0;
   border-bottom: var(--border-width) solid var(--border-subtle);
-}
-
-.ui-item--card {
-  padding: clamp(var(--space-3), 3vw, var(--space-4));
-  border-bottom: 0;
 }
 
 .ui-item__meta {
@@ -361,29 +329,23 @@ textarea {
   overflow-wrap: break-word;
 }
 
+.ui-item__title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ui-item__title a:hover,
+.ui-item__title a:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .ui-item__excerpt {
   margin: 0;
   color: var(--text-body);
   font-size: var(--font-size-0);
   line-height: 1.45;
   overflow-wrap: break-word;
-}
-
-.ui-item__actions {
-  margin: 0;
-}
-
-.ui-item__actions a {
-  color: var(--eyebrow-color);
-  font-size: var(--font-size-00);
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--letter-spacing-meta);
-  text-transform: uppercase;
-}
-
-.ui-item__actions a:hover,
-.ui-item__actions a:focus-visible {
-  color: var(--text-strong);
 }
 
 .input {
@@ -551,11 +513,7 @@ textarea {
 }
 
 @media (width < 48rem) {
-  .ui-hero__masthead {
-    grid-template-columns: 1fr;
-  }
-
-  .ui-hero__actions {
+  .ui-actions {
     display: grid;
     grid-template-columns: 1fr;
     width: 100%;

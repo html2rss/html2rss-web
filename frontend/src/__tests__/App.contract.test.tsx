@@ -110,7 +110,7 @@ describe('App contract', () => {
       expect(screen.getByLabelText(COPY.feedUrl)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
-      expect(screen.getByText(COPY.previewLatest)).toBeInTheDocument();
+      expect(screen.getByText(COPY.previewItemCount(1))).toBeInTheDocument();
     });
     fetchSpy.mockRestore();
   });

@@ -92,7 +92,7 @@ describe('ResultDisplay', () => {
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
       expect(screen.getByText('Item Four')).toBeInTheDocument();
-      expect(screen.getByText(COPY.previewLatest)).toBeInTheDocument();
+      expect(screen.getByText(COPY.previewItemCount(4))).toBeInTheDocument();
     });
     expect(screen.queryByRole('button', { name: /show all .* items/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Show fewer items' })).not.toBeInTheDocument();
