@@ -14,6 +14,24 @@ document.addEventListener('DOMContentLoaded', function () {
     jsonLink.setAttribute('href', deriveJsonFeedUrl());
   }
 
+  var copyButton = document.querySelector('[data-copy-feed-url]');
+  if (copyButton) {
+    if (!navigator.clipboard || !navigator.clipboard.writeText) {
+      copyButton.hidden = true;
+    } else {
+      copyButton.setAttribute('aria-live', 'polite');
+      var copyLabel = copyButton.textContent;
+      copyButton.addEventListener('click', function () {
+        navigator.clipboard.writeText(window.location.href).then(function () {
+          copyButton.textContent = 'Copied!';
+          globalThis.setTimeout(function () {
+            copyButton.textContent = copyLabel;
+          }, 2500);
+        });
+      });
+    }
+  }
+
   function deriveJsonFeedUrl() {
     var url = new URL(window.location.href);
     var pathname = url.pathname;

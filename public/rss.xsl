@@ -267,6 +267,7 @@
                   </xsl:attribute>
                   Open in feed reader
                 </a>
+                <button type="button" class="feed-hero__action btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
                 <a class="feed-hero__action btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
                 <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                   <a class="feed-hero__action btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>

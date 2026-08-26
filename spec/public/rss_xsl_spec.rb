@@ -62,6 +62,16 @@ RSpec.describe 'public/rss.xsl' do
     expect(doc.at_css('script')['src']).to eq('/feed-page.js')
   end
 
+  it 'renders the copy feed URL control with client-side wiring' do
+    doc = Nokogiri::HTML(rendered_html)
+    copy_action = doc.at_css('[data-copy-feed-url]')
+
+    expect(copy_action).not_to be_nil
+    expect(copy_action.text.strip).to eq('Copy feed URL')
+    expect(copy_action.name).to eq('button')
+    expect(copy_action['type']).to eq('button')
+  end
+
   it 'renders the JSON feed hero action with client-side wiring' do
     doc = Nokogiri::HTML(rendered_html)
     json_action = doc.at_css('[data-json-feed-link]')
