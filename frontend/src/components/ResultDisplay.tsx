@@ -12,13 +12,14 @@ interface ResultDisplayProperties {
 
 interface PreviewSectionProperties {
   ariaLabel: string;
+  eyebrow?: string;
   children: ComponentChildren;
 }
 
-function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {
+function PreviewSection({ ariaLabel, eyebrow, children }: PreviewSectionProperties) {
   return (
     <section class="layout-rail-reading layout-stack layout-section-divided" aria-label={ariaLabel}>
-      <p class="ui-eyebrow">{COPY.previewLatest}</p>
+      {eyebrow && <p class="ui-eyebrow">{eyebrow}</p>}
       {children}
     </section>
   );
@@ -109,26 +110,25 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
       )}
 
       {!preview.isLoading && hasPreviewItems && (
-        <PreviewSection ariaLabel={COPY.previewRegion}>
+        <PreviewSection ariaLabel={COPY.previewRegion} eyebrow={COPY.previewItemCount(preview.items.length)}>
           <ul class="ui-item-list" role="list">
             {preview.items.map((item) => (
               <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
-                <article class="layout-stack layout-stack--tight">
-                  {item.publishedLabel && (
-                    <div class="ui-item__meta">
-                      <span>{item.publishedLabel}</span>
-                    </div>
+                {item.publishedLabel && (
+                  <div class="ui-item__meta">
+                    <span>{item.publishedLabel}</span>
+                  </div>
+                )}
+                <h2 class="ui-item__title">
+                  {item.url ? (
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      {item.title}
+                    </a>
+                  ) : (
+                    item.title
                   )}
-                  <h2 class="ui-item__title">{item.title}</h2>
-                  {item.excerpt && <p class="ui-item__excerpt">{item.excerpt}</p>}
-                  {item.url && (
-                    <p class="ui-item__actions">
-                      <a href={item.url} target="_blank" rel="noopener noreferrer">
-                        {COPY.openOriginal}
-                      </a>
-                    </p>
-                  )}
-                </article>
+                </h2>
+                {item.title && item.excerpt && <p class="ui-item__excerpt">{item.excerpt}</p>}
               </li>
             ))}
           </ul>

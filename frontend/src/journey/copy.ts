@@ -14,6 +14,7 @@ export const COPY = {
   tryAgain: 'Try again',
   checkAgain: 'Check again',
   openOriginal: 'Open original',
+  previewItemCount: (count: number) => `${count} items`,
   copy: 'Copy',
   copied: 'Copied!',
   creationDisabled: 'Feed creation is disabled on this instance.',

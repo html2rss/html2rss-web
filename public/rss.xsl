@@ -97,63 +97,69 @@
           </xsl:if>
 
           <section class="feed-section layout-rail-reading layout-stack layout-section-divided" aria-label="Feed items">
-            <p class="ui-eyebrow">Latest items</p>
+            <p class="ui-eyebrow">
+              <xsl:value-of select="count(rss/channel/item)" />
+              <xsl:text> items</xsl:text>
+            </p>
 
             <xsl:choose>
               <xsl:when test="count(rss/channel/item) &gt; 0">
                 <ul class="ui-item-list" role="list">
                   <xsl:for-each select="rss/channel/item">
                     <li class="ui-item">
-                      <article class="layout-stack layout-stack--tight">
-                        <xsl:variable name="cleanTitle">
-                          <xsl:call-template name="clean-text">
-                            <xsl:with-param name="text" select="string(title)" />
-                          </xsl:call-template>
-                        </xsl:variable>
-                        <xsl:variable name="cleanDescription">
-                          <xsl:call-template name="clean-text">
-                            <xsl:with-param name="text" select="string(description)" />
-                          </xsl:call-template>
-                        </xsl:variable>
-                        <xsl:variable name="displayTitle">
-                          <xsl:choose>
-                            <xsl:when test="normalize-space(string($cleanTitle)) != ''">
-                              <xsl:value-of select="$cleanTitle" />
-                            </xsl:when>
-                            <xsl:when test="normalize-space(string($cleanDescription)) != ''">
-                              <xsl:call-template name="truncate-text">
-                                <xsl:with-param name="text" select="string($cleanDescription)" />
-                                <xsl:with-param name="limit" select="92" />
-                              </xsl:call-template>
-                            </xsl:when>
-                            <xsl:otherwise>Untitled item</xsl:otherwise>
-                          </xsl:choose>
-                        </xsl:variable>
-                        <xsl:variable name="hasSummary" select="normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
-
-                        <xsl:if test="normalize-space(string(pubDate)) != ''">
-                          <p class="ui-item__meta"><xsl:value-of select="pubDate" /></p>
-                        </xsl:if>
-
-                        <h2 class="ui-item__title">
-                          <xsl:value-of select="$displayTitle" />
-                        </h2>
-
-                        <xsl:if test="$hasSummary">
-                          <p class="ui-item__excerpt">
+                      <xsl:variable name="cleanTitle">
+                        <xsl:call-template name="clean-text">
+                          <xsl:with-param name="text" select="string(title)" />
+                        </xsl:call-template>
+                      </xsl:variable>
+                      <xsl:variable name="cleanDescription">
+                        <xsl:call-template name="clean-text">
+                          <xsl:with-param name="text" select="string(description)" />
+                        </xsl:call-template>
+                      </xsl:variable>
+                      <xsl:variable name="displayTitle">
+                        <xsl:choose>
+                          <xsl:when test="normalize-space(string($cleanTitle)) != ''">
+                            <xsl:value-of select="$cleanTitle" />
+                          </xsl:when>
+                          <xsl:when test="normalize-space(string($cleanDescription)) != ''">
                             <xsl:call-template name="truncate-text">
                               <xsl:with-param name="text" select="string($cleanDescription)" />
-                              <xsl:with-param name="limit" select="260" />
+                              <xsl:with-param name="limit" select="72" />
                             </xsl:call-template>
-                          </p>
-                        </xsl:if>
+                          </xsl:when>
+                          <xsl:otherwise>Untitled item</xsl:otherwise>
+                        </xsl:choose>
+                      </xsl:variable>
+                      <xsl:variable name="hasSummary" select="normalize-space(string($cleanTitle)) != '' and normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
 
-                        <xsl:if test="normalize-space(string(link)) != ''">
-                          <p class="ui-item__actions">
-                            <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
-                          </p>
-                        </xsl:if>
-                      </article>
+                      <xsl:if test="normalize-space(string(pubDate)) != ''">
+                        <p class="ui-item__meta">
+                          <time><xsl:value-of select="pubDate" /></time>
+                        </p>
+                      </xsl:if>
+
+                      <h2 class="ui-item__title">
+                        <xsl:choose>
+                          <xsl:when test="normalize-space(string(link)) != ''">
+                            <a href="{link}" target="_blank" rel="noopener noreferrer">
+                              <xsl:value-of select="$displayTitle" />
+                            </a>
+                          </xsl:when>
+                          <xsl:otherwise>
+                            <xsl:value-of select="$displayTitle" />
+                          </xsl:otherwise>
+                        </xsl:choose>
+                      </h2>
+
+                      <xsl:if test="$hasSummary">
+                        <p class="ui-item__excerpt">
+                          <xsl:call-template name="truncate-text">
+                            <xsl:with-param name="text" select="string($cleanDescription)" />
+                            <xsl:with-param name="limit" select="96" />
+                          </xsl:call-template>
+                        </p>
+                      </xsl:if>
                     </li>
                   </xsl:for-each>
                 </ul>
@@ -165,11 +171,6 @@
           </section>
 
           <div class="feed-meta layout-rail-reading layout-stack layout-section-divided">
-            <div class="feed-meta__row">
-              <span class="ui-eyebrow">Items</span>
-              <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
-            </div>
-
             <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
               <div class="feed-meta__row">
                 <span class="ui-eyebrow">Source</span>

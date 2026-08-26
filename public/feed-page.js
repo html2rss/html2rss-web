@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
       timeStyle: 'short'
     });
 
-    document.querySelectorAll('.feed-hero time, .ui-item__meta').forEach(function (node) {
+    document.querySelectorAll('.feed-hero time, .ui-item__meta time').forEach(function (node) {
       var raw = node.textContent.trim();
       if (!raw) return;
 

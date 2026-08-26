@@ -41,6 +41,10 @@ RSpec.describe 'public/rss.xsl' do
             <link>https://example.com/articles/3</link>
             <pubDate>Wed, 03 Jan 2024 10:00:00 GMT</pubDate>
           </item>
+          <item>
+            <description>Description-only label text that should not get an excerpt block when rendered.</description>
+            <link>https://example.com/articles/4</link>
+          </item>
         </channel>
       </rss>
     XML
@@ -108,17 +112,35 @@ RSpec.describe 'public/rss.xsl' do
     expect(actions.element_children.none? { |node| %w[img h1].include?(node.name) }).to be(true)
   end
 
-  it 'orders item meta before title to match the result preview' do
+  it 'orders item meta before linked title to match the result preview' do
     doc = Nokogiri::HTML(rendered_html)
     first_item = doc.css('.ui-item').first
-    article_children = first_item.at_css('article').element_children
+    item_children = first_item.element_children
 
-    meta_index = article_children.index { |node| node['class']&.include?('ui-item__meta') }
-    title_index = article_children.index { |node| node['class']&.include?('ui-item__title') }
+    meta_index = item_children.index { |node| node['class']&.include?('ui-item__meta') }
+    title_index = item_children.index { |node| node['class']&.include?('ui-item__title') }
 
     expect(meta_index).not_to be_nil
     expect(title_index).not_to be_nil
     expect(meta_index).to be < title_index
+    expect(first_item.at_css('.ui-item__title > a')['href']).to eq('https://example.com/articles/1')
+  end
+
+  it 'renders minimal linked items without action rows' do
+    doc = Nokogiri::HTML(rendered_html)
+
+    expect(doc.css('.ui-item__actions')).to be_empty
+    expect(doc.css('.ui-item__title > a').length).to eq(4)
+    expect(doc.at_css('.feed-section .ui-eyebrow').text.strip).to eq('4 items')
+    expect(doc.css('.feed-meta .ui-eyebrow').map { |node| node.text.strip }).not_to include('Items')
+  end
+
+  it 'suppresses excerpts for title-less items' do
+    doc = Nokogiri::HTML(rendered_html)
+    description_only_item = doc.css('.ui-item').last
+
+    expect(description_only_item.at_css('.ui-item__excerpt')).to be_nil
+    expect(description_only_item.at_css('.ui-item__title > a').text.strip).to include('Description-only label')
   end
 
   it 'does not render feed-only footer or signal markup' do
@@ -153,7 +175,7 @@ RSpec.describe 'public/rss.xsl' do
 
     expect(item_list).not_to be_nil
     expect(item_list.name).to eq('ul')
-    expect(doc.css('.ui-item-list > .ui-item').length).to eq(3)
+    expect(doc.css('.ui-item-list > .ui-item').length).to eq(4)
     expect(doc.css('.ui-item--card')).to be_empty
     doc.css('.ui-item-list > .ui-item').each do |item|
       expect(item['class']).not_to include('ui-card')
@@ -182,8 +204,9 @@ RSpec.describe 'public/rss.xsl' do
 
   it 'preserves plain-text angle brackets while stripping actual html tags' do
     doc = Nokogiri::HTML(rendered_html)
+    math_item = doc.css('.ui-item__title').find { |node| node.text.strip == 'Math 1 < 2 > 0' }
 
-    expect(doc.css('.ui-item__title').last.text.strip).to eq('Math 1 < 2 > 0')
+    expect(math_item).not_to be_nil
     expect(doc.css('.ui-item__excerpt')[1].text.strip).to eq('Math 1 < 2 > 0')
   end
 
