@@ -17,8 +17,8 @@
   width: 100%;
   max-width: var(--layout-page-max-width);
   margin: 0 auto;
-  padding: clamp(0.85rem, 3vh, 2rem) clamp(var(--space-3), 3vw, var(--space-4))
-    calc(var(--space-5) + var(--footer-nav-reserve));
+
+  --layout-shell-padding-bottom: calc(var(--space-5) + var(--footer-nav-reserve));
 }
 
 .workspace-shell,
@@ -29,7 +29,6 @@
 .workspace-hero,
 .utility-strip,
 .utility-strip__items,
-.result-actions,
 .app-footer__inner,
 .field-block {
   display: grid;
@@ -358,14 +357,6 @@
   justify-items: end;
 }
 
-.result-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--space-3);
-}
-
 .token-gate__back {
   justify-self: start;
 }
@@ -539,13 +530,6 @@
   .result-preview,
   .form-shell--minimal .dominant-field,
   .result-shell .dominant-field {
-    width: 100%;
-  }
-
-  .result-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-2);
     width: 100%;
   }
 

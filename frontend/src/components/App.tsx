@@ -133,7 +133,7 @@ export function App() {
 
   return (
     <div class="page-shell">
-      <main class="page-main">
+      <main class="page-main layout-shell-padding">
         <section class="workspace-shell workspace-shell--centered">
           <header class="workspace-hero">
             <BrandLockup onNavigateHome={() => navigate({ kind: 'create' })} />

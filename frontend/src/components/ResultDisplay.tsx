@@ -82,7 +82,7 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
         onAction={() => void copyToClipboard(fullUrl)}
       />
 
-      <div class="result-actions layout-rail-reading">
+      <div class="ui-actions layout-rail-reading">
         <a href={fullUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           {COPY.openFeed}
         </a>

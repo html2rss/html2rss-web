@@ -14,10 +14,6 @@
         <style>
           .feed-page {
             min-height: 100vh;
-            padding:
-              clamp(0.85rem, 3vh, 2rem)
-              clamp(var(--space-3), 3vw, var(--space-4))
-              var(--space-5);
           }
 
           .feed-page__brand {
@@ -26,6 +22,34 @@
             text-align: center;
             place-items: center;
             margin-bottom: var(--section-gap);
+          }
+
+          .feed-hero__masthead {
+            width: 100%;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: var(--space-4);
+            align-items: start;
+          }
+
+          .feed-hero__icon-wrap {
+            width: clamp(3.6rem, 8vw, 4.6rem);
+            height: clamp(3.6rem, 8vw, 4.6rem);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: var(--border-width) solid var(--border-muted);
+            border-radius: 1.15rem;
+            background:
+              linear-gradient(180deg, var(--overlay-icon-top), var(--surface-base)),
+              var(--overlay-icon-base);
+            box-shadow: inset 0 1px 0 var(--border-subtle);
+          }
+
+          .feed-hero__icon {
+            width: 62%;
+            height: 62%;
+            display: block;
           }
 
           .feed-hero {
@@ -145,6 +169,10 @@
           }
 
           @media (max-width: 47.9375rem) {
+            .feed-hero__masthead {
+              grid-template-columns: 1fr;
+            }
+
             .feed-item__footer {
               align-items: start;
             }
@@ -158,7 +186,7 @@
         </style>
       </head>
       <body>
-        <main class="feed-page layout-shell">
+        <main class="feed-page layout-shell layout-shell-padding">
           <div class="feed-page__brand">
             <a href="/" class="brand-lockup" aria-label="html2rss">
               <span class="brand-lockup__mark" aria-hidden="true">
@@ -172,9 +200,9 @@
 
           <section class="feed-hero layout-rail-reading layout-stack">
             <div class="feed-hero__body">
-              <div class="ui-hero__masthead">
-                <div class="ui-hero__icon-wrap" aria-hidden="true">
-                  <img class="ui-hero__icon" src="/feed.svg" alt="" />
+              <div class="feed-hero__masthead">
+                <div class="feed-hero__icon-wrap" aria-hidden="true">
+                  <img class="feed-hero__icon" src="/feed.svg" alt="" />
                 </div>
                 <h1 class="feed-title ui-display-title">
                   <xsl:call-template name="clean-text">
@@ -214,7 +242,7 @@
                   </xsl:choose>
                 </p>
               </xsl:if>
-              <div class="ui-hero__actions">
+              <div class="ui-actions">
                 <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true">
                   <xsl:attribute name="href">
                     <xsl:choose>

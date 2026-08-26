@@ -50,7 +50,7 @@ RSpec.describe 'public/rss.xsl' do
     doc = Nokogiri::HTML(rendered_html)
 
     expect(doc.at_css('link[rel="icon"]')['href']).to eq('/feed.svg')
-    expect(doc.at_css('.ui-hero__icon')['src']).to eq('/feed.svg')
+    expect(doc.at_css('.feed-hero__icon')['src']).to eq('/feed.svg')
   end
 
   it 'renders the feed-reader hero action with client-side wiring' do

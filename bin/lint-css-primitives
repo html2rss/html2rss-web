@@ -14,7 +14,7 @@ ALL_STYLE_FILES = [
 ].freeze
 
 PRIMITIVE_REDEF = /
-  \.(btn|input|ui-card|ui-eyebrow|ui-item|layout-stack|brand-lockup)
+  \.(btn|input|ui-card|ui-eyebrow|ui-item|layout-stack|brand-lockup|ui-actions|ui-display-title)
   (--[a-z0-9-]+|__[a-z0-9-]+)?
   \s*([,{]|$)
 /x
