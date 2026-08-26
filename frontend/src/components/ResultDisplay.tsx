@@ -17,7 +17,7 @@ interface PreviewSectionProperties {
 
 function PreviewSection({ ariaLabel, children }: PreviewSectionProperties) {
   return (
-    <section class="result-preview layout-rail-reading layout-stack" aria-label={ariaLabel}>
+    <section class="layout-rail-reading layout-stack layout-section-divided" aria-label={ariaLabel}>
       <p class="ui-eyebrow">{COPY.previewLatest}</p>
       {children}
     </section>

@@ -14,7 +14,7 @@
         <script src="/feed-page.js"></script>
       </head>
       <body>
-        <main class="feed-page layout-shell layout-shell-padding">
+        <main class="feed-page layout-shell layout-shell-padding layout-stack">
           <div class="feed-page__brand">
             <a href="/" class="brand-lockup" aria-label="html2rss">
               <span class="brand-lockup__mark" aria-hidden="true">
@@ -27,86 +27,56 @@
           </div>
 
           <section class="feed-hero layout-rail-reading layout-stack">
-            <div class="feed-hero__body">
-              <div class="feed-hero__masthead">
-                <div class="feed-hero__icon-wrap" aria-hidden="true">
-                  <img class="feed-hero__icon" src="/feed.svg" alt="" />
-                </div>
-                <h1 class="feed-title ui-display-title">
-                  <xsl:call-template name="clean-text">
-                    <xsl:with-param name="text" select="string(rss/channel/title)" />
-                  </xsl:call-template>
-                </h1>
+            <div class="ui-actions">
+              <div class="feed-hero__icon-wrap" aria-hidden="true">
+                <img class="feed-hero__icon" src="/feed.svg" alt="" />
               </div>
-
-              <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
-                <p class="feed-description layout-rail-copy">
-                  <xsl:call-template name="truncate-text">
-                    <xsl:with-param name="text">
-                      <xsl:call-template name="clean-text">
-                        <xsl:with-param name="text" select="string(rss/channel/description)" />
-                      </xsl:call-template>
-                    </xsl:with-param>
-                    <xsl:with-param name="limit" select="260" />
-                  </xsl:call-template>
-                </p>
-              </xsl:if>
-
-              <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != '' or normalize-space(string(rss/channel/pubDate)) != '' or normalize-space(string(rss/channel/item[1]/pubDate)) != ''">
-                <p class="feed-hero__stamp">
-                  <xsl:choose>
-                    <xsl:when test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
-                      <span>Updated </span>
-                      <xsl:value-of select="rss/channel/lastBuildDate" />
-                    </xsl:when>
-                    <xsl:when test="normalize-space(string(rss/channel/pubDate)) != ''">
-                      <span>Published </span>
-                      <xsl:value-of select="rss/channel/pubDate" />
-                    </xsl:when>
-                    <xsl:otherwise>
-                      <span>Latest item </span>
-                      <xsl:value-of select="rss/channel/item[1]/pubDate" />
-                    </xsl:otherwise>
-                  </xsl:choose>
-                </p>
-              </xsl:if>
-              <div class="ui-actions">
-                <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true" href="#">Open in feed reader</a>
-                <button type="button" class="btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
-                <span class="ui-eyebrow ui-eyebrow--ghost" data-copy-feed-url-status="true" aria-live="polite"></span>
-                <a class="btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
-                <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
-                  <a class="btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
-                </xsl:if>
-              </div>
+              <h1 class="feed-title ui-display-title">
+                <xsl:call-template name="clean-text">
+                  <xsl:with-param name="text" select="string(rss/channel/title)" />
+                </xsl:call-template>
+              </h1>
             </div>
 
-            <div class="feed-meta layout-stack">
-              <div class="feed-meta__row">
-                <span class="ui-eyebrow">Items</span>
-                <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
-              </div>
-
-              <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
-                <div class="feed-meta__row">
-                  <span class="ui-eyebrow">Source</span>
-                  <span class="feed-meta__value">
-                    <a href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">
-                      <xsl:value-of select="rss/channel/link" />
-                    </a>
-                  </span>
-                </div>
-              </xsl:if>
-
-              <xsl:if test="normalize-space(string(rss/channel/generator)) != ''">
-                <div class="feed-meta__row">
-                  <span class="ui-eyebrow">Generated by</span>
-                  <span class="feed-meta__value">
+            <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
+              <p class="feed-description layout-rail-copy">
+                <xsl:call-template name="truncate-text">
+                  <xsl:with-param name="text">
                     <xsl:call-template name="clean-text">
-                      <xsl:with-param name="text" select="string(rss/channel/generator)" />
+                      <xsl:with-param name="text" select="string(rss/channel/description)" />
                     </xsl:call-template>
-                  </span>
-                </div>
+                  </xsl:with-param>
+                  <xsl:with-param name="limit" select="260" />
+                </xsl:call-template>
+              </p>
+            </xsl:if>
+
+            <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != '' or normalize-space(string(rss/channel/pubDate)) != '' or normalize-space(string(rss/channel/item[1]/pubDate)) != ''">
+              <p class="feed-hero__stamp">
+                <xsl:choose>
+                  <xsl:when test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
+                    <span>Updated </span>
+                    <xsl:value-of select="rss/channel/lastBuildDate" />
+                  </xsl:when>
+                  <xsl:when test="normalize-space(string(rss/channel/pubDate)) != ''">
+                    <span>Published </span>
+                    <xsl:value-of select="rss/channel/pubDate" />
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <span>Latest item </span>
+                    <xsl:value-of select="rss/channel/item[1]/pubDate" />
+                  </xsl:otherwise>
+                </xsl:choose>
+              </p>
+            </xsl:if>
+
+            <div class="ui-actions layout-rail-reading">
+              <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true" href="#">Open in feed reader</a>
+              <button type="button" class="btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
+              <span class="ui-eyebrow ui-eyebrow--ghost" data-copy-feed-url-status="true" aria-live="polite"></span>
+              <a class="btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
+              <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
+                <a class="btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
               </xsl:if>
             </div>
           </section>
@@ -126,7 +96,7 @@
             </section>
           </xsl:if>
 
-          <section class="feed-section layout-rail-reading layout-stack" aria-label="Feed items">
+          <section class="feed-section layout-rail-reading layout-stack layout-section-divided" aria-label="Feed items">
             <p class="ui-eyebrow">Latest items</p>
 
             <xsl:choose>
@@ -160,17 +130,14 @@
                           </xsl:choose>
                         </xsl:variable>
                         <xsl:variable name="hasSummary" select="normalize-space(string($cleanDescription)) != '' and normalize-space(string($cleanDescription)) != normalize-space(string($displayTitle))" />
-                        <xsl:variable name="hasImage" select="enclosure[contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='thumbnail'] or *[local-name()='content'][contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='group']/*[local-name()='content'][contains(translate(@type, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'image/')] or *[local-name()='image'][normalize-space(string(.)) != '']" />
-                        <xsl:variable name="hasCategories" select="category[normalize-space(string(.)) != '']" />
-                        <xsl:variable name="hasAuthor" select="normalize-space(string(author)) != '' or *[local-name()='creator'][normalize-space(string(.)) != '']" />
-
-                        <h2 class="ui-item__title">
-                          <xsl:value-of select="$displayTitle" />
-                        </h2>
 
                         <xsl:if test="normalize-space(string(pubDate)) != ''">
                           <p class="ui-item__meta"><xsl:value-of select="pubDate" /></p>
                         </xsl:if>
+
+                        <h2 class="ui-item__title">
+                          <xsl:value-of select="$displayTitle" />
+                        </h2>
 
                         <xsl:if test="$hasSummary">
                           <p class="ui-item__excerpt">
@@ -181,31 +148,10 @@
                           </p>
                         </xsl:if>
 
-                        <xsl:if test="normalize-space(string(link)) != '' or $hasSummary or $hasImage or $hasCategories or $hasAuthor">
-                          <div class="feed-item__footer">
-                            <xsl:if test="normalize-space(string(link)) != ''">
-                              <p class="ui-item__actions">
-                                <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
-                              </p>
-                            </xsl:if>
-
-                            <xsl:if test="$hasSummary or $hasImage or $hasCategories or $hasAuthor">
-                              <div class="feed-item__signals" aria-label="Item quality indicators">
-                                <xsl:if test="$hasSummary">
-                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Summary</span></span>
-                                </xsl:if>
-                                <xsl:if test="$hasImage">
-                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Image</span></span>
-                                </xsl:if>
-                                <xsl:if test="$hasCategories">
-                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Tags</span></span>
-                                </xsl:if>
-                                <xsl:if test="$hasAuthor">
-                                  <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Byline</span></span>
-                                </xsl:if>
-                              </div>
-                            </xsl:if>
-                          </div>
+                        <xsl:if test="normalize-space(string(link)) != ''">
+                          <p class="ui-item__actions">
+                            <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
+                          </p>
                         </xsl:if>
                       </article>
                     </li>
@@ -217,6 +163,35 @@
               </xsl:otherwise>
             </xsl:choose>
           </section>
+
+          <div class="feed-meta layout-rail-reading layout-stack layout-section-divided">
+            <div class="feed-meta__row">
+              <span class="ui-eyebrow">Items</span>
+              <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
+            </div>
+
+            <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
+              <div class="feed-meta__row">
+                <span class="ui-eyebrow">Source</span>
+                <span class="feed-meta__value">
+                  <a href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">
+                    <xsl:value-of select="rss/channel/link" />
+                  </a>
+                </span>
+              </div>
+            </xsl:if>
+
+            <xsl:if test="normalize-space(string(rss/channel/generator)) != ''">
+              <div class="feed-meta__row">
+                <span class="ui-eyebrow">Generated by</span>
+                <span class="feed-meta__value">
+                  <xsl:call-template name="clean-text">
+                    <xsl:with-param name="text" select="string(rss/channel/generator)" />
+                  </xsl:call-template>
+                </span>
+              </div>
+            </xsl:if>
+          </div>
         </main>
       </body>
     </html>

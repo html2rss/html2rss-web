@@ -412,12 +412,6 @@
   animation: spin 0.9s linear infinite;
 }
 
-.result-preview {
-  justify-items: start;
-  padding-top: var(--space-4);
-  border-top: var(--border-width) solid var(--border-subtle);
-}
-
 .notice[data-state="loading"] p {
   color: var(--text-muted);
 }
@@ -527,7 +521,7 @@
     --control-input-lg-min-height: 4rem;
   }
 
-  .result-preview,
+  .layout-section-divided,
   .form-shell--minimal .dominant-field,
   .result-shell .dominant-field {
     width: 100%;

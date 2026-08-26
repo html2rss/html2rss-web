@@ -205,6 +205,12 @@ textarea {
   --stack-gap: var(--space-3);
 }
 
+.layout-section-divided {
+  justify-items: start;
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
 .ui-card {
   border: var(--border-default);
   border-radius: var(--radius-lg);

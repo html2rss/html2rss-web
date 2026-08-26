@@ -77,12 +77,51 @@ RSpec.describe 'public/rss.xsl' do
 
   it 'uses the shared ui-actions row for hero controls' do
     doc = Nokogiri::HTML(rendered_html)
-    actions = doc.at_css('.ui-actions')
+    actions = doc.css('.feed-hero .ui-actions.layout-rail-reading').first
 
     expect(actions).not_to be_nil
     expect(actions.at_css('[data-feed-reader-link]')).not_to be_nil
     expect(actions.at_css('[data-copy-feed-url]')).not_to be_nil
     expect(actions.at_css('[data-json-feed-link]')).not_to be_nil
+  end
+
+  it 'orders item meta before title to match the result preview' do
+    doc = Nokogiri::HTML(rendered_html)
+    first_item = doc.css('.ui-item').first
+    article_children = first_item.at_css('article').element_children
+
+    meta_index = article_children.index { |node| node['class']&.include?('ui-item__meta') }
+    title_index = article_children.index { |node| node['class']&.include?('ui-item__title') }
+
+    expect(meta_index).not_to be_nil
+    expect(title_index).not_to be_nil
+    expect(meta_index).to be < title_index
+  end
+
+  it 'does not render feed-only footer or signal markup' do
+    doc = Nokogiri::HTML(rendered_html)
+
+    expect(doc.css('.feed-item__footer')).to be_empty
+    expect(doc.css('.feed-item__signals')).to be_empty
+    expect(doc.css('.feed-signal')).to be_empty
+  end
+
+  it 'places feed metadata after the item list, outside the hero' do
+    doc = Nokogiri::HTML(rendered_html)
+    feed_section = doc.at_css('.feed-section')
+    feed_meta = doc.at_css('.feed-meta')
+
+    expect(feed_meta).not_to be_nil
+    expect(doc.at_css('.feed-hero .feed-meta')).to be_nil
+    expect(feed_section).not_to be_nil
+    expect(feed_section.xpath('following-sibling::*[1]').first).to eq(feed_meta)
+  end
+
+  it 'uses layout-section-divided for the item list and metadata sections' do
+    doc = Nokogiri::HTML(rendered_html)
+
+    expect(doc.at_css('.feed-section.layout-section-divided')).not_to be_nil
+    expect(doc.at_css('.feed-meta.layout-section-divided')).not_to be_nil
   end
 
   it 'renders feed items in an uncarded ui-item-list' do
@@ -125,7 +164,7 @@ RSpec.describe 'public/rss.xsl' do
     expect(doc.css('.ui-item__excerpt')[1].text.strip).to eq('Math 1 < 2 > 0')
   end
 
-  it 'surfaces last build time in the hero instead of decorative quality pills' do
+  it 'surfaces last build time in the hero stamp' do
     doc = Nokogiri::HTML(rendered_html)
     hero_stamp = doc.at_css('.feed-hero__stamp')
 
@@ -141,14 +180,6 @@ RSpec.describe 'public/rss.xsl' do
     expect(lockup.name).to eq('a')
     expect(lockup['href']).to eq('/')
     expect(doc.at_css('.brand-lockup__wordmark').text.strip).to eq('html2rss')
-  end
-
-  it 'shows muted quality indicators instead of item metadata values' do
-    doc = Nokogiri::HTML(rendered_html)
-
-    first_item_signals = doc.css('.ui-item').first.css('.feed-signal').map { |node| node.text.strip }
-
-    expect(first_item_signals).to include('Summary', 'Image', 'Tags', 'Byline')
   end
 end
 # rubocop:enable RSpec/MultipleExpectations
