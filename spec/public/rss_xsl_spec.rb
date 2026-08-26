@@ -51,6 +51,7 @@ RSpec.describe 'public/rss.xsl' do
 
     expect(doc.at_css('link[rel="icon"]')['href']).to eq('/feed.svg')
     expect(doc.at_css('.feed-hero__icon')['src']).to eq('/feed.svg')
+    expect(doc.css('.feed-hero__icon-wrap')).to be_empty
   end
 
   it 'renders the feed-reader hero action with client-side wiring' do

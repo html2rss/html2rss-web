@@ -28,9 +28,7 @@
 
           <section class="feed-hero layout-rail-reading layout-stack">
             <div class="ui-actions">
-              <div class="feed-hero__icon-wrap" aria-hidden="true">
-                <img class="feed-hero__icon" src="/feed.svg" alt="" />
-              </div>
+              <img class="feed-hero__icon" src="/feed.svg" alt="" aria-hidden="true" />
               <h1 class="feed-title ui-display-title">
                 <xsl:call-template name="clean-text">
                   <xsl:with-param name="text" select="string(rss/channel/title)" />
