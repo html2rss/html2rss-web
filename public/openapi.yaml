@@ -64,9 +64,28 @@ paths:
                             - enabled
                             - access_token_required
                             type: object
+                          registries:
+                            items:
+                              properties:
+                                id:
+                                  type: string
+                                sync_mode:
+                                  type: string
+                                updated_at:
+                                  type: string
+                                  nullable: true
+                                version:
+                                  type: string
+                                  nullable: true
+                              required:
+                              - id
+                              - sync_mode
+                              type: object
+                            type: array
                         required:
                         - feed_creation
                         - catalog
+                        - registries
                         type: object
                     required:
                     - api
@@ -78,7 +97,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns catalog pointer metadata
+          description: returns registry status metadata
       security:
       - {}
       summary: API metadata
@@ -132,101 +151,10 @@ paths:
                             parameters:
                               properties:
                                 defaults:
-                                  properties:
-                                    blog:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    id:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    region:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    repository:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    section:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    user_id:
-                                      type:
-                                      - string
-                                      - 'null'
-                                    username:
-                                      type:
-                                      - string
-                                      - 'null'
+                                  properties: {}
                                   type: object
                                 schema:
-                                  properties:
-                                    blog:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    id:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    region:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    repository:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    section:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    user_id:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
-                                    username:
-                                      properties:
-                                        type:
-                                          type: string
-                                      required:
-                                      - type
-                                      type:
-                                      - object
-                                      - 'null'
+                                  properties: {}
                                   type: object
                               required:
                               - schema
@@ -234,15 +162,17 @@ paths:
                               type: object
                             path:
                               type: string
+                            registry:
+                              type: string
                             source:
                               type: string
                           required:
                           - id
                           - path
-                          - source
                           - directory
                           - channel
                           - parameters
+                          - source
                           type: object
                         type: array
                     required:

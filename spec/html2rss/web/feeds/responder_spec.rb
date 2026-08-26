@@ -25,7 +25,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   end
 
   before do
-    allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
+    allow(Html2rss::Web::Registry::Index.current).to receive(:config_for).with('example').and_return(static_config)
     allow(Html2rss::Web::Observability).to receive(:emit)
     allow(Html2rss::Web::SentryOps).to receive(:emit_failure_telemetry)
   end

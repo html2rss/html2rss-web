@@ -196,6 +196,21 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
+    it 'returns registry status metadata', :aggregate_failures do
+      get '/api/v1'
+
+      expect(last_response.status).to eq(200)
+      json = expect_success_response(last_response)
+      official = json.dig('data', 'instance', 'registries').find { |row| row['id'] == 'official' }
+
+      expect(official).to include(
+        'id' => 'official',
+        'version' => 'test-fixture',
+        'sync_mode' => 'path'
+      )
+      expect(official['updated_at']).to be_a(String)
+    end
+
     it 'returns API information with trailing slash', :aggregate_failures do
       get '/api/v1/'
 
@@ -221,7 +236,10 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       json = expect_success_response(last_response)
       expect(json.dig('meta', 'catalog_version')).to eq(1)
       expect(json.dig('data', 'configs')).to be_an(Array)
-      expect(json.dig('data', 'configs').first).to include('id', 'path', 'source', 'directory', 'channel', 'parameters')
+      first = json.dig('data', 'configs').first
+      expect(first).to include('id', 'path', 'source', 'directory', 'channel', 'parameters')
+      expect(first['source']).to eq('registry')
+      expect(first).to include('registry' => 'official')
     end
 
     it 'returns 404 when the catalog is disabled', :aggregate_failures do

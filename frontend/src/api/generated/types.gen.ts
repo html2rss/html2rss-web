@@ -13,7 +13,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
     /**
-     * returns catalog pointer metadata
+     * returns registry status metadata
      */
     200: {
         data: {
@@ -31,6 +31,12 @@ export type GetApiMetadataResponses = {
                     access_token_required: boolean;
                     enabled: boolean;
                 };
+                registries: Array<{
+                    id: string;
+                    sync_mode: string;
+                    updated_at?: string;
+                    version?: string;
+                }>;
             };
         };
         success: boolean;
@@ -77,39 +83,14 @@ export type GetConfigCatalogResponses = {
                 id: string;
                 parameters: {
                     defaults: {
-                        blog?: string | null;
-                        id?: string | null;
-                        region?: string | null;
-                        repository?: string | null;
-                        section?: string | null;
-                        user_id?: string | null;
-                        username?: string | null;
+                        [key: string]: unknown;
                     };
                     schema: {
-                        blog?: {
-                            type: string;
-                        } | null;
-                        id?: {
-                            type: string;
-                        } | null;
-                        region?: {
-                            type: string;
-                        } | null;
-                        repository?: {
-                            type: string;
-                        } | null;
-                        section?: {
-                            type: string;
-                        } | null;
-                        user_id?: {
-                            type: string;
-                        } | null;
-                        username?: {
-                            type: string;
-                        } | null;
+                        [key: string]: unknown;
                     };
                 };
                 path: string;
+                registry?: string;
                 source: string;
             }>;
         };

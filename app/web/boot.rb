@@ -60,7 +60,10 @@ module Html2rss
         def configure_loader(new_loader)
           new_loader.push_dir(app_root, namespace: Html2rss)
           collapsed_web_dirs.each { |path| new_loader.collapse(path) }
-          new_loader.inflector.inflect('api_v1' => 'ApiV1')
+          new_loader.inflector.inflect(
+            'api_v1' => 'ApiV1',
+            'cli' => 'CLI'
+          )
         end
 
         # @return [Array<String>]

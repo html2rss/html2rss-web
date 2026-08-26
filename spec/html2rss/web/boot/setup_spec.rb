@@ -21,6 +21,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
   before do
     allow(Html2rss::Web::Flags).to receive(:validate!)
     allow(Html2rss::Web::Boot::Sentry).to receive(:configure!)
+    allow(Html2rss::Web::Registry::Sync).to receive(:boot!)
   end
 
   describe '.call!' do
@@ -33,6 +34,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       expect(Html2rss::Web::EnvironmentValidator).to have_received(:validate_environment!).once
       expect(Html2rss::Web::EnvironmentValidator).to have_received(:validate_production_security!).once
       expect(Html2rss::Web::Flags).to have_received(:validate!).once
+      expect(Html2rss::Web::Registry::Sync).to have_received(:boot!).once
     end
 
     it 'routes rack-timeout logs through the shared app logger' do

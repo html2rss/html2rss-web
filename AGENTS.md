@@ -54,21 +54,63 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 - **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
 - **No skipped quality gate:** Opening a PR without a green Dev Container gate is forbidden. If the gate cannot run, do not open the PR; fix the environment or hand off with explicit blocker + next command for the user.
 
+## Ruby 4 Style
+
+**Ruby 4.0+ only** (see `.tool-versions`). No Ruby 3.x backward-compat shims, guards, or dual-path APIs.
+
+### Baseline
+
+- `# frozen_string_literal: true` on every `.rb` file
+- Plain Ruby — no ActiveSupport
+- Keyword arguments for public multi-arg APIs
+- Typed YARD on public methods in `app/` (`@param`, `@return`) — enforced by `make yard-verify-public-docs`
+
+### Modern syntax (prefer consistently)
+
+| Idiom | Use instead of |
+| --- | --- |
+| Leading `&&` / `\|\|` at line start (Ruby 4) | Trailing operators on long wrapped conditions |
+| `it` in single-parameter blocks | `{ \|x\| x.foo }` when block has one arg only |
+| Pattern matching (`in`, `case … in`) | Deep `if/elsif` chains on shape |
+| `Data.define` | OpenStruct / hand-rolled structs |
+| `filter_map`, `index_by`, `then`, `match?` | Verbose `map`/`compact`, nested `if`, `=~` |
+| Endless `def` | One-line pure helpers when RuboCop allows |
+| Core `Set` (no `require 'set'`) | Array membership/diff on growing collections |
+
+### Performance (agent defaults)
+
+- **Set** for catalog/diff/membership when sizes can grow
+- **Memoize** repeated `ENV.fetch` / pure computations on hot paths
+- **One owner** for duplicated helpers — dedupe before splitting into new files
+- **Functional iterators** over imperative loops
+- **No metric-driven micro-methods** whose only purpose is satisfying RuboCop metrics
+- Do **not** document ZJIT/Ruby Box/Ractor as defaults
+
+### Web-specific deltas
+
+- Prefer `class << self` + `private` over `module_function` (see docs/README Architectural Constraints)
+- Do not use `send(...)` to reach private APIs in app code or specs
+- Specs: table-drive matrices; `:aggregate_failures` for discriminating multi-assert examples
+- LOC: dedupe/unify before extracting — new files only when they buy a real seam or test surface
+
 ## Config catalog API
 
-Public feed-directory metadata for embedded and local configs.
+Public feed-directory metadata from verified registry bundles and local `feeds.yml` entries.
 
 | Item | Detail |
 | --- | --- |
 | Endpoint | `GET /api/v1/configs` |
 | Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
 | Disabled response | `404` with `{ "error": "catalog_disabled" }` |
-| Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
-| Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
+| Registry entries | `Registry::Index.current.catalog_rows` — loads signed bundles from `config/registries.yml`; adds `source: registry`, `registry: <id>` |
+| Local entries | `Registry::Index` catalog rows include `feeds.yml` feeds only when `directory.title` is set (`source: local`) |
+| Per-registry privacy | `catalog: false` in `registries.yml` omits that registry from the API (feeds still served) |
 | Starter feeds (UI) | Frontend `selectStarterFeeds` when feed creation is disabled; catalog find uses full catalog when enabled |
 | Catalog find | `findCatalogEntries` → multi-hit list under create URL; links via `catalogFeedHref` (path + defaults) |
 | CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
-| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
+| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` and `instance.registries` sync status |
 | Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
+
+Registry sync: `bin/html2rss-web registry status`; embedded bundle + optional runtime sync via `Registry::Sync.boot!`. See [docs/README.md](docs/README.md#registry-sync-runbook).
 
 After handler or envelope changes: `make openapi` and `make ci-ready`.

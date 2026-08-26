@@ -38,7 +38,26 @@ RUN apk add --no-cache \
     /usr/local/bundle/bundler/gems/*/.git \
     /usr/local/bundle/cache/bundler/git
 
-# Stage 3: Runtime
+# Stage 3: Official Registry Artifact Builder & Verifier
+FROM ${RUBY_BASE_IMAGE} AS registry-builder
+
+ARG REGISTRY_BUNDLE_URL="https://github.com/html2rss/html2rss-configs/releases/latest/download/registry-bundle.tar.gz"
+
+WORKDIR /app
+
+COPY --from=builder /usr/local/bundle /usr/local/bundle
+COPY bin ./bin
+COPY app ./app
+COPY config ./config
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache curl tar ca-certificates \
+  && curl -fsSL -o registry-bundle.tar.gz "${REGISTRY_BUNDLE_URL}" \
+  && mkdir -p /build/official \
+  && tar -xzf registry-bundle.tar.gz -C /build/official \
+  && bin/html2rss-web registry verify --registry official --dir /build/official
+
+# Stage 4: Runtime
 FROM ${RUBY_BASE_IMAGE}
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
@@ -51,13 +70,14 @@ ARG GIT_SHA
 ENV PORT=4000 \
   RACK_ENV=production \
   RUBY_YJIT_ENABLE=1 \
+  PATH="/app/bin:$PATH" \
   BUILD_TAG=${BUILD_TAG} \
   GIT_SHA=${GIT_SHA}
 
 EXPOSE $PORT
 
 HEALTHCHECK --interval=30m --timeout=60s --start-period=5s \
-  CMD ["/app/bin/docker-healthcheck"]
+  CMD ["/app/bin/html2rss-web", "healthcheck"]
 
 ARG USER=html2rss
 ARG UID=991
@@ -78,6 +98,7 @@ RUN apk add --no-cache \
   && mkdir -p /app \
   && mkdir -p /app/tmp/rack-cache-body \
   && mkdir -p /app/tmp/rack-cache-meta \
+  && mkdir -p /app/data/registries \
   && chown "$USER":"$USER" -R /app
 
 WORKDIR /app
@@ -85,10 +106,11 @@ WORKDIR /app
 USER 991
 
 COPY --from=builder /usr/local/bundle /usr/local/bundle
-COPY --chown=$USER:$USER bin/docker-healthcheck ./bin/docker-healthcheck
+COPY --chown=$USER:$USER bin ./bin
 COPY --chown=$USER:$USER Gemfile Gemfile.lock app.rb config.ru ./
 COPY --chown=$USER:$USER app ./app
 COPY --chown=$USER:$USER config ./config
+COPY --from=registry-builder --chown=$USER:$USER /build/official ./registries/official
 COPY --chown=$USER:$USER public ./public
 COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./frontend/dist
 

@@ -2,3 +2,4 @@
 set -eux
 
 docker build --no-cache -t html2rss/web -f Dockerfile .
+

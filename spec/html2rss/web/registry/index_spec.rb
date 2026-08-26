@@ -1,0 +1,215 @@
+# frozen_string_literal: true
+
+require 'fileutils'
+require 'spec_helper'
+
+require_relative '../../../../app'
+
+RSpec.describe Html2rss::Web::Registry::Index do
+  describe '#config_for' do
+    it 'returns registry configs by feed id' do
+      config = described_class.current.config_for('anthropic.com/news')
+
+      expect(config).to include(channel: hash_including(title: 'Anthropic — News'))
+    end
+
+    it 'returns nil for unknown ids' do
+      expect(described_class.current.config_for('missing.example/feed')).to be_nil
+    end
+
+    it 'resolves feeds by alias' do # rubocop:disable RSpec/ExampleLength
+      fake_bundle = described_class::RegistryBundle.new(
+        registry_id: 'official',
+        manifest: nil,
+        configs: {
+          'anthropic.com/news' => { channel: { title: 'Anthropic — News' } },
+          'anthropic.com/legacy-news' => { channel: { title: 'Anthropic — News' } }
+        },
+        catalog_entries: []
+      )
+      allow(described_class.current).to receive(:loaded_bundles).and_return('official' => fake_bundle)
+
+      expect(described_class.current.config_for('anthropic.com/legacy-news')).to include(
+        channel: hash_including(title: 'Anthropic — News')
+      )
+    end
+
+    it 'still resolves catalog-disabled registry feeds by id' do
+      config = described_class.current.config_for('secret.example/private')
+
+      expect(config).to include(channel: hash_including(url: 'https://secret.example/private'))
+    end
+  end
+
+  describe '.current' do
+    it 'reloads when manifest mtime changes' do
+      initial_index = described_class.current
+      allow(Html2rss::Web::Registry::Store).to receive(:manifest_mtime).and_return('2099-01-01T00:00:00Z')
+
+      expect(described_class.current).not_to be(initial_index)
+    end
+  end
+
+  describe '#catalog_rows' do
+    it 'includes registry rows with source and registry fields' do
+      rows = described_class.current.catalog_rows
+      anthropic = rows.find { it.fetch(:id) == 'anthropic.com/news' }
+
+      expect(anthropic).to include(
+        source: 'registry',
+        registry: 'official',
+        path: '/anthropic.com/news.rss'
+      )
+    end
+
+    it 'omits catalog-disabled registries from the catalog API rows' do
+      rows = described_class.current.catalog_rows
+
+      expect(rows.map { it.fetch(:id) }).not_to include('secret.example/private')
+    end
+
+    it 'prefers the first registry in precedence for duplicate feed ids' do
+      rows = described_class.current.catalog_rows
+      deepmind = rows.find { it.fetch(:id) == 'deepmind.google/blog' }
+
+      expect(deepmind.fetch(:registry)).to eq('official')
+    end
+
+    it 'merges local feeds.yml rows after registry rows', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      allow(Html2rss::Web::LocalConfig).to receive(:feeds).and_return(
+        'team/releases' => {
+          directory: { title: 'Team Releases', summary: 'Internal release notes' },
+          channel: { url: 'https://team.example/releases', title: 'Team Releases' }
+        }
+      )
+
+      rows = described_class.current.catalog_rows
+      local = rows.find { it.fetch(:id) == 'team/releases' }
+
+      expect(local).to include(
+        source: 'local',
+        path: '/team/releases.rss',
+        directory: hash_including(title: 'Team Releases'),
+        channel: hash_including(url: 'https://team.example/releases')
+      )
+      expect(local).not_to have_key(:registry)
+    end
+  end
+
+  describe '#status' do
+    it 'reports loaded registry metadata' do
+      status = described_class.current.status
+      official = status.find { it.id == 'official' }
+
+      expect(official).to have_attributes(
+        version: 'test-fixture',
+        mode: :path
+      )
+    end
+  end
+
+  describe 'allowed_channel_domains' do
+    let(:config_path) { File.join(Dir.pwd, 'tmp', 'domain-allowlist-registries.yml') }
+
+    after do
+      FileUtils.rm_f(config_path)
+    end
+
+    it 'allows suffix-matching channel domains via config load' do # rubocop:disable RSpec/ExampleLength
+      FileUtils.mkdir_p(File.dirname(config_path))
+      File.write(config_path, <<~YAML)
+        precedence:
+          - official
+        registries:
+          official:
+            path: spec/fixtures/registries/official
+            catalog: true
+            allowed_channel_domains:
+              - anthropic.com
+              - deepmind.google
+      YAML
+      ENV['REGISTRIES_CONFIG'] = config_path
+      described_class.reload!
+
+      expect(described_class.current.config_for('anthropic.com/news')).to include(
+        channel: hash_including(url: 'https://www.anthropic.com/news')
+      )
+    end
+
+    it 'rejects bundles with channel URLs outside the allowlist' do # rubocop:disable RSpec/ExampleLength
+      FileUtils.mkdir_p(File.dirname(config_path))
+      File.write(config_path, <<~YAML)
+        precedence:
+          - official
+        registries:
+          official:
+            path: spec/fixtures/registries/official
+            catalog: true
+            allowed_channel_domains:
+              - blocked.example
+      YAML
+      ENV['REGISTRIES_CONFIG'] = config_path
+      described_class.reload!
+
+      expect { described_class.current.config_for('anthropic.com/news') }
+        .to raise_error(Html2rss::Web::Registry::Errors::LoadError, /anthropic\.com/)
+    end
+  end
+
+  describe 'embedded bundle resolution' do
+    let(:embedded_config_path) { File.join(Dir.pwd, 'tmp', 'embedded-registries.yml') }
+    let(:embedded_root) { File.join(Dir.pwd, 'tmp', 'embedded-root') }
+
+    before do
+      FileUtils.mkdir_p(File.dirname(embedded_config_path))
+      File.write(
+        embedded_config_path,
+        YAML.dump(
+          'precedence' => ['official'],
+          'registries' => {
+            'official' => {
+              'sync' => { 'channel' => 'html2rss-official' },
+              'catalog' => true,
+              'public_key_id' => 'test-key',
+              'public_key' => RegistrySyncTestHelpers::TEST_PUBLIC_KEY
+            }
+          }
+        )
+      )
+      ENV['REGISTRIES_CONFIG'] = embedded_config_path
+      ENV['REGISTRY_DATA_ROOT'] = File.join(Dir.pwd, 'tmp', 'empty-data-root')
+      ENV['REGISTRY_EMBEDDED_ROOT'] = embedded_root
+      FileUtils.rm_rf(ENV.fetch('REGISTRY_DATA_ROOT'))
+      FileUtils.rm_rf(embedded_root)
+
+      embedded_official = File.join(embedded_root, 'official')
+      FileUtils.mkdir_p(embedded_official)
+      FileUtils.cp_r(File.join(RegistryTestHelpers::FIXTURES_ROOT, 'official', 'configs'), embedded_official)
+      FileUtils.cp(
+        File.join(RegistrySyncTestHelpers::SYNC_FIXTURES_ROOT, 'bundle', Html2rss::Registry::Manifest::MANIFEST_FILE),
+        File.join(embedded_official, Html2rss::Registry::Manifest::MANIFEST_FILE)
+      )
+      manifest = Html2rss::Registry::Manifest.parse(
+        File.read(File.join(embedded_official, Html2rss::Registry::Manifest::MANIFEST_FILE))
+      )
+      Html2rss::Registry::Signer.sign!(
+        manifest,
+        key_pem: RegistrySyncTestHelpers::TEST_PRIVATE_KEY,
+        bundle_dir: embedded_official
+      )
+      described_class.reload!
+    end
+
+    after do
+      FileUtils.rm_f(embedded_config_path)
+      FileUtils.rm_rf(embedded_root)
+      FileUtils.rm_rf(ENV.fetch('REGISTRY_DATA_ROOT', nil))
+    end
+
+    it 'loads configs directly from the embedded root when no runtime sync data exists' do
+      expect(described_class.current.config_for('anthropic.com/news')).to include(
+        channel: hash_including(title: 'Anthropic — News')
+      )
+    end
+  end
+end

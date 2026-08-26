@@ -24,7 +24,7 @@ RSpec.describe Html2rss::Web::App do
   end
 
   def stub_static_feed(rss_body: '<rss/>', json_body: static_feed_json, ttl: 180)
-    allow(Html2rss::Web::LocalConfig).to receive(:find).and_return({ channel: { ttl: ttl } })
+    allow(Html2rss::Web::Registry::Index.current).to receive(:config_for).and_return({ channel: { ttl: ttl } })
 
     stub_static_renderers(static_feed_result(ttl:), rss_body:, json_body:)
   end
@@ -59,8 +59,8 @@ RSpec.describe Html2rss::Web::App do
   end
 
   def stub_static_service_error(feed_name)
-    allow(Html2rss::Web::LocalConfig)
-      .to receive(:find)
+    allow(Html2rss::Web::Registry::Index.current)
+      .to receive(:config_for)
       .with(feed_name)
       .and_return({ channel: { ttl: 180 } })
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(static_service_error_result)
@@ -145,7 +145,8 @@ RSpec.describe Html2rss::Web::App do
     end
 
     it 'serves nested static feed routes' do
-      allow(Html2rss::Web::LocalConfig).to receive(:find).with('team/releases').and_return({ channel: { ttl: 180 } })
+      allow(Html2rss::Web::Registry::Index.current)
+        .to receive(:config_for).with('team/releases').and_return({ channel: { ttl: 180 } })
       stub_static_renderers(static_feed_result(ttl: 180), rss_body: '<rss/>', json_body: static_feed_json)
 
       get '/team/releases.xml'
@@ -157,7 +158,8 @@ RSpec.describe Html2rss::Web::App do
 
     it 'serves HEAD requests for static feed routes with negotiated headers only' do
       feed_name = "legacy-head-#{SecureRandom.hex(4)}"
-      allow(Html2rss::Web::LocalConfig).to receive(:find).with(feed_name).and_return({ channel: { ttl: 180 } })
+      allow(Html2rss::Web::Registry::Index.current)
+        .to receive(:config_for).with(feed_name).and_return({ channel: { ttl: 180 } })
       stub_static_renderers(static_feed_result(ttl: 180), rss_body: '<rss/>', json_body: static_feed_json)
 
       head "/#{feed_name}"
@@ -176,7 +178,8 @@ RSpec.describe Html2rss::Web::App do
 
     it 'coerces string ttl values before cache expiry math' do
       feed_name = "legacy-ttl-#{SecureRandom.hex(4)}"
-      allow(Html2rss::Web::LocalConfig).to receive(:find).with(feed_name).and_return({ channel: { ttl: '180' } })
+      allow(Html2rss::Web::Registry::Index.current)
+        .to receive(:config_for).with(feed_name).and_return({ channel: { ttl: '180' } })
       stub_static_renderers(static_feed_result(ttl: '180'), rss_body: '<rss/>', json_body: static_feed_json)
 
       get "/#{feed_name}"

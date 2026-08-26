@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# frozen_string_literal: true
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+CONFIGS_REPO="${HTML2RSS_CONFIGS_ROOT:-$ROOT_DIR/../html2rss-configs}"
+OUTPUT_TAR="${1:-$ROOT_DIR/dist/registry-bundle.tar.gz}"
+
+if [[ ! -d "$CONFIGS_REPO/configs" ]]; then
+  echo "Missing configs tree at $CONFIGS_REPO/configs" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$OUTPUT_TAR")"
+echo "Building registry bundle from $CONFIGS_REPO into $OUTPUT_TAR"
+(
+  cd "$CONFIGS_REPO"
+  BUNDLE_GEMFILE=tool/Gemfile bundle exec ruby tool/registry-build --output "$OUTPUT_TAR"
+)
+
+echo "Registry bundle ready at $OUTPUT_TAR"
+

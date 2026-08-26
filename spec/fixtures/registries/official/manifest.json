@@ -1,0 +1,11 @@
+{
+  "format": "registry.v1",
+  "registry_id": "official",
+  "version": "test-fixture",
+  "public_key_id": "test",
+  "files": {
+    "configs/anthropic.com/news.yml": "679b3c28b6dd7e08bbfdaf8564e077e7c2ac4140eacbc9543756591aaf0621f5",
+    "configs/deepmind.google/blog.yml": "3dbc30f109bb169f1de06372236a2d352584808d11be8243ba93befcd94a7b41"
+  }
+}
+

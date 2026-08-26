@@ -5,6 +5,7 @@ plugins:
   - rubocop-thread_safety
 
 AllCops:
+  TargetRubyVersion: 4.0
   DisplayCopNames: true
   NewCops: enable
   Exclude:
@@ -37,6 +38,10 @@ Style/Documentation:
   Enabled: false
   AllowedConstants:
     - App
+
+Style/ItBlockParameter:
+  Enabled: true
+  EnforcedStyle: allow_single_line
 
 RSpec/SpecFilePathFormat:
   Exclude:

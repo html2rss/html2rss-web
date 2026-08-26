@@ -26,7 +26,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 - **Runtime behavior**: Application code plus tests.
 - **HTTP contract**: Request specs plus generated OpenAPI.
-- **Config catalog API**: `GET /api/v1/configs` — embedded data from `Html2rss::Configs::Catalog`, merged with local `feeds.yml` entries that include `directory.title`. Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
+- **Config catalog API**: `GET /api/v1/configs` — catalog rows from `Registry::Index` (verified registry bundles per `config/registries.yml`, merged with local `feeds.yml` entries that include `directory.title`). Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
 - **This file**: Contributor conventions and current project rules.
 
 ---
@@ -167,12 +167,15 @@ Search these pages for examples, plugins, and configuration options:
 ## Architectural Constraints
 
 - **No Persistence**: Do not add databases, ORMs, or background job systems.
-- **Backend Style**:
+- **Backend Style** (Ruby **4.0+** only — see [AGENTS.md](../AGENTS.md#ruby-4-style)):
   - Keep the main `app.rb` thin; organize routes in `Html2rss::Web::Routes::*`.
   - For helpers, use `class << self` and `private` methods. Avoid `module_function`.
   - Use YARD doc comments for all public methods in `app/`.
   - Add `# frozen_string_literal: true` to all Ruby files.
   - Do not use `send(...)` to reach into private APIs; expose what is needed at the module level.
+  - Prefer leading `&&` / `||` at line start for wrapped conditions; `it` in single-parameter blocks; pattern matching over deep `if/elsif` chains.
+  - Prefer `Data.define`, `filter_map`, `index_by`, `then`, `match?`, and core `Set` (no `require 'set'`) over OpenStruct, verbose `map`/`compact`, nested `if`, `=~`, and array membership on growing collections.
+  - Dedupe helpers before extracting new files; use `Set` and memoization on hot paths; table-drive specs with `:aggregate_failures` for multi-assert outcomes.
 - **Frontend Style**:
   - Follow visual and CSS rules in [design-system.md](design-system.md).
   - Use Preact components in `frontend/src/`.
@@ -281,6 +284,107 @@ After baseline traffic, configure per project:
 **Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
 
 Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
+
+---
+
+## Registry sync runbook
+
+For end-to-end release and deployment steps (maintainers and operators), see [registry-go-live.md](registry-go-live.md).
+
+Signed feed registries replace the embedded `html2rss-configs` gem. Each registry is defined in `config/registries.yml` (override path with `REGISTRIES_CONFIG`).
+
+### Check sync status
+
+Inside the Dev Container or Docker container:
+
+```bash
+bin/html2rss-web registry status
+```
+
+Columns: `registry`, `mode`, `version`, `staged_version`, `updated_at`, `sync_url`, `last_error`. Exit code is non-zero when any sync-mode registry lacks a usable on-disk bundle.
+
+Sync, dry-run, or promote a staged bundle:
+
+```bash
+bin/html2rss-web registry sync --registry official
+bin/html2rss-web registry sync --registry official --dry-run
+bin/html2rss-web registry promote --registry official
+```
+
+Production recommendation: keep `auto_promote: false` (default), pin `sync.pin_version` to the approved configs tag, run sync to stage a verified bundle, then promote manually after review. Use `sync.max_version` as an incident freeze cap.
+
+In Docker Compose, the dedicated `registry-sync` service runs periodic background updates cleanly outside Puma/Ruby.
+
+Optional hardening: `allowed_channel_domains` suffix-matches every registry config `channel.url` host at bundle load time.
+
+### Boot behavior
+
+`Registry::Sync.boot!` runs during app boot (see `app/web/boot/setup.rb`):
+
+1. **Instant index** — loads the embedded official bundle (140+ feeds) directly from `/app/registries/official` (or `REGISTRY_DATA_ROOT/official` if an updated synced bundle exists). Zero copying, zero startup network traffic.
+2. **Sync on boot** — when `REGISTRY_SYNC_ON_BOOT=true`, triggers an asynchronous background sync.
+3. **Background refresh** — in standalone single-process mode, `REGISTRY_SYNC_INTERVAL_HOURS` (default `24`) re-syncs on a periodic timer. Set to `0` when using the `registry-sync` Compose service or in static/offline environments.
+
+Network sync and embedded bundle verification verify Ed25519 signatures using the `public_key` pinned in `registries.yml`. Local `path:` mounts use integrity-only verification.
+
+### Add a corporate registry
+
+```yaml
+precedence:
+  - official
+  - corp
+
+registries:
+  official:
+    sync:
+      channel: html2rss-official
+      pin_version: v2026.08.22   # optional
+      max_version: v2026.08.22   # optional incident freeze
+    auto_promote: false          # default; verified bundles stage until --promote
+    catalog: true
+    public_key_id: html2rss:registry:2026
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      ...
+      -----END PUBLIC KEY-----
+
+  corp:
+    sync:
+      url: https://registry.example.com/registry-bundle.tar.gz
+    catalog: false          # feeds served; omitted from GET /api/v1/configs
+    public_key_id: corp:registry:2026
+    public_key: |
+      -----BEGIN PUBLIC KEY-----
+      ...
+      -----END PUBLIC KEY-----
+```
+
+- **`precedence`** — merge order for feed lookup; first match wins.
+- **`sync.url`** — direct tarball URL, or use `sync.channel: html2rss-official` for the default GitHub release asset.
+- **`sync.pin_version` / `sync.max_version`** — fetch a specific tag or reject manifests newer than the cap.
+- **`auto_promote: false`** — default; verified bundles land in `REGISTRY_DATA_ROOT/<id>/.staging/` until `bin/html2rss-web registry promote`.
+- **`allowed_channel_domains`** — optional suffix allowlist enforced when the bundle loads.
+- **`catalog: false`** — private registry: configs are served at `/{registry.id}.rss` but excluded from the public catalog API (privacy for internal feeds).
+- Restrict outbound hosts with `REGISTRY_SYNC_ALLOWED_HOSTS` (comma-separated hostnames).
+
+### Air-gapped / offline path mount
+
+For environments without outbound network access, mount a verified bundle directory:
+
+```yaml
+registries:
+  official:
+    path: /opt/html2rss/registry/official
+    catalog: true
+```
+
+The directory must contain `manifest.json`, optional `manifest.sig`, and `configs/`. Path mode skips network sync; run `bin/html2rss-web registry status` to confirm `mode` is `path`.
+
+### Key rotation
+
+1. Publish a new bundle signed with the new key (`public_key_id` in `manifest.json`).
+2. Update `public_key_id` and `public_key` in `registries.yml` on every instance **before** or together with the first release that requires the new key.
+3. Re-sync (`bin/html2rss-web registry sync`) and promote when `auto_promote: false` (`bin/html2rss-web registry promote`). Failed verification leaves the previous bundle active and records `last_error`.
 
 ---
 
