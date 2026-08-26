@@ -5,13 +5,15 @@
 
 COMPOSITION_FILES = [
   'frontend/src/styles/main.css',
-  'public/rss.xsl'
+  'public/feed.css'
 ].freeze
 
 ALL_STYLE_FILES = [
   *COMPOSITION_FILES,
   'public/shared-ui.css'
 ].freeze
+
+RSS_XSL_PATH = 'public/rss.xsl'
 
 PRIMITIVE_REDEF = /
   \.(btn|input|ui-card|ui-eyebrow|ui-item|layout-stack|brand-lockup|ui-actions|ui-display-title)
@@ -20,6 +22,8 @@ PRIMITIVE_REDEF = /
 /x
 RAW_LETTER_SPACING = /^\s*letter-spacing:\s*[0-9.-]/
 RAW_FONT_SIZE = /^\s*font-size:\s*(clamp\(|[0-9])/
+INLINE_STYLE_ELEMENT = /<style[\s>]/
+INLINE_STYLE_ATTRIBUTE = /\sstyle=/
 
 def matching_lines(files, pattern)
   files.flat_map do |path|
@@ -51,7 +55,7 @@ end
 
 fail_with(
   matching_lines(COMPOSITION_FILES, PRIMITIVE_REDEF),
-  'main.css / rss.xsl must not redefine shared primitives; ' \
+  'main.css / feed.css must not redefine shared primitives; ' \
   'move them to public/shared-ui.css or override via CSS vars on a composition host'
 )
 
@@ -62,12 +66,22 @@ fail_with(
 
 fail_with(
   matching_lines(COMPOSITION_FILES, RAW_LETTER_SPACING),
-  'Use letter-spacing tokens instead of raw values in main.css / rss.xsl'
+  'Use letter-spacing tokens instead of raw values in main.css / feed.css'
 )
 
 fail_with(
   matching_lines(COMPOSITION_FILES, RAW_FONT_SIZE),
-  'Use font-size tokens instead of raw values in main.css / rss.xsl'
+  'Use font-size tokens instead of raw values in main.css / feed.css'
+)
+
+rss_xsl_lines = File.readlines(RSS_XSL_PATH)
+fail_with(
+  rss_xsl_lines.each_with_index.filter_map do |line, index|
+    next unless line.match?(INLINE_STYLE_ELEMENT) || line.match?(INLINE_STYLE_ATTRIBUTE)
+
+    "#{RSS_XSL_PATH}:#{index + 1}:#{line}"
+  end,
+  'public/rss.xsl must be CSP-safe: no inline <style> elements or style= attributes'
 )
 
 puts 'CSS primitive ownership checks passed!'

@@ -75,7 +75,7 @@ lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Stylelint + P
 	@echo "Running ESLint..."
 	@cd frontend && pnpm run lint
 	@echo "Running Stylelint..."
-	@cd frontend && pnpm exec stylelint "../public/shared-ui.css" "**/*.css"
+	@cd frontend && pnpm exec stylelint "../public/shared-ui.css" "../public/feed.css" "**/*.css"
 	@$(MAKE) lint-css-primitives
 	@echo "Running Prettier format check..."
 	@cd frontend && pnpm run format:check

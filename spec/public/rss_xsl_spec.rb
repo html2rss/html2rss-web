@@ -110,10 +110,12 @@ RSpec.describe 'public/rss.xsl' do
     expect(json_action['rel']).to eq('noopener noreferrer')
   end
 
-  it 'uses the shared ui stylesheet' do
+  it 'uses the shared ui and feed stylesheets without inline styles' do
     doc = Nokogiri::HTML(rendered_html)
+    stylesheet_hrefs = doc.css('link[rel="stylesheet"]').map { |link| link['href'] }
 
-    expect(doc.at_css('link[rel="stylesheet"]')['href']).to eq('/shared-ui.css')
+    expect(stylesheet_hrefs).to eq(['/shared-ui.css', '/feed.css'])
+    expect(doc.at_css('style')).to be_nil
   end
 
   it 'preserves plain-text angle brackets while stripping actual html tags' do

@@ -10,11 +10,11 @@ There is one shared design language and one shared primitive layer.
 
 - Shared primitives live in [public/shared-ui.css](../public/shared-ui.css).
 - App-specific composition lives in [frontend/src/styles/main.css](../frontend/src/styles/main.css).
-- Feed-specific composition lives in [public/rss.xsl](../public/rss.xsl).
+- Feed-specific composition lives in [public/feed.css](../public/feed.css) (loaded by [public/rss.xsl](../public/rss.xsl)).
 - Journey **chrome** copy lives in [frontend/src/journey/copy.ts](../frontend/src/journey/copy.ts): titles, buttons, local validation, loading labels, and aria (one string per chrome job).
 - Classified API/feed **outcomes** show `Decision#message` from the wire (`error.message` / `warning.message`). Do not remap those codes through COPY.
 
-Do not duplicate tokens, element resets, base canvas rules, card shells, inputs, item list grammar, rails, stack primitives, or brand-lockup styling in `main.css` or `rss.xsl`. If app and feed both need it, it belongs in `shared-ui.css`.
+Do not duplicate tokens, element resets, base canvas rules, card shells, inputs, item list grammar, rails, stack primitives, or brand-lockup styling in `main.css` or `feed.css`. If app and feed both need it, it belongs in `shared-ui.css`.
 
 ## Visual Thesis
 
@@ -120,7 +120,7 @@ This file must not redefine shared primitives (`.btn`, `.input`, `.ui-card`, `.u
 
 ### 3. Feed Composition Layer
 
-Owned by [public/rss.xsl](../public/rss.xsl).
+Owned by [public/feed.css](../public/feed.css).
 
 This file owns only feed-page specifics:
 
@@ -135,7 +135,8 @@ Item title / meta / excerpt / actions must reuse the shared `.ui-item__*` classe
 
 The XSL feed view is a human-browser presentation layer only:
 
-- local assets only (`/shared-ui.css`, `/feed-page.js`, `/feed.svg`) — zero third-party network requests
+- local assets only (`/shared-ui.css`, `/feed.css`, `/feed-page.js`, `/feed.svg`) — zero third-party network requests
+- CSP-safe XSL output: no inline `<style>` blocks or `style=` attributes (`style-src` / `script-src` are `'self'`)
 - format and copy actions are demoted secondary controls; primary reader action keeps the orange treatment
 - no analytics hooks, cookie banners, consent UI, or privacy-policy copy
 - item lists use the same uncarded `.ui-item-list` / `.ui-item` grammar as the app result preview
@@ -249,7 +250,8 @@ If you add `display: grid`, be able to explain why an existing stack or rail pri
 
 `make lint-css-primitives` (wired into `make lint-js`) fails when:
 
-- `frontend/src/styles/main.css` or `public/rss.xsl` redefine shared primitive selectors (including indented rules)
+- `frontend/src/styles/main.css` or `public/feed.css` redefine shared primitive selectors (including indented rules)
+- `public/rss.xsl` contains inline `<style>` elements or `style=` attributes
 - `--state-frame-*` tokens reappear
 - raw off-scale `letter-spacing` or `font-size` literals appear in app/feed composition CSS (use tokens; override shared controls via host CSS vars such as `--control-input-lg-*`)
 
@@ -260,7 +262,7 @@ Stylelint continues to enforce selector naming on CSS files.
 When changing UI, an agent must verify:
 
 1. Does the change reuse `shared-ui.css` where appropriate?
-2. Did I avoid duplicating a shared primitive in `main.css` or `rss.xsl`?
+2. Did I avoid duplicating a shared primitive in `main.css` or `feed.css`?
 3. Does the app still match the RSS/XSL rendering in overall tone and framing?
 4. Did I avoid inventing a page-local variant for something that should be a modifier or attribute?
 5. If I added a token, modifier, or primitive, did I justify it in this file?
