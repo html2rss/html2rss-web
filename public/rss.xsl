@@ -10,7 +10,7 @@
         <title><xsl:value-of select="rss/channel/title" /> (Feed)</title>
         <link href="/shared-ui.css" rel="stylesheet" />
         <link href="/feed.svg" rel="icon" />
-        <script src="/feed-reader-link.js"></script>
+        <script src="/feed-page.js"></script>
         <style>
           .feed-page {
             min-height: 100vh;
@@ -267,6 +267,7 @@
                   </xsl:attribute>
                   Open in feed reader
                 </a>
+                <a class="feed-hero__action btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
                 <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                   <a class="feed-hero__action btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
                 </xsl:if>

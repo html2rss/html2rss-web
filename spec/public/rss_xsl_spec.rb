@@ -59,7 +59,18 @@ RSpec.describe 'public/rss.xsl' do
     expect(doc.at_css('[data-feed-reader-link]')).not_to be_nil
     expect(doc.at_css('[data-feed-reader-link]').text.strip).to eq('Open in feed reader')
     expect(doc.at_css('[data-feed-reader-link]')['href']).to eq('#')
-    expect(doc.at_css('script')['src']).to eq('/feed-reader-link.js')
+    expect(doc.at_css('script')['src']).to eq('/feed-page.js')
+  end
+
+  it 'renders the JSON feed hero action with client-side wiring' do
+    doc = Nokogiri::HTML(rendered_html)
+    json_action = doc.at_css('[data-json-feed-link]')
+
+    expect(json_action).not_to be_nil
+    expect(json_action.text.strip).to eq('Open JSON Feed')
+    expect(json_action['href']).to eq('#')
+    expect(json_action['target']).to eq('_blank')
+    expect(json_action['rel']).to eq('noopener noreferrer')
   end
 
   it 'uses the shared ui stylesheet' do
