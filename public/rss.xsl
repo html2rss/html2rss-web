@@ -61,13 +61,6 @@
             gap: var(--space-3);
           }
 
-          .feed-hero__lede {
-            margin: 0;
-            color: var(--text-muted);
-            font-size: var(--font-size-1);
-            max-width: 32rem;
-          }
-
           .feed-hero__action--primary {
             border-color: var(--border-reader-strong);
             background: var(--surface-reader-strong);
@@ -243,19 +236,9 @@
                 </p>
               </xsl:if>
               <div class="ui-actions">
-                <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true">
-                  <xsl:attribute name="href">
-                    <xsl:choose>
-                      <xsl:when test="normalize-space(string(rss/channel/atom:link[@rel='self']/@href)) != ''">
-                        <xsl:text>feed:</xsl:text>
-                        <xsl:value-of select="rss/channel/atom:link[@rel='self']/@href" />
-                      </xsl:when>
-                      <xsl:otherwise>#</xsl:otherwise>
-                    </xsl:choose>
-                  </xsl:attribute>
-                  Open in feed reader
-                </a>
+                <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true" href="#">Open in feed reader</a>
                 <button type="button" class="btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
+                <span class="ui-eyebrow ui-eyebrow--ghost" data-copy-feed-url-status="true" aria-live="polite"></span>
                 <a class="btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
                 <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                   <a class="btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>

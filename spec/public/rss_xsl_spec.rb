@@ -70,6 +70,33 @@ RSpec.describe 'public/rss.xsl' do
     expect(copy_action.text.strip).to eq('Copy feed URL')
     expect(copy_action.name).to eq('button')
     expect(copy_action['type']).to eq('button')
+    expect(doc.at_css('[data-copy-feed-url-status]')).not_to be_nil
+    expect(doc.at_css('[data-copy-feed-url-status]')['aria-live']).to eq('polite')
+    expect(copy_action['aria-live']).to be_nil
+  end
+
+  it 'uses the shared ui-actions row for hero controls' do
+    doc = Nokogiri::HTML(rendered_html)
+    actions = doc.at_css('.ui-actions')
+
+    expect(actions).not_to be_nil
+    expect(actions.at_css('[data-feed-reader-link]')).not_to be_nil
+    expect(actions.at_css('[data-copy-feed-url]')).not_to be_nil
+    expect(actions.at_css('[data-json-feed-link]')).not_to be_nil
+  end
+
+  it 'renders feed items in an uncarded ui-item-list' do
+    doc = Nokogiri::HTML(rendered_html)
+    item_list = doc.at_css('.ui-item-list')
+
+    expect(item_list).not_to be_nil
+    expect(item_list.name).to eq('ul')
+    expect(doc.css('.ui-item-list > .ui-item').length).to eq(3)
+    expect(doc.css('.ui-item--card')).to be_empty
+    doc.css('.ui-item-list > .ui-item').each do |item|
+      expect(item['class']).not_to include('ui-card')
+      expect(item.at_css('.ui-card')).to be_nil
+    end
   end
 
   it 'renders the JSON feed hero action with client-side wiring' do

@@ -19,15 +19,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!navigator.clipboard || !navigator.clipboard.writeText) {
       copyButton.hidden = true;
     } else {
-      copyButton.setAttribute('aria-live', 'polite');
-      var copyLabel = copyButton.textContent;
+      var copyStatus = document.querySelector('[data-copy-feed-url-status]');
       copyButton.addEventListener('click', function () {
         navigator.clipboard.writeText(window.location.href).then(function () {
-          copyButton.textContent = 'Copied!';
+          if (copyStatus) {
+            copyStatus.textContent = 'Copied!';
+          }
           globalThis.setTimeout(function () {
-            copyButton.textContent = copyLabel;
+            if (copyStatus) {
+              copyStatus.textContent = '';
+            }
           }, 2500);
-        });
+        }).catch(function () {});
       });
     }
   }
