@@ -50,7 +50,7 @@ RSpec.describe 'public/rss.xsl' do
     doc = Nokogiri::HTML(rendered_html)
 
     expect(doc.at_css('link[rel="icon"]')['href']).to eq('/feed.svg')
-    expect(doc.at_css('.feed-hero__icon')['src']).to eq('/feed.svg')
+    expect(doc.at_css('.ui-hero__icon')['src']).to eq('/feed.svg')
   end
 
   it 'renders the feed-reader hero action with client-side wiring' do
@@ -106,17 +106,20 @@ RSpec.describe 'public/rss.xsl' do
 
   it 'uses the shared brand lockup in the feed header' do
     doc = Nokogiri::HTML(rendered_html)
+    lockup = doc.at_css('.brand-lockup')
 
-    expect(doc.at_css('.brand-lockup')).not_to be_nil
+    expect(lockup).not_to be_nil
+    expect(lockup.name).to eq('a')
+    expect(lockup['href']).to eq('/')
     expect(doc.at_css('.brand-lockup__wordmark').text.strip).to eq('html2rss')
   end
 
   it 'shows muted quality indicators instead of item metadata values' do
     doc = Nokogiri::HTML(rendered_html)
 
-    first_card_signals = doc.css('.feed-card').first.css('.feed-signal').map { |node| node.text.strip }
+    first_item_signals = doc.css('.ui-item').first.css('.feed-signal').map { |node| node.text.strip }
 
-    expect(first_card_signals).to include('Summary', 'Image', 'Tags', 'Byline')
+    expect(first_item_signals).to include('Summary', 'Image', 'Tags', 'Byline')
   end
 end
 # rubocop:enable RSpec/MultipleExpectations

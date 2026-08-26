@@ -131,6 +131,16 @@ This file owns only feed-page specifics:
 
 Item title / meta / excerpt / actions must reuse the shared `.ui-item__*` classes.
 
+### Self-hosted feed surface (XSL)
+
+The XSL feed view is a human-browser presentation layer only:
+
+- local assets only (`/shared-ui.css`, `/feed-page.js`, `/feed.svg`) — zero third-party network requests
+- format and copy actions are demoted secondary controls; primary reader action keeps the orange treatment
+- no analytics hooks, cookie banners, consent UI, or privacy-policy copy
+- item lists use the same uncarded `.ui-item-list` / `.ui-item` grammar as the app result preview
+- brand lockup links to `/` as the instance discovery on-ramp
+
 ## Approved Primitive API
 
 Prefer composing these primitives before inventing new classes:

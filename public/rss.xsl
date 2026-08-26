@@ -37,33 +37,6 @@
             gap: var(--space-3);
           }
 
-          .feed-hero__masthead {
-            width: auto;
-            display: flex;
-            align-items: baseline;
-            gap: var(--space-3);
-          }
-
-          .feed-hero__icon-wrap {
-            width: clamp(1.8rem, 4vw, 2.5rem);
-            height: clamp(1.8rem, 4vw, 2.5rem);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 auto;
-            transform: translateY(0.08em);
-          }
-
-          .feed-hero__icon {
-            width: 100%;
-            height: 100%;
-            opacity: 0.92;
-          }
-
-          .feed-title {
-            flex: 1 1 auto;
-          }
-
           .feed-hero__lede {
             margin: 0;
             color: var(--text-muted);
@@ -92,13 +65,13 @@
 
           .feed-meta {
             --stack-gap: var(--space-2);
-            padding-top: var(--space-2);
+            padding-top: var(--space-3);
             border-top: var(--border-width) solid var(--border-subtle);
           }
 
           .feed-meta__row {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: minmax(6rem, max-content) 1fr;
             gap: var(--space-2);
             align-items: baseline;
           }
@@ -127,11 +100,7 @@
             gap: var(--space-4);
           }
 
-          .feed-list {
-            --stack-gap: var(--space-4);
-          }
-
-          .feed-card__footer {
+          .feed-item__footer {
             display: flex;
             flex-wrap: wrap;
             gap: var(--space-3);
@@ -139,7 +108,7 @@
             justify-content: space-between;
           }
 
-          .feed-card__signals {
+          .feed-item__signals {
             display: flex;
             flex-wrap: wrap;
             gap: var(--space-2);
@@ -176,20 +145,11 @@
           }
 
           @media (max-width: 47.9375rem) {
-            .feed-hero {
-              padding: var(--space-4);
-            }
-
-            .feed-meta__row {
-              display: grid;
-              gap: var(--space-1);
-            }
-
-            .feed-card__footer {
+            .feed-item__footer {
               align-items: start;
             }
 
-            .feed-card__signals {
+            .feed-item__signals {
               width: 100%;
               justify-content: flex-start;
               margin-left: 0;
@@ -200,21 +160,21 @@
       <body>
         <main class="feed-page layout-shell">
           <div class="feed-page__brand">
-            <div class="brand-lockup" aria-label="html2rss">
+            <a href="/" class="brand-lockup" aria-label="html2rss">
               <span class="brand-lockup__mark" aria-hidden="true">
                 <span></span>
                 <span></span>
                 <span></span>
               </span>
               <strong class="brand-lockup__wordmark">html2rss</strong>
-            </div>
+            </a>
           </div>
 
-          <section class="feed-hero ui-card ui-card--notice ui-card--roomy ui-hero layout-rail-reading layout-stack">
+          <section class="feed-hero layout-rail-reading layout-stack">
             <div class="feed-hero__body">
-              <div class="feed-hero__masthead ui-hero__masthead">
-                <div class="feed-hero__icon-wrap ui-hero__icon-wrap" aria-hidden="true">
-                  <img class="feed-hero__icon ui-hero__icon" src="/feed.svg" alt="" />
+              <div class="ui-hero__masthead">
+                <div class="ui-hero__icon-wrap" aria-hidden="true">
+                  <img class="ui-hero__icon" src="/feed.svg" alt="" />
                 </div>
                 <h1 class="feed-title ui-display-title">
                   <xsl:call-template name="clean-text">
@@ -254,8 +214,8 @@
                   </xsl:choose>
                 </p>
               </xsl:if>
-              <div class="feed-hero__actions ui-hero__actions">
-                <a class="feed-hero__action btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true">
+              <div class="ui-hero__actions">
+                <a class="btn btn--ghost feed-hero__action--primary" data-feed-reader-link="true">
                   <xsl:attribute name="href">
                     <xsl:choose>
                       <xsl:when test="normalize-space(string(rss/channel/atom:link[@rel='self']/@href)) != ''">
@@ -267,10 +227,10 @@
                   </xsl:attribute>
                   Open in feed reader
                 </a>
-                <button type="button" class="feed-hero__action btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
-                <a class="feed-hero__action btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
+                <button type="button" class="btn btn--ghost" data-copy-feed-url="true">Copy feed URL</button>
+                <a class="btn btn--ghost" data-json-feed-link="true" target="_blank" rel="noopener noreferrer" href="#">Open JSON Feed</a>
                 <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
-                  <a class="feed-hero__action btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
+                  <a class="btn btn--ghost" href="{rss/channel/link}" target="_blank" rel="noopener noreferrer">Open source site</a>
                 </xsl:if>
               </div>
             </div>
@@ -280,13 +240,6 @@
                 <span class="ui-eyebrow">Items</span>
                 <span class="feed-meta__value"><xsl:value-of select="count(rss/channel/item)" /></span>
               </div>
-
-              <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
-                <div class="feed-meta__row">
-                  <span class="ui-eyebrow">Updated</span>
-                  <span class="feed-meta__value"><xsl:value-of select="rss/channel/lastBuildDate" /></span>
-                </div>
-              </xsl:if>
 
               <xsl:if test="normalize-space(string(rss/channel/link)) != ''">
                 <div class="feed-meta__row">
@@ -332,10 +285,10 @@
 
             <xsl:choose>
               <xsl:when test="count(rss/channel/item) &gt; 0">
-                <ul class="feed-list layout-stack">
+                <ul class="ui-item-list" role="list">
                   <xsl:for-each select="rss/channel/item">
-                    <li>
-                      <article class="feed-card ui-card ui-item--card layout-stack layout-stack--tight">
+                    <li class="ui-item">
+                      <article class="layout-stack layout-stack--tight">
                         <xsl:variable name="cleanTitle">
                           <xsl:call-template name="clean-text">
                             <xsl:with-param name="text" select="string(title)" />
@@ -383,7 +336,7 @@
                         </xsl:if>
 
                         <xsl:if test="normalize-space(string(link)) != '' or $hasSummary or $hasImage or $hasCategories or $hasAuthor">
-                          <div class="feed-card__footer">
+                          <div class="feed-item__footer">
                             <xsl:if test="normalize-space(string(link)) != ''">
                               <p class="ui-item__actions">
                                 <a href="{link}" target="_blank" rel="noopener noreferrer">Open original</a>
@@ -391,7 +344,7 @@
                             </xsl:if>
 
                             <xsl:if test="$hasSummary or $hasImage or $hasCategories or $hasAuthor">
-                              <div class="feed-card__signals" aria-label="Item quality indicators">
+                              <div class="feed-item__signals" aria-label="Item quality indicators">
                                 <xsl:if test="$hasSummary">
                                   <span class="feed-signal"><span class="feed-signal__glyph"></span><span>Summary</span></span>
                                 </xsl:if>
