@@ -76,6 +76,27 @@ RSpec.describe 'public/rss.xsl' do
     expect(copy_action['aria-live']).to be_nil
   end
 
+  it 'uses ui-headline-row with a right-aligned badge outside ui-actions' do
+    doc = Nokogiri::HTML(rendered_html)
+    headline_row = doc.at_css('.feed-hero .ui-headline-row')
+
+    expect(headline_row).not_to be_nil
+    expect(headline_row.at_css('.ui-display-title')).not_to be_nil
+    expect(headline_row.at_css('.feed-hero__icon')['src']).to eq('/feed.svg')
+    expect(doc.at_css('.feed-hero .ui-actions .feed-hero__icon')).to be_nil
+    expect(doc.at_css('.feed-hero .ui-actions h1')).to be_nil
+  end
+
+  it 'places a context eyebrow before the headline row' do
+    doc = Nokogiri::HTML(rendered_html)
+    hero = doc.at_css('.feed-hero')
+    eyebrow = hero.at_css('.ui-eyebrow')
+    headline_row = hero.at_css('.ui-headline-row')
+
+    expect(eyebrow.text.strip).to eq('RSS feed')
+    expect(hero.element_children.index(eyebrow)).to be < hero.element_children.index(headline_row)
+  end
+
   it 'uses the shared ui-actions row for hero controls' do
     doc = Nokogiri::HTML(rendered_html)
     actions = doc.css('.feed-hero .ui-actions.layout-rail-reading').first
@@ -84,6 +105,7 @@ RSpec.describe 'public/rss.xsl' do
     expect(actions.at_css('[data-feed-reader-link]')).not_to be_nil
     expect(actions.at_css('[data-copy-feed-url]')).not_to be_nil
     expect(actions.at_css('[data-json-feed-link]')).not_to be_nil
+    expect(actions.element_children.none? { |node| %w[img h1].include?(node.name) }).to be(true)
   end
 
   it 'orders item meta before title to match the result preview' do
@@ -165,11 +187,14 @@ RSpec.describe 'public/rss.xsl' do
     expect(doc.css('.ui-item__excerpt')[1].text.strip).to eq('Math 1 < 2 > 0')
   end
 
-  it 'surfaces last build time in the hero stamp' do
+  it 'surfaces last build time in a ui-eyebrow stamp with time element' do
     doc = Nokogiri::HTML(rendered_html)
-    hero_stamp = doc.at_css('.feed-hero__stamp')
+    stamp = doc.css('.feed-hero .ui-eyebrow').find { |node| node.at_css('time') }
 
-    expect(hero_stamp.text.gsub(/\s+/, ' ').strip).to eq('Updated Mon, 01 Jan 2024 00:00:00 GMT')
+    expect(stamp).not_to be_nil
+    expect(doc.css('.feed-hero__stamp')).to be_empty
+    expect(stamp.text.gsub(/\s+/, ' ').strip).to eq('Updated Mon, 01 Jan 2024 00:00:00 GMT')
+    expect(stamp.at_css('time').text.strip).to eq('Mon, 01 Jan 2024 00:00:00 GMT')
     expect(doc.css('.feed-quality__pill')).to be_empty
   end
 

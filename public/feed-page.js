@@ -1,4 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
+  formatFeedDates();
+
   var readerLink = document.querySelector('[data-feed-reader-link]');
   if (readerLink) {
     var currentHref = readerLink.getAttribute('href');
@@ -53,5 +55,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     url.pathname = pathname + '.json';
     return url.toString();
+  }
+
+  function formatFeedDates() {
+    var formatter = new Intl.DateTimeFormat(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+
+    document.querySelectorAll('.feed-hero time, .ui-item__meta').forEach(function (node) {
+      var raw = node.textContent.trim();
+      if (!raw) return;
+
+      var parsed = Date.parse(raw);
+      if (Number.isNaN(parsed)) return;
+
+      node.textContent = formatter.format(new Date(parsed));
+    });
   }
 });

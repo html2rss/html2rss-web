@@ -10,7 +10,7 @@
 }
 
 .feed-hero__icon {
-  width: clamp(2.2rem, 5vw, 2.85rem);
+  width: clamp(2.6rem, 6vw, 3.25rem);
   height: auto;
   display: block;
 }
@@ -22,14 +22,6 @@
 .feed-hero__action--primary {
   border-color: var(--border-reader-strong);
   background: var(--surface-reader-strong);
-}
-
-.feed-hero__stamp {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: var(--font-size-00);
-  letter-spacing: var(--eyebrow-letter-spacing);
-  text-transform: uppercase;
 }
 
 .feed-description {

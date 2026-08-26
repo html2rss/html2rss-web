@@ -211,6 +211,13 @@ textarea {
   border-top: var(--border-width) solid var(--border-subtle);
 }
 
+.ui-headline-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  align-items: start;
+}
+
 .ui-card {
   border: var(--border-default);
   border-radius: var(--radius-lg);

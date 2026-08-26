@@ -27,13 +27,15 @@
           </div>
 
           <section class="feed-hero layout-rail-reading layout-stack">
-            <div class="ui-actions">
-              <img class="feed-hero__icon" src="/feed.svg" alt="" aria-hidden="true" />
-              <h1 class="feed-title ui-display-title">
+            <p class="ui-eyebrow">RSS feed</p>
+
+            <div class="ui-headline-row">
+              <h1 class="ui-display-title">
                 <xsl:call-template name="clean-text">
                   <xsl:with-param name="text" select="string(rss/channel/title)" />
                 </xsl:call-template>
               </h1>
+              <img class="feed-hero__icon" src="/feed.svg" alt="" aria-hidden="true" />
             </div>
 
             <xsl:if test="normalize-space(string(rss/channel/description)) != ''">
@@ -50,19 +52,19 @@
             </xsl:if>
 
             <xsl:if test="normalize-space(string(rss/channel/lastBuildDate)) != '' or normalize-space(string(rss/channel/pubDate)) != '' or normalize-space(string(rss/channel/item[1]/pubDate)) != ''">
-              <p class="feed-hero__stamp">
+              <p class="ui-eyebrow">
                 <xsl:choose>
                   <xsl:when test="normalize-space(string(rss/channel/lastBuildDate)) != ''">
                     <span>Updated </span>
-                    <xsl:value-of select="rss/channel/lastBuildDate" />
+                    <time><xsl:value-of select="rss/channel/lastBuildDate" /></time>
                   </xsl:when>
                   <xsl:when test="normalize-space(string(rss/channel/pubDate)) != ''">
                     <span>Published </span>
-                    <xsl:value-of select="rss/channel/pubDate" />
+                    <time><xsl:value-of select="rss/channel/pubDate" /></time>
                   </xsl:when>
                   <xsl:otherwise>
                     <span>Latest item </span>
-                    <xsl:value-of select="rss/channel/item[1]/pubDate" />
+                    <time><xsl:value-of select="rss/channel/item[1]/pubDate" /></time>
                   </xsl:otherwise>
                 </xsl:choose>
               </p>
