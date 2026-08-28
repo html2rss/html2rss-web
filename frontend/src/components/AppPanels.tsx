@@ -324,7 +324,7 @@ function ActionFeedback({
         <Notice
           className="layout-rail-reading"
           tone="error"
-          title={COPY.createFailedTitle}
+          title={isShowRetryButton ? COPY.createFailedRetryTitle : COPY.createFailedTitle}
           actions={
             isShowRetryButton && (
               <button type="button" class="btn btn--primary" onClick={onRetryCreate}>

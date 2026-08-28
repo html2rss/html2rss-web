@@ -184,7 +184,7 @@ describe('ResultDisplay', () => {
           warnings: [
             {
               code: 'PREVIEW_HTTP_422',
-              message: 'This website blocked automated access.',
+              message: 'This site blocked automated access. Try another URL or site.',
               retryable: false,
               nextAction: 'wait',
             },
@@ -195,7 +195,9 @@ describe('ResultDisplay', () => {
       />
     );
 
-    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This site blocked automated access. Try another URL or site.')
+    ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY.checkAgain })).not.toBeInTheDocument();
   });
 

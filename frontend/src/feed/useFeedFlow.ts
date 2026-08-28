@@ -141,6 +141,8 @@ export function useFeedFlow({
 
       setFeedFieldErrors({ ...EMPTY_FEED_ERRORS, form: failure.message });
       if (route.kind === 'token') {
+        // Prevent create-entry auto-submit from clearing Decision error before remount runs.
+        hasAutoSubmittedReference.current = true;
         navigate({ kind: 'create', prefillUrl: normalizedUrl });
       }
       return false;
@@ -212,14 +214,22 @@ export function useFeedFlow({
     const isSameKindCreateEntry = previousKind === 'create' && previousCreateEntryKey !== createEntryKey;
     if (!didKindChangeToCreate && !isSameKindCreateEntry) return;
 
-    clearError();
     clearResult();
     setTokenError('');
     setTokenDraft('');
-    if (isSameKindCreateEntry) setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    if (isSameKindCreateEntry) {
+      setFeedFieldErrors(EMPTY_FEED_ERRORS);
+      clearError();
+    } else if (feedFieldErrors.form) {
+      // token→create non-auth failure: keep Decision error for retry chrome; do not auto-retry.
+      hasAutoSubmittedReference.current = true;
+    } else {
+      // Kind change onto create without a projected form failure (e.g. result recovery).
+      clearError();
+    }
     if (!route.prefillUrl) autoSubmitUrlReference.current = undefined;
     setFocusCreateComposerKey((current) => current + 1);
-  }, [createEntryKey, route]);
+  }, [clearError, clearResult, createEntryKey, feedFieldErrors.form, route]);
 
   const viewModel = decideJourney({
     creationError,

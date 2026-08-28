@@ -62,7 +62,11 @@ export function useFeedCreation() {
     globalThis.document?.body?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     requestIdReference.current += 1;
     cancelPreview();
-    setState({ isCreating: false });
+    setState((previous) => ({
+      ...previous,
+      isCreating: false,
+      result: undefined,
+    }));
   };
 
   const clearError = () => {

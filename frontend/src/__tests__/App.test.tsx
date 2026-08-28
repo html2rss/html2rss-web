@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
+import type { FeedCreationError } from '../api/contracts';
 import { App } from '../components/App';
 import { COPY } from '../journey/copy';
 
@@ -49,6 +50,7 @@ const mockCreatedFeedResult = {
 async function expectCreateRemountedWithoutErrorChrome() {
   await waitFor(() => {
     expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedRetryTitle)).not.toBeInTheDocument();
   });
   expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   await waitFor(() => {
@@ -63,12 +65,18 @@ describe('App', () => {
   const mockClearCreationError = vi.fn();
   const mockClearResult = vi.fn();
   const mockRetryPreviewFetch = vi.fn();
+  /** Mirrors useFeedCreation: reject sets error; clearError clears it (App mock was static). */
+  let creationHookError: FeedCreationError | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    creationHookError = undefined;
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
     mockCreateFeed.mockResolvedValue(mockCreatedFeedResult);
+    mockClearCreationError.mockImplementation(() => {
+      creationHookError = undefined;
+    });
     mockUseCatalogEntries.mockReturnValue([]);
 
     mockUseAccessToken.mockReturnValue({
@@ -99,15 +107,22 @@ describe('App', () => {
       error: undefined,
     });
 
-    mockUseFeedCreation.mockReturnValue({
+    mockUseFeedCreation.mockImplementation(() => ({
       isCreating: false,
       result: undefined,
-      error: undefined,
-      createFeed: mockCreateFeed,
+      error: creationHookError,
+      createFeed: async (url: string, token: string) => {
+        try {
+          return await mockCreateFeed(url, token);
+        } catch (error) {
+          creationHookError = error as FeedCreationError;
+          throw error;
+        }
+      },
       clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
-    });
+    }));
   });
 
   const creationFailure = {
@@ -148,7 +163,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+      expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     });
   }
 
@@ -611,7 +626,7 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
-    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
@@ -625,7 +640,7 @@ describe('App', () => {
         retryable: false,
         nextAction: 'correct_input',
         retryAction: 'none',
-        message: 'This website blocked automated access.',
+        message: 'This site blocked automated access. Try another URL or site.',
       },
       createFeed: mockCreateFeed,
       clearError: mockClearCreationError,
@@ -635,7 +650,11 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText('This site blocked automated access. Try another URL or site.')
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
   });
 
   it('shows instance metadata failure as a banner without create-error chrome', () => {
@@ -1046,6 +1065,8 @@ describe('App', () => {
     await screen.findByText(
       'Could not extract feed items. Try a more specific listing URL or explicit selectors.'
     );
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedRetryTitle)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
@@ -1076,7 +1097,7 @@ describe('App', () => {
       expect(location.hash).toMatch(/^#\/create/);
     });
     expect(document.querySelector('dialog')).toBeNull();
-    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     expect(screen.getByText('Upstream failed')).toBeInTheDocument();
   });
 

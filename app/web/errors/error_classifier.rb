@@ -130,7 +130,7 @@ module Html2rss
       ).freeze
 
       BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
-      BLOCKED_SURFACE_MESSAGE = 'This website blocked automated access.'
+      BLOCKED_SURFACE_MESSAGE = 'This site blocked automated access. Try another URL or site.'
 
       BLOCKED_SURFACE = Decision.new(
         status: 422,

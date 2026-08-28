@@ -67,7 +67,9 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'uses one human sentence for classified user decisions', :aggregate_failures do
-      expect(described_class::BLOCKED_SURFACE.message).to eq('This website blocked automated access.')
+      expect(described_class::BLOCKED_SURFACE.message).to eq(
+        'This site blocked automated access. Try another URL or site.'
+      )
       expect(described_class::SCRAPER_UNAVAILABLE.message).to eq('Feed fetching is temporarily unavailable.')
       expect(described_class::SERVICE_UNAVAILABLE.message).to eq(
         'The server is too busy or the request timed out.'
