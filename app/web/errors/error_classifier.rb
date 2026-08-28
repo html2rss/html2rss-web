@@ -19,7 +19,7 @@ module Html2rss
       ##
       # Gem strategy attempts plus expanded transport telemetry for feed Observability / headers.
       Diagnostics = Data.define(
-        :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category
+        :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category, :timeout_phase
       ) do
         class << self
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
@@ -28,12 +28,20 @@ module Html2rss
           end
 
           # Digs strategy attempts from the exception cause chain.
+          # Prefer +timeout_phase+ from transport_meta; else from +RequestTimedOut+ in the chain.
           #
           # @param error [Exception, nil]
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
           def from_error(error)
-            with_attempts = ErrorClassifier.error_chain(error).find { it.respond_to?(:attempts) }
-            from_attempts(with_attempts ? Array(with_attempts.attempts) : [])
+            chain = ErrorClassifier.error_chain(error)
+            with_attempts = chain.find { it.respond_to?(:attempts) }
+            list = with_attempts ? Array(with_attempts.attempts) : []
+            fields = transport_fields(list)
+            fields[:timeout_phase] ||= timeout_phase_from_chain(chain)
+
+            return EMPTY_DIAGNOSTICS if list.empty? && fields.values.all?(&:nil?)
+
+            new(strategy_attempts: list, **fields)
           end
 
           # Expands attempt hashes into transport fields (single dig algorithm).
@@ -57,8 +65,21 @@ module Html2rss
               request_id: dig_meta(meta, :request_id),
               strategy_used: dig_meta(meta, :strategy_used),
               render_ms: dig_meta(meta, :render_ms),
-              error_category: dig_meta(meta, :error_category)
+              error_category: dig_meta(meta, :error_category),
+              timeout_phase: dig_meta(meta, :timeout_phase)
             }
+          end
+
+          # @param chain [Array<Exception>]
+          # @return [Object, nil]
+          def timeout_phase_from_chain(chain)
+            return unless defined?(::Html2rss::RequestService::RequestTimedOut)
+
+            timed_out = chain.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }
+            return unless timed_out
+            return unless timed_out.respond_to?(:timeout_phase)
+
+            timed_out.timeout_phase
           end
 
           # @param meta [Hash, nil]
@@ -76,7 +97,7 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def to_h
           details = strategy_attempts.empty? ? {} : { strategy_attempts: strategy_attempts }
-          %i[request_id strategy_used render_ms error_category].each do |key|
+          %i[request_id strategy_used render_ms error_category timeout_phase].each do |key|
             val = public_send(key)
             details[key] = val if val
           end
@@ -88,7 +109,8 @@ module Html2rss
         request_id: nil,
         strategy_used: nil,
         render_ms: nil,
-        error_category: nil
+        error_category: nil,
+        timeout_phase: nil
       ).freeze
 
       ##
