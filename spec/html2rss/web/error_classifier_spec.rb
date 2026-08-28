@@ -19,6 +19,17 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end)
   end
 
+  def stub_request_timed_out
+    stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error) do
+      def initialize(message = nil, timeout_phase: nil)
+        @timeout_phase = timeout_phase
+        super(message)
+      end
+
+      attr_reader :timeout_phase
+    end)
+  end
+
   describe '.classify' do
     it 'returns a carried Decision without remapping' do
       decided = described_class::DecidedError.new(described_class::BLOCKED_SURFACE)
@@ -85,19 +96,56 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns gateway timeout for RequestTimedOut (Botasaurus/Faraday wall-clock)' do
-      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('Botasaurus scrape timed out')
 
       expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
+    it 'returns gateway timeout for RequestTimedOut with timeout_phase work' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('work timed out', timeout_phase: 'work')
+
+      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'returns service unavailable for RequestTimedOut with timeout_phase queue' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('queued too long', timeout_phase: 'queue')
+
+      expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
+    it 'returns service unavailable for RequestTimedOut with timeout_phase boot' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('browser boot timed out', timeout_phase: 'boot')
+
+      expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
     it 'detects RequestTimedOut through Exception#cause' do
-      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      stub_request_timed_out
       root = Html2rss::RequestService::RequestTimedOut.new('timed out')
       wrapped = StandardError.new('wrapped')
       allow(wrapped).to receive(:cause).and_return(root)
 
       expect(described_class.classify(wrapped)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'maps queue timeout_phase through Exception#cause to service unavailable' do
+      stub_request_timed_out
+      root = Html2rss::RequestService::RequestTimedOut.new('capacity', timeout_phase: 'queue')
+      wrapped = StandardError.new('wrapped')
+      allow(wrapped).to receive(:cause).and_return(root)
+
+      expect(described_class.classify(wrapped)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
+    it 'keeps gateway timeout when RequestTimedOut omits timeout_phase reader' do
+      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::RequestTimedOut.new('legacy timed out')
+
+      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
     it 'returns internal server error decision for unrelated errors' do

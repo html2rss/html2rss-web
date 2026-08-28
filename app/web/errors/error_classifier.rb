@@ -214,7 +214,18 @@ module Html2rss
              c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
          }, SCRAPER_UNAVAILABLE],
         [lambda { |c, _|
+           # queue/boot = our capacity or Chromium — not the target site.
+           return false unless defined?(::Html2rss::RequestService::RequestTimedOut)
+
+           timed_out = c.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }
+           return false unless timed_out
+
+           phase = timed_out.respond_to?(:timeout_phase) ? timed_out.timeout_phase : nil
+           %w[queue boot].include?(phase)
+         }, SERVICE_UNAVAILABLE],
+        [lambda { |c, _|
            # Gem wall-clock timeout (Botasaurus 504 / Faraday timeout) — not Timeout::Error.
+           # work / nil (transport hop) → site-shaped 504.
            defined?(::Html2rss::RequestService::RequestTimedOut) &&
              c.any?(::Html2rss::RequestService::RequestTimedOut)
          }, GATEWAY_TIMEOUT],
