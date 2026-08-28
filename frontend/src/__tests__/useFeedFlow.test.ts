@@ -187,13 +187,19 @@ describe('useFeedFlow', () => {
   it('returns non-auth creation failures from token onto create', async () => {
     await stubFeedCreationFailure();
 
-    const { result } = renderHook(() =>
-      useFeedFlow(
-        feedFlowProperties({
-          mayCreate: () => 'proceed',
-          route: { kind: 'token', prefillUrl: 'https://example.com/private-articles' },
-        })
-      )
+    const { result, rerender } = renderHook(
+      ({ route }) =>
+        useFeedFlow(
+          feedFlowProperties({
+            mayCreate: () => 'proceed',
+            route,
+          })
+        ),
+      {
+        initialProps: {
+          route: { kind: 'token' as const, prefillUrl: 'https://example.com/private-articles' },
+        },
+      }
     );
 
     act(() => {
@@ -213,6 +219,21 @@ describe('useFeedFlow', () => {
     });
     expect(result.current.tokenError).toBe('');
     expect(result.current.feedFieldErrors.form).toBe('Upstream failed');
+    expect(result.current.creationError).toMatchObject({
+      message: 'Upstream failed',
+      nextAction: 'retry',
+    });
+
+    // Simulate router applying token→create; remount must keep Decision error for retry chrome.
+    rerender({
+      route: { kind: 'create', prefillUrl: 'https://example.com/private-articles' },
+    });
+
+    expect(result.current.feedFieldErrors.form).toBe('Upstream failed');
+    expect(result.current.creationError).toMatchObject({
+      message: 'Upstream failed',
+      nextAction: 'retry',
+    });
   });
 
   it('recovers unmatched result routes onto remounted create without prefillUrl', async () => {

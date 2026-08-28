@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/preact';
+import type { FeedCreationError } from '../api/contracts';
 import { App } from '../components/App';
 import { COPY } from '../journey/copy';
 
@@ -49,6 +50,7 @@ const mockCreatedFeedResult = {
 async function expectCreateRemountedWithoutErrorChrome() {
   await waitFor(() => {
     expect(screen.queryByText(COPY.createFailedTitle)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedRetryTitle)).not.toBeInTheDocument();
   });
   expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   await waitFor(() => {
@@ -63,12 +65,18 @@ describe('App', () => {
   const mockClearCreationError = vi.fn();
   const mockClearResult = vi.fn();
   const mockRetryPreviewFetch = vi.fn();
+  /** Mirrors useFeedCreation: reject sets error; clearError clears it (App mock was static). */
+  let creationHookError: FeedCreationError | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    creationHookError = undefined;
     history.replaceState({}, '', 'http://localhost:3000/#/create');
     localStorage.clear();
     mockCreateFeed.mockResolvedValue(mockCreatedFeedResult);
+    mockClearCreationError.mockImplementation(() => {
+      creationHookError = undefined;
+    });
     mockUseCatalogEntries.mockReturnValue([]);
 
     mockUseAccessToken.mockReturnValue({
@@ -99,15 +107,22 @@ describe('App', () => {
       error: undefined,
     });
 
-    mockUseFeedCreation.mockReturnValue({
+    mockUseFeedCreation.mockImplementation(() => ({
       isCreating: false,
       result: undefined,
-      error: undefined,
-      createFeed: mockCreateFeed,
+      error: creationHookError,
+      createFeed: async (url: string, token: string) => {
+        try {
+          return await mockCreateFeed(url, token);
+        } catch (error) {
+          creationHookError = error as FeedCreationError;
+          throw error;
+        }
+      },
       clearError: mockClearCreationError,
       clearResult: mockClearResult,
       retryPreviewFetch: mockRetryPreviewFetch,
-    });
+    }));
   });
 
   const creationFailure = {
