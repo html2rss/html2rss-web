@@ -10,7 +10,10 @@ export const COPY = {
   tokenHint: 'Required by this instance.',
   tokenPlaceholder: 'Paste access token',
   tokenRejected: 'Access token was rejected. Paste a valid token to continue.',
-  createFailedTitle: "Couldn't create feed yet",
+  /** Non-retryable / correct_input create failures (blocked, empty extract, …). */
+  createFailedTitle: "Couldn't create feed",
+  /** Retryable create failures where Try again remains honest. */
+  createFailedRetryTitle: "Couldn't create feed yet",
   tryAgain: 'Try again',
   checkAgain: 'Check again',
   previewItemCount: (count: number) => `${count} items`,

@@ -80,7 +80,7 @@ describe('previewHydration', () => {
 
   it('passes short text/plain HTTP error bodies through as warning.message', async () => {
     fetchMock.mockResolvedValueOnce(
-      new Response('This website blocked automated access.', {
+      new Response('This site blocked automated access. Try another URL or site.', {
         status: 422,
         headers: { 'Content-Type': 'text/plain; charset=utf-8' },
       })
@@ -91,7 +91,7 @@ describe('previewHydration', () => {
       warnings: [
         {
           code: 'PREVIEW_HTTP_422',
-          message: 'This website blocked automated access.',
+          message: 'This site blocked automated access. Try another URL or site.',
           retryable: false,
           nextAction: 'wait',
         },

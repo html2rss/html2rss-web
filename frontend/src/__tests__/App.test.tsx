@@ -148,7 +148,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() => {
-      expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+      expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     });
   }
 
@@ -611,7 +611,7 @@ describe('App', () => {
     render(<App />);
 
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'error');
-    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     expect(screen.getByText('Access denied')).toBeInTheDocument();
   });
 
@@ -625,7 +625,7 @@ describe('App', () => {
         retryable: false,
         nextAction: 'correct_input',
         retryAction: 'none',
-        message: 'This website blocked automated access.',
+        message: 'This site blocked automated access. Try another URL or site.',
       },
       createFeed: mockCreateFeed,
       clearError: mockClearCreationError,
@@ -635,7 +635,11 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('This website blocked automated access.')).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText('This site blocked automated access. Try another URL or site.')
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
   });
 
   it('shows instance metadata failure as a banner without create-error chrome', () => {
@@ -1046,6 +1050,8 @@ describe('App', () => {
     await screen.findByText(
       'Could not extract feed items. Try a more specific listing URL or explicit selectors.'
     );
+    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.createFailedRetryTitle)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: COPY.tokenTitle })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY.tryAgain })).not.toBeInTheDocument();
     expect(mockClearToken).not.toHaveBeenCalled();
@@ -1076,7 +1082,7 @@ describe('App', () => {
       expect(location.hash).toMatch(/^#\/create/);
     });
     expect(document.querySelector('dialog')).toBeNull();
-    expect(screen.getByText(COPY.createFailedTitle)).toBeInTheDocument();
+    expect(screen.getByText(COPY.createFailedRetryTitle)).toBeInTheDocument();
     expect(screen.getByText('Upstream failed')).toBeInTheDocument();
   });
 

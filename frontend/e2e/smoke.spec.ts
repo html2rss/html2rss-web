@@ -41,7 +41,8 @@ test.describe('frontend smoke', () => {
     await expect(page.getByRole('button', { name: COPY.back })).toBeVisible();
     await expect(page.locator('dialog')).toHaveAttribute('open');
     await expect(page.getByLabel(COPY.urlLabel)).toHaveCount(1);
-    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedTitle, { exact: true })).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedRetryTitle, { exact: true })).toHaveCount(0);
 
     await page.getByRole('button', { name: COPY.back }).click();
     await expect(page).toHaveURL(/#\/create(?:\?.*)?$/);
@@ -96,21 +97,21 @@ test.describe('frontend smoke', () => {
 
     await page.getByLabel(COPY.urlLabel).fill('https://example.com/articles');
     await page.getByRole('button', { name: COPY.createFeed }).click();
-    await expect(page.getByText(COPY.createFailedTitle)).toBeVisible();
+    await expect(page.getByText(COPY.createFailedRetryTitle, { exact: true })).toBeVisible();
 
     await page.getByRole('link', { name: 'html2rss' }).click();
-    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedRetryTitle, { exact: true })).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
     await expect(page.getByLabel(COPY.urlLabel)).toBeFocused();
 
     await page.getByRole('button', { name: COPY.createFeed }).click();
-    await expect(page.getByText(COPY.createFailedTitle)).toBeVisible();
+    await expect(page.getByText(COPY.createFailedRetryTitle, { exact: true })).toBeVisible();
 
     await page.evaluate(() => {
       location.hash = '#!/create';
     });
     await expect(page).toHaveURL(/\/#\/create$/);
-    await expect(page.getByText(COPY.createFailedTitle)).toHaveCount(0);
+    await expect(page.getByText(COPY.createFailedRetryTitle, { exact: true })).toHaveCount(0);
     await expect(page.locator('.form-shell')).toHaveAttribute('data-state', 'create');
     await expect(page.getByLabel(COPY.urlLabel)).toBeFocused();
   });
