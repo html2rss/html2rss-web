@@ -213,6 +213,35 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     tags: ['Catalog'],
     security: [{}]
   } do
+    # Seed warm last_result rows so OpenAPI infers string|null for code/at
+    # (cold-only responses freeze both fields to null).
+    before do
+      Html2rss::Web::Feeds::LastResults.clear!
+      Html2rss::Web::Feeds::LastResults.record(
+        'fao.org/newsroom',
+        Html2rss::Web::Feeds::Contracts::RenderResult.new(
+          status: :ok,
+          payload: nil,
+          ttl_seconds: 600,
+          cache_key: 'feed_result:catalog-openapi'
+        ),
+        clock: -> { Time.utc(2026, 8, 29, 8) }
+      )
+      Html2rss::Web::Feeds::LastResults.record(
+        'ftc.gov/press-releases',
+        Html2rss::Web::Feeds::Contracts::RenderResult.new(
+          status: :empty,
+          decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
+          payload: nil,
+          ttl_seconds: 600,
+          cache_key: 'feed_result:catalog-openapi-empty'
+        ),
+        clock: -> { Time.utc(2026, 8, 29, 9) }
+      )
+    end
+
+    after { Html2rss::Web::Feeds::LastResults.clear! }
+
     it 'returns the merged catalog with CORS headers', :aggregate_failures do
       get '/api/v1/configs'
 
@@ -227,6 +256,20 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         'id', 'path', 'source', 'directory', 'channel', 'parameters', 'last_result'
       )
       expect(json.dig('data', 'configs').first.fetch('last_result')).to include('state', 'code', 'at')
+    end
+
+    it 'exposes warm last_result and demotes empty from starters', :aggregate_failures, openapi: false do
+      get '/api/v1/configs'
+
+      json = expect_success_response(last_response)
+      expect(json.dig('meta', 'starters')).not_to include('ftc.gov/press-releases')
+      by_id = json.dig('data', 'configs').to_h { |row| [row.fetch('id'), row] }
+      expect(by_id.fetch('fao.org/newsroom').fetch('last_result')).to include(
+        'state' => 'ok', 'code' => nil, 'at' => '2026-08-29T08:00:00Z'
+      )
+      expect(by_id.fetch('ftc.gov/press-releases').fetch('last_result')).to include(
+        'state' => 'empty', 'code' => 'EXTRACTION_EMPTY', 'at' => '2026-08-29T09:00:00Z'
+      )
     end
 
     it 'returns 404 when the catalog is disabled', :aggregate_failures do

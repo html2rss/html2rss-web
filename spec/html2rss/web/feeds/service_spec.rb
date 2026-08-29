@@ -110,6 +110,15 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
     end
 
+    it 'records empty last_result for directory-defaults scrapes' do
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles']).to have_attributes(
+        state: :empty,
+        code: 'EXTRACTION_EMPTY'
+      )
+    end
+
     it 'marks the result as empty' do
       expect(result.status).to eq(:empty)
     end
@@ -139,6 +148,12 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   context 'when generation fails' do
     before do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(StandardError, 'boom')
+    end
+
+    it 'records error last_result even though errors are not Cache-retained' do
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles'].state).to eq(:error)
     end
 
     it 'marks the result as an error' do

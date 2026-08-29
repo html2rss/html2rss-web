@@ -132,9 +132,13 @@ paths:
                             last_result:
                               properties:
                                 at:
-                                  type: 'null'
+                                  type:
+                                  - string
+                                  - 'null'
                                 code:
-                                  type: 'null'
+                                  type:
+                                  - string
+                                  - 'null'
                                 state:
                                   type: string
                               required:

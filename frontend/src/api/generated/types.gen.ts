@@ -76,8 +76,8 @@ export type GetConfigCatalogResponses = {
                 };
                 id: string;
                 last_result: {
-                    at: null;
-                    code: null;
+                    at: string | null;
+                    code: string | null;
                     state: string;
                 };
                 parameters: {
