@@ -19,7 +19,7 @@ describe('useSession', () => {
   const emptyCatalogResponse = Response.json({
     success: true,
     data: { configs: [] },
-    meta: { total: 0, catalog_version: 1 },
+    meta: { total: 0, catalog_version: 2, starters: [] },
   });
 
   const mockFetchFor = (metadata: unknown, catalogResponse: Response = emptyCatalogResponse) => {
@@ -72,13 +72,14 @@ describe('useSession', () => {
       channel: { url: 'https://www.fao.org/newsroom' },
       directory: { title: 'FAO Newsroom', summary: 'News' },
       parameters: { defaults: {} },
+      last_result: { state: 'unknown' },
     };
     mockFetchFor(
       mockMetadata,
       Response.json({
         success: true,
         data: { configs: [fao] },
-        meta: { total: 1, catalog_version: 1 },
+        meta: { total: 1, catalog_version: 2, starters: ['fao.org/newsroom'] },
       })
     );
 

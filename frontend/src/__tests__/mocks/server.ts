@@ -28,7 +28,7 @@ export const server = setupServer(
     return HttpResponse.json({
       success: true,
       data: { configs: [] },
-      meta: { total: 0, catalog_version: 1 },
+      meta: { total: 0, catalog_version: 2, starters: [] },
     });
   })
 );

@@ -28,8 +28,12 @@ export function useSession() {
   const isLoading = tokenLoading || metadataLoading;
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const feedCreationEnabled = feedCreation.enabled;
-  const catalogEntries = useCatalogEntries(metadata);
-  const featuredFeeds: CatalogEntry[] = useMemo(() => selectStarterFeeds(catalogEntries), [catalogEntries]);
+  const catalog = useCatalogEntries(metadata);
+  const catalogEntries = catalog.entries;
+  const featuredFeeds: CatalogEntry[] = useMemo(
+    () => selectStarterFeeds(catalogEntries, catalog.starters),
+    [catalogEntries, catalog.starters]
+  );
 
   const mayCreate = (accessToken?: string): MayCreateResult => {
     if (!feedCreation.enabled) return 'disabled';

@@ -18,7 +18,7 @@ vi.mock('../hooks/useApiMetadata', () => ({
 }));
 
 vi.mock('../catalog/useCatalogEntries', () => ({
-  useCatalogEntries: vi.fn(() => []),
+  useCatalogEntries: vi.fn(() => ({ entries: [], starters: [] })),
 }));
 
 import { useAccessToken } from '../session/accessToken';
@@ -30,6 +30,12 @@ const mockUseAccessToken = useAccessToken as any;
 const mockUseApiMetadata = useApiMetadata as any;
 const mockUseFeedCreation = useFeedCreation as any;
 const mockUseCatalogEntries = useCatalogEntries as any;
+
+const catalogHook = (entries: unknown[] = [], starters?: string[]) => ({
+  entries,
+  starters: starters ?? entries.map((entry: any) => entry.id).slice(0, 3),
+});
+
 const mockCreatedFeedResult = {
   feed: {
     id: 'feed-123',
@@ -77,7 +83,7 @@ describe('App', () => {
     mockClearCreationError.mockImplementation(() => {
       creationHookError = undefined;
     });
-    mockUseCatalogEntries.mockReturnValue([]);
+    mockUseCatalogEntries.mockReturnValue(catalogHook());
 
     mockUseAccessToken.mockReturnValue({
       token: undefined,
@@ -368,10 +374,11 @@ describe('App', () => {
     description: 'News and media from the Food and Agriculture Organization.',
     channelUrl: 'https://www.fao.org/newsroom',
     parameterDefaults: {},
+    lastResult: { state: 'unknown' },
   };
 
   it('shows lean included-feed starters on empty create when creation is enabled', async () => {
-    mockUseCatalogEntries.mockReturnValue([faoStarter]);
+    mockUseCatalogEntries.mockReturnValue(catalogHook([faoStarter], ['fao.org/newsroom']));
     mockUseAccessToken.mockReturnValue({
       token: 'session-token',
       hasToken: true,
@@ -410,7 +417,7 @@ describe('App', () => {
   });
 
   it('hides included-feed starters when the URL field is non-empty', async () => {
-    mockUseCatalogEntries.mockReturnValue([faoStarter]);
+    mockUseCatalogEntries.mockReturnValue(catalogHook([faoStarter], ['fao.org/newsroom']));
     mockUseAccessToken.mockReturnValue({
       token: 'session-token',
       hasToken: true,
@@ -439,17 +446,20 @@ describe('App', () => {
   });
 
   it('hides included-feed starters when catalog find has hits', async () => {
-    mockUseCatalogEntries.mockReturnValue([
-      faoStarter,
-      {
-        id: 'anthropic.com/news',
-        path: '/anthropic.com/news.rss',
-        title: 'Anthropic — News',
-        description: 'Product and research announcements from Anthropic.',
-        channelUrl: 'https://www.anthropic.com/news',
-        parameterDefaults: {},
-      },
-    ]);
+    mockUseCatalogEntries.mockReturnValue(
+      catalogHook([
+        faoStarter,
+        {
+          id: 'anthropic.com/news',
+          path: '/anthropic.com/news.rss',
+          title: 'Anthropic — News',
+          description: 'Product and research announcements from Anthropic.',
+          channelUrl: 'https://www.anthropic.com/news',
+          parameterDefaults: {},
+          lastResult: { state: 'unknown' },
+        },
+      ])
+    );
     mockUseAccessToken.mockReturnValue({
       token: 'session-token',
       hasToken: true,
@@ -478,7 +488,7 @@ describe('App', () => {
   });
 
   it('promotes included feeds when feed creation is disabled', async () => {
-    mockUseCatalogEntries.mockReturnValue([faoStarter]);
+    mockUseCatalogEntries.mockReturnValue(catalogHook([faoStarter], ['fao.org/newsroom']));
 
     mockUseApiMetadata.mockReturnValue({
       metadata: {
@@ -518,16 +528,19 @@ describe('App', () => {
   });
 
   it('suggests included feeds when the URL matches the catalog', async () => {
-    mockUseCatalogEntries.mockReturnValue([
-      {
-        id: 'anthropic.com/news',
-        path: '/anthropic.com/news.rss',
-        title: 'Anthropic — News',
-        description: 'Product and research announcements from Anthropic.',
-        channelUrl: 'https://www.anthropic.com/news',
-        parameterDefaults: {},
-      },
-    ]);
+    mockUseCatalogEntries.mockReturnValue(
+      catalogHook([
+        {
+          id: 'anthropic.com/news',
+          path: '/anthropic.com/news.rss',
+          title: 'Anthropic — News',
+          description: 'Product and research announcements from Anthropic.',
+          channelUrl: 'https://www.anthropic.com/news',
+          parameterDefaults: {},
+          lastResult: { state: 'unknown' },
+        },
+      ])
+    );
 
     render(<App />);
 
@@ -545,24 +558,28 @@ describe('App', () => {
   });
 
   it('lists multiple catalog find hits for a text query including defaults href', async () => {
-    mockUseCatalogEntries.mockReturnValue([
-      {
-        id: 'bbc.com/mundo',
-        path: '/bbc.com/mundo.rss',
-        title: 'BBC — Mundo',
-        description: 'Spanish-language news from BBC Mundo.',
-        channelUrl: 'https://www.bbc.com/mundo',
-        parameterDefaults: {},
-      },
-      {
-        id: 'bbc.co.uk/available_episodes',
-        path: '/bbc.co.uk/available_episodes.rss',
-        title: 'BBC Sounds — Programme episodes',
-        description: 'Available episodes for a BBC programme on Sounds.',
-        channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
-        parameterDefaults: { id: 'b006wkfp' },
-      },
-    ]);
+    mockUseCatalogEntries.mockReturnValue(
+      catalogHook([
+        {
+          id: 'bbc.com/mundo',
+          path: '/bbc.com/mundo.rss',
+          title: 'BBC — Mundo',
+          description: 'Spanish-language news from BBC Mundo.',
+          channelUrl: 'https://www.bbc.com/mundo',
+          parameterDefaults: {},
+          lastResult: { state: 'unknown' },
+        },
+        {
+          id: 'bbc.co.uk/available_episodes',
+          path: '/bbc.co.uk/available_episodes.rss',
+          title: 'BBC Sounds — Programme episodes',
+          description: 'Available episodes for a BBC programme on Sounds.',
+          channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
+          parameterDefaults: { id: 'b006wkfp' },
+          lastResult: { state: 'unknown' },
+        },
+      ])
+    );
 
     render(<App />);
 
@@ -590,24 +607,28 @@ describe('App', () => {
     const assignSpy = vi.fn();
     vi.stubGlobal('location', { ...location, assign: assignSpy });
 
-    mockUseCatalogEntries.mockReturnValue([
-      {
-        id: 'bbc.com/mundo',
-        path: '/bbc.com/mundo.rss',
-        title: 'BBC — Mundo',
-        description: 'Spanish-language news from BBC Mundo.',
-        channelUrl: 'https://www.bbc.com/mundo',
-        parameterDefaults: {},
-      },
-      {
-        id: 'bbc.co.uk/available_episodes',
-        path: '/bbc.co.uk/available_episodes.rss',
-        title: 'BBC Sounds — Programme episodes',
-        description: 'Available episodes for a BBC programme on Sounds.',
-        channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
-        parameterDefaults: { id: 'b006wkfp' },
-      },
-    ]);
+    mockUseCatalogEntries.mockReturnValue(
+      catalogHook([
+        {
+          id: 'bbc.com/mundo',
+          path: '/bbc.com/mundo.rss',
+          title: 'BBC — Mundo',
+          description: 'Spanish-language news from BBC Mundo.',
+          channelUrl: 'https://www.bbc.com/mundo',
+          parameterDefaults: {},
+          lastResult: { state: 'unknown' },
+        },
+        {
+          id: 'bbc.co.uk/available_episodes',
+          path: '/bbc.co.uk/available_episodes.rss',
+          title: 'BBC Sounds — Programme episodes',
+          description: 'Available episodes for a BBC programme on Sounds.',
+          channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
+          parameterDefaults: { id: 'b006wkfp' },
+          lastResult: { state: 'unknown' },
+        },
+      ])
+    );
 
     render(<App />);
 
@@ -641,16 +662,19 @@ describe('App', () => {
       error: undefined,
     });
 
-    mockUseCatalogEntries.mockReturnValue([
-      {
-        id: 'bbc.com/mundo',
-        path: '/bbc.com/mundo.rss',
-        title: 'BBC — Mundo',
-        description: 'Spanish-language news from BBC Mundo.',
-        channelUrl: 'https://www.bbc.com/mundo',
-        parameterDefaults: {},
-      },
-    ]);
+    mockUseCatalogEntries.mockReturnValue(
+      catalogHook([
+        {
+          id: 'bbc.com/mundo',
+          path: '/bbc.com/mundo.rss',
+          title: 'BBC — Mundo',
+          description: 'Spanish-language news from BBC Mundo.',
+          channelUrl: 'https://www.bbc.com/mundo',
+          parameterDefaults: {},
+          lastResult: { state: 'unknown' },
+        },
+      ])
+    );
 
     render(<App />);
 
