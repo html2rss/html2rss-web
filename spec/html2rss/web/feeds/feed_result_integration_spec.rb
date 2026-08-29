@@ -12,7 +12,10 @@ RSpec.describe 'FeedResult pipeline integration' do
       generator_input: generator_input,
       ttl_seconds: 600,
       url: page_url,
-      strategy: :faraday
+      strategy: :faraday,
+      feed_name: nil,
+      directory_defaults: {},
+      request_params: {}
     )
   end
   let(:generator_input) do

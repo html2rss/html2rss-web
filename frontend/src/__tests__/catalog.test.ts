@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { catalogFeedHref, findCatalogEntries, parseCatalogEntries, selectStarterFeeds } from '../catalog';
+import { catalogFeedHref, findCatalogEntries, parseCatalog, selectStarterFeeds } from '../catalog';
 import type { CatalogEntry } from '../catalog';
+import { UNKNOWN_LAST_RESULT } from '../catalog';
 
 const baseEntry = (
   overrides: Partial<CatalogEntry> & Pick<CatalogEntry, 'id' | 'channelUrl'>
@@ -9,6 +10,7 @@ const baseEntry = (
   title: overrides.title ?? overrides.id,
   description: overrides.description ?? '',
   parameterDefaults: overrides.parameterDefaults ?? {},
+  lastResult: overrides.lastResult ?? UNKNOWN_LAST_RESULT,
   ...overrides,
 });
 
@@ -85,11 +87,22 @@ describe('findCatalogEntries', () => {
     expect(hits[0]?.id).toBe('exact.example/path');
     expect(findCatalogEntries('news', many)).toHaveLength(5);
   });
+
+  it('demotes empty/error text hits below ok/unknown', () => {
+    const failing = baseEntry({
+      id: 'bbc.com/broken',
+      channelUrl: 'https://www.bbc.com/broken',
+      title: 'BBC Broken',
+      lastResult: { state: 'error', code: 'UPSTREAM', at: '2026-08-29T08:00:00Z' },
+    });
+    const hits = findCatalogEntries('bbc', [failing, mundo]);
+    expect(hits.map((entry) => entry.id)).toEqual(['bbc.com/mundo', 'bbc.com/broken']);
+  });
 });
 
-describe('parseCatalogEntries', () => {
-  it('maps wire rows with parameterDefaults and drops invalid ones', () => {
-    const entries = parseCatalogEntries({
+describe('parseCatalog', () => {
+  it('maps v2 wire rows with last_result and meta.starters', () => {
+    const snapshot = parseCatalog({
       data: {
         configs: [
           {
@@ -98,6 +111,7 @@ describe('parseCatalogEntries', () => {
             channel: { url: 'https://www.anthropic.com/news' },
             directory: { title: 'Anthropic — News', summary: 'Announcements.' },
             parameters: { schema: {}, defaults: {} },
+            last_result: { state: 'unknown' },
           },
           {
             id: 'bbc.co.uk/available_episodes',
@@ -105,13 +119,20 @@ describe('parseCatalogEntries', () => {
             channel: { url: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player' },
             directory: { title: 'BBC Sounds — Programme episodes', summary: 'Episodes.' },
             parameters: { schema: { id: { type: 'string' } }, defaults: { id: 'b006wkfp' } },
+            last_result: { state: 'ok', at: '2026-08-29T08:00:00Z' },
           },
           { id: 'broken' },
         ],
       },
+      meta: {
+        total: 2,
+        catalog_version: 2,
+        starters: ['bbc.co.uk/available_episodes', 'anthropic.com/news'],
+      },
     });
 
-    expect(entries).toEqual([
+    expect(snapshot.starters).toEqual(['bbc.co.uk/available_episodes', 'anthropic.com/news']);
+    expect(snapshot.entries).toEqual([
       {
         id: 'anthropic.com/news',
         path: '/anthropic.com/news.rss',
@@ -119,6 +140,7 @@ describe('parseCatalogEntries', () => {
         description: 'Announcements.',
         channelUrl: 'https://www.anthropic.com/news',
         parameterDefaults: {},
+        lastResult: { state: 'unknown' },
       },
       {
         id: 'bbc.co.uk/available_episodes',
@@ -127,21 +149,45 @@ describe('parseCatalogEntries', () => {
         description: 'Episodes.',
         channelUrl: 'https://www.bbc.co.uk/programmes/%<id>s/episodes/player',
         parameterDefaults: { id: 'b006wkfp' },
+        lastResult: { state: 'ok', at: '2026-08-29T08:00:00Z' },
       },
     ]);
+  });
+
+  it('fail-closes on catalog_version 1', () => {
+    expect(
+      parseCatalog({
+        data: { configs: [{ id: 'x', path: '/x.rss', channel: { url: 'https://x' } }] },
+        meta: { total: 1, catalog_version: 1 },
+      })
+    ).toEqual({ entries: [], starters: [] });
   });
 });
 
 describe('selectStarterFeeds', () => {
-  it('prefers known starter ids then falls back to the first three', () => {
+  it('maps meta.starters ids onto entries', () => {
     const fao = baseEntry({ id: 'fao.org/newsroom', channelUrl: 'https://fao.example' });
     const other = baseEntry({ id: 'other.com/feed', channelUrl: 'https://other.example' });
-    expect(selectStarterFeeds([other, fao]).map((entry) => entry.id)).toEqual(['fao.org/newsroom']);
-    expect(selectStarterFeeds([other]).map((entry) => entry.id)).toEqual(['other.com/feed']);
+    expect(selectStarterFeeds([other, fao], ['fao.org/newsroom']).map((entry) => entry.id)).toEqual([
+      'fao.org/newsroom',
+    ]);
   });
 
-  it('exports STARTER_FEED_IDS for lockstep assertions', async () => {
-    const { STARTER_FEED_IDS } = await import('../catalog');
-    expect([...STARTER_FEED_IDS]).toEqual(['fao.org/newsroom', 'ftc.gov/press-releases', 'icrc.org/news']);
+  it('falls back to last_result ranking and skips failing when alternatives exist', () => {
+    const ok = baseEntry({
+      id: 'ok.com/feed',
+      channelUrl: 'https://ok.example',
+      lastResult: { state: 'ok' },
+    });
+    const failing = baseEntry({
+      id: 'bad.com/feed',
+      channelUrl: 'https://bad.example',
+      lastResult: { state: 'error', code: 'X' },
+    });
+    const unknown = baseEntry({ id: 'cold.com/feed', channelUrl: 'https://cold.example' });
+    expect(selectStarterFeeds([failing, unknown, ok], []).map((entry) => entry.id)).toEqual([
+      'ok.com/feed',
+      'cold.com/feed',
+    ]);
   });
 });

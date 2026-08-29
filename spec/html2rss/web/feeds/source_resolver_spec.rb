@@ -63,6 +63,17 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
         expect(resolved.generator_input[:strategy]).to eq(:botasaurus)
         expect(resolved).to have_attributes(url: 'https://example.com/feed', strategy: :botasaurus)
       end
+
+      it 'exposes directory defaults and request params for last-result gating', :aggregate_failures do
+        config[:parameters] = { id: { type: 'string', default: 'b006wkfp' } }
+        resolved = described_class.call(feed_request)
+
+        expect(resolved).to have_attributes(
+          feed_name: 'legacy',
+          directory_defaults: { 'id' => 'b006wkfp' },
+          request_params: { 'page' => '3' }
+        )
+      end
     end
 
     context 'with a token request' do

@@ -65,8 +65,10 @@ Public feed-directory metadata for embedded and local configs.
 | Disabled response | `404` with `{ "error": "catalog_disabled" }` |
 | Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
 | Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
-| Starter feeds (UI) | Frontend `selectStarterFeeds` for empty Create / creation-disabled; catalog find uses full catalog when enabled |
-| Catalog find | `findCatalogEntries` → multi-hit list under create URL; links via `catalogFeedHref` (path + defaults) |
+| Starter feeds (UI) | Server `meta.starters` via `Catalog::Starters.pick`; frontend `selectStarterFeeds(entries, starters)` |
+| Catalog find | `findCatalogEntries` → multi-hit list under create URL; demotes `empty`/`error`; links via `catalogFeedHref` |
+| last_result | Required on every catalog entry (`ok`/`empty`/`error`/`unknown`); process-local `Feeds::LastResults` |
+| catalog_version | `2` (clients fail-closed on other versions) |
 | CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
 | Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
 | Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |

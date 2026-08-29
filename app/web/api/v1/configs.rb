@@ -7,7 +7,7 @@ module Html2rss
         ##
         # Public config catalog endpoint for feed directory clients.
         module Configs
-          CATALOG_VERSION = 1
+          CATALOG_VERSION = 2
 
           class << self
             ##
@@ -50,8 +50,12 @@ module Html2rss
 
             def success_payload(entries)
               Response.success(
-                data: { configs: entries },
-                meta: { total: entries.size, catalog_version: CATALOG_VERSION }
+                data: { configs: entries.map(&:to_h) },
+                meta: {
+                  total: entries.size,
+                  catalog_version: CATALOG_VERSION,
+                  starters: Catalog::Starters.pick(entries)
+                }
               )
             end
           end

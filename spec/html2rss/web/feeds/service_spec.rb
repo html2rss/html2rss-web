@@ -16,12 +16,16 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       },
       ttl_seconds: 900,
       url: 'https://example.com/articles',
-      strategy: nil
+      strategy: nil,
+      feed_name: 'example.com/articles',
+      directory_defaults: {},
+      request_params: {}
     )
   end
 
   before do
     Html2rss::Web::Feeds::Cache.clear!
+    Html2rss::Web::Feeds::LastResults.clear!
     allow(Html2rss::Web::Feeds::ChannelTitle).to receive(:for)
       .with('https://example.com/articles')
       .and_return('Example Feed')
@@ -56,6 +60,41 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.payload.site_title).to eq('Channel From Scrape')
     end
 
+    it 'records last_result for directory-defaults static scrapes', :aggregate_failures do
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
+
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles'].state).to eq(:ok)
+    end
+
+    it 'does not refresh last_result on cache hits' do
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
+      described_class.call(resolved_source)
+      first_at = Html2rss::Web::Feeds::LastResults['example.com/articles'].at
+
+      travel = first_at + 60
+      allow(Time).to receive(:now).and_return(travel)
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles'].at).to eq(first_at)
+    end
+
+    it 'does not record when request params diverge from directory defaults' do
+      custom = Html2rss::Web::Feeds::Contracts::ResolvedSource.new(
+        **resolved_source.to_h,
+        directory_defaults: { 'id' => 'default' },
+        request_params: { 'id' => 'custom' }
+      )
+      allow(Html2rss).to receive(:feed_result).with(custom.generator_input).and_return(feed_result)
+
+      described_class.call(custom)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles']).to eq(
+        Html2rss::Web::Feeds::LastResult.unknown
+      )
+    end
+
     it 'reuses the cached result for repeated requests' do
       described_class.call(resolved_source)
       described_class.call(resolved_source)
@@ -69,6 +108,15 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     before do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_return(feed_result)
+    end
+
+    it 'records empty last_result for directory-defaults scrapes' do
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles']).to have_attributes(
+        state: :empty,
+        code: 'EXTRACTION_EMPTY'
+      )
     end
 
     it 'marks the result as empty' do
@@ -100,6 +148,12 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   context 'when generation fails' do
     before do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(StandardError, 'boom')
+    end
+
+    it 'records error last_result even though errors are not Cache-retained' do
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Feeds::LastResults['example.com/articles'].state).to eq(:error)
     end
 
     it 'marks the result as an error' do

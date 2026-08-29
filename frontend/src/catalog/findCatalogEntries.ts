@@ -68,6 +68,18 @@ function isTextMatch(entry: CatalogEntry, needle: string): boolean {
   return haystacks.some((value) => value.toLowerCase().includes(needle));
 }
 
+function isFailing(entry: CatalogEntry): boolean {
+  const state = entry.lastResult.state;
+  return state === 'empty' || state === 'error';
+}
+
+function compareFindHits(a: CatalogEntry, b: CatalogEntry): number {
+  const failA = isFailing(a) ? 1 : 0;
+  const failB = isFailing(b) ? 1 : 0;
+  if (failA !== failB) return failA - failB;
+  return a.id.localeCompare(b.id);
+}
+
 /**
  * Relative feed href with `parameters.defaults` applied as query params.
  */
@@ -79,7 +91,8 @@ export function catalogFeedHref(entry: CatalogEntry): string {
 
 /**
  * Finds catalog entries for a create-field query: URL equivalence hits first,
- * then case-insensitive substring text hits. Deduped by `id`, capped at 5.
+ * then case-insensitive substring text hits. Within each bucket, demotes
+ * empty/error below ok/unknown. Deduped by `id`, capped at 5.
  */
 export function findCatalogEntries(query: string, entries: readonly CatalogEntry[]): readonly CatalogEntry[] {
   const trimmed = query.trim();
@@ -121,7 +134,7 @@ export function findCatalogEntries(query: string, entries: readonly CatalogEntry
     }
   }
 
-  urlHits.sort((a, b) => a.id.localeCompare(b.id));
-  textHits.sort((a, b) => a.id.localeCompare(b.id));
+  urlHits.sort(compareFindHits);
+  textHits.sort(compareFindHits);
   return [...urlHits, ...textHits].slice(0, FIND_CAP);
 }

@@ -27,6 +27,15 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def build_result(resolved_source, cache_key)
+            result = scrape_result(resolved_source, cache_key)
+            record_directory_last_result(resolved_source, result)
+            result
+          end
+
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param cache_key [String]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def scrape_result(resolved_source, cache_key)
             feed_result = Html2rss.feed_result(resolved_source.generator_input)
             success_result(feed_result, resolved_source, cache_key)
           rescue StandardError => error
@@ -37,6 +46,23 @@ module Html2rss
             end
 
             error_result(error, decision, diagnostics, resolved_source, cache_key)
+          end
+
+          # Records only static scrapes whose request params match directory defaults.
+          # Cache hits never reach this path (see {#call}).
+          #
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [void]
+          def record_directory_last_result(resolved_source, result)
+            return unless resolved_source.source_kind == :static
+            return if resolved_source.feed_name.to_s.empty?
+            return unless DirectoryParams.match?(
+              resolved_source.directory_defaults,
+              resolved_source.request_params
+            )
+
+            LastResults.record(resolved_source.feed_name, result)
           end
 
           # @param feed_result [Html2rss::FeedResult]

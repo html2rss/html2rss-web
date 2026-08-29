@@ -75,6 +75,11 @@ export type GetConfigCatalogResponses = {
                     topics: Array<string>;
                 };
                 id: string;
+                last_result: {
+                    at: string | null;
+                    code: string | null;
+                    state: string;
+                };
                 parameters: {
                     defaults: {
                         blog?: string | null;
@@ -115,6 +120,7 @@ export type GetConfigCatalogResponses = {
         };
         meta: {
             catalog_version: number;
+            starters: Array<string>;
             total: number;
         };
         success: boolean;
