@@ -61,10 +61,14 @@ export function parseCatalogEntries(payload: unknown): CatalogEntry[] {
   return entries;
 }
 
-const STARTER_FEED_IDS = ['microsoft.com/azure-products', 'phys.org/weekly', 'softwareleadweekly.com/issues'];
+/**
+ * Preferred included-feed starters (empty Create URL / creation-disabled Notice).
+ * Keep in lockstep with `Html2rss::Web::Catalog::Merge::STARTER_FEED_IDS`.
+ */
+export const STARTER_FEED_IDS = ['fao.org/newsroom', 'ftc.gov/press-releases', 'icrc.org/news'] as const;
 
 /**
- * Picks starter feeds for the creation-disabled surface.
+ * Picks up to three starter feeds by preferred id, else the first catalog rows.
  */
 export function selectStarterFeeds(entries: readonly CatalogEntry[]): CatalogEntry[] {
   const selected = STARTER_FEED_IDS.map((id) => entries.find((entry) => entry.id === id)).filter(

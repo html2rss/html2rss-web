@@ -106,6 +106,64 @@ function CatalogHitList({ entries, ariaLabel, listboxId, activeIndex }: CatalogH
   );
 }
 
+function feedDirectoryHref(): string {
+  const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
+  if (globalThis.window === undefined) return directoryUrl.href;
+
+  const instanceUrl = new URL('/', location.origin);
+  directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.href)}`;
+  return directoryUrl.href;
+}
+
+function FeedDirectoryEscape({ catalogCount }: { catalogCount: number }) {
+  return (
+    <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer" class="utility-link">
+      {COPY.browseFeedDirectory(catalogCount)}
+    </a>
+  );
+}
+
+function IncludedFeedsBlock({
+  featuredFeeds,
+  catalogCount,
+  lean,
+}: {
+  featuredFeeds: readonly CatalogEntry[];
+  catalogCount: number;
+  lean: boolean;
+}) {
+  if (lean) {
+    return (
+      <div class="layout-rail-reading layout-stack layout-stack--tight" role="status">
+        <p class="ui-eyebrow">{COPY.feedDirectory}</p>
+        <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.feedDirectory} />
+        <FeedDirectoryEscape catalogCount={catalogCount} />
+      </div>
+    );
+  }
+
+  return (
+    <Notice
+      className="layout-rail-reading"
+      role="status"
+      ariaLabel={COPY.feedDirectory}
+      title={COPY.feedDirectory}
+    >
+      <p class="notice__intro">{COPY.feedDirectoryIntro}</p>
+      <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.feedDirectory} />
+      <p class="notice__meta">
+        <a
+          href="https://html2rss.github.io/web-application/guides/use-the-feed-directory/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {COPY.feedDirectoryLearnMore}
+        </a>
+      </p>
+    </Notice>
+  );
+}
+
 function UrlEntrySection({
   url,
   disabled,
@@ -120,6 +178,8 @@ function UrlEntrySection({
   const catalogHits = useMemo(() => findCatalogEntries(url, catalogEntries), [url, catalogEntries]);
   const [activeHitIndex, setActiveHitIndex] = useState<number | undefined>(undefined);
   const hasHits = catalogHits.length > 0;
+  const shouldShowStarters =
+    featuredFeeds.length > 0 && (!feedCreationEnabled || (url.trim() === '' && !hasHits && !isCreating));
 
   useEffect(() => {
     setActiveHitIndex(undefined);
@@ -197,30 +257,14 @@ function UrlEntrySection({
         </div>
       )}
 
-      {!feedCreationEnabled && (
-        <>
-          <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
-          {featuredFeeds.length > 0 && (
-            <Notice
-              className="layout-rail-reading"
-              role="status"
-              ariaLabel={COPY.includedFeedsTitle}
-              title={COPY.includedFeedsTitle}
-            >
-              <p class="notice__intro">{COPY.includedFeedsIntro}</p>
-              <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
-              <p class="notice__meta">
-                <a
-                  href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {COPY.includedFeedsLearnMore}
-                </a>
-              </p>
-            </Notice>
-          )}
-        </>
+      {!feedCreationEnabled && <p class="field-help field-help--alert">{COPY.creationDisabled}</p>}
+
+      {shouldShowStarters && (
+        <IncludedFeedsBlock
+          featuredFeeds={featuredFeeds}
+          catalogCount={catalogEntries.length}
+          lean={feedCreationEnabled}
+        />
       )}
     </>
   );
@@ -482,6 +526,7 @@ export function CreateFeedPanel({
 
 interface UtilityStripProperties {
   hasAccessToken: boolean;
+  catalogCount: number;
   openapiUrl?: string;
   onClearToken: () => void;
   onShowBookmarkletHelp: () => void;
@@ -489,26 +534,17 @@ interface UtilityStripProperties {
 
 export function UtilityStrip({
   hasAccessToken,
+  catalogCount,
   openapiUrl,
   onClearToken,
   onShowBookmarkletHelp,
 }: UtilityStripProperties) {
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
-  const includedFeedsHref = (() => {
-    const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
-    if (globalThis.window === undefined) return directoryUrl.href;
-
-    const instanceUrl = new URL('/', location.origin);
-    directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.href)}`;
-    return directoryUrl.href;
-  })();
 
   return (
     <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
-        <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
-          {COPY.tryIncludedFeeds}
-        </a>
+        <FeedDirectoryEscape catalogCount={catalogCount} />
         <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>

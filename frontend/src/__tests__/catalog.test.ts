@@ -134,11 +134,14 @@ describe('parseCatalogEntries', () => {
 
 describe('selectStarterFeeds', () => {
   it('prefers known starter ids then falls back to the first three', () => {
-    const azure = baseEntry({ id: 'microsoft.com/azure-products', channelUrl: 'https://azure.example' });
+    const fao = baseEntry({ id: 'fao.org/newsroom', channelUrl: 'https://fao.example' });
     const other = baseEntry({ id: 'other.com/feed', channelUrl: 'https://other.example' });
-    expect(selectStarterFeeds([other, azure]).map((entry) => entry.id)).toEqual([
-      'microsoft.com/azure-products',
-    ]);
+    expect(selectStarterFeeds([other, fao]).map((entry) => entry.id)).toEqual(['fao.org/newsroom']);
     expect(selectStarterFeeds([other]).map((entry) => entry.id)).toEqual(['other.com/feed']);
+  });
+
+  it('exports STARTER_FEED_IDS for lockstep assertions', async () => {
+    const { STARTER_FEED_IDS } = await import('../catalog');
+    expect([...STARTER_FEED_IDS]).toEqual(['fao.org/newsroom', 'ftc.gov/press-releases', 'icrc.org/news']);
   });
 });

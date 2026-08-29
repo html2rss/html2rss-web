@@ -20,11 +20,15 @@ export const COPY = {
   copy: 'Copy',
   copied: 'Copied!',
   creationDisabled: 'Feed creation is disabled on this instance.',
-  includedFeedsTitle: 'Included feeds',
-  includedFeedsIntro: 'Start with a ready-made feed from this instance.',
-  includedFeedsLearnMore: 'Learn how included feeds work.',
-  catalogFindHint: 'Matching included feeds.',
-  catalogFindHitsLabel: 'Matching included feeds',
+  /** Browse product name — SSOT with docs /feed-directory/ title. */
+  feedDirectory: 'Feed Directory',
+  /** Escape / utility CTA — verb + SSOT name; optional public catalog count. */
+  browseFeedDirectory: (count = 0) =>
+    count > 0 ? `Browse Feed Directory (${count})` : 'Browse Feed Directory',
+  feedDirectoryIntro: 'Start with a ready-made feed from this instance.',
+  feedDirectoryLearnMore: 'Learn how the Feed Directory works.',
+  catalogFindHint: 'Matching feeds.',
+  catalogFindHitsLabel: 'Matching feeds',
   dockerSetup: 'Set up your own instance with Docker.',
   dockerInstall: 'Install from Docker Hub',
   bookmarkletTitle: 'Bookmarklet',
@@ -40,7 +44,6 @@ export const COPY = {
   saveAndContinue: 'Save and continue',
   back: 'Back',
   utilities: 'Utilities',
-  tryIncludedFeeds: 'Try included feeds',
   logout: 'Logout',
   openapiSpec: 'OpenAPI spec',
   sourceCode: 'Source code',

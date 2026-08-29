@@ -65,6 +65,30 @@ describe('useSession', () => {
     expect(result.current.feedCreationEnabled).toBe(true);
   });
 
+  it('selects starter feeds when feed creation is enabled', async () => {
+    const fao = {
+      id: 'fao.org/newsroom',
+      path: '/fao.org/newsroom.rss',
+      channel: { url: 'https://www.fao.org/newsroom' },
+      directory: { title: 'FAO Newsroom', summary: 'News' },
+      parameters: { defaults: {} },
+    };
+    mockFetchFor(
+      mockMetadata,
+      Response.json({
+        success: true,
+        data: { configs: [fao] },
+        meta: { total: 1, catalog_version: 1 },
+      })
+    );
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.feedCreationEnabled).toBe(true);
+    expect(result.current.featuredFeeds.map((entry) => entry.id)).toEqual(['fao.org/newsroom']);
+  });
+
   it('saves new tokens to persistent storage and does not write sessionStorage', async () => {
     mockFetchFor(mockMetadata);
 

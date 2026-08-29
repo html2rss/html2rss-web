@@ -361,17 +361,124 @@ describe('App', () => {
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
-  it('promotes included feeds when feed creation is disabled', async () => {
+  const faoStarter = {
+    id: 'fao.org/newsroom',
+    path: '/fao.org/newsroom.rss',
+    title: 'FAO Newsroom',
+    description: 'News and media from the Food and Agriculture Organization.',
+    channelUrl: 'https://www.fao.org/newsroom',
+    parameterDefaults: {},
+  };
+
+  it('shows lean included-feed starters on empty create when creation is enabled', async () => {
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toHaveAttribute(
+        'href',
+        '/fao.org/newsroom.rss'
+      );
+    });
+    const starters = screen.getByRole('status');
+    expect(starters.querySelector('.ui-eyebrow')?.textContent).toBe(COPY.feedDirectory);
+    expect(screen.queryByText(COPY.feedDirectoryIntro)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.feedDirectoryLearnMore)).not.toBeInTheDocument();
+    expect(document.querySelector('.notice')).toBeNull();
+    expect(screen.getByRole('list', { name: COPY.feedDirectory })).toBeInTheDocument();
+    const directoryLinks = screen.getAllByRole('link', { name: COPY.browseFeedDirectory(1) });
+    expect(directoryLinks).toHaveLength(2);
+    for (const link of directoryLinks) {
+      expect(link).toHaveAttribute(
+        'href',
+        'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
+      );
+      expect(link).toHaveClass('utility-link');
+    }
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
+    });
+  });
+
+  it('hides included-feed starters when the URL field is non-empty', async () => {
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toBeInTheDocument();
+    });
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'example.com/articles' },
+    });
+
+    expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory(1) })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
+    );
+  });
+
+  it('hides included-feed starters when catalog find has hits', async () => {
     mockUseCatalogEntries.mockReturnValue([
+      faoStarter,
       {
-        id: 'microsoft.com/azure-products',
-        path: '/microsoft.com/azure-products.rss',
-        title: 'Azure product updates',
-        description: 'Follow Microsoft Azure product announcements from your own instance.',
-        channelUrl: 'https://azure.microsoft.com/updates',
+        id: 'anthropic.com/news',
+        path: '/anthropic.com/news.rss',
+        title: 'Anthropic — News',
+        description: 'Product and research announcements from Anthropic.',
+        channelUrl: 'https://www.anthropic.com/news',
         parameterDefaults: {},
       },
     ]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toBeInTheDocument();
+    });
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'www.anthropic.com/news' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Anthropic — News' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory(2) })).toBeInTheDocument();
+  });
+
+  it('promotes included feeds when feed creation is disabled', async () => {
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
 
     mockUseApiMetadata.mockReturnValue({
       metadata: {
@@ -395,13 +502,19 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+      expect(document.querySelector('.notice__title')?.textContent).toBe(COPY.feedDirectory);
     });
-    expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toHaveAttribute(
       'href',
-      '/microsoft.com/azure-products.rss'
+      '/fao.org/newsroom.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
+    expect(screen.getByText(COPY.feedDirectoryIntro)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.feedDirectoryLearnMore })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/web-application/guides/use-the-feed-directory/'
+    );
+    expect(document.querySelector('.notice')).not.toBeNull();
   });
 
   it('suggests included feeds when the URL matches the catalog', async () => {
@@ -763,7 +876,7 @@ describe('App', () => {
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
-      COPY.tryIncludedFeeds,
+      COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
       COPY.logout,
       COPY.dockerInstall,
@@ -1148,7 +1261,7 @@ describe('App', () => {
       ...screen.getByLabelText(COPY.utilities).querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
-      COPY.tryIncludedFeeds,
+      COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
       COPY.dockerInstall,
       COPY.openapiSpec,
@@ -1159,7 +1272,7 @@ describe('App', () => {
       'href',
       'https://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: COPY.tryIncludedFeeds })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory() })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );

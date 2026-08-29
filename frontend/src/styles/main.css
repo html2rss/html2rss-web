@@ -318,6 +318,15 @@
   color: var(--text-muted);
 }
 
+/* Global `a` uses --accent; muted meta must set color on the link itself. */
+.notice__meta a {
+  color: var(--text-muted);
+}
+
+.notice__meta a:hover {
+  color: var(--text-strong);
+}
+
 .notice[data-tone="error"] {
   border-color: var(--border-danger);
   background: var(--bg-danger);
