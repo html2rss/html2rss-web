@@ -142,10 +142,6 @@ describe('selectStarterFeeds', () => {
 
   it('exports STARTER_FEED_IDS for lockstep assertions', async () => {
     const { STARTER_FEED_IDS } = await import('../catalog');
-    expect([...STARTER_FEED_IDS]).toEqual([
-      'fao.org/newsroom',
-      'ftc.gov/press-releases',
-      'icrc.org/news',
-    ]);
+    expect([...STARTER_FEED_IDS]).toEqual(['fao.org/newsroom', 'ftc.gov/press-releases', 'icrc.org/news']);
   });
 });

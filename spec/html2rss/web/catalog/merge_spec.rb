@@ -15,5 +15,10 @@ RSpec.describe Html2rss::Web::Catalog::Merge do
         ]
       )
     end
+
+    it 'resolves each preferred id in the merged catalog' do
+      catalog_ids = described_class.call.map { |entry| entry.fetch(:id) }
+      expect(catalog_ids).to include(*described_class::STARTER_FEED_IDS)
+    end
   end
 end

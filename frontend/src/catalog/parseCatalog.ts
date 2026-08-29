@@ -65,11 +65,7 @@ export function parseCatalogEntries(payload: unknown): CatalogEntry[] {
  * Preferred included-feed starters (empty Create URL / creation-disabled Notice).
  * Keep in lockstep with `Html2rss::Web::Catalog::Merge::STARTER_FEED_IDS`.
  */
-export const STARTER_FEED_IDS = [
-  'fao.org/newsroom',
-  'ftc.gov/press-releases',
-  'icrc.org/news',
-] as const;
+export const STARTER_FEED_IDS = ['fao.org/newsroom', 'ftc.gov/press-releases', 'icrc.org/news'] as const;
 
 /**
  * Picks up to three starter feeds by preferred id, else the first catalog rows.

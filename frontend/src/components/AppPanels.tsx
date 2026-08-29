@@ -159,9 +159,8 @@ function UrlEntrySection({
   const catalogHits = useMemo(() => findCatalogEntries(url, catalogEntries), [url, catalogEntries]);
   const [activeHitIndex, setActiveHitIndex] = useState<number | undefined>(undefined);
   const hasHits = catalogHits.length > 0;
-  const showStarters =
-    featuredFeeds.length > 0 &&
-    (!feedCreationEnabled || (url.trim() === '' && !hasHits && !isCreating));
+  const shouldShowStarters =
+    featuredFeeds.length > 0 && (!feedCreationEnabled || (url.trim() === '' && !hasHits && !isCreating));
 
   useEffect(() => {
     setActiveHitIndex(undefined);
@@ -239,13 +238,9 @@ function UrlEntrySection({
         </div>
       )}
 
-      {!feedCreationEnabled && (
-        <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
-      )}
+      {!feedCreationEnabled && <p class="field-help field-help--alert">{COPY.creationDisabled}</p>}
 
-      {showStarters && (
-        <IncludedFeedsBlock featuredFeeds={featuredFeeds} lean={feedCreationEnabled} />
-      )}
+      {shouldShowStarters && <IncludedFeedsBlock featuredFeeds={featuredFeeds} lean={feedCreationEnabled} />}
     </>
   );
 }
