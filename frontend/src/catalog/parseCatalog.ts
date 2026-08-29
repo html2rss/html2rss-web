@@ -66,9 +66,9 @@ export function parseCatalogEntries(payload: unknown): CatalogEntry[] {
  * Keep in lockstep with `Html2rss::Web::Catalog::Merge::STARTER_FEED_IDS`.
  */
 export const STARTER_FEED_IDS = [
-  'microsoft.com/azure-products',
-  'phys.org/weekly',
-  'softwareleadweekly.com/issues',
+  'fao.org/newsroom',
+  'ftc.gov/press-releases',
+  'icrc.org/news',
 ] as const;
 
 /**

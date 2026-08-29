@@ -361,17 +361,17 @@ describe('App', () => {
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
-  const azureStarter = {
-    id: 'microsoft.com/azure-products',
-    path: '/microsoft.com/azure-products.rss',
-    title: 'Azure product updates',
-    description: 'Follow Microsoft Azure product announcements from your own instance.',
-    channelUrl: 'https://azure.microsoft.com/updates',
+  const faoStarter = {
+    id: 'fao.org/newsroom',
+    path: '/fao.org/newsroom.rss',
+    title: 'FAO Newsroom',
+    description: 'News and media from the Food and Agriculture Organization.',
+    channelUrl: 'https://www.fao.org/newsroom',
     parameterDefaults: {},
   };
 
   it('shows lean included-feed starters on empty create when creation is enabled', async () => {
-    mockUseCatalogEntries.mockReturnValue([azureStarter]);
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
     mockUseAccessToken.mockReturnValue({
       token: 'session-token',
       hasToken: true,
@@ -384,9 +384,9 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toHaveAttribute(
         'href',
-        '/microsoft.com/azure-products.rss'
+        '/fao.org/newsroom.rss'
       );
     });
     expect(screen.getByText(COPY.includedFeedsHint)).toBeInTheDocument();
@@ -400,7 +400,7 @@ describe('App', () => {
   });
 
   it('hides included-feed starters when the URL field is non-empty', async () => {
-    mockUseCatalogEntries.mockReturnValue([azureStarter]);
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
     mockUseAccessToken.mockReturnValue({
       token: 'session-token',
       hasToken: true,
@@ -413,20 +413,20 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Azure product updates' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toBeInTheDocument();
     });
 
     fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
       target: { value: 'example.com/articles' },
     });
 
-    expect(screen.queryByRole('link', { name: 'Azure product updates' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
     expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
   });
 
   it('hides included-feed starters when catalog find has hits', async () => {
     mockUseCatalogEntries.mockReturnValue([
-      azureStarter,
+      faoStarter,
       {
         id: 'anthropic.com/news',
         path: '/anthropic.com/news.rss',
@@ -448,7 +448,7 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Azure product updates' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toBeInTheDocument();
     });
 
     fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
@@ -458,12 +458,12 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Anthropic — News' })).toBeInTheDocument();
     });
-    expect(screen.queryByRole('link', { name: 'Azure product updates' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
     expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
   });
 
   it('promotes included feeds when feed creation is disabled', async () => {
-    mockUseCatalogEntries.mockReturnValue([azureStarter]);
+    mockUseCatalogEntries.mockReturnValue([faoStarter]);
 
     mockUseApiMetadata.mockReturnValue({
       metadata: {
@@ -489,9 +489,9 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
     });
-    expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toHaveAttribute(
       'href',
-      '/microsoft.com/azure-products.rss'
+      '/fao.org/newsroom.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
     expect(screen.getByText(COPY.includedFeedsIntro)).toBeInTheDocument();

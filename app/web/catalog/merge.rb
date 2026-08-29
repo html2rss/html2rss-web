@@ -8,10 +8,12 @@ module Html2rss
     # Merges embedded catalog entries with local feed configs for the public catalog API.
     module Catalog
       module Merge
+        # Prefer Faraday-stable IGO/gov configs. Keep in lockstep with
+        # frontend `STARTER_FEED_IDS` in `frontend/src/catalog/parseCatalog.ts`.
         STARTER_FEED_IDS = %w[
-          microsoft.com/azure-products
-          phys.org/weekly
-          softwareleadweekly.com/issues
+          fao.org/newsroom
+          ftc.gov/press-releases
+          icrc.org/news
         ].freeze
 
         module_function
