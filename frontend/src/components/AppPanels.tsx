@@ -106,6 +106,15 @@ function CatalogHitList({ entries, ariaLabel, listboxId, activeIndex }: CatalogH
   );
 }
 
+function feedDirectoryHref(): string {
+  const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
+  if (globalThis.window === undefined) return directoryUrl.href;
+
+  const instanceUrl = new URL('/', location.origin);
+  directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.href)}`;
+  return directoryUrl.href;
+}
+
 function IncludedFeedsBlock({
   featuredFeeds,
   lean,
@@ -115,10 +124,14 @@ function IncludedFeedsBlock({
 }) {
   if (lean) {
     return (
-      <div class="layout-rail-reading" role="status">
-        <p class="field-help">{COPY.includedFeedsTitle}</p>
-        <p class="field-help">{COPY.includedFeedsHint}</p>
-        <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
+      <div class="layout-rail-reading layout-stack layout-stack--tight" role="status">
+        <p class="ui-eyebrow">{COPY.feedDirectory}</p>
+        <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.feedDirectory} />
+        <p class="notice__meta">
+          <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer">
+            {COPY.feedDirectory}
+          </a>
+        </p>
       </div>
     );
   }
@@ -127,18 +140,18 @@ function IncludedFeedsBlock({
     <Notice
       className="layout-rail-reading"
       role="status"
-      ariaLabel={COPY.includedFeedsTitle}
-      title={COPY.includedFeedsTitle}
+      ariaLabel={COPY.feedDirectory}
+      title={COPY.feedDirectory}
     >
-      <p class="notice__intro">{COPY.includedFeedsIntro}</p>
-      <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
+      <p class="notice__intro">{COPY.feedDirectoryIntro}</p>
+      <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.feedDirectory} />
       <p class="notice__meta">
         <a
-          href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+          href="https://html2rss.github.io/web-application/guides/use-the-feed-directory/"
           target="_blank"
           rel="noopener noreferrer"
         >
-          {COPY.includedFeedsLearnMore}
+          {COPY.feedDirectoryLearnMore}
         </a>
       </p>
     </Notice>
@@ -513,20 +526,12 @@ export function UtilityStrip({
   onShowBookmarkletHelp,
 }: UtilityStripProperties) {
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
-  const includedFeedsHref = (() => {
-    const directoryUrl = new URL('https://html2rss.github.io/feed-directory/');
-    if (globalThis.window === undefined) return directoryUrl.href;
-
-    const instanceUrl = new URL('/', location.origin);
-    directoryUrl.hash = `!url=${encodeURIComponent(instanceUrl.href)}`;
-    return directoryUrl.href;
-  })();
 
   return (
     <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
-        <a href={includedFeedsHref} target="_blank" rel="noopener noreferrer" class="utility-link">
-          {COPY.tryIncludedFeeds}
+        <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer" class="utility-link">
+          {COPY.feedDirectory}
         </a>
         <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (

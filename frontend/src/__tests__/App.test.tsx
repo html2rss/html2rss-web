@@ -389,11 +389,20 @@ describe('App', () => {
         '/fao.org/newsroom.rss'
       );
     });
-    expect(screen.getByText(COPY.includedFeedsHint)).toBeInTheDocument();
-    expect(screen.queryByText(COPY.includedFeedsIntro)).not.toBeInTheDocument();
-    expect(screen.queryByText(COPY.includedFeedsLearnMore)).not.toBeInTheDocument();
+    const starters = screen.getByRole('status');
+    expect(starters.querySelector('.ui-eyebrow')?.textContent).toBe(COPY.feedDirectory);
+    expect(screen.queryByText(COPY.feedDirectoryIntro)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.feedDirectoryLearnMore)).not.toBeInTheDocument();
     expect(document.querySelector('.notice')).toBeNull();
-    expect(screen.getByRole('list', { name: COPY.includedFeedsTitle })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: COPY.feedDirectory })).toBeInTheDocument();
+    const directoryLinks = screen.getAllByRole('link', { name: COPY.feedDirectory });
+    expect(directoryLinks).toHaveLength(2);
+    for (const link of directoryLinks) {
+      expect(link).toHaveAttribute(
+        'href',
+        'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
+      );
+    }
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
     });
@@ -421,7 +430,11 @@ describe('App', () => {
     });
 
     expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
-    expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
+    );
   });
 
   it('hides included-feed starters when catalog find has hits', async () => {
@@ -459,7 +472,8 @@ describe('App', () => {
       expect(screen.getByRole('option', { name: 'Anthropic — News' })).toBeInTheDocument();
     });
     expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
-    expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toBeInTheDocument();
   });
 
   it('promotes included feeds when feed creation is disabled', async () => {
@@ -487,15 +501,18 @@ describe('App', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(screen.getByText(COPY.includedFeedsTitle)).toBeInTheDocument();
+      expect(document.querySelector('.notice__title')?.textContent).toBe(COPY.feedDirectory);
     });
     expect(screen.getByRole('link', { name: 'FAO Newsroom' })).toHaveAttribute(
       'href',
       '/fao.org/newsroom.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
-    expect(screen.getByText(COPY.includedFeedsIntro)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: COPY.includedFeedsLearnMore })).toBeInTheDocument();
+    expect(screen.getByText(COPY.feedDirectoryIntro)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.feedDirectoryLearnMore })).toHaveAttribute(
+      'href',
+      'https://html2rss.github.io/web-application/guides/use-the-feed-directory/'
+    );
     expect(document.querySelector('.notice')).not.toBeNull();
   });
 
@@ -858,7 +875,7 @@ describe('App', () => {
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
-      COPY.tryIncludedFeeds,
+      COPY.feedDirectory,
       COPY.bookmarkletTitle,
       COPY.logout,
       COPY.dockerInstall,
@@ -1243,7 +1260,7 @@ describe('App', () => {
       ...screen.getByLabelText(COPY.utilities).querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
-      COPY.tryIncludedFeeds,
+      COPY.feedDirectory,
       COPY.bookmarkletTitle,
       COPY.dockerInstall,
       COPY.openapiSpec,
@@ -1254,7 +1271,7 @@ describe('App', () => {
       'href',
       'https://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: COPY.tryIncludedFeeds })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );
