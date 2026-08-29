@@ -22,6 +22,9 @@ export const COPY = {
   creationDisabled: 'Feed creation is disabled on this instance.',
   /** Browse product name — SSOT with docs /feed-directory/ title. */
   feedDirectory: 'Feed Directory',
+  /** Escape / utility CTA — verb + SSOT name; optional public catalog count. */
+  browseFeedDirectory: (count = 0) =>
+    count > 0 ? `Browse Feed Directory (${count})` : 'Browse Feed Directory',
   feedDirectoryIntro: 'Start with a ready-made feed from this instance.',
   feedDirectoryLearnMore: 'Learn how the Feed Directory works.',
   catalogFindHint: 'Matching feeds.',

@@ -395,13 +395,14 @@ describe('App', () => {
     expect(screen.queryByText(COPY.feedDirectoryLearnMore)).not.toBeInTheDocument();
     expect(document.querySelector('.notice')).toBeNull();
     expect(screen.getByRole('list', { name: COPY.feedDirectory })).toBeInTheDocument();
-    const directoryLinks = screen.getAllByRole('link', { name: COPY.feedDirectory });
+    const directoryLinks = screen.getAllByRole('link', { name: COPY.browseFeedDirectory(1) });
     expect(directoryLinks).toHaveLength(2);
     for (const link of directoryLinks) {
       expect(link).toHaveAttribute(
         'href',
         'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
       );
+      expect(link).toHaveClass('utility-link');
     }
     await waitFor(() => {
       expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
@@ -431,7 +432,7 @@ describe('App', () => {
 
     expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
     expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory(1) })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );
@@ -473,7 +474,7 @@ describe('App', () => {
     });
     expect(screen.queryByRole('link', { name: 'FAO Newsroom' })).not.toBeInTheDocument();
     expect(screen.queryByRole('list', { name: COPY.feedDirectory })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory(2) })).toBeInTheDocument();
   });
 
   it('promotes included feeds when feed creation is disabled', async () => {
@@ -875,7 +876,7 @@ describe('App', () => {
     ].map((element) => element.textContent);
 
     expect(utilityItems).toEqual([
-      COPY.feedDirectory,
+      COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
       COPY.logout,
       COPY.dockerInstall,
@@ -1260,7 +1261,7 @@ describe('App', () => {
       ...screen.getByLabelText(COPY.utilities).querySelectorAll(':scope .utility-strip__items > a'),
     ].map((link) => link.textContent);
     expect(utilityLinks).toEqual([
-      COPY.feedDirectory,
+      COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
       COPY.dockerInstall,
       COPY.openapiSpec,
@@ -1271,7 +1272,7 @@ describe('App', () => {
       'href',
       'https://example.test/openapi.yaml'
     );
-    expect(screen.getByRole('link', { name: COPY.feedDirectory })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: COPY.browseFeedDirectory() })).toHaveAttribute(
       'href',
       'https://html2rss.github.io/feed-directory/#!url=http%3A%2F%2Flocalhost%3A3000%2F'
     );

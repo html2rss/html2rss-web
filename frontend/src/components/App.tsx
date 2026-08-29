@@ -175,6 +175,7 @@ export function App() {
         <div class="app-footer__inner">
           <UtilityStrip
             hasAccessToken={hasToken}
+            catalogCount={catalogEntries.length}
             openapiUrl={metadata?.api.openapi_url}
             onClearToken={onClearToken}
             onShowBookmarkletHelp={onShowBookmarkletHelp}

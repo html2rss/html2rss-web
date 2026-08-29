@@ -115,11 +115,21 @@ function feedDirectoryHref(): string {
   return directoryUrl.href;
 }
 
+function FeedDirectoryEscape({ catalogCount }: { catalogCount: number }) {
+  return (
+    <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer" class="utility-link">
+      {COPY.browseFeedDirectory(catalogCount)}
+    </a>
+  );
+}
+
 function IncludedFeedsBlock({
   featuredFeeds,
+  catalogCount,
   lean,
 }: {
   featuredFeeds: readonly CatalogEntry[];
+  catalogCount: number;
   lean: boolean;
 }) {
   if (lean) {
@@ -127,11 +137,7 @@ function IncludedFeedsBlock({
       <div class="layout-rail-reading layout-stack layout-stack--tight" role="status">
         <p class="ui-eyebrow">{COPY.feedDirectory}</p>
         <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.feedDirectory} />
-        <p class="notice__meta">
-          <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer">
-            {COPY.feedDirectory}
-          </a>
-        </p>
+        <FeedDirectoryEscape catalogCount={catalogCount} />
       </div>
     );
   }
@@ -253,7 +259,13 @@ function UrlEntrySection({
 
       {!feedCreationEnabled && <p class="field-help field-help--alert">{COPY.creationDisabled}</p>}
 
-      {shouldShowStarters && <IncludedFeedsBlock featuredFeeds={featuredFeeds} lean={feedCreationEnabled} />}
+      {shouldShowStarters && (
+        <IncludedFeedsBlock
+          featuredFeeds={featuredFeeds}
+          catalogCount={catalogEntries.length}
+          lean={feedCreationEnabled}
+        />
+      )}
     </>
   );
 }
@@ -514,6 +526,7 @@ export function CreateFeedPanel({
 
 interface UtilityStripProperties {
   hasAccessToken: boolean;
+  catalogCount: number;
   openapiUrl?: string;
   onClearToken: () => void;
   onShowBookmarkletHelp: () => void;
@@ -521,6 +534,7 @@ interface UtilityStripProperties {
 
 export function UtilityStrip({
   hasAccessToken,
+  catalogCount,
   openapiUrl,
   onClearToken,
   onShowBookmarkletHelp,
@@ -530,9 +544,7 @@ export function UtilityStrip({
   return (
     <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
-        <a href={feedDirectoryHref()} target="_blank" rel="noopener noreferrer" class="utility-link">
-          {COPY.feedDirectory}
-        </a>
+        <FeedDirectoryEscape catalogCount={catalogCount} />
         <Bookmarklet onClick={onShowBookmarkletHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>
