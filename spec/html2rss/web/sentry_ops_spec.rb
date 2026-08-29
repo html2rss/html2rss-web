@@ -15,7 +15,8 @@ RSpec.describe Html2rss::Web::SentryOps do
       request_id: 'req-scrape-42',
       strategy_used: 'botasaurus',
       render_ms: 12_345,
-      error_category: 'timeout'
+      error_category: 'timeout',
+      timeout_phase: nil
     )
   end
   let(:context) do

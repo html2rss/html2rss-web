@@ -19,6 +19,17 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end)
   end
 
+  def stub_request_timed_out
+    stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error) do
+      def initialize(message = nil, timeout_phase: nil)
+        @timeout_phase = timeout_phase
+        super(message)
+      end
+
+      attr_reader :timeout_phase
+    end)
+  end
+
   describe '.classify' do
     it 'returns a carried Decision without remapping' do
       decided = described_class::DecidedError.new(described_class::BLOCKED_SURFACE)
@@ -85,19 +96,56 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns gateway timeout for RequestTimedOut (Botasaurus/Faraday wall-clock)' do
-      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('Botasaurus scrape timed out')
 
       expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
+    it 'returns gateway timeout for RequestTimedOut with timeout_phase work' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('work timed out', timeout_phase: 'work')
+
+      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'returns service unavailable for RequestTimedOut with timeout_phase queue' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('queued too long', timeout_phase: 'queue')
+
+      expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
+    it 'returns service unavailable for RequestTimedOut with timeout_phase boot' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('browser boot timed out', timeout_phase: 'boot')
+
+      expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
     it 'detects RequestTimedOut through Exception#cause' do
-      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      stub_request_timed_out
       root = Html2rss::RequestService::RequestTimedOut.new('timed out')
       wrapped = StandardError.new('wrapped')
       allow(wrapped).to receive(:cause).and_return(root)
 
       expect(described_class.classify(wrapped)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'maps queue timeout_phase through Exception#cause to service unavailable' do
+      stub_request_timed_out
+      root = Html2rss::RequestService::RequestTimedOut.new('capacity', timeout_phase: 'queue')
+      wrapped = StandardError.new('wrapped')
+      allow(wrapped).to receive(:cause).and_return(root)
+
+      expect(described_class.classify(wrapped)).to eq(described_class::SERVICE_UNAVAILABLE)
+    end
+
+    it 'keeps gateway timeout when RequestTimedOut omits timeout_phase reader' do
+      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::RequestTimedOut.new('legacy timed out')
+
+      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
     it 'returns internal server error decision for unrelated errors' do
@@ -170,7 +218,12 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
           {
             strategy: :faraday,
             items_count: 0,
-            transport_meta: { 'request_id' => 'req-123', 'render_ms' => 45, 'strategy_used' => 'faraday' }
+            transport_meta: {
+              'request_id' => 'req-123',
+              'render_ms' => 45,
+              'strategy_used' => 'faraday',
+              'timeout_phase' => 'work'
+            }
           }
         ]
       )
@@ -178,16 +231,45 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
 
     it 'extracts strategy attempts and transport meta when present', :aggregate_failures do
       diagnostics = described_class::Diagnostics.from_error(diagnostic_error)
+      expect(diagnostics).to have_attributes(
+        request_id: 'req-123', render_ms: 45, strategy_used: 'faraday', timeout_phase: 'work'
+      )
       expect(diagnostics.strategy_attempts.size).to eq(1)
-      expect(diagnostics.request_id).to eq('req-123')
-      expect(diagnostics.render_ms).to eq(45)
-      expect(diagnostics.strategy_used).to eq('faraday')
       expect(diagnostics.to_h).to include(
         strategy_attempts: diagnostics.strategy_attempts,
-        request_id: 'req-123',
-        render_ms: 45,
-        strategy_used: 'faraday'
+        request_id: 'req-123', render_ms: 45, strategy_used: 'faraday', timeout_phase: 'work'
       )
+    end
+
+    it 'prefers transport_meta timeout_phase over RequestTimedOut on the chain' do
+      stub_request_timed_out
+      timed_out = Html2rss::RequestService::RequestTimedOut.new('queued', timeout_phase: 'queue')
+      allow(diagnostic_error).to receive(:cause).and_return(timed_out)
+
+      expect(described_class::Diagnostics.from_error(diagnostic_error).timeout_phase).to eq('work')
+    end
+
+    it 'falls back to RequestTimedOut#timeout_phase when transport_meta omits it' do
+      stub_request_timed_out
+      klass = stub_no_feed_items_extracted_with_attempts
+      error = klass.new(
+        attempts: [{ strategy: :botasaurus, items_count: 0,
+                     transport_meta: { 'request_id' => 'req-9', 'error_category' => 'timeout' } }]
+      )
+      allow(error).to receive(:cause).and_return(
+        Html2rss::RequestService::RequestTimedOut.new('capacity', timeout_phase: 'boot')
+      )
+
+      expect(described_class::Diagnostics.from_error(error)).to have_attributes(
+        request_id: 'req-9', error_category: 'timeout', timeout_phase: 'boot'
+      )
+    end
+
+    it 'emits timeout_phase from RequestTimedOut when attempts are absent' do
+      stub_request_timed_out
+      error = Html2rss::RequestService::RequestTimedOut.new('queued too long', timeout_phase: 'queue')
+
+      expect(described_class::Diagnostics.from_error(error).to_h).to eq(timeout_phase: 'queue')
     end
 
     it 'returns empty diagnostics when no attempts are present' do
