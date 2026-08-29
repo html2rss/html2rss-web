@@ -129,6 +129,19 @@ paths:
                               type: object
                             id:
                               type: string
+                            last_result:
+                              properties:
+                                at:
+                                  type: 'null'
+                                code:
+                                  type: 'null'
+                                state:
+                                  type: string
+                              required:
+                              - state
+                              - code
+                              - at
+                              type: object
                             parameters:
                               properties:
                                 defaults:
@@ -243,6 +256,7 @@ paths:
                           - directory
                           - channel
                           - parameters
+                          - last_result
                           type: object
                         type: array
                     required:
@@ -252,11 +266,16 @@ paths:
                     properties:
                       catalog_version:
                         type: integer
+                      starters:
+                        items:
+                          type: string
+                        type: array
                       total:
                         type: integer
                     required:
                     - total
                     - catalog_version
+                    - starters
                     type: object
                   success:
                     type: boolean

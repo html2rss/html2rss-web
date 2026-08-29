@@ -219,9 +219,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(200)
       expect(last_response.headers['Access-Control-Allow-Origin']).to eq('*')
       json = expect_success_response(last_response)
-      expect(json.dig('meta', 'catalog_version')).to eq(1)
+      expect(json.dig('meta', 'catalog_version')).to eq(2)
+      expect(json.dig('meta', 'starters')).to be_an(Array)
+      expect(json.dig('meta', 'starters').size).to be <= 3
       expect(json.dig('data', 'configs')).to be_an(Array)
-      expect(json.dig('data', 'configs').first).to include('id', 'path', 'source', 'directory', 'channel', 'parameters')
+      expect(json.dig('data', 'configs').first).to include(
+        'id', 'path', 'source', 'directory', 'channel', 'parameters', 'last_result'
+      )
+      expect(json.dig('data', 'configs').first.fetch('last_result')).to include('state', 'code', 'at')
     end
 
     it 'returns 404 when the catalog is disabled', :aggregate_failures do

@@ -34,7 +34,21 @@ module Html2rss
 
         ##
         # Normalized source inputs for shared feed generation.
-        ResolvedSource = Data.define(:source_kind, :cache_identity, :generator_input, :ttl_seconds, :url, :strategy)
+        #
+        # +feed_name+, +directory_defaults+, and +request_params+ support
+        # directory-path {LastResults} recording for static feeds. Token sources
+        # use +feed_name+ nil and empty defaults/params bags.
+        ResolvedSource = Data.define(
+          :source_kind,
+          :cache_identity,
+          :generator_input,
+          :ttl_seconds,
+          :url,
+          :strategy,
+          :feed_name,
+          :directory_defaults,
+          :request_params
+        )
 
         ##
         # Normalized feed payload consumed by renderers and HTTP responders.

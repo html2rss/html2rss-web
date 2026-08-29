@@ -28,16 +28,25 @@ module Html2rss
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def resolve_static(feed_request)
             config = LocalConfig.find(feed_request.feed_name)
-            generator_input = static_generator_input(config, feed_request.params)
-
-            resolved_source_for(
-              source_kind: :static,
-              cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
-              generator_input: generator_input,
-              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl))
-            )
+            build_static_source(feed_request, config)
           rescue Html2rss::Web::LocalConfig::NotFound
             raise Html2rss::Web::NotFoundError
+          end
+
+          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
+          # @param config [Hash]
+          # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          def build_static_source(feed_request, config)
+            generator_input = static_generator_input(config, feed_request.params)
+            resolved_source(
+              source_kind: :static,
+              cache_identity: static_cache_identity(feed_request.feed_name, feed_request.params),
+              generator_input:,
+              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl)),
+              feed_name: feed_request.feed_name,
+              directory_defaults: Catalog::ParameterDefaults.extract(config[:parameters]),
+              request_params: feed_request.params.to_h
+            )
           end
 
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
@@ -45,30 +54,33 @@ module Html2rss
           def resolve_token(feed_request)
             ensure_auto_source_enabled!
             feed_token = authorize_feed_token!(feed_request.token)
-            strategy = resolved_strategy(feed_token)
-            generator_input = token_generator_input(feed_token.url, strategy)
+            build_token_source(feed_request, feed_token)
+          end
 
-            resolved_source_for(
+          # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
+          # @param feed_token [Html2rss::Web::FeedToken]
+          # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          def build_token_source(feed_request, feed_token)
+            generator_input = token_generator_input(feed_token.url, resolved_strategy(feed_token))
+            resolved_source(
               source_kind: :token,
               cache_identity: token_cache_identity(feed_request.token),
-              generator_input: generator_input,
-              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300)
+              generator_input:,
+              ttl_seconds: Cache.seconds_from_minutes(generator_input.dig(:channel, :ttl), default: 300),
+              feed_name: nil,
+              directory_defaults: {},
+              request_params: {}
             )
           end
 
-          # @param source_kind [Symbol]
-          # @param cache_identity [String]
-          # @param generator_input [Hash{Symbol=>Object}]
-          # @param ttl_seconds [Integer]
+          # @param kwargs [Hash{Symbol=>Object}]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          def resolved_source_for(source_kind:, cache_identity:, generator_input:, ttl_seconds:)
+          def resolved_source(**kwargs)
+            generator_input = kwargs.fetch(:generator_input)
             Contracts::ResolvedSource.new(
-              source_kind:,
-              cache_identity:,
-              generator_input:,
-              ttl_seconds:,
               url: generator_input.dig(:channel, :url),
-              strategy: generator_input[:strategy]
+              strategy: generator_input[:strategy],
+              **kwargs
             )
           end
 
