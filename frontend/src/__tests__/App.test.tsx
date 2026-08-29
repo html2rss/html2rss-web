@@ -361,17 +361,109 @@ describe('App', () => {
     expect(mockCreateFeed).not.toHaveBeenCalled();
   });
 
-  it('promotes included feeds when feed creation is disabled', async () => {
+  const azureStarter = {
+    id: 'microsoft.com/azure-products',
+    path: '/microsoft.com/azure-products.rss',
+    title: 'Azure product updates',
+    description: 'Follow Microsoft Azure product announcements from your own instance.',
+    channelUrl: 'https://azure.microsoft.com/updates',
+    parameterDefaults: {},
+  };
+
+  it('shows lean included-feed starters on empty create when creation is enabled', async () => {
+    mockUseCatalogEntries.mockReturnValue([azureStarter]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Azure product updates' })).toHaveAttribute(
+        'href',
+        '/microsoft.com/azure-products.rss'
+      );
+    });
+    expect(screen.getByText(COPY.includedFeedsHint)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.includedFeedsIntro)).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.includedFeedsLearnMore)).not.toBeInTheDocument();
+    expect(document.querySelector('.notice')).toBeNull();
+    expect(screen.getByRole('list', { name: COPY.includedFeedsTitle })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByLabelText(COPY.urlLabel));
+    });
+  });
+
+  it('hides included-feed starters when the URL field is non-empty', async () => {
+    mockUseCatalogEntries.mockReturnValue([azureStarter]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Azure product updates' })).toBeInTheDocument();
+    });
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'example.com/articles' },
+    });
+
+    expect(screen.queryByRole('link', { name: 'Azure product updates' })).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
+  });
+
+  it('hides included-feed starters when catalog find has hits', async () => {
     mockUseCatalogEntries.mockReturnValue([
+      azureStarter,
       {
-        id: 'microsoft.com/azure-products',
-        path: '/microsoft.com/azure-products.rss',
-        title: 'Azure product updates',
-        description: 'Follow Microsoft Azure product announcements from your own instance.',
-        channelUrl: 'https://azure.microsoft.com/updates',
+        id: 'anthropic.com/news',
+        path: '/anthropic.com/news.rss',
+        title: 'Anthropic — News',
+        description: 'Product and research announcements from Anthropic.',
+        channelUrl: 'https://www.anthropic.com/news',
         parameterDefaults: {},
       },
     ]);
+    mockUseAccessToken.mockReturnValue({
+      token: 'session-token',
+      hasToken: true,
+      saveToken: mockSaveToken,
+      clearToken: mockClearToken,
+      isLoading: false,
+      error: undefined,
+    });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Azure product updates' })).toBeInTheDocument();
+    });
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'www.anthropic.com/news' },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('option', { name: 'Anthropic — News' })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('link', { name: 'Azure product updates' })).not.toBeInTheDocument();
+    expect(screen.queryByText(COPY.includedFeedsHint)).not.toBeInTheDocument();
+  });
+
+  it('promotes included feeds when feed creation is disabled', async () => {
+    mockUseCatalogEntries.mockReturnValue([azureStarter]);
 
     mockUseApiMetadata.mockReturnValue({
       metadata: {
@@ -402,6 +494,9 @@ describe('App', () => {
       '/microsoft.com/azure-products.rss'
     );
     expect(screen.getByText(COPY.creationDisabled)).toBeInTheDocument();
+    expect(screen.getByText(COPY.includedFeedsIntro)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.includedFeedsLearnMore })).toBeInTheDocument();
+    expect(document.querySelector('.notice')).not.toBeNull();
   });
 
   it('suggests included feeds when the URL matches the catalog', async () => {

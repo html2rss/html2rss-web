@@ -141,4 +141,13 @@ describe('selectStarterFeeds', () => {
     ]);
     expect(selectStarterFeeds([other]).map((entry) => entry.id)).toEqual(['other.com/feed']);
   });
+
+  it('exports STARTER_FEED_IDS for lockstep assertions', async () => {
+    const { STARTER_FEED_IDS } = await import('../catalog');
+    expect(STARTER_FEED_IDS).toEqual([
+      'microsoft.com/azure-products',
+      'phys.org/weekly',
+      'softwareleadweekly.com/issues',
+    ]);
+  });
 });

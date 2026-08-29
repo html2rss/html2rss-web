@@ -21,6 +21,7 @@ export const COPY = {
   copied: 'Copied!',
   creationDisabled: 'Feed creation is disabled on this instance.',
   includedFeedsTitle: 'Included feeds',
+  includedFeedsHint: 'Open one to try this instance.',
   includedFeedsIntro: 'Start with a ready-made feed from this instance.',
   includedFeedsLearnMore: 'Learn how included feeds work.',
   catalogFindHint: 'Matching included feeds.',

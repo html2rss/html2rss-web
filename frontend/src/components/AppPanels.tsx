@@ -106,6 +106,45 @@ function CatalogHitList({ entries, ariaLabel, listboxId, activeIndex }: CatalogH
   );
 }
 
+function IncludedFeedsBlock({
+  featuredFeeds,
+  lean,
+}: {
+  featuredFeeds: readonly CatalogEntry[];
+  lean: boolean;
+}) {
+  if (lean) {
+    return (
+      <div class="layout-rail-reading" role="status">
+        <p class="field-help">{COPY.includedFeedsTitle}</p>
+        <p class="field-help">{COPY.includedFeedsHint}</p>
+        <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
+      </div>
+    );
+  }
+
+  return (
+    <Notice
+      className="layout-rail-reading"
+      role="status"
+      ariaLabel={COPY.includedFeedsTitle}
+      title={COPY.includedFeedsTitle}
+    >
+      <p class="notice__intro">{COPY.includedFeedsIntro}</p>
+      <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
+      <p class="notice__meta">
+        <a
+          href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {COPY.includedFeedsLearnMore}
+        </a>
+      </p>
+    </Notice>
+  );
+}
+
 function UrlEntrySection({
   url,
   disabled,
@@ -120,6 +159,9 @@ function UrlEntrySection({
   const catalogHits = useMemo(() => findCatalogEntries(url, catalogEntries), [url, catalogEntries]);
   const [activeHitIndex, setActiveHitIndex] = useState<number | undefined>(undefined);
   const hasHits = catalogHits.length > 0;
+  const showStarters =
+    featuredFeeds.length > 0 &&
+    (!feedCreationEnabled || (url.trim() === '' && !hasHits && !isCreating));
 
   useEffect(() => {
     setActiveHitIndex(undefined);
@@ -198,29 +240,11 @@ function UrlEntrySection({
       )}
 
       {!feedCreationEnabled && (
-        <>
-          <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
-          {featuredFeeds.length > 0 && (
-            <Notice
-              className="layout-rail-reading"
-              role="status"
-              ariaLabel={COPY.includedFeedsTitle}
-              title={COPY.includedFeedsTitle}
-            >
-              <p class="notice__intro">{COPY.includedFeedsIntro}</p>
-              <CatalogHitList entries={featuredFeeds} ariaLabel={COPY.includedFeedsTitle} />
-              <p class="notice__meta">
-                <a
-                  href="https://html2rss.github.io/web-application/how-to/use-included-configs/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {COPY.includedFeedsLearnMore}
-                </a>
-              </p>
-            </Notice>
-          )}
-        </>
+        <p class="field-help field-help--alert">{COPY.creationDisabled}</p>
+      )}
+
+      {showStarters && (
+        <IncludedFeedsBlock featuredFeeds={featuredFeeds} lean={feedCreationEnabled} />
       )}
     </>
   );

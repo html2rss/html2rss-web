@@ -65,6 +65,32 @@ describe('useSession', () => {
     expect(result.current.feedCreationEnabled).toBe(true);
   });
 
+  it('selects starter feeds when feed creation is enabled', async () => {
+    const azure = {
+      id: 'microsoft.com/azure-products',
+      path: '/microsoft.com/azure-products.rss',
+      channel: { url: 'https://azure.example' },
+      directory: { title: 'Azure product updates', summary: 'Updates' },
+      parameters: { defaults: {} },
+    };
+    mockFetchFor(
+      mockMetadata,
+      Response.json({
+        success: true,
+        data: { configs: [azure] },
+        meta: { total: 1, catalog_version: 1 },
+      })
+    );
+
+    const { result } = renderHook(() => useSession());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.feedCreationEnabled).toBe(true);
+    expect(result.current.featuredFeeds.map((entry) => entry.id)).toEqual([
+      'microsoft.com/azure-products',
+    ]);
+  });
+
   it('saves new tokens to persistent storage and does not write sessionStorage', async () => {
     mockFetchFor(mockMetadata);
 
