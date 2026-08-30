@@ -256,10 +256,11 @@ Start triage from the newest `feed.create`, `feed.render`, and `request.error` e
 3. **Decision tree**
    - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
    - `SERVICE_UNAVAILABLE` with scraper `timeout_phase` `queue` or `boot` → our capacity (queue backlog) or Chromium boot (RAM/shm/prewarm) — not the target site
-   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal)
+   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal). Unclean or unreadable hung Botasaurus surfaces fail closed as `challenge_block` (not `timeout`/`work`).
    - `EXTRACTION_EMPTY` → selectors/config (product signal)
    - `GATEWAY_TIMEOUT` / `timeout` with `timeout_phase` `work` (or nil transport hop) → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
 
+Outer scraper deadlines reclaim Chromium via WorkLease (session force-close) so worker slots free before the HTTP 504 returns; lingering `timeout_phase:queue` under light traffic after deploy usually means reclaim or per-host admit saturation (`SCRAPE_MAX_PER_HOST`), not soft-cancel theater.
 ### Alert baselines
 
 After baseline traffic, configure per project:
