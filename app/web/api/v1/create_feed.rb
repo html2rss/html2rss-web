@@ -45,8 +45,11 @@ module Html2rss
             end
 
             def build_create_params(request, account)
-              url = validated_url(request_params(request)['url'], account)
-              FeedMetadata::CreateParams.new(url:, name: Feeds::ChannelTitle.for(url))
+              params = request_params(request)
+              url = validated_url(params['url'], account)
+              name = params['name'].to_s.strip
+              name = nil if name.empty?
+              FeedMetadata::CreateParams.new(url:, name:)
             end
 
             def request_params(request)
@@ -109,8 +112,23 @@ module Html2rss
               feed_token = Auth.generate_feed_token(account[:username], params.url)
               raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_token
 
-              ensure_extractable!(Feeds::Service.call(resolved_source_for(feed_token)))
-              FeedMetadata.build(account:, name: params.name, url: params.url, feed_token:)
+              result = Feeds::Service.call(resolved_source_for(feed_token))
+              ensure_extractable!(result)
+              name = resolve_feed_name(params.name, result, params.url)
+              FeedMetadata.build(account:, name:, url: params.url, feed_token:)
+            end
+
+            # @param requested_name [String, nil]
+            # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+            # @param url [String]
+            # @return [String]
+            def resolve_feed_name(requested_name, result, url)
+              return requested_name unless requested_name.to_s.empty?
+
+              site_title = result.payload&.site_title
+              return site_title unless site_title.to_s.empty?
+
+              Feeds::ChannelTitle.for(url) || url.to_s
             end
 
             # @param feed_token [String]

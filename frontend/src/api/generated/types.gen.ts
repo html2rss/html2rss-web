@@ -149,6 +149,7 @@ export type OptionsConfigCatalogResponse = OptionsConfigCatalogResponses[keyof O
 
 export type CreateFeedData = {
     body?: {
+        name?: string;
         url: string;
     };
     headers: {
