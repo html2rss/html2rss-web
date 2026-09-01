@@ -321,6 +321,8 @@ paths:
           application/json:
             schema:
               properties:
+                name:
+                  type: string
                 url:
                   type: string
               required:

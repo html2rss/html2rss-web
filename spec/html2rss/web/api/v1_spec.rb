@@ -21,6 +21,15 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     )
   end
 
+  def feed_result_with_site_title(site_title)
+    Html2rss::Web::Feeds::Contracts::RenderResult.new(
+      status: :ok,
+      payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(feed: nil, site_title:, url: feed_url),
+      ttl_seconds: 600,
+      cache_key: 'feed_result:with-title'
+    )
+  end
+
   def service_error_result
     Html2rss::Web::Feeds::Contracts::RenderResult.new(
       status: :error,
@@ -730,6 +739,28 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect_feed_payload(json)
       expect(json.fetch('data')).not_to have_key('conversion')
       expect(last_response.headers['Content-Type']).to include('application/json')
+    end
+
+    it 'adopts scraped site_title from Service execution when available', :aggregate_failures do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call)
+        .and_return(feed_result_with_site_title('Live Scraped Site Title'))
+
+      post_feed_request(url: feed_url)
+
+      expect(last_response.status).to eq(201)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'feed', 'name')).to eq('Live Scraped Site Title')
+    end
+
+    it 'prefers explicit requested name over scraped site_title', :aggregate_failures do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call)
+        .and_return(feed_result_with_site_title('Live Scraped Site Title'))
+
+      post_feed_request(url: feed_url, name: 'My Custom Feed Name')
+
+      expect(last_response.status).to eq(201)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'feed', 'name')).to eq('My Custom Feed Name')
     end
 
     it 'normalizes hostname-only input to https before feed creation', :aggregate_failures do
