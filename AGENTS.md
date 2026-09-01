@@ -13,7 +13,7 @@ This document defines execution constraints for AI agents. For general contribut
 - **Ambiguity:** Proceed with safest assumption, then confirm.
 - **Non-negotiables:** Dev Container only; security first.
 
-## Agent-Specific Verification Rules
+## Agent-Specific Verification Rules 
 
 - Always run Dev Container smoke + `make ready` for changes.
 - For frontend changes or API contract/spec changes, run `make ci-ready` before push/PR open to mirror CI parity checks (`ready` + OpenAPI verify + frontend e2e smoke).
