@@ -92,7 +92,7 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Content-Security-Policy']).to include("script-src 'self'")
       expect(last_response.headers['Content-Security-Policy']).to include("style-src 'self'")
       expect(last_response.headers['Content-Security-Policy']).not_to include("'unsafe-inline'")
-      expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
+      expect(last_response.headers['Strict-Transport-Security']).to be_nil
     end
 
     it 'serves the SPA shell in development when built assets are absent', :aggregate_failures do
