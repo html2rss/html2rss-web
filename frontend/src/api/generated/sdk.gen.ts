@@ -5,17 +5,17 @@ import { client } from './client.gen';
 import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
-    /**
-     * You can provide a client instance returned by `createClient()` instead of
-     * individual options. This might be also useful if you want to implement a
-     * custom client.
-     */
-    client?: Client;
-    /**
-     * You can pass arbitrary values through the `meta` object. This can be
-     * used to access values that aren't defined as part of the SDK function.
-     */
-    meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
+  /**
+   * You can provide a client instance returned by `createClient()` instead of
+   * individual options. This might be also useful if you want to implement a
+   * custom client.
+   */
+  client?: Client;
+  /**
+   * You can pass arbitrary values through the `meta` object. This can be
+   * used to access values that aren't defined as part of the SDK function.
+   */
+  meta?: keyof ClientMeta extends never ? Record<string, unknown> : ClientMeta;
 };
 
 /**
@@ -38,13 +38,13 @@ export const getConfigCatalog = <ThrowOnError extends boolean = false>(options?:
  * Config catalog preflight
  */
 export const optionsConfigCatalog = <ThrowOnError extends boolean = false>(options?: Options<OptionsConfigCatalogData, ThrowOnError>): RequestResult<OptionsConfigCatalogResponses, unknown, ThrowOnError> => (options?.client ?? client).options<OptionsConfigCatalogResponses, unknown, ThrowOnError>({
-    ...urlSearchParamsBodySerializer,
-    url: '/configs',
-    ...options,
-    headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        ...options?.headers
-    }
+  ...urlSearchParamsBodySerializer,
+  url: '/configs',
+  ...options,
+  headers: {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    ...options?.headers
+  }
 });
 
 /**
@@ -53,13 +53,13 @@ export const optionsConfigCatalog = <ThrowOnError extends boolean = false>(optio
  * Create a feed
  */
 export const createFeed = <ThrowOnError extends boolean = false>(options: Options<CreateFeedData, ThrowOnError>): RequestResult<CreateFeedResponses, CreateFeedErrors, ThrowOnError> => (options.client ?? client).post<CreateFeedResponses, CreateFeedErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/feeds',
-    ...options,
-    headers: {
-        'Content-Type': 'application/json',
-        ...options.headers
-    }
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/feeds',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
 });
 
 /**
@@ -75,9 +75,9 @@ export const renderFeedByToken = <ThrowOnError extends boolean = false>(options:
  * Authenticated health check
  */
 export const getHealthStatus = <ThrowOnError extends boolean = false>(options: Options<GetHealthStatusData, ThrowOnError>): RequestResult<GetHealthStatusResponses, GetHealthStatusErrors, ThrowOnError> => (options.client ?? client).get<GetHealthStatusResponses, GetHealthStatusErrors, ThrowOnError>({
-    security: [{ scheme: 'bearer', type: 'http' }],
-    url: '/health',
-    ...options
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/health',
+  ...options
 });
 
 /**
