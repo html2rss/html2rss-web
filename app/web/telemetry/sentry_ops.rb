@@ -11,9 +11,8 @@ module Html2rss
     # {ErrorClassifier::Decision} codes only.
     module SentryOps
       OPERATIONAL_CODES = %w[
-        SCRAPER_UNAVAILABLE
-        GATEWAY_TIMEOUT
         INTERNAL_SERVER_ERROR
+        SCRAPER_UNAVAILABLE
         SERVICE_UNAVAILABLE
       ].freeze
       SERVICE_NAME = 'html2rss-web'

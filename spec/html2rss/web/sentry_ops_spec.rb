@@ -49,8 +49,8 @@ RSpec.describe Html2rss::Web::SentryOps do
     end
   end
 
-  %w[BLOCKED_SURFACE EXTRACTION_EMPTY].each do |code|
-    it "does not emit a Sentry issue for product-signal code #{code}" do
+  %w[BLOCKED_SURFACE EXTRACTION_EMPTY GATEWAY_TIMEOUT].each do |code|
+    it "does not emit a Sentry issue for non-operational or transient code #{code}" do
       described_class.emit_operational_failure(
         decision: Html2rss::Web::ErrorClassifier.const_get(code),
         diagnostics:,
@@ -91,6 +91,26 @@ RSpec.describe Html2rss::Web::SentryOps do
       details: { error_code: 'SERVICE_UNAVAILABLE', status: 503 }
     )
     expect(capture_store).to include(message: 'request.error: SERVICE_UNAVAILABLE')
+  end
+
+  it 'emits observability but suppresses Sentry issue for GATEWAY_TIMEOUT', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    allow(Html2rss::Web::Observability).to receive(:emit)
+
+    described_class.emit_failure_telemetry(
+      decision: Html2rss::Web::ErrorClassifier::GATEWAY_TIMEOUT,
+      diagnostics:,
+      event_name: 'feed.render',
+      details: { error_code: 'GATEWAY_TIMEOUT', status: 504 },
+      level: :warn
+    )
+
+    expect(Html2rss::Web::Observability).to have_received(:emit).with(
+      event_name: 'feed.render',
+      outcome: 'failure',
+      level: :warn,
+      details: { error_code: 'GATEWAY_TIMEOUT', status: 504 }
+    )
+    expect(capture_store).to be_empty
   end
 
   def operational_decision(code)
