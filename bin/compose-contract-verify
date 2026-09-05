@@ -17,13 +17,18 @@ SCRAPER_PORT = 4010
 SCRAPER_URL = 'http://botasaurus:4010'
 LOOPBACK = '127.0.0.1'
 ALL_INTERFACE_HOST_IPS = [nil, '', '0.0.0.0'].freeze
+PRODUCTION_STUB_ENV = {
+  'HTML2RSS_SECRET_KEY' => 'ci-compose-contract-secret-key-32b',
+  'HTML2RSS_ACCESS_TOKEN' => 'ci-compose-contract-access'
+}.freeze
 
 def fail!(message)
   abort("compose contract verify failed: #{message}")
 end
 
 def compose_config(compose_file, env: {})
-  cmd = ['docker', 'compose', '--project-directory', REPO_ROOT, '-f', compose_file, 'config', '--format', 'json']
+  cmd = ['docker', 'compose', '--project-directory', REPO_ROOT, '-f', compose_file,
+         'config', '--format', 'json']
   output, status = Open3.capture2e(env, *cmd)
   fail!("docker compose config (#{compose_file}) exited #{status.exitstatus}\n#{output}") unless status.success?
 
@@ -39,6 +44,11 @@ def fetch_service!(services, name)
   service
 end
 
+def services_pair!(config, label)
+  services = config.fetch('services') { fail!("#{label} missing top-level services map") }
+  [fetch_service!(services, 'html2rss-web'), fetch_service!(services, 'botasaurus')]
+end
+
 def assert_equal!(actual, expected, label)
   return if actual == expected
 
@@ -51,17 +61,9 @@ def assert_truthy_string!(value, label)
   fail!("#{label} must be a non-empty string, got #{value.inspect}")
 end
 
-def host_ip(port)
-  port['host_ip']
-end
-
-def all_interfaces?(port)
-  ALL_INTERFACE_HOST_IPS.include?(host_ip(port))
-end
-
-def loopback?(port)
-  host_ip(port) == LOOPBACK
-end
+def host_ip(port) = port['host_ip']
+def all_interfaces?(port) = ALL_INTERFACE_HOST_IPS.include?(host_ip(port))
+def loopback?(port) = host_ip(port) == LOOPBACK
 
 def published_port?(port, published:, target:)
   port['published'].to_s == published.to_s && port['target'].to_i == target.to_i
@@ -87,51 +89,54 @@ def assert_botasaurus_unpublished!(ports)
   fail!('botasaurus must not publish host ports in quickstart (Docker network only)')
 end
 
+def scraper_loopback_published?(ports)
+  ports.any? do |port|
+    loopback?(port) && published_port?(port, published: SCRAPER_PORT, target: SCRAPER_PORT)
+  end
+end
+
 def assert_botasaurus_loopback_only!(ports)
   published = Array(ports)
   fail!('botasaurus must publish 127.0.0.1:4010:4010 in production compose') if published.empty?
-
-  unless published.any? { |port| loopback?(port) && published_port?(port, published: SCRAPER_PORT, target: SCRAPER_PORT) }
-    fail!('botasaurus must publish 127.0.0.1:4010:4010 (loopback only)')
-  end
-
+  fail!('botasaurus must publish 127.0.0.1:4010:4010 (loopback only)') unless scraper_loopback_published?(published)
   return unless published.any? { |port| !loopback?(port) }
 
   fail!('botasaurus must never publish on all interfaces')
 end
 
-def verify_quickstart!
-  config = compose_config(File.join(REPO_ROOT, 'docker-compose.quickstart.yml'))
-  services = config.fetch('services') { fail!('quickstart missing top-level services map') }
-  web = fetch_service!(services, 'html2rss-web')
-  bot = fetch_service!(services, 'botasaurus')
-
-  assert_equal!(web['image'], 'html2rss/web:1', 'quickstart html2rss-web image')
-  environment = web.fetch('environment') { fail!('quickstart html2rss-web missing environment map') }
-  assert_equal!(environment['RACK_ENV'], 'development', 'quickstart RACK_ENV')
-  assert_equal!(environment['HTML2RSS_ACCESS_TOKEN'], 'CHANGE_ME_ADMIN_TOKEN', 'quickstart HTML2RSS_ACCESS_TOKEN')
-  assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], SCRAPER_URL, 'quickstart BOTASAURUS_SCRAPER_URL')
-  assert_equal!(environment['AUTO_SOURCE_ENABLED'], 'true', 'quickstart AUTO_SOURCE_ENABLED')
-  assert_web_lan_port!(web['ports'])
-  assert_botasaurus_unpublished!(bot['ports'])
+def web_environment!(web, label)
+  web.fetch('environment') { fail!("#{label} html2rss-web missing environment map") }
 end
 
-def verify_production!
-  stub_env = {
-    'HTML2RSS_SECRET_KEY' => 'ci-compose-contract-secret-key-32b',
-    'HTML2RSS_ACCESS_TOKEN' => 'ci-compose-contract-access'
-  }
-  config = compose_config(File.join(REPO_ROOT, 'docker-compose.yml'), env: stub_env)
-  services = config.fetch('services') { fail!('production missing top-level services map') }
-  web = fetch_service!(services, 'html2rss-web')
-  bot = fetch_service!(services, 'botasaurus')
+def assert_quickstart_env!(environment)
+  assert_equal!(environment['RACK_ENV'], 'development', 'quickstart RACK_ENV')
+  assert_equal!(environment['HTML2RSS_ACCESS_TOKEN'], 'CHANGE_ME_ADMIN_TOKEN',
+                'quickstart HTML2RSS_ACCESS_TOKEN')
+  assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], SCRAPER_URL, 'quickstart BOTASAURUS_SCRAPER_URL')
+  assert_equal!(environment['AUTO_SOURCE_ENABLED'], 'true', 'quickstart AUTO_SOURCE_ENABLED')
+end
 
-  environment = web.fetch('environment') { fail!('production html2rss-web missing environment map') }
+def assert_production_env!(environment)
   assert_equal!(environment['RACK_ENV'], 'production', 'production RACK_ENV')
   assert_equal!(environment['AUTO_SOURCE_ENABLED'], 'true', 'production AUTO_SOURCE_ENABLED default')
   assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], SCRAPER_URL, 'production BOTASAURUS_SCRAPER_URL')
   assert_truthy_string!(environment['HTML2RSS_SECRET_KEY'], 'production HTML2RSS_SECRET_KEY')
   assert_truthy_string!(environment['HTML2RSS_ACCESS_TOKEN'], 'production HTML2RSS_ACCESS_TOKEN')
+end
+
+def verify_quickstart!
+  config = compose_config(File.join(REPO_ROOT, 'docker-compose.quickstart.yml'))
+  web, bot = services_pair!(config, 'quickstart')
+  assert_equal!(web['image'], 'html2rss/web:1', 'quickstart html2rss-web image')
+  assert_quickstart_env!(web_environment!(web, 'quickstart'))
+  assert_web_lan_port!(web['ports'])
+  assert_botasaurus_unpublished!(bot['ports'])
+end
+
+def verify_production!
+  config = compose_config(File.join(REPO_ROOT, 'docker-compose.yml'), env: PRODUCTION_STUB_ENV)
+  web, bot = services_pair!(config, 'production')
+  assert_production_env!(web_environment!(web, 'production'))
   assert_web_lan_port!(web['ports'])
   assert_botasaurus_loopback_only!(bot['ports'])
 end
