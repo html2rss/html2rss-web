@@ -38,7 +38,7 @@ trap cleanup SIGINT SIGTERM
 
 # Start Ruby server in background
 echo "Starting Ruby server..."
-bundle exec puma -p ${PORT:-4000} -C config/puma.rb &
+bundle exec falcon host config/falcon.rb &
 RUBY_PID=$!
 
 # Wait a moment for Ruby server to start
