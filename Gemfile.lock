@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: 0d80e4b575c97a899666bcb3f68f9922e4fe43bb
+  revision: 13cdb5f27bc7c9e943f27ee222eaf13f3dd0c93c
   specs:
     html2rss-configs (0.2.0)
       html2rss
@@ -146,7 +146,7 @@ GEM
     loofah (2.25.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    mcp (1.4.0)
+    mcp (1.5.0)
       json_schemer (>= 2.4)
     mime-types (3.7.0)
       logger
@@ -389,7 +389,7 @@ CHECKSUMS
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   loofah (2.25.2) sha256=2007f746959ac65552456e04b433e83deb22759ab38c838b4445c70e43425918
-  mcp (1.4.0) sha256=4048ad5ec2fb6e225fdf4888e25871a93b67da4b0233913dcbf70f780460ee5b
+  mcp (1.5.0) sha256=6f97785fa6e069eb667aa3d50299851ea9aca904b4abe8306f156bb8fd9eaff0
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0701) sha256=cd8811e1fb89d836499ba0582368a10ee74cef929ba956d1d5ddca045e6a730f
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
