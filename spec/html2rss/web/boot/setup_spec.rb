@@ -113,7 +113,8 @@ RSpec.describe Html2rss::Web::Boot::Setup do
         described_class.call!
       end
 
-      expect_sentry_config(:enable_logs, true)
+      expect(Sentry.captured_config.before_send_log).to be_nil
+      expect(Sentry.captured_config.enabled_patches).to include(:logger)
     end
 
     it 'fails fast when SENTRY_ENABLE_LOGS is malformed' do
@@ -191,8 +192,14 @@ RSpec.describe Html2rss::Web::Boot::Setup do
   def expect_sentry_to_be_configured
     expect(Bundler).to have_received(:require).with(:sentry)
     expect_sentry_config(:dsn, sentry_dsn)
-    expect_sentry_config(:enable_logs, false)
     expect_sentry_config(:release, '2026-03-27+abc1234')
+    expect_log_intake_disabled(Sentry.captured_config)
+  end
+
+  def expect_log_intake_disabled(config)
+    expect(config.before_send_log).to be_a(Proc)
+    expect(config.before_send_log.call(Object.new)).to be_nil
+    expect(config.enabled_patches).not_to include(:logger)
   end
 
   def build_fake_sentry
@@ -231,6 +238,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
   end
 
   def build_fake_sentry_config
-    Struct.new(:dsn, :environment, :enable_logs, :send_default_pii, :release).new
+    Struct.new(:dsn, :environment, :before_send_log, :enabled_patches, :send_default_pii, :release)
+          .new(nil, nil, nil, [])
   end
 end
