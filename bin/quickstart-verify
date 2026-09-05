@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-# frozen_string_literal: true
-# Compatibility wrapper — prefer bin/compose-contract-verify.
-set -euo pipefail
-exec "$(dirname "$0")/compose-contract-verify"
