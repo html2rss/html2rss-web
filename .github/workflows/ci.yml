@@ -19,14 +19,14 @@ jobs:
       - name: Lint Dockerfile
         run: docker run --rm -i hadolint/hadolint < Dockerfile
 
-  quickstart:
+  compose-contract:
     needs:
       - hadolint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Make compose contract verifier executable
-        run: chmod +x bin/compose-contract-verify bin/quickstart-verify
+        run: chmod +x bin/compose-contract-verify
       - name: Verify compose contracts
         run: bin/compose-contract-verify
 

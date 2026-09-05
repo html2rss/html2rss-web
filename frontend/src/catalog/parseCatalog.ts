@@ -122,13 +122,6 @@ export function parseCatalog(payload: unknown): CatalogSnapshot {
 }
 
 /**
- * @deprecated Prefer {@link parseCatalog}; kept as entries-only adapter.
- */
-export function parseCatalogEntries(payload: unknown): CatalogEntry[] {
-  return parseCatalog(payload).entries;
-}
-
-/**
  * Maps server `meta.starters` to entries. Fallback ranks by last_result
  * (ok → unknown → failing) when starter ids are missing or unmatched.
  */
