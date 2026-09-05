@@ -51,6 +51,8 @@ The quickstart runs in development mode for evaluation. For permanent or public 
 
 ## Network and reverse proxy
 
+**Compose exposure:** `html2rss-web` publishes `4000:4000` on all interfaces so LAN devices can reach the UI; protect the instance with `HTML2RSS_ACCESS_TOKEN` (demo token only for quickstart). `botasaurus` stays on the Compose network in quickstart, or `127.0.0.1:4010` in production — never all-interfaces. CI enforces this via `bin/compose-contract-verify`.
+
 Plain HTTP works on localhost and LAN IPs. HSTS and CSP `upgrade-insecure-requests` are set only when the request is HTTPS (including behind a reverse proxy that sends `X-Forwarded-Proto: https`).
 
 For public internet exposure, terminate TLS with Caddy, Nginx, or Traefik and forward to port 4000:
