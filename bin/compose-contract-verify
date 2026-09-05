@@ -1,0 +1,146 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Verifies Docker Compose exposure policy for html2rss-web:
+#   - Web publishes 4000 on all interfaces (LAN + localhost); protect with ACCESS_TOKEN
+#   - Botasaurus stays unpublished (quickstart) or loopback-only when published (production)
+#   - Auto-source stays enabled by default
+#
+# Production pass stubs HTML2RSS_SECRET_KEY / HTML2RSS_ACCESS_TOKEN so `:?` interpolates.
+
+require 'json'
+require 'open3'
+
+REPO_ROOT = File.expand_path('..', __dir__)
+WEB_PORT = 4000
+SCRAPER_PORT = 4010
+SCRAPER_URL = 'http://botasaurus:4010'
+LOOPBACK = '127.0.0.1'
+ALL_INTERFACE_HOST_IPS = [nil, '', '0.0.0.0'].freeze
+PRODUCTION_STUB_ENV = {
+  'HTML2RSS_SECRET_KEY' => 'ci-compose-contract-secret-key-32b',
+  'HTML2RSS_ACCESS_TOKEN' => 'ci-compose-contract-access'
+}.freeze
+
+def fail!(message)
+  abort("compose contract verify failed: #{message}")
+end
+
+def compose_config(compose_file, env: {})
+  cmd = ['docker', 'compose', '--project-directory', REPO_ROOT, '-f', compose_file,
+         'config', '--format', 'json']
+  output, status = Open3.capture2e(env, *cmd)
+  fail!("docker compose config (#{compose_file}) exited #{status.exitstatus}\n#{output}") unless status.success?
+
+  JSON.parse(output)
+rescue JSON::ParserError => error
+  fail!("invalid compose json for #{compose_file}: #{error.message}")
+end
+
+def fetch_service!(services, name)
+  service = services[name]
+  fail!("missing service #{name.inspect}") unless service
+
+  service
+end
+
+def services_pair!(config, label)
+  services = config.fetch('services') { fail!("#{label} missing top-level services map") }
+  [fetch_service!(services, 'html2rss-web'), fetch_service!(services, 'botasaurus')]
+end
+
+def assert_equal!(actual, expected, label)
+  return if actual == expected
+
+  fail!("#{label} expected #{expected.inspect}, got #{actual.inspect}")
+end
+
+def assert_truthy_string!(value, label)
+  return if value.is_a?(String) && !value.strip.empty?
+
+  fail!("#{label} must be a non-empty string, got #{value.inspect}")
+end
+
+def host_ip(port) = port['host_ip']
+def all_interfaces?(port) = ALL_INTERFACE_HOST_IPS.include?(host_ip(port))
+def loopback?(port) = host_ip(port) == LOOPBACK
+
+def published_port?(port, published:, target:)
+  port['published'].to_s == published.to_s && port['target'].to_i == target.to_i
+end
+
+def assert_web_lan_port!(ports)
+  match = Array(ports).find { |port| published_port?(port, published: WEB_PORT, target: WEB_PORT) }
+  fail!("html2rss-web must publish #{WEB_PORT}:#{WEB_PORT}") unless match
+  if loopback?(match)
+    fail!(
+      'html2rss-web must publish 4000 on all interfaces for LAN ' \
+      "(reject #{LOOPBACK}:#{WEB_PORT}:#{WEB_PORT})"
+    )
+  end
+  return if all_interfaces?(match)
+
+  fail!("html2rss-web host_ip must be blank/0.0.0.0 for LAN, got #{host_ip(match).inspect}")
+end
+
+def assert_botasaurus_unpublished!(ports)
+  return if Array(ports).empty?
+
+  fail!('botasaurus must not publish host ports in quickstart (Docker network only)')
+end
+
+def scraper_loopback_published?(ports)
+  ports.any? do |port|
+    loopback?(port) && published_port?(port, published: SCRAPER_PORT, target: SCRAPER_PORT)
+  end
+end
+
+def assert_botasaurus_loopback_only!(ports)
+  published = Array(ports)
+  fail!('botasaurus must publish 127.0.0.1:4010:4010 in production compose') if published.empty?
+  fail!('botasaurus must publish 127.0.0.1:4010:4010 (loopback only)') unless scraper_loopback_published?(published)
+  return unless published.any? { |port| !loopback?(port) }
+
+  fail!('botasaurus must never publish on all interfaces')
+end
+
+def web_environment!(web, label)
+  web.fetch('environment') { fail!("#{label} html2rss-web missing environment map") }
+end
+
+def assert_quickstart_env!(environment)
+  assert_equal!(environment['RACK_ENV'], 'development', 'quickstart RACK_ENV')
+  assert_equal!(environment['HTML2RSS_ACCESS_TOKEN'], 'CHANGE_ME_ADMIN_TOKEN',
+                'quickstart HTML2RSS_ACCESS_TOKEN')
+  assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], SCRAPER_URL, 'quickstart BOTASAURUS_SCRAPER_URL')
+  assert_equal!(environment['AUTO_SOURCE_ENABLED'], 'true', 'quickstart AUTO_SOURCE_ENABLED')
+end
+
+def assert_production_env!(environment)
+  assert_equal!(environment['RACK_ENV'], 'production', 'production RACK_ENV')
+  assert_equal!(environment['AUTO_SOURCE_ENABLED'], 'true', 'production AUTO_SOURCE_ENABLED default')
+  assert_equal!(environment['BOTASAURUS_SCRAPER_URL'], SCRAPER_URL, 'production BOTASAURUS_SCRAPER_URL')
+  assert_truthy_string!(environment['HTML2RSS_SECRET_KEY'], 'production HTML2RSS_SECRET_KEY')
+  assert_truthy_string!(environment['HTML2RSS_ACCESS_TOKEN'], 'production HTML2RSS_ACCESS_TOKEN')
+end
+
+def verify_quickstart!
+  config = compose_config(File.join(REPO_ROOT, 'docker-compose.quickstart.yml'))
+  web, bot = services_pair!(config, 'quickstart')
+  assert_equal!(web['image'], 'html2rss/web:1', 'quickstart html2rss-web image')
+  assert_quickstart_env!(web_environment!(web, 'quickstart'))
+  assert_web_lan_port!(web['ports'])
+  assert_botasaurus_unpublished!(bot['ports'])
+end
+
+def verify_production!
+  config = compose_config(File.join(REPO_ROOT, 'docker-compose.yml'), env: PRODUCTION_STUB_ENV)
+  web, bot = services_pair!(config, 'production')
+  assert_production_env!(web_environment!(web, 'production'))
+  assert_web_lan_port!(web['ports'])
+  assert_botasaurus_loopback_only!(bot['ports'])
+end
+
+verify_quickstart!
+verify_production!
+puts 'compose contract verify passed'

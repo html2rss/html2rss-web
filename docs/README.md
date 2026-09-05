@@ -161,6 +161,7 @@ Search these pages for examples, plugins, and configuration options:
 - **SSRF Protection**: Delegated to the `html2rss` gem's built-in security features. Do not bypass these protections or weaken CSP.
 - **Secrets**: Never leak stack traces, auth tokens, or internal secrets in HTTP responses.
 - **Data Protection**: Auth tokens provided by users must never be exposed or logged.
+- **Compose exposure**: Web binds `4000:4000` (all interfaces) for LAN; require a strong `HTML2RSS_ACCESS_TOKEN` in production. Botasaurus must stay unpublished (quickstart) or `127.0.0.1:4010` only (production). Enforce with `bin/compose-contract-verify`.
 
 ---
 
@@ -224,7 +225,7 @@ Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never s
 | `SENTRY_DSN` | html2rss-web | A (web) |
 | `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
 
-Compose requires `BOTASAURUS_SENTRY_DSN` for botasaurus and does not fall back to web `SENTRY_DSN`.
+Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`${BOTASAURUS_SENTRY_DSN:-}`). It does not fall back to web `SENTRY_DSN`. Leave it unset until you want scraper error reporting.
 
 ### Compose timeout ladder
 

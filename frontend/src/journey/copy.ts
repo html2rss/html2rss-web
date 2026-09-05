@@ -7,8 +7,8 @@ export const COPY = {
   urlPlaceholder: 'example.com/articles',
   feedUrl: 'Feed URL',
   tokenTitle: 'Access token',
-  tokenHint: 'Required by this instance.',
-  tokenPlaceholder: 'Paste access token',
+  tokenHint: 'Instance access token (HTML2RSS_ACCESS_TOKEN).',
+  tokenPlaceholder: 'Paste HTML2RSS_ACCESS_TOKEN',
   tokenRejected: 'Access token was rejected. Paste a valid token to continue.',
   /** Non-retryable / correct_input create failures (blocked, empty extract, …). */
   createFailedTitle: "Couldn't create feed",

@@ -83,7 +83,7 @@ RSpec.describe Html2rss::Web::App do
 
     def app = described_class
 
-    it 'serves the homepage with core security headers' do
+    it 'serves the homepage with core security headers on plain HTTP' do
       get '/'
 
       expect(last_response).to be_ok
@@ -92,7 +92,16 @@ RSpec.describe Html2rss::Web::App do
       expect(last_response.headers['Content-Security-Policy']).to include("script-src 'self'")
       expect(last_response.headers['Content-Security-Policy']).to include("style-src 'self'")
       expect(last_response.headers['Content-Security-Policy']).not_to include("'unsafe-inline'")
+      expect(last_response.headers['Content-Security-Policy']).not_to include('upgrade-insecure-requests')
+      expect(last_response.headers['Strict-Transport-Security']).to be_nil
+    end
+
+    it 'serves HSTS and CSP upgrade-insecure-requests over HTTPS' do
+      get '/', {}, { 'HTTP_X_FORWARDED_PROTO' => 'https' }
+
+      expect(last_response).to be_ok
       expect(last_response.headers['Strict-Transport-Security']).to include('max-age=31536000')
+      expect(last_response.headers['Content-Security-Policy']).to include('upgrade-insecure-requests')
     end
 
     it 'serves the SPA shell in development when built assets are absent', :aggregate_failures do

@@ -20,7 +20,6 @@ module Html2rss
       'X-Permitted-Cross-Domain-Policies' => 'none',
       'Referrer-Policy' => 'strict-origin-when-cross-origin',
       'Permissions-Policy' => 'geolocation=(), microphone=(), camera=()',
-      'Strict-Transport-Security' => 'max-age=31536000; includeSubDomains; preload',
       'Cross-Origin-Embedder-Policy' => 'require-corp',
       'Cross-Origin-Opener-Policy' => 'same-origin',
       'Cross-Origin-Resource-Policy' => 'same-origin',
@@ -80,7 +79,6 @@ module Html2rss
         csp.worker_src :none
         csp.child_src :none
         csp.block_all_mixed_content
-        csp.upgrade_insecure_requests
       end
       plugin :default_headers, DEFAULT_HEADERS
 
@@ -100,6 +98,11 @@ module Html2rss
       end
 
       route do |r|
+        if r.ssl?
+          response['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+          content_security_policy(&:upgrade_insecure_requests)
+        end
+
         r.public
 
         Routes::ApiV1.call(r) ||

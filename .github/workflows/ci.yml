@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Make quickstart verifier executable
-        run: chmod +x bin/quickstart-verify
-      - name: Verify quickstart compose contract
-        run: bin/quickstart-verify
+      - name: Make compose contract verifier executable
+        run: chmod +x bin/compose-contract-verify bin/quickstart-verify
+      - name: Verify compose contracts
+        run: bin/compose-contract-verify
 
   ruby:
     runs-on: ubuntu-latest

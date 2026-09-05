@@ -2,9 +2,10 @@ services:
   html2rss-web:
     image: ${HTML2RSS_WEB_IMAGE:-html2rss/web:1}
     ports:
-      - "127.0.0.1:4000:4000"
+      - "4000:4000"
     environment:
       RACK_ENV: development
+      AUTO_SOURCE_ENABLED: "true"
       HTML2RSS_ACCESS_TOKEN: CHANGE_ME_ADMIN_TOKEN
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
 
