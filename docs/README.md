@@ -246,7 +246,7 @@ When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/bo
 
 With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational server failures (`SentryOps`: `SCRAPER_UNAVAILABLE`, `SERVICE_UNAVAILABLE`, `INTERNAL_SERVER_ERROR`) to Sentry Issues. Transient target timeouts (`GATEWAY_TIMEOUT`) and extraction warnings stay in structured stdout logs (`feed.render` / `request.error`) and Sentry breadcrumbs to prevent alert fatigue from slow external websites. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
 
-Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs`.
+Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs` or the stdlib `Logger` → Sentry patch.
 
 Start triage from the newest `feed.create`, `feed.render`, and `request.error` events. Check release, route group, strategy, and outcome.
 
