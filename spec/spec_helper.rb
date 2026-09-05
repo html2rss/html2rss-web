@@ -19,11 +19,14 @@ if (ENV.fetch('CI', nil) || ENV.fetch('COVERAGE', nil)) && ENV['RUN_DOCKER_SPECS
 end
 
 require 'rack/test'
+require 'httpx'
 require 'vcr'
+require 'webmock/rspec'
+require 'httpx/adapters/webmock'
 
 VCR.configure do |config|
   config.cassette_library_dir = 'spec/fixtures/vcr_cassettes'
-  config.hook_into :faraday, :webmock
+  config.hook_into :webmock
   config.ignore_localhost = true
 end
 

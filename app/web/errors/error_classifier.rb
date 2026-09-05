@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'timeout'
+require 'net/http'
 
 module Html2rss
   module Web
