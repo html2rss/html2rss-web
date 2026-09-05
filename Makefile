@@ -18,7 +18,6 @@ setup: ## Full development setup
 		cp .env.example .env 2>/dev/null || echo "RACK_ENV=development" > .env; \
 		echo "Created .env file"; \
 	fi
-	@mkdir -p tmp/rack-cache-body tmp/rack-cache-meta
 	@echo "Setting up frontend..."
 	@cd frontend && CI=1 pnpm install --frozen-lockfile
 	@echo "Setup complete!"
@@ -146,7 +145,7 @@ openapi-lint-spectral: ## Lint OpenAPI using Spectral OAS rules
 openai-lint-spectral: openapi-lint-spectral ## Alias for openapi-lint-spectral
 
 clean: ## Clean temporary files
-	@rm -rf tmp/rack-cache-* coverage/
+	@rm -rf coverage/
 	@cd frontend && rm -rf dist/ node_modules/
 	@echo "Clean complete!"
 

@@ -21,10 +21,7 @@ if [ ! -f .env ]; then
   echo "Please edit .env file with your configuration"
 fi
 
-# Create necessary directories
-echo "Creating necessary directories..."
-mkdir -p tmp/rack-cache-body
-mkdir -p tmp/rack-cache-meta
+
 
 # Run tests to verify setup
 echo "Running tests to verify setup..."

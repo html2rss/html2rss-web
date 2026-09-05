@@ -14,7 +14,6 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 gem 'base64'
 gem 'falcon'
-gem 'rack-cache'
 gem 'roda'
 gem 'zeitwerk'
 

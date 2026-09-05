@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'roda'
-require 'rack/cache'
 require 'json'
 require 'base64'
 
@@ -54,8 +53,6 @@ module Html2rss
       opts.merge!(check_dynamic_arity: false, check_arity: :warn)
       use RequestContextMiddleware
       use RateLimiter
-      use Rack::Cache, metastore: 'file:./tmp/rack-cache-meta', entitystore: 'file:./tmp/rack-cache-body',
-                       verbose: development?
 
       plugin :content_security_policy do |csp|
         csp.default_src :none
