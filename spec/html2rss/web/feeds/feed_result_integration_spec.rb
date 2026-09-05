@@ -51,7 +51,7 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect_json_render(service_result)
   end
 
-  # rubocop:disable RSpec/ExampleLength -- Link host-leak + feed_url Host vary asserted together
+  # rubocop:disable-next RSpec/ExampleLength -- Link host-leak + feed_url Host vary asserted together
   it 'keeps relative Link targets while varying JSON feed_url by Host', :aggregate_failures do
     expect(service_result.status).to eq(:ok)
 
@@ -70,9 +70,8 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect(other_host_response['Link']).not_to include('feeds.other.test')
     expect(json['feed_url']).to eq('http://feeds.other.test/api/v1/feeds/integration-token.json')
   end
-  # rubocop:enable RSpec/ExampleLength
 
-  # rubocop:disable RSpec/ExampleLength -- asserts empty status, channel title, plain body, and Vary together
+  # rubocop:disable-next RSpec/ExampleLength -- asserts empty status, channel title, plain body, and Vary together
   it 'prefers channel_title for empty scrape plain-text bodies', :aggregate_failures do
     empty_feed = instance_double(
       Html2rss::FeedResult,
@@ -93,7 +92,6 @@ RSpec.describe 'FeedResult pipeline integration' do
     expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     expect(response['Vary']).to eq('Accept')
   end
-  # rubocop:enable RSpec/ExampleLength
 
   # @return [void]
   def expect_cached_feed_result # rubocop:disable Metrics/AbcSize

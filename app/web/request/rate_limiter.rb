@@ -26,7 +26,7 @@ module Html2rss
         # @param window_seconds [Integer]
         # @param max_requests [Integer]
         # @return [Array<(Boolean, Integer, Boolean)>] limit exceeded flag, retry_after seconds, and deleted flag.
-        # rubocop:disable Metrics/MethodLength
+        # rubocop:disable-next Metrics/MethodLength
         def record_and_check_limit(now, window_seconds, max_requests)
           @mutex.synchronize do
             return [false, 0, true] if @deleted
@@ -44,7 +44,6 @@ module Html2rss
             end
           end
         end
-        # rubocop:enable Metrics/MethodLength
 
         # Prunes expired timestamps and deletes the key from history if empty.
         # Uses non-blocking try_lock to avoid blocking the pruning thread.
@@ -53,7 +52,7 @@ module Html2rss
         # @param history [Concurrent::Map]
         # @param key [String]
         # @return [Boolean] true if key was pruned and deleted.
-        # rubocop:disable Metrics/MethodLength
+        # rubocop:disable-next Metrics/MethodLength
         def prune(window_start, history, key)
           return false unless @mutex.try_lock
 
@@ -73,7 +72,6 @@ module Html2rss
             @mutex.unlock
           end
         end
-        # rubocop:enable Metrics/MethodLength
       end
 
       # @param app [#call]
@@ -86,7 +84,7 @@ module Html2rss
 
       # @param env [Hash]
       # @return [Array<(Integer, Hash, #each)>]
-      # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      # rubocop:disable-next Metrics/AbcSize, Metrics/MethodLength
       def call(env)
         return @app.call(env) unless Flags.rate_limit_enabled?
 
@@ -141,7 +139,6 @@ module Html2rss
 
         @app.call(env)
       end
-      # rubocop:enable Metrics/AbcSize, Metrics/MethodLength
 
       private
 
@@ -161,7 +158,7 @@ module Html2rss
       # Hard-caps the history size to prevent OOM.
       #
       # @return [void]
-      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable-next Metrics/MethodLength
       def prune_history_if_needed
         now = Time.now.to_i
         size = @history.size
@@ -180,13 +177,12 @@ module Html2rss
         end
         nil
       end
-      # rubocop:enable Metrics/MethodLength
 
       # Handles history map overflow by logging a security event and evicting entries.
       #
       # @param now [Integer]
       # @return [void]
-      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable-next Metrics/MethodLength
       def handle_overflow(now)
         @last_pruned = now
         prune_all_expired(now)
@@ -208,7 +204,6 @@ module Html2rss
           evicted += 1 if @history.delete(key)
         end
       end
-      # rubocop:enable Metrics/MethodLength
 
       # Iterates over history and prunes inactive tracks.
       #

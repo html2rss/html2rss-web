@@ -10,11 +10,10 @@ module Html2rss
       ##
       # Small synchronous cache for canonical feed results.
       module Cache
-        # rubocop:disable ThreadSafety/ClassInstanceVariable
+        # rubocop:disable-next ThreadSafety/ClassInstanceVariable
         def self.entries
           @entries ||= Concurrent::Map.new
         end
-        # rubocop:enable ThreadSafety/ClassInstanceVariable
         private_class_method :entries
 
         Entry = Data.define(:result, :expires_at)

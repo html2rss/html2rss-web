@@ -4,7 +4,7 @@ require 'spec_helper'
 require 'nokogiri'
 require_relative '../../app'
 
-# rubocop:disable RSpec/MultipleExpectations
+# rubocop:disable-next RSpec/MultipleExpectations
 RSpec.describe 'public/rss.xsl' do
   subject(:rendered_html) do
     Nokogiri::XSLT(File.read(File.expand_path('../../public/rss.xsl', __dir__))).transform(Nokogiri::XML(feed_xml)).to_s
@@ -261,4 +261,3 @@ RSpec.describe 'public/rss.xsl' do
     end
   end
 end
-# rubocop:enable RSpec/MultipleExpectations

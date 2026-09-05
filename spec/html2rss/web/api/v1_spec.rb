@@ -647,7 +647,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
-    # rubocop:disable RSpec/ExampleLength
+    # rubocop:disable-next RSpec/ExampleLength
     it 'returns 429 when rate limit is exceeded', :aggregate_failures do
       allow(Html2rss::Web::Flags).to receive_messages(
         rate_limit_enabled?: true,
@@ -666,7 +666,6 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(429)
       expect(last_response.headers['Retry-After']).not_to be_nil
     end
-    # rubocop:enable RSpec/ExampleLength
 
     it 'returns 503 when the server times out', :aggregate_failures do
       token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-503", strategy: 'faraday')
