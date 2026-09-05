@@ -213,6 +213,17 @@ module Html2rss
         retry_action: 'primary'
       ).freeze
 
+      PRIVATE_NETWORK_DENIED = Decision.new(
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Requests to private or loopback networks are forbidden.',
+        kind: 'input',
+        cacheable: true,
+        retryable: false,
+        next_action: 'correct_input',
+        retry_action: 'none'
+      ).freeze
+
       INTERNAL_NETWORK_ERROR = Decision.new(
         status: 500,
         code: 'INTERNAL_SERVER_ERROR',
@@ -237,6 +248,10 @@ module Html2rss
              c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
          }, SCRAPER_UNAVAILABLE],
         [lambda { |c, _|
+           defined?(::Html2rss::RequestService::PrivateNetworkDenied) &&
+             c.any?(::Html2rss::RequestService::PrivateNetworkDenied)
+         }, PRIVATE_NETWORK_DENIED],
+        [lambda { |c, _|
            # queue/boot = our capacity or Chromium — not the target site.
            return false unless defined?(::Html2rss::RequestService::RequestTimedOut)
 
@@ -255,7 +270,10 @@ module Html2rss
         [lambda { |_, err|
            defined?(::Rack::Timeout::RequestTimeoutException) && err.is_a?(::Rack::Timeout::RequestTimeoutException)
          }, SERVICE_UNAVAILABLE],
-        [->(_, err) { err.is_a?(Timeout::Error) || err.is_a?(Errno::ETIMEDOUT) }, GATEWAY_TIMEOUT]
+        [lambda { |c, err|
+           err.is_a?(Timeout::Error) || err.is_a?(Errno::ETIMEDOUT) ||
+             (defined?(::HTTPX::TimeoutError) && (err.is_a?(::HTTPX::TimeoutError) || c.any?(::HTTPX::TimeoutError)))
+         }, GATEWAY_TIMEOUT]
       ].freeze
 
       class << self
@@ -327,7 +345,11 @@ module Html2rss
         end
 
         def network_error?(error)
-          error_chain(error).any? { NETWORK_ERRORS.include?(it.class) }
+          error_chain(error).any? do |err|
+            NETWORK_ERRORS.include?(err.class) ||
+              (defined?(::HTTPX::Error) &&
+                (err.is_a?(::HTTPX::ConnectionError) || err.is_a?(::HTTPX::TLSError) || err.is_a?(::HTTPX::TimeoutError)))
+          end
         end
       end
     end

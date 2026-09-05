@@ -451,7 +451,9 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(200)
       expect(last_response.content_type).to include('application/json')
       json = expect_success_response(last_response)
-      expect(json.dig('data', 'strategies')).to be_an(Array)
+      strategies = json.dig('data', 'strategies')
+      expect(strategies.map { |s| s['id'] }).to eq(%w[default botasaurus])
+      expect(strategies.map { |s| s['display_name'] }).to eq(['Default', 'Browser (Botasaurus)'])
     end
   end
 

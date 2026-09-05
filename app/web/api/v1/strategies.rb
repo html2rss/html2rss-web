@@ -10,6 +10,8 @@ module Html2rss
         # Exposes only lightweight strategy metadata so clients can render
         # choices without coupling to backend strategy internals.
         module Strategies
+          PUBLIC_STRATEGIES = %i[default botasaurus].freeze
+
           class << self
             # @param _request [Rack::Request]
             # @return [Hash{Symbol=>Object}] response with strategy list.
@@ -18,7 +20,8 @@ module Html2rss
             # @option return [Hash] :meta list metadata.
             # @option return [Integer] :total number of strategies.
             def index(_request)
-              strategies = Html2rss::RequestService.strategy_names.map do |name|
+              available = PUBLIC_STRATEGIES.select { |name| Html2rss::RequestService.strategy_registered?(name) }
+              strategies = available.map do |name|
                 {
                   id: name.to_s,
                   name: name.to_s,
@@ -33,7 +36,7 @@ module Html2rss
 
             def display_name_for(name)
               case name.to_s
-              when 'default', 'faraday', 'httpx' then 'Default'
+              when 'default' then 'Default'
               when 'botasaurus' then 'Browser (Botasaurus)'
               else name.to_s.split('_').map(&:capitalize).join(' ')
               end

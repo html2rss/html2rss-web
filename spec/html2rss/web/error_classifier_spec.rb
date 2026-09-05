@@ -198,10 +198,35 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
         described_class::SERVICE_UNAVAILABLE
       )
       expect(described_class.classify(Net::OpenTimeout.new('timeout'))).to eq(described_class::GATEWAY_TIMEOUT)
+      expect(described_class.classify(HTTPX::TimeoutError.new(5, 'timeout'))).to eq(
+        described_class::GATEWAY_TIMEOUT
+      )
+    end
+
+    it 'returns the forbidden decision for PrivateNetworkDenied' do
+      stub_const('Html2rss::RequestService::PrivateNetworkDenied', Class.new(Html2rss::Error))
+      error = Html2rss::RequestService::PrivateNetworkDenied.new('private network blocked')
+
+      expect(described_class.classify(error)).to eq(described_class::PRIVATE_NETWORK_DENIED)
     end
 
     it 'classifies low-level network errors as internal server error with network kind' do
       expect(described_class.classify(Errno::ECONNREFUSED.new)).to have_attributes(
+        status: 500,
+        code: 'INTERNAL_SERVER_ERROR',
+        kind: 'network',
+        retryable: true
+      )
+    end
+
+    it 'classifies HTTPX network errors as internal server error with network kind', :aggregate_failures do
+      expect(described_class.classify(HTTPX::ConnectionError.new('conn reset'))).to have_attributes(
+        status: 500,
+        code: 'INTERNAL_SERVER_ERROR',
+        kind: 'network',
+        retryable: true
+      )
+      expect(described_class.classify(HTTPX::TLSError.new('tls error'))).to have_attributes(
         status: 500,
         code: 'INTERNAL_SERVER_ERROR',
         kind: 'network',
