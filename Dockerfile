@@ -27,6 +27,7 @@ RUN apk add --no-cache \
   'libc-dev>=0.7' \
   'make>=4' \
   'openssl=~3' \
+  'openssl-dev=~3' \
   'libxml2-dev>=2' \
   'libxslt-dev>=1' \
   && gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
