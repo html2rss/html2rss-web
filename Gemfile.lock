@@ -1,11 +1,7 @@
-PATH
-  remote: ../html2rss-configs
-  specs:
-    html2rss-configs (0.2.0)
-      html2rss
-
-PATH
-  remote: ../html2rss
+GIT
+  remote: https://github.com/html2rss/html2rss
+  revision: f0b73c2ae11dcc4aabc3386ecc0d7b6ee1b54013
+  branch: experiment/httpx-default
   specs:
     html2rss (0.29.1)
       addressable (~> 2.7)
@@ -25,6 +21,13 @@ PATH
       tzinfo
       webrick (~> 1.9)
       zeitwerk
+
+GIT
+  remote: https://github.com/html2rss/html2rss-configs
+  revision: 13cdb5f27bc7c9e943f27ee222eaf13f3dd0c93c
+  specs:
+    html2rss-configs (0.2.0)
+      html2rss
 
 GEM
   remote: https://rubygems.org/
