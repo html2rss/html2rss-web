@@ -2,7 +2,6 @@
 
 require 'rubygems'
 require 'bundler/setup'
-require 'rack-timeout'
 require_relative 'app/web/boot/development_reloader'
 require_relative 'app'
 
@@ -16,8 +15,6 @@ if dev
     app_provider: -> { Html2rss::Web::App.app }
   )
 else
-  use Rack::Timeout
-
   Html2rss::Web::Boot.eager_load!
 
   run(Html2rss::Web::App.freeze.app)
