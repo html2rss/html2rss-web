@@ -3,7 +3,7 @@
 require 'spec_helper'
 require_relative '../../../../app'
 
-# rubocop:disable RSpec/ExampleLength
+# rubocop:disable-next RSpec/ExampleLength
 RSpec.describe 'Cache Eviction' do
   let(:cache) { Html2rss::Web::Feeds::Cache }
 
@@ -87,4 +87,3 @@ RSpec.describe 'Cache Eviction' do
     expect(yielded_key3).to be(false)
   end
 end
-# rubocop:enable RSpec/ExampleLength

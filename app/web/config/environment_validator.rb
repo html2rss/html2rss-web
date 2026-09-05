@@ -6,7 +6,7 @@ module Html2rss
     # Environment validation for html2rss-web
     # Handles validation of environment variables and configuration
     module EnvironmentValidator # rubocop:disable Metrics/ModuleLength
-      # rubocop:disable Metrics/ClassLength
+      # rubocop:disable-next Metrics/ClassLength
       class << self
         ##
         # Validate required environment variables on startup
@@ -218,7 +218,6 @@ module Html2rss
           )
         end
       end
-      # rubocop:enable Metrics/ClassLength
     end
   end
 end

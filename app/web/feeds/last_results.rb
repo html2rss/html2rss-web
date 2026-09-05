@@ -11,11 +11,10 @@ module Html2rss
       # Separate from {Cache}: outcomes outlive body TTL; cache hits do not
       # refresh +at+. Not a Redis/store twin — best-effort per worker.
       module LastResults
-        # rubocop:disable ThreadSafety/ClassInstanceVariable
+        # rubocop:disable-next ThreadSafety/ClassInstanceVariable
         def self.entries
           @entries ||= Concurrent::Map.new
         end
-        # rubocop:enable ThreadSafety/ClassInstanceVariable
         private_class_method :entries
 
         class << self
