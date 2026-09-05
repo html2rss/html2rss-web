@@ -1,12 +1,17 @@
-# Docker Compose configuration for html2rss-web
-# This is the default configuration - customize as needed
+# Docker Compose configuration for html2rss-web + botasaurus-scrape-api
+#
+# Quickstart:
+#   1. cp .env.example .env
+#   2. openssl rand -hex 32  # Run twice to generate secrets for HTML2RSS_SECRET_KEY and HTML2RSS_ACCESS_TOKEN
+#   3. docker compose up -d
+#   4. Open http://localhost:4000/ (or your LAN IP: http://<LAN_IP>:4000/)
 
 services:
   html2rss-web:
     image: html2rss/web
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4000:4000"
+      - "4000:4000"
     env_file:
       - path: .env
         required: false
@@ -15,8 +20,10 @@ services:
       PORT: 4000
       BUILD_TAG: ${BUILD_TAG:-local}
       GIT_SHA: ${GIT_SHA:-local}
-      HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY}
-      HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:?set HEALTH_CHECK_TOKEN}
+      HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY in .env (generate with `openssl rand -hex 32`)}
+      HTML2RSS_ACCESS_TOKEN: ${HTML2RSS_ACCESS_TOKEN:?set HTML2RSS_ACCESS_TOKEN in .env (generate with `openssl rand -hex 32`)}
+      AUTO_SOURCE_ENABLED: ${AUTO_SOURCE_ENABLED:-true}
+      HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:-}
       # Web Sentry (Project A): SENTRY_DSN; logs opt-in via SENTRY_ENABLE_LOGS=true
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
@@ -26,7 +33,7 @@ services:
       BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS: 30
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
     # Trial runs use the image's bundled config/feeds.yml.
-    # Uncomment the block below when you want to replace it with your own file.
+    # To mount custom curated YAML feeds (advanced escape hatch):
     # volumes:
     #   - type: bind
     #     source: ./config/feeds.yml
@@ -46,7 +53,7 @@ services:
     restart: unless-stopped
     environment:
       # Scraper Sentry (Project B): BOTASAURUS_SENTRY_DSN only — not web SENTRY_DSN
-      SENTRY_DSN: ${BOTASAURUS_SENTRY_DSN:?set BOTASAURUS_SENTRY_DSN}
+      SENTRY_DSN: ${BOTASAURUS_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${ENVIRONMENT:-production}
       SENTRY_RELEASE: ${GIT_SHA:-unknown}
       SCRAPE_TIMEOUT_SECONDS: 45
