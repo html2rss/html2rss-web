@@ -46,5 +46,13 @@ RSpec.describe Html2rss::Web::AppLogger do
       expect(Html2rss::Web::SentryLogs).not_to have_received(:emit)
       expect(io.string).to include('"message":"plain-text log line with request details"')
     end
+
+    it 'shares the logger instance across different fibers' do
+      described_class.reset_logger!
+      logger_a = Fiber.new { described_class.logger }.resume
+      logger_b = Fiber.new { described_class.logger }.resume
+
+      expect(logger_a).to be(logger_b)
+    end
   end
 end
