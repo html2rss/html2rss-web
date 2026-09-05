@@ -5,7 +5,7 @@ source 'https://rubygems.org'
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
 # gem 'html2rss', '~> 0.29'
-gem 'html2rss', github: 'html2rss/html2rss', branch: 'experiment/httpx-default'
+gem 'html2rss', github: 'html2rss/html2rss', branch: 'master'
 gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 # Use these instead of the two above (uncomment them) when developing locally:
@@ -13,12 +13,10 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 # gem 'html2rss-configs', path: '../html2rss-configs'
 
 gem 'base64'
+gem 'falcon'
 gem 'rack-cache'
-gem 'rack-timeout'
 gem 'roda'
 gem 'zeitwerk'
-
-gem 'puma', require: false
 
 group :development do
   gem 'irb', require: false
