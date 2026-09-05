@@ -63,6 +63,13 @@ feed.example.com {
 }
 ```
 
+Alternatively, Falcon supports direct in-process TLS termination and HTTP/2 negotiation by providing certificate and private key paths:
+
+```bash
+TLS_CERTIFICATE_PATH=/path/to/fullchain.pem
+TLS_KEY_PATH=/path/to/privkey.pem
+```
+
 ## Custom feeds (escape hatch)
 
 When auto-source is not enough, mount a YAML feeds file:
