@@ -2,7 +2,7 @@
 
 module Html2rss
   module Web
-    VERSION = '1.12.1'
+    VERSION = '1.12.2'
     public_constant :VERSION
   end
 end
