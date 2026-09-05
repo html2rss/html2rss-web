@@ -2,16 +2,32 @@
 
 This document provides a mental model of how `html2rss-web` processes requests.
 
+## Server & Adapter Stack
+
+```
+Client (HTTP/1.1 or HTTP/2)
+   │
+   ▼
+[Falcon Server] (Terminates TLS / HTTP/2 multiplexing, fiber-based async reactor)
+   │
+   ▼
+[Roda Routing Tree] (Stateless routing & parameter validation)
+   │
+   ├──▶ [HTTPX] (Non-blocking cooperative fiber I/O to upstream HTML)
+   └──▶ [Botasaurus Scrape API] (Browser/dynamic scraping via HTTPX)
+```
+
 ## High-Level Data Flow
 
 ```mermaid
 flowchart TD
-    user["User / RSS Reader"] --> routes["Roda App (app/web/routes)"]
+    user["User / RSS Reader"] --> falcon["Falcon Server (HTTP/1.1 & HTTP/2)"]
+    falcon --> routes["Roda App (app/web/routes)"]
     security["Auth / Security (app/web/security)"] --> routes
     routes --> feeds["Feeds Service (app/web/feeds)"]
     cache["Cache (app/web/feeds/cache.rb)"] --> feeds
     feeds --> gem["html2rss Gem"]
-    strategies["Request Strategies (Faraday / Botasaurus)"] --> gem
+    strategies["Request Strategies (HTTPX / Botasaurus)"] --> gem
     gem --> target["Target Website"]
 ```
 
@@ -19,7 +35,7 @@ flowchart TD
 
 ### 1. Routing & Auth
 
-Requests enter via `app.rb` and are dispatched to `app/web/routes/`.
+Requests enter via `Falcon`, dispatch through `config.ru` and `app.rb`, and are routed to `app/web/routes/`.
 
 - **Static feed pages (`/<feed_name>`)**: Routed by `app/web/routes/feed_pages.rb` and resolved as `target_kind: :static`.
   - Source: static config in `config/feeds.yml` (via `LocalConfig.find`).
@@ -54,7 +70,7 @@ The `Html2rss::Web::Feeds::Service` orchestrates extraction behind a gem `FeedRe
 
 Strategies are defined by the `html2rss` gem but can be configured here.
 
-- **Faraday**: Default HTTP client for static HTML.
+- **HTTPX**: Default non-blocking HTTP transport layer for static HTML. It natively cooperates with the Ruby Fiber scheduler for connection pooling, keep-alive, and HTTP/2 multiplexing across upstream requests.
 - **Botasaurus**: Used for JavaScript-heavy websites or anti-bot protected pages (`BOTASAURUS_SCRAPER_URL`).
 
 To add or configure strategies, see `app/web/feeds/source_resolver.rb` and the `html2rss` gem documentation.
