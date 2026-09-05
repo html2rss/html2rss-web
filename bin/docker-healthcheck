@@ -3,17 +3,27 @@
 
 require 'uri'
 require 'net/http'
+require 'openssl'
 
 port = ENV.fetch('PORT', '4000')
 token = ENV.fetch('HEALTH_CHECK_TOKEN', nil)
 token = 'CHANGE_ME_HEALTH_CHECK_TOKEN' if token.nil? || token.empty?
 
-uri = URI("http://localhost:#{port}/api/v1/health")
+tls_cert_path = ENV.fetch('TLS_CERTIFICATE_PATH', nil)
+tls_enabled = tls_cert_path && !tls_cert_path.empty?
+
+scheme = tls_enabled ? 'https' : 'http'
+uri = URI("#{scheme}://localhost:#{port}/api/v1/health")
 request = Net::HTTP::Get.new(uri)
 request['Authorization'] = "Bearer #{token}"
 
 begin
-  response = Net::HTTP.start(uri.hostname, uri.port) { |http| http.request(request) }
+  response = Net::HTTP.start(
+    uri.hostname,
+    uri.port,
+    use_ssl: tls_enabled,
+    verify_mode: OpenSSL::SSL::VERIFY_NONE
+  ) { |http| http.request(request) }
   exit(response.is_a?(Net::HTTPSuccess) ? 0 : 1)
 rescue StandardError
   exit(1)
