@@ -6,6 +6,15 @@ require 'openssl'
 ##
 # Helper for building endpoints and options for Falcon.
 module FalconConfig
+  CIPHERS = %w[
+    ECDHE-ECDSA-AES128-GCM-SHA256
+    ECDHE-RSA-AES128-GCM-SHA256
+    ECDHE-ECDSA-AES256-GCM-SHA384
+    ECDHE-RSA-AES256-GCM-SHA384
+    ECDHE-ECDSA-CHACHA20-POLY1305
+    ECDHE-RSA-CHACHA20-POLY1305
+  ].join(':')
+
   class << self
     def project_root
       File.expand_path('..', __dir__)
@@ -20,7 +29,7 @@ module FalconConfig
     end
 
     def timeout_seconds
-      Float(ENV.fetch('REQUEST_TIMEOUT_SECONDS', 15))
+      Float(ENV.fetch('REQUEST_TIMEOUT_SECONDS', 55))
     end
 
     def endpoint
@@ -41,23 +50,34 @@ module FalconConfig
     def tls_endpoint(port, cert_path, key_path)
       Async::HTTP::Endpoint.parse(
         "https://0.0.0.0:#{port}",
-        ssl_context: OpenSSL::SSL::SSLContext.new.tap do |context|
-          context.cert = OpenSSL::X509::Certificate.new(File.read(cert_path))
-          context.key = OpenSSL::PKey.read(File.read(key_path))
-          context.alpn_protocols = ['h2', 'http/1.1']
-        end
+        ssl_context: build_ssl_context(cert_path, key_path)
       )
+    end
+
+    def build_ssl_context(cert_path, key_path)
+      OpenSSL::SSL::SSLContext.new.tap do |context|
+        context.cert = OpenSSL::X509::Certificate.new(File.read(cert_path))
+        context.key = OpenSSL::PKey.read(File.read(key_path))
+        context.alpn_protocols = %w[h2 http/1.1]
+        context.min_version = OpenSSL::SSL::TLS1_2_VERSION
+        context.ciphers = CIPHERS
+        context.options |= OpenSSL::SSL::OP_NO_COMPRESSION if defined?(OpenSSL::SSL::OP_NO_COMPRESSION)
+      end
     end
   end
 end
 
-service 'html2rss-web' do
-  include Falcon::Environment::Rack
+if respond_to?(:service)
+  service 'html2rss-web' do
+    include Falcon::Environment::Rack
 
-  root { FalconConfig.project_root }
-  rackup_path { FalconConfig.rackup_file }
+    preload { [FalconConfig.rackup_file] }
 
-  count { FalconConfig.worker_count }
-  timeout { FalconConfig.timeout_seconds }
-  endpoint { FalconConfig.endpoint }
+    root { FalconConfig.project_root }
+    rackup_path { FalconConfig.rackup_file }
+
+    count { FalconConfig.worker_count }
+    timeout { FalconConfig.timeout_seconds }
+    endpoint { FalconConfig.endpoint }
+  end
 end
