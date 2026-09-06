@@ -6,8 +6,6 @@ module Html2rss
       ##
       # Applies boot-time runtime configuration outside the Roda class body.
       module Setup
-        RACK_TIMEOUT_BUFFER_SECONDS = 5
-
         class << self
           # @return [Boolean]
           def sentry_enabled?
@@ -21,8 +19,6 @@ module Html2rss
             validate_environment!
             capture_runtime_env!
             configure_sentry!
-            configure_request_service!
-            configure_runtime_logging!
             configure_gem_defaults!
             log_startup!
           end
@@ -53,27 +49,6 @@ module Html2rss
           # @return [void]
           def configure_sentry!
             Sentry.configure!
-          end
-
-          # @return [void]
-          def configure_request_service!
-            return unless defined?(Rack::Timeout)
-            return unless Rack::Timeout.respond_to?(:service_timeout=)
-
-            Rack::Timeout.service_timeout =
-              if ENV.key?('RACK_TIMEOUT_SERVICE_TIMEOUT')
-                Integer(ENV['RACK_TIMEOUT_SERVICE_TIMEOUT'])
-              else
-                Html2rss::RequestService::Policy::DEFAULTS[:total_timeout_seconds] +
-                  RACK_TIMEOUT_BUFFER_SECONDS
-              end
-          end
-
-          # @return [void]
-          def configure_runtime_logging!
-            return unless defined?(Rack::Timeout::Logger)
-
-            Rack::Timeout::Logger.logger = AppLogger.logger
           end
 
           # @return [void]

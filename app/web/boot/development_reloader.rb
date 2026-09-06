@@ -27,10 +27,12 @@ module Html2rss
         # @param env [Hash]
         # @return [Array<(Integer, Hash, #each)>]
         def call(env)
-          @reload_mutex.synchronize do
+          app = @reload_mutex.synchronize do
             reload_if_needed
-            @app_provider.call.call(env)
+            @app_provider.call
           end
+
+          app.call(env)
         end
 
         private

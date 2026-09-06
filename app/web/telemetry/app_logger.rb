@@ -7,15 +7,17 @@ module Html2rss
   module Web
     module AppLogger
       class << self
+        # rubocop:disable ThreadSafety/ClassInstanceVariable
         # @return [Logger]
         def logger
-          Thread.current[:app_logger] ||= build_logger
+          @logger ||= build_logger
         end
 
         # @return [void]
         def reset_logger!
-          Thread.current[:app_logger] = nil
+          @logger = nil
         end
+        # rubocop:enable ThreadSafety/ClassInstanceVariable
 
         private
 

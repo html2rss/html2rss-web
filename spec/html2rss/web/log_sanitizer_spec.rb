@@ -113,12 +113,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     expect(observability_payload.dig(:details, :url)).to eq(expected_news_url)
   end
 
-  it 'formats rack-timeout logfmt as json' do
-    Html2rss::Web::AppLogger.logger.info('source=rack-timeout id=req-123 timeout=15000ms state=completed')
+  it 'formats logfmt messages as json' do
+    Html2rss::Web::AppLogger.logger.info('source=upstream id=req-123 timeout=15000ms state=completed')
 
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
     expect(payload).to include(
-      source: 'rack-timeout',
+      source: 'upstream',
       id: 'req-123',
       timeout: '15000ms',
       state: 'completed'

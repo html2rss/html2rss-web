@@ -27,12 +27,13 @@ RUN apk add --no-cache \
   'libc-dev>=0.7' \
   'make>=4' \
   'openssl=~3' \
+  'openssl-dev=~3' \
   'libxml2-dev>=2' \
   'libxslt-dev>=1' \
   && gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
   && bundle config set --local without 'development test' \
   && bundle install --retry=5 --jobs=$(nproc) \
-  && bundle binstubs bundler html2rss \
+  && bundle binstubs bundler html2rss falcon \
   && bundle clean --force \
   && rm -rf /usr/local/bundle/cache \
     /usr/local/bundle/bundler/gems/*/.git \
@@ -76,8 +77,6 @@ RUN apk add --no-cache \
   --no-create-home \
   --uid "$UID" "$USER" \
   && mkdir -p /app \
-  && mkdir -p /app/tmp/rack-cache-body \
-  && mkdir -p /app/tmp/rack-cache-meta \
   && chown "$USER":"$USER" -R /app
 
 WORKDIR /app
@@ -92,4 +91,4 @@ COPY --chown=$USER:$USER config ./config
 COPY --chown=$USER:$USER public ./public
 COPY --from=frontend-builder --chown=$USER:$USER /app/frontend/dist ./frontend/dist
 
-CMD ["bundle", "exec", "puma", "-C", "./config/puma.rb"]
+CMD ["bundle", "exec", "falcon", "host", "./config/falcon.rb"]

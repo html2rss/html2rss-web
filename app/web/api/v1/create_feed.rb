@@ -9,8 +9,9 @@ module Html2rss
       module V1
         ##
         # Creates stable feed records from authenticated API requests.
-        module CreateFeed
+        module CreateFeed # rubocop:disable Metrics/ModuleLength
           FEED_ATTRIBUTE_KEYS = %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
+          MAX_BODY_BYTES = 64 * 1024
           ABSOLUTE_URL_REGEXP = %r{\A[a-z][a-z0-9+\-.]*://}i
           HOSTNAME_INPUT_REGEXP = %r{
             \A(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
@@ -45,11 +46,18 @@ module Html2rss
             end
 
             def build_create_params(request, account)
+              enforce_body_limit!(request)
               params = request_params(request)
               url = validated_url(params['url'], account)
               name = params['name'].to_s.strip
               name = nil if name.empty?
               FeedMetadata::CreateParams.new(url:, name:)
+            end
+
+            def enforce_body_limit!(request)
+              return unless request.content_length.to_i > MAX_BODY_BYTES
+
+              raise Html2rss::Web::BadRequestError, 'Payload too large'
             end
 
             def request_params(request)
@@ -59,8 +67,7 @@ module Html2rss
             end
 
             def parsed_json_body(request)
-              raw_body = request.body.read
-              request.body.rewind
+              raw_body = read_limited_body(request)
               return {} if raw_body.strip.empty?
 
               parsed = JSON.parse(raw_body)
@@ -69,6 +76,15 @@ module Html2rss
               parsed
             rescue JSON::ParserError
               raise Html2rss::Web::BadRequestError, 'Invalid JSON payload'
+            end
+
+            def read_limited_body(request)
+              enforce_body_limit!(request)
+
+              request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
+                request.body.rewind
+                raise Html2rss::Web::BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
+              end
             end
 
             def json_request?(request)

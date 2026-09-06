@@ -13,6 +13,7 @@ services:
       - RACK_ENV=development
       - BUNDLE_PATH=/usr/local/bundle
       - PORT=4000
+      - BOTASAURUS_SCRAPER_URL=${BOTASAURUS_SCRAPER_URL:-http://host.docker.internal:4010}
     command: sleep infinity
     user: vscode
     working_dir: /workspace

@@ -66,7 +66,6 @@ task :test do
   sh ['docker run',
       '-d',
       '-p 4000:4000',
-      '--env PUMA_LOG_CONFIG=1',
       "--env BUILD_TAG=#{smoke_build_tag}",
       "--env GIT_SHA=#{smoke_git_sha}",
       "--env HEALTH_CHECK_TOKEN=#{smoke_health_token}",

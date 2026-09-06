@@ -17,9 +17,9 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 `html2rss-web` converts arbitrary websites into RSS 2.0 feeds.
 
-- **Backend**: Ruby + Roda under the `Html2rss::Web` namespace.
+- **Backend**: Ruby + Falcon + Roda under the `Html2rss::Web` namespace.
 - **Frontend**: Preact + Vite, built into `frontend/dist` and served at `/` in production.
-- **Feed extraction**: Delegated to the `html2rss` gem.
+- **Feed extraction**: Delegated to the `html2rss` gem (HTTPX non-blocking transport layer).
 - **Distribution**: Docker Compose / Dev Container first.
 
 ### Source Of Truth
@@ -229,7 +229,7 @@ Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`$
 
 ### Compose timeout ladder
 
-Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem client, and html2rss-web so the scraper exhausts its budget before the web tier aborts the request. Keep **scrape total (45) ≤ feed build (50) ≤ Rack (55)**; the **work** budget (30) applies only after the browser is ready on the scraper.
+Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem client, and html2rss-web so the scraper exhausts its budget before the web tier aborts the request. Keep **scrape total (45) ≤ feed build (50) ≤ Falcon (55)**; the **work** budget (30) applies only after the browser is ready on the scraper.
 
 | Variable | Service | Default | Role |
 | --- | --- | --- | --- |
@@ -238,7 +238,7 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS` | html2rss (web) | `45` | Faraday POST `/scrape` cap (mirrors scrape total) |
 | `BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS` | html2rss | `30` | Max `wait_timeout_seconds` in feed YAML |
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
-| `RACK_TIMEOUT_SERVICE_TIMEOUT` | html2rss-web | `55` | Rack outer wall |
+| `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
 
 When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or `error_category:timeout`, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder (see **Alert baselines**).
 

@@ -35,7 +35,7 @@ cleanup() {
   fi
 
   # Clean up any remaining processes on our ports
-  pkill -f "puma.*html2rss-web" 2>/dev/null || true
+  pkill -f "falcon.*html2rss-web" 2>/dev/null || true
   pkill -f "vite.*4001" 2>/dev/null || true
 
   echo "✅ Development servers stopped"
@@ -46,12 +46,12 @@ trap cleanup SIGINT SIGTERM
 
 # Prevent silent failures from port conflicts
 if port_in_use 4000; then
-  echo "❌ Port 4000 is already in use. Run: \`pkill -f 'puma.*html2rss-web'\`"
+  echo "❌ Port 4000 is already in use. Run: \`pkill -f 'falcon.*html2rss-web'\`"
   exit 1
 fi
 
 # Start Ruby server
-bundle exec puma -p 4000 -C config/puma.rb &
+bundle exec falcon host config/falcon.rb &
 RUBY_PID=$!
 
 # Verify Ruby server started successfully (allow slower boots in containers)

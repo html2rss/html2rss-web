@@ -382,6 +382,40 @@ paths:
                 - meta
                 type: object
           description: normalizes hostname-only input to https before feed creation
+        '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - code
+                    - message
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: returns 400 when request body exceeds maximum allowed bytes
         '401':
           content:
             application/json:
