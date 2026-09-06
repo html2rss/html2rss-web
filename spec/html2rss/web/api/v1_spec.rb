@@ -808,5 +808,17 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(429)
       expect(last_response.headers['Retry-After']).not_to be_nil
     end
+
+    it 'returns 400 when request body exceeds maximum allowed bytes', :aggregate_failures do
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+
+      oversized_payload = { url: 'https://example.com/articles', padding: 'x' * 100_000 }.to_json
+      post '/api/v1/feeds', oversized_payload
+
+      expect(last_response.status).to eq(400)
+      json = JSON.parse(last_response.body)
+      expect(json.dig('error', 'message')).to eq('Payload too large')
+    end
   end
 end

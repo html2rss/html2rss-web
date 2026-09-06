@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'concurrent/ivar'
 require 'concurrent/map'
 require 'digest'
 require 'time'
@@ -10,11 +11,17 @@ module Html2rss
       ##
       # Small synchronous cache for canonical feed results.
       module Cache
-        # rubocop:disable-next ThreadSafety/ClassInstanceVariable
+        # rubocop:disable ThreadSafety/ClassInstanceVariable
         def self.entries
           @entries ||= Concurrent::Map.new
         end
         private_class_method :entries
+
+        def self.in_flight
+          @in_flight ||= Concurrent::Map.new
+        end
+        private_class_method :in_flight
+        # rubocop:enable ThreadSafety/ClassInstanceVariable
 
         Entry = Data.define(:result, :expires_at)
         DEFAULT_TTL_SECONDS = 3600
@@ -37,22 +44,33 @@ module Html2rss
           # @param cacheable [Boolean, Proc]
           # @yieldreturn [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # rubocop:disable-next Metrics/MethodLength
           def fetch(key, ttl_seconds:, cacheable: true)
             entry = read_entry(key)
             return entry.result if fresh?(entry)
 
-            result = yield
+            ivar = Concurrent::IVar.new
+            actual_ivar = in_flight.put_if_absent(key, ivar)
+            return actual_ivar.value! if actual_ivar
 
-            return result unless cacheable_result?(cacheable, result)
-
-            write_entry(key, ttl_seconds, result)
-            result
+            begin
+              result = yield
+              write_entry(key, ttl_seconds, result) if cacheable_result?(cacheable, result)
+              ivar.set(result)
+              result
+            rescue StandardError => error
+              ivar.fail(error)
+              raise
+            ensure
+              in_flight.delete_pair(key, ivar)
+            end
           end
 
           # @param reason [String]
           # @return [nil]
           def clear!(reason: 'manual')
             entries.clear
+            in_flight.clear
             Observability.emit(
               event_name: 'cache.lifecycle',
               outcome: 'success',

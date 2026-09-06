@@ -36,6 +36,13 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     expect { fetch_with_counter }.to change { fetch_calls }.from(1).to(2)
   end
 
+  it 'coalesces concurrent in-flight reads for the same key to a single computation' do
+    results, calls = run_concurrent_fetches('feed_result:concurrent_test', 5)
+
+    expect(results).to all(eq(result))
+    expect(calls).to eq(1)
+  end
+
   describe '.seconds_from_minutes' do
     it 'converts positive minute values to seconds', :aggregate_failures do
       expect(described_class.seconds_from_minutes(5)).to eq(300)
@@ -68,5 +75,24 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
   # @return [Integer]
   def fetch_calls
     @fetch_calls ||= 0
+  end
+
+  # rubocop:disable-next Metrics/MethodLength, ThreadSafety/NewThread
+  def run_concurrent_fetches(key, concurrency)
+    computation_calls = Concurrent::AtomicFixnum.new(0)
+    barrier = Concurrent::CyclicBarrier.new(concurrency)
+
+    threads = Array.new(concurrency) do
+      Thread.new do
+        barrier.wait
+        described_class.fetch(key, ttl_seconds: 60) do
+          computation_calls.increment
+          sleep 0.05
+          result
+        end
+      end
+    end
+
+    [threads.map(&:value), computation_calls.value]
   end
 end
