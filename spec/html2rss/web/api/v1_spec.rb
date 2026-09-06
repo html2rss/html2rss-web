@@ -821,7 +821,8 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(json.dig('error', 'message')).to eq('Payload too large')
     end
 
-    it 'returns 400 when form-urlencoded request body exceeds maximum allowed bytes', :aggregate_failures do
+    it 'returns 400 when form-urlencoded request body exceeds maximum allowed bytes', :aggregate_failures,
+       openapi: false do
       header 'Authorization', "Bearer #{admin_token}"
       header 'Content-Type', 'application/x-www-form-urlencoded'
 
