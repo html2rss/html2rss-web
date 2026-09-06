@@ -3,12 +3,12 @@
 module Html2rss
   module Web
     ##
-    # Thread-safe account snapshot cache.
+    # Fiber-native account snapshot cache.
     #
     # Keeps config reads cheap by materializing one immutable snapshot and
     # exposing narrow lookup helpers for auth and authorization flows.
     module AccountManager
-      @mutex = Mutex.new
+      Snapshot = Data.define(:accounts, :token_index, :username_index)
       @snapshot = nil
 
       class << self
@@ -17,7 +17,8 @@ module Html2rss
         # @param reason [String]
         # @return [nil]
         def reload!(reason: 'manual')
-          @mutex.synchronize { @snapshot = nil }
+          # rubocop:disable-next ThreadSafety/ClassInstanceVariable
+          @snapshot = nil
           Observability.emit(
             event_name: 'cache.lifecycle',
             outcome: 'success',
@@ -31,12 +32,12 @@ module Html2rss
         def get_account(token)
           return nil unless token
 
-          snapshot[:token_index][token]
+          snapshot.token_index[token]
         end
 
         # @return [Array<Hash{Symbol=>Object}>]
         def accounts
-          snapshot[:accounts]
+          snapshot.accounts
         end
 
         # @param username [String, nil]
@@ -44,13 +45,14 @@ module Html2rss
         def get_account_by_username(username)
           return nil unless username
 
-          snapshot[:username_index][username]
+          snapshot.username_index[username]
         end
 
         private
 
         def snapshot
-          @mutex.synchronize { @snapshot ||= build_snapshot }
+          # rubocop:disable-next ThreadSafety/ClassInstanceVariable
+          @snapshot ||= build_snapshot
         end
 
         def build_snapshot
@@ -64,7 +66,7 @@ module Html2rss
             outcome: 'success',
             details: { component: 'account_manager', event: 'build', accounts_count: accounts.length }
           )
-          { accounts: accounts, token_index: token_index, username_index: username_index }.freeze
+          Snapshot.new(accounts:, token_index:, username_index:)
         end
 
         # @param raw_accounts [Array<Hash>, nil]

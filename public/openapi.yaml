@@ -596,7 +596,7 @@ paths:
               example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns 503 when the server times out
+          description: returns 503 when the scraper queue times out
           headers:
             Retry-After:
               description: The number of seconds to wait before retrying the request.

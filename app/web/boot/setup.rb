@@ -16,6 +16,7 @@ module Html2rss
           #
           # @return [void]
           def call!
+            Boot.eager_load! unless EnvironmentValidator.development?
             validate_environment!
             capture_runtime_env!
             configure_sentry!

@@ -48,12 +48,6 @@ RSpec.describe Html2rss::Web::Flags do
       end
     end
 
-    it 'raises for malformed stale factor' do
-      ClimateControl.modify('ASYNC_FEED_REFRESH_STALE_FACTOR' => '0') do
-        expect { described_class.validate! }.to raise_error(ArgumentError, /failed constraints/)
-      end
-    end
-
     it 'raises for invalid feeds cache max size' do
       ClimateControl.modify('FEEDS_CACHE_MAX_SIZE' => '0') do
         expect { described_class.validate! }.to raise_error(ArgumentError, /failed constraints/)

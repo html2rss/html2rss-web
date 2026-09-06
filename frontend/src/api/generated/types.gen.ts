@@ -278,7 +278,7 @@ export type RenderFeedByTokenErrors = {
    */
   500: string;
   /**
-   * returns 503 when the server times out
+   * returns 503 when the scraper queue times out
    */
   503: string;
   /**

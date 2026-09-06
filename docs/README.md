@@ -235,7 +235,7 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | --- | --- | --- | --- |
 | `SCRAPE_TIMEOUT_SECONDS` | botasaurus-scrape-api | `45` | Handler wall (queue, boot, navigate, wait) |
 | `SCRAPE_WORK_TIMEOUT_SECONDS` | botasaurus-scrape-api | `30` | Post-boot navigate, selector wait, scroll |
-| `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS` | html2rss (web) | `45` | Faraday POST `/scrape` cap (mirrors scrape total) |
+| `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS` | html2rss (web) | `45` | HTTPX POST `/scrape` cap (mirrors scrape total) |
 | `BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS` | html2rss | `30` | Max `wait_timeout_seconds` in feed YAML |
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
 | `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |

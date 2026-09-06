@@ -12,7 +12,7 @@ RSpec.describe 'FeedResult pipeline integration' do
       generator_input: generator_input,
       ttl_seconds: 600,
       url: page_url,
-      strategy: :faraday,
+      strategy: :default,
       feed_name: nil,
       directory_defaults: {},
       request_params: {}
@@ -21,7 +21,7 @@ RSpec.describe 'FeedResult pipeline integration' do
   let(:generator_input) do
     {
       channel: { url: page_url, title: 'Integration Feed' },
-      strategy: :faraday,
+      strategy: :default,
       selectors: {
         items: { selector: 'article' },
         title: { selector: 'h1 a' },

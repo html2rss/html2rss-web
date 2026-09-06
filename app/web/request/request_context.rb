@@ -13,12 +13,12 @@ module Html2rss
         # @param context [Context]
         # @return [Context]
         def set!(context)
-          Thread.current[:request_context] = context
+          Fiber[:request_context] = context
         end
 
         # @return [Context, nil]
         def current
-          Thread.current[:request_context]
+          Fiber[:request_context]
         end
 
         # @return [Hash{Symbol=>Object}]
@@ -31,7 +31,7 @@ module Html2rss
 
         # @return [nil]
         def clear!
-          Thread.current[:request_context] = nil
+          Fiber[:request_context] = nil
           nil
         end
 

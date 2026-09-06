@@ -31,20 +31,6 @@ module Html2rss
           default: true,
           validator: nil
         ),
-        async_feed_refresh_enabled: Definition.new(
-          name: :async_feed_refresh_enabled,
-          env_key: 'ASYNC_FEED_REFRESH_ENABLED',
-          type: :boolean,
-          default: false,
-          validator: nil
-        ),
-        async_feed_refresh_stale_factor: Definition.new(
-          name: :async_feed_refresh_stale_factor,
-          env_key: 'ASYNC_FEED_REFRESH_STALE_FACTOR',
-          type: :integer,
-          default: 3,
-          validator: ->(value) { value >= 1 }
-        ),
         feeds_cache_max_size: Definition.new(
           name: :feeds_cache_max_size,
           env_key: 'FEEDS_CACHE_MAX_SIZE',
@@ -119,16 +105,6 @@ module Html2rss
         # @return [Boolean]
         def auto_source_enabled?
           fetch(:auto_source_enabled)
-        end
-
-        # @return [Boolean]
-        def async_feed_refresh_enabled?
-          fetch(:async_feed_refresh_enabled)
-        end
-
-        # @return [Integer]
-        def async_feed_refresh_stale_factor
-          fetch(:async_feed_refresh_stale_factor)
         end
 
         # Validates all known flags and managed env key prefixes.

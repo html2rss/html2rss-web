@@ -60,3 +60,6 @@ frontend/.astro
 
 # Bundler/vendored dependencies
 /vendor/
+
+# Local agent artifacts
+/.agents/
