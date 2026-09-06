@@ -24,6 +24,14 @@ module FalconConfig
       File.join(project_root, 'config.ru')
     end
 
+    def app_file
+      File.join(project_root, 'app.rb')
+    end
+
+    def preload_files
+      ENV['RACK_ENV'] == 'development' ? [] : [app_file]
+    end
+
     def worker_count
       ENV['RACK_ENV'] == 'development' ? 1 : Integer(ENV.fetch('WEB_CONCURRENCY', 2))
     end
@@ -71,7 +79,7 @@ if respond_to?(:service)
   service 'html2rss-web' do
     include Falcon::Environment::Rack
 
-    preload { [FalconConfig.rackup_file] }
+    preload { FalconConfig.preload_files }
 
     root { FalconConfig.project_root }
     rackup_path { FalconConfig.rackup_file }

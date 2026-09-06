@@ -46,11 +46,18 @@ module Html2rss
             end
 
             def build_create_params(request, account)
+              enforce_body_limit!(request)
               params = request_params(request)
               url = validated_url(params['url'], account)
               name = params['name'].to_s.strip
               name = nil if name.empty?
               FeedMetadata::CreateParams.new(url:, name:)
+            end
+
+            def enforce_body_limit!(request)
+              return unless request.content_length.to_i > MAX_BODY_BYTES
+
+              raise Html2rss::Web::BadRequestError, 'Payload too large'
             end
 
             def request_params(request)
@@ -72,7 +79,7 @@ module Html2rss
             end
 
             def read_limited_body(request)
-              raise Html2rss::Web::BadRequestError, 'Payload too large' if request.content_length.to_i > MAX_BODY_BYTES
+              enforce_body_limit!(request)
 
               request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
                 request.body.rewind

@@ -17,6 +17,26 @@ RSpec.describe FalconConfig do
     end
   end
 
+  describe '.app_file' do
+    it 'returns the path to app.rb' do
+      expect(described_class.app_file).to eq(File.join(described_class.project_root, 'app.rb'))
+    end
+  end
+
+  describe '.preload_files' do
+    it 'returns empty array in development environment' do
+      ClimateControl.modify('RACK_ENV' => 'development') do
+        expect(described_class.preload_files).to eq([])
+      end
+    end
+
+    it 'returns app_file in production environment' do
+      ClimateControl.modify('RACK_ENV' => 'production') do
+        expect(described_class.preload_files).to eq([described_class.app_file])
+      end
+    end
+  end
+
   describe '.worker_count' do
     it 'returns 1 in development environment' do
       ClimateControl.modify('RACK_ENV' => 'development', 'WEB_CONCURRENCY' => '4') do
