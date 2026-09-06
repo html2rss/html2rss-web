@@ -162,6 +162,20 @@ export type CreateFeedData = {
 
 export type CreateFeedErrors = {
   /**
+   * returns 400 when request body exceeds maximum allowed bytes
+   */
+  400: {
+    error: {
+      code: string;
+      kind: string;
+      message: string;
+      next_action: string;
+      retry_action: string;
+      retryable: boolean;
+    };
+    success: boolean;
+  };
+  /**
    * returns 401 with UNAUTHORIZED error payload
    */
   401: {
