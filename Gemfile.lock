@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: da5cf9400f758c956b49177962b26f76299898bf
+  revision: 5f2ab31855f092c1ed18a7a5150448bd66e46ade
   branch: refactor/httpx-transport-modernization
   specs:
     html2rss (0.29.1)

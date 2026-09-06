@@ -262,7 +262,7 @@ module Html2rss
            %w[queue boot].include?(phase)
          }, SERVICE_UNAVAILABLE],
         [lambda { |c, _|
-           # Gem wall-clock timeout (Botasaurus 504 / Faraday timeout) — not Timeout::Error.
+           # Gem wall-clock timeout (Botasaurus 504 / HTTPX timeout) — not Timeout::Error.
            # work / nil (transport hop) → site-shaped 504.
            defined?(::Html2rss::RequestService::RequestTimedOut) &&
              c.any?(::Html2rss::RequestService::RequestTimedOut)

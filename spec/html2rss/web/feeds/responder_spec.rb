@@ -20,7 +20,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   let(:static_config) do
     {
       channel: { url: 'https://example.com', ttl: 10 },
-      strategy: :faraday
+      strategy: :default
     }
   end
 
@@ -67,7 +67,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'success',
-        details: include(strategy: :faraday, url: 'https://example.com', feed_name: 'example'),
+        details: include(strategy: :default, url: 'https://example.com', feed_name: 'example'),
         level: :info
       )
     end
@@ -134,7 +134,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     end
 
     it 'emits hard error from RenderResult fields including diagnostics', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      attempts = [{ strategy: :faraday, items_count: 0, error_class: 'Timeout::Error' }]
+      attempts = [{ strategy: :default, items_count: 0, error_class: 'Timeout::Error' }]
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(
         Html2rss::Web::Feeds::Contracts::RenderResult.new(
           status: :error,
@@ -153,7 +153,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         diagnostics: have_attributes(strategy_attempts: attempts),
         event_name: 'feed.render',
         details: include(
-          strategy: :faraday,
+          strategy: :default,
           url: 'https://example.com',
           feed_name: 'example',
           error_code: 'INTERNAL_SERVER_ERROR',
@@ -161,7 +161,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
           strategy_attempts: attempts
         ),
         level: :warn,
-        context: { url: 'https://example.com', strategy: :faraday }
+        context: { url: 'https://example.com', strategy: :default }
       )
     end
   end
@@ -189,7 +189,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         empty_reason: 'content_extraction_empty',
         diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.from_attempts(
           [
-            { strategy: :faraday, items_count: 0, error_class: nil },
+            { strategy: :default, items_count: 0, error_class: nil },
             { strategy: :botasaurus, items_count: 0, error_class: nil }
           ]
         )
@@ -214,7 +214,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         event_name: 'feed.render',
         outcome: 'failure',
         details: include(
-          strategy: :faraday,
+          strategy: :default,
           url: 'https://example.com',
           reason: 'content_extraction_empty',
           strategy_attempts: result.diagnostics.strategy_attempts
@@ -259,7 +259,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'failure',
-        details: include(strategy: :faraday, url: 'https://example.com', reason: 'feed_empty'),
+        details: include(strategy: :default, url: 'https://example.com', reason: 'feed_empty'),
         level: :warn
       )
     end
@@ -324,7 +324,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       have_attributes(
         source_kind: :static,
         cache_identity: a_string_starting_with('static:example:'),
-        generator_input: include(strategy: :faraday, channel: { url: 'https://example.com', ttl: 10 }),
+        generator_input: include(strategy: :default, channel: { url: 'https://example.com', ttl: 10 }),
         ttl_seconds: 600
       )
     )

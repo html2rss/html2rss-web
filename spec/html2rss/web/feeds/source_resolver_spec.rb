@@ -90,7 +90,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           Html2rss::Web::FeedToken,
           username: 'admin',
           url: 'https://example.com/private',
-          strategy: 'faraday'
+          strategy: 'default'
         )
       end
 
@@ -102,7 +102,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
         allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?)
           .with({ username: 'admin' }, 'https://example.com/private').and_return(true)
         allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
-        allow(Html2rss::RequestService).to receive(:strategy_names).and_return([:faraday])
+        allow(Html2rss::RequestService).to receive(:strategy_names).and_return(%i[auto default faraday botasaurus])
         allow(Html2rss::Web::LocalConfig).to receive(:global)
           .and_return({ headers: { 'User-Agent' => 'html2rss-web' } })
       end
@@ -112,12 +112,20 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
         expect(resolved_tuple(resolved)).to match(
           [:token, start_with('token:'), 300,
-           include(strategy: :faraday, channel: { url: 'https://example.com/private' }, auto_source: {})]
+           include(strategy: :default, channel: { url: 'https://example.com/private' }, auto_source: {})]
         )
         expect(resolved).to have_attributes(
           url: 'https://example.com/private',
-          strategy: :faraday
+          strategy: :default
         )
+      end
+
+      it 'accepts legacy faraday token strategy for backwards compatibility' do
+        allow(feed_token).to receive(:strategy).and_return('faraday')
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.strategy).to eq(:faraday)
       end
 
       it 'defaults blank token strategy to auto', :aggregate_failures do

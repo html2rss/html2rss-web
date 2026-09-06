@@ -205,7 +205,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(
         no_feed_items_extracted_class.new(
           attempts: [
-            { strategy: :faraday, items_count: 0, error_class: nil },
+            { strategy: :default, items_count: 0, error_class: nil },
             { strategy: :botasaurus, items_count: 0, error_class: nil }
           ]
         )
@@ -219,7 +219,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.error_message).to include('No feed items extracted after auto fallback')
       expect(result.diagnostics.strategy_attempts).to eq(
         [
-          { strategy: :faraday, items_count: 0, error_class: nil },
+          { strategy: :default, items_count: 0, error_class: nil },
           { strategy: :botasaurus, items_count: 0, error_class: nil }
         ]
       )
@@ -238,7 +238,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     it 'maps NoFeedItemsExtracted nested in Exception#cause to empty extraction', :aggregate_failures do
       root = no_feed_items_extracted_class.new(
-        attempts: [{ strategy: :faraday, items_count: 0, error_class: nil }]
+        attempts: [{ strategy: :default, items_count: 0, error_class: nil }]
       )
       wrapper = StandardError.new('strategy failed')
       allow(wrapper).to receive(:cause).and_return(root)
@@ -246,7 +246,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
-      expect(result.diagnostics.strategy_attempts).to eq([{ strategy: :faraday, items_count: 0, error_class: nil }])
+      expect(result.diagnostics.strategy_attempts).to eq([{ strategy: :default, items_count: 0, error_class: nil }])
     end
   end
 

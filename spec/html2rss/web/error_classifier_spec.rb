@@ -56,7 +56,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
 
     it 'ignores attempts payload when mapping HTTP semantics' do
       klass = stub_no_feed_items_extracted_with_attempts
-      error = klass.new(attempts: [{ strategy: :faraday, items_count: 0 }])
+      error = klass.new(attempts: [{ strategy: :default, items_count: 0 }])
 
       expect(described_class.classify(error)).to have_attributes(
         status: 422,
@@ -95,7 +95,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
     end
 
-    it 'returns gateway timeout for RequestTimedOut (Botasaurus/Faraday wall-clock)' do
+    it 'returns gateway timeout for RequestTimedOut (Botasaurus/HTTPX wall-clock)' do
       stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('Botasaurus scrape timed out')
 
@@ -238,12 +238,12 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       klass.new(
         attempts: [
           {
-            strategy: :faraday,
+            strategy: :default,
             items_count: 0,
             transport_meta: {
               'request_id' => 'req-123',
               'render_ms' => 45,
-              'strategy_used' => 'faraday',
+              'strategy_used' => 'default',
               'timeout_phase' => 'work'
             }
           }
@@ -254,12 +254,12 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     it 'extracts strategy attempts and transport meta when present', :aggregate_failures do
       diagnostics = described_class::Diagnostics.from_error(diagnostic_error)
       expect(diagnostics).to have_attributes(
-        request_id: 'req-123', render_ms: 45, strategy_used: 'faraday', timeout_phase: 'work'
+        request_id: 'req-123', render_ms: 45, strategy_used: 'default', timeout_phase: 'work'
       )
       expect(diagnostics.strategy_attempts.size).to eq(1)
       expect(diagnostics.to_h).to include(
         strategy_attempts: diagnostics.strategy_attempts,
-        request_id: 'req-123', render_ms: 45, strategy_used: 'faraday', timeout_phase: 'work'
+        request_id: 'req-123', render_ms: 45, strategy_used: 'default', timeout_phase: 'work'
       )
     end
 

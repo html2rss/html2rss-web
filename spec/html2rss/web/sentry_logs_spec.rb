@@ -114,7 +114,7 @@ RSpec.describe Html2rss::Web::SentryLogs do
       outcome: 'failure',
       request_id: 'req-123',
       route_group: 'api_v1',
-      strategy: 'faraday',
+      strategy: 'default',
       details: { url: 'https://example.com/articles', fallback: 'botasaurus' }
     }
   end
@@ -134,7 +134,7 @@ RSpec.describe Html2rss::Web::SentryLogs do
       outcome: 'failure',
       request_id: 'req-123',
       route_group: 'api_v1',
-      strategy: 'faraday',
+      strategy: 'default',
       details: breadcrumb_details_matcher
     )
   end

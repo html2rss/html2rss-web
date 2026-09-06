@@ -27,7 +27,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       http_method: 'GET',
       route_group: 'api_v1',
       actor: nil,
-      strategy: 'faraday',
+      strategy: 'default',
       started_at: '2026-03-21T00:00:00Z'
     )
   end
@@ -104,7 +104,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::Observability.emit(
       event_name: 'feed.render',
       outcome: 'success',
-      details: { url: 'https://news.ycombinator.com', strategy: 'faraday' }
+      details: { url: 'https://news.ycombinator.com', strategy: 'default' }
     )
 
     lines = io.string.lines.map { |line| JSON.parse(line, symbolize_names: true) }
