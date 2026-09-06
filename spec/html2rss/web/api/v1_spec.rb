@@ -669,12 +669,11 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.headers['Retry-After']).not_to be_nil
     end
 
-    it 'returns 503 when the server times out', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-503", strategy: 'faraday')
-      stub_const('Rack::Timeout::RequestTimeoutException', Class.new(StandardError))
+    it 'returns 503 when the scraper queue times out', :aggregate_failures do
+      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-503", strategy: 'default')
 
-      allow(Html2rss::Web::Feeds::Service).to receive(:call)
-        .and_raise(Rack::Timeout::RequestTimeoutException.new('service timeout'))
+      error = Html2rss::RequestService::RequestTimedOut.new('queue timed out', timeout_phase: 'queue')
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_raise(error)
 
       get "/api/v1/feeds/#{token}.xml"
 

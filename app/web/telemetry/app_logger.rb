@@ -53,6 +53,8 @@ module Html2rss
         # @param message [Object]
         # @return [Hash{Symbol=>Object}]
         def normalize_message(message)
+          return message if message.is_a?(Hash)
+
           message_string = message.to_s
           return parsed_json(message_string) if json_like?(message_string)
 

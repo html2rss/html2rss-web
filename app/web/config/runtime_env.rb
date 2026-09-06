@@ -9,21 +9,23 @@ module Html2rss
       ADMIN_ACCESS_TOKEN_PLACEHOLDER = 'CHANGE_ME_ADMIN_TOKEN'
       HEALTH_CHECK_TOKEN_PLACEHOLDER = 'CHANGE_ME_HEALTH_CHECK_TOKEN'
       SENSITIVE_KEYS = %w[HTML2RSS_SECRET_KEY HTML2RSS_ACCESS_TOKEN HEALTH_CHECK_TOKEN SENTRY_DSN].freeze
-      BOOT_METADATA_KEYS = %w[BUILD_TAG GIT_SHA RACK_ENV SENTRY_ENABLE_LOGS].freeze
-      @mutex = Mutex.new
+      BOOT_METADATA_KEYS = %w[
+        BUILD_TAG GIT_SHA RACK_ENV SENTRY_ENABLE_LOGS PORT WEB_CONCURRENCY REQUEST_TIMEOUT_SECONDS
+      ].freeze
+      # rubocop:disable ThreadSafety/ClassInstanceVariable
       @values = nil
 
       class << self
         # @return [void]
         def capture!
-          @mutex.synchronize { @values = tracked_env_values.freeze }
+          @values = tracked_env_values.freeze
           scrub_sensitive_env!
           nil
         end
 
         # @return [void]
         def reset!
-          @mutex.synchronize { @values = nil }
+          @values = nil
         end
 
         # @return [String]
@@ -78,6 +80,21 @@ module Html2rss
           fetch('RACK_ENV', ENV.fetch('RACK_ENV', 'development'))
         end
 
+        # @return [Integer]
+        def port
+          fetch('PORT', 4000).to_i
+        end
+
+        # @return [Integer]
+        def web_concurrency
+          fetch('WEB_CONCURRENCY', 2).to_i
+        end
+
+        # @return [Float]
+        def request_timeout_seconds
+          fetch('REQUEST_TIMEOUT_SECONDS', 55.0).to_f
+        end
+
         private
 
         # @param key [String]
@@ -86,7 +103,8 @@ module Html2rss
         def fetch(key, default = :__missing__)
           return ENV.fetch(key) if ENV.key?(key)
 
-          current_values = @mutex.synchronize { @values || {} }
+          current_values = @values || {}
+          # rubocop:enable ThreadSafety/ClassInstanceVariable
           return current_values.fetch(key) if current_values.key?(key)
           return default unless default == :__missing__
 

@@ -267,11 +267,9 @@ module Html2rss
            defined?(::Html2rss::RequestService::RequestTimedOut) &&
              c.any?(::Html2rss::RequestService::RequestTimedOut)
          }, GATEWAY_TIMEOUT],
-        [lambda { |_, err|
-           defined?(::Rack::Timeout::RequestTimeoutException) && err.is_a?(::Rack::Timeout::RequestTimeoutException)
-         }, SERVICE_UNAVAILABLE],
         [lambda { |c, err|
            err.is_a?(Timeout::Error) || err.is_a?(Errno::ETIMEDOUT) ||
+             (defined?(::Async::TimeoutError) && (err.is_a?(::Async::TimeoutError) || c.any?(::Async::TimeoutError))) ||
              (defined?(::HTTPX::TimeoutError) && (err.is_a?(::HTTPX::TimeoutError) || c.any?(::HTTPX::TimeoutError)))
          }, GATEWAY_TIMEOUT]
       ].freeze
@@ -345,11 +343,15 @@ module Html2rss
         end
 
         def network_error?(error)
-          error_chain(error).any? do |err|
-            NETWORK_ERRORS.include?(err.class) ||
-              (defined?(::HTTPX::Error) &&
-                (err.is_a?(::HTTPX::ConnectionError) || err.is_a?(::HTTPX::TLSError) || err.is_a?(::HTTPX::TimeoutError)))
-          end
+          error_chain(error).any? { |err| network_error_class?(err) }
+        end
+
+        def network_error_class?(err)
+          return true if NETWORK_ERRORS.include?(err.class)
+          return true if defined?(::Async::TimeoutError) && err.is_a?(::Async::TimeoutError)
+          return false unless defined?(::HTTPX::Error)
+
+          err.is_a?(::HTTPX::ConnectionError) || err.is_a?(::HTTPX::TLSError) || err.is_a?(::HTTPX::TimeoutError)
         end
       end
     end

@@ -112,14 +112,14 @@ RSpec.describe Html2rss::Web::ErrorResponder do
       expect(response['Retry-After']).to eq('60')
     end
 
-    it 'maps Rack::Timeout::RequestTimeoutException to 503 and injects Retry-After header', :aggregate_failures do
-      stub_const('Rack::Timeout::RequestTimeoutException', Class.new(StandardError))
+    it 'maps Async::TimeoutError to 504 and injects Retry-After header', :aggregate_failures do
+      require 'async'
       response, _body = respond_with(
-        error: Rack::Timeout::RequestTimeoutException.new('timeout'),
+        error: Async::TimeoutError.new,
         path: '/api/v1/feeds',
         target: Html2rss::Web::RequestTarget::API
       )
-      expect(response.status).to eq(503)
+      expect(response.status).to eq(504)
       expect(response['Retry-After']).to eq('300')
     end
 

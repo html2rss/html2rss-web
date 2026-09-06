@@ -8,8 +8,8 @@ module Html2rss
     module Feeds
       ##
       # Builds feed HTTP envelopes: status, headers, and serialized bodies.
-      module Renderer
-        class << self
+      module Renderer # rubocop:disable Metrics/ModuleLength
+        class << self # rubocop:disable Metrics/ClassLength
           # Renders a RenderResult and configures the HTTP response headers and status.
           #
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -30,7 +30,7 @@ module Html2rss
           # @return [String] plain-text error body
           def render_error(message, response:)
             response['Content-Type'] = FormatNegotiation::TEXT_PLAIN_CONTENT_TYPE
-            HttpCache.expires_now(response)
+            expires_now(response)
 
             call_error(message: message)
           end
@@ -91,9 +91,9 @@ module Html2rss
           def apply_vary_and_links(response, result, request)
             if result.status == :ok
               apply_alternate_links(response, request)
-              HttpCache.vary(response, 'Accept', 'Host')
+              vary(response, 'Accept', 'Host')
             else
-              HttpCache.vary(response, 'Accept')
+              vary(response, 'Accept')
             end
           end
 
@@ -141,9 +141,37 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def apply_cache_headers(response, result)
-            return HttpCache.expires_now(response) if result.status == :error
+            return expires_now(response) if result.status == :error
 
-            HttpCache.expires(response, result.ttl_seconds, cache_control: 'public')
+            expires(response, result.ttl_seconds, cache_control: 'public')
+          end
+
+          # @param response [Rack::Response]
+          # @param seconds [Integer]
+          # @param cache_control [String, nil]
+          # @return [void]
+          def expires(response, seconds, cache_control: nil)
+            expires_now(response) and return if seconds <= 0
+
+            response['Expires'] = (Time.now + seconds).httpdate
+            cache_value = "max-age=#{seconds}"
+            cache_value += ",#{cache_control}" if cache_control
+            response['Cache-Control'] = cache_value
+          end
+
+          # @param response [Rack::Response]
+          # @return [void]
+          def expires_now(response)
+            response['Expires'] = '0'
+            response['Cache-Control'] = 'private,max-age=0,no-cache,no-store,must-revalidate'
+          end
+
+          # @param response [Rack::Response]
+          # @param fields [Array<String>]
+          # @return [void]
+          def vary(response, *fields)
+            existing = response['Vary'].to_s.split(',').map(&:strip).reject(&:empty?)
+            response['Vary'] = (existing + fields).uniq.join(', ')
           end
 
           # @param response [Rack::Response]

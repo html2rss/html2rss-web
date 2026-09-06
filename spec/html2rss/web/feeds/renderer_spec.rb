@@ -99,22 +99,18 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
     end
 
     it 'sets status, content-type, link alternates, vary, and cache control on the response', :aggregate_failures do
-      allow(response).to receive(:status=)
-      allow(response).to receive(:[]=)
-      allow(Html2rss::Web::Feeds::HttpCache).to receive(:vary)
-      allow(Html2rss::Web::Feeds::HttpCache).to receive(:expires)
+      real_response = Rack::Response.new
+      described_class.render(ok_result, response: real_response, request: request)
 
-      described_class.render(ok_result, response: response, request: request)
-
-      expect(response).to have_received(:status=).with(200)
-      expect(response).to have_received(:[]=).with('Content-Type', 'application/xml')
-      expect(response).to have_received(:[]=).with(
-        'Link',
+      expect(real_response.status).to eq(200)
+      expect(real_response['Content-Type']).to eq('application/xml')
+      expect(real_response['Link']).to eq(
         '</api/v1/feeds/token.xml>; rel="alternate"; type="application/rss+xml", ' \
         '</api/v1/feeds/token.json>; rel="alternate"; type="application/feed+json"'
       )
-      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:vary).with(response, 'Accept', 'Host')
-      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:expires).with(response, 300, cache_control: 'public')
+      expect(real_response['Vary']).to eq('Accept, Host')
+      expect(real_response['Cache-Control']).to eq('max-age=300,public')
+      expect(real_response['Expires']).to be_a(String)
     end
 
     it 'omits reverse-proxy Docker DNS Hosts from Link targets' do
@@ -171,17 +167,15 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
   end
 
   describe '.render_error' do
-    let(:response) { instance_double(Rack::Response, :[]= => nil) }
+    let(:response) { Rack::Response.new }
 
     it 'sets plain text content-type and disables cache on the response', :aggregate_failures do
-      allow(response).to receive(:[]=)
-      allow(Html2rss::Web::Feeds::HttpCache).to receive(:expires_now)
-
       body = described_class.render_error('Test Error', response: response)
 
       expect(body).to eq('Failed to generate feed: Test Error')
-      expect(response).to have_received(:[]=).with('Content-Type', 'text/plain; charset=utf-8')
-      expect(Html2rss::Web::Feeds::HttpCache).to have_received(:expires_now).with(response)
+      expect(response['Content-Type']).to eq('text/plain; charset=utf-8')
+      expect(response['Cache-Control']).to eq('private,max-age=0,no-cache,no-store,must-revalidate')
+      expect(response['Expires']).to eq('0')
     end
   end
   # rubocop:enable RSpec/ExampleLength

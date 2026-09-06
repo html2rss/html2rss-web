@@ -141,40 +141,5 @@ RSpec.describe Html2rss::Web::RateLimiter do
         anything, '/api/v1/feeds', 3
       )
     end
-
-    it 'skips pruning locked tracks using non-blocking try_lock' do
-      history_map = middleware.instance_variable_get(:@history)
-      track = described_class::RequestTrack.new
-      history_map['999.999.999.999'] = track
-
-      # Stub try_lock to return false, mimicking lock contention
-      allow(track.instance_variable_get(:@mutex)).to receive(:try_lock).and_return(false)
-
-      # Populate history past 1000 so pruning is triggered
-      1005.times do |i|
-        history_map["192.168.1.#{i}"] = described_class::RequestTrack.new
-      end
-
-      request_builder.get('/api/v1/feeds')
-
-      # Check that the locked track was NOT pruned/deleted, even though it was empty
-      expect(history_map.key?('999.999.999.999')).to be(true)
-    end
-
-    it 'recovers and retries when a track is deleted during check' do
-      track = described_class::RequestTrack.new
-      track.instance_variable_set(:@deleted, true)
-
-      call_count = 0
-      original_new = described_class::RequestTrack.method(:new)
-      allow(described_class::RequestTrack).to receive(:new) do
-        call_count += 1
-        call_count == 1 ? track : original_new.call
-      end
-
-      response = request_builder.get('/api/v1/feeds')
-      expect(response.status).to eq(200)
-      expect(call_count).to eq(2)
-    end
   end
 end

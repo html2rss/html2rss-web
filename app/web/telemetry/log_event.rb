@@ -10,7 +10,7 @@ module Html2rss
         # @param level [Symbol]
         # @return [void]
         def emit(payload:, level: :info)
-          logger.public_send(level, build_payload(payload).to_json)
+          logger.public_send(level, build_payload(payload))
         rescue StandardError => error
           warn_fallback(error, payload)
         end

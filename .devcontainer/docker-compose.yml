@@ -5,6 +5,7 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ../:/workspace:cached
+      - ../../:/Users/gil/versioned/html2rss:cached
       - bundle-cache:/usr/local/bundle
     ports:
       - "4000:4000"

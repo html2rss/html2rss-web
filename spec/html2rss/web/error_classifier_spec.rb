@@ -193,10 +193,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'classifies timeout errors correctly', :aggregate_failures do
-      stub_const('Rack::Timeout::RequestTimeoutException', Class.new(StandardError))
-      expect(described_class.classify(Rack::Timeout::RequestTimeoutException.new)).to eq(
-        described_class::SERVICE_UNAVAILABLE
-      )
+      expect(described_class.classify(Async::TimeoutError.new)).to eq(described_class::GATEWAY_TIMEOUT)
       expect(described_class.classify(Net::OpenTimeout.new('timeout'))).to eq(described_class::GATEWAY_TIMEOUT)
       expect(described_class.classify(HTTPX::TimeoutError.new(5, 'timeout'))).to eq(
         described_class::GATEWAY_TIMEOUT

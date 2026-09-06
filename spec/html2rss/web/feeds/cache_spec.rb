@@ -43,6 +43,31 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     expect(calls).to eq(1)
   end
 
+  it 'propagates cancellation and cleans in-flight entry when the leader is stopped',
+     :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    waiter_error = nil
+
+    Async do |task|
+      task.async do
+        described_class.fetch('feed_result:stopped_test', ttl_seconds: 60) do
+          sleep 5
+          result
+        end
+      end
+      task.yield
+      waiter = task.async do
+        described_class.fetch('feed_result:stopped_test', ttl_seconds: 60) { result }
+      rescue Exception => error # rubocop:disable Lint/RescueException
+        waiter_error = error
+      end
+      task.children.first.stop
+      waiter.wait
+    end
+
+    expect(waiter_error).to be_a(Exception)
+    expect(described_class.send(:in_flight)).to be_empty
+  end
+
   describe '.seconds_from_minutes' do
     it 'converts positive minute values to seconds', :aggregate_failures do
       expect(described_class.seconds_from_minutes(5)).to eq(300)
@@ -77,22 +102,20 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     @fetch_calls ||= 0
   end
 
-  # rubocop:disable-next Metrics/MethodLength, ThreadSafety/NewThread
-  def run_concurrent_fetches(key, concurrency)
-    computation_calls = Concurrent::AtomicFixnum.new(0)
-    barrier = Concurrent::CyclicBarrier.new(concurrency)
-
-    threads = Array.new(concurrency) do
-      Thread.new do
-        barrier.wait
-        described_class.fetch(key, ttl_seconds: 60) do
-          computation_calls.increment
-          sleep 0.05
-          result
+  def run_concurrent_fetches(key, concurrency) # rubocop:disable Metrics/MethodLength
+    calls = 0
+    results = []
+    Async do |task|
+      Array.new(concurrency) do
+        task.async do
+          results << described_class.fetch(key, ttl_seconds: 60) do
+            calls += 1
+            sleep 0.05
+            result
+          end
         end
-      end
+      end.each(&:wait)
     end
-
-    [threads.map(&:value), computation_calls.value]
+    [results, calls]
   end
 end

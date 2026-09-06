@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require 'concurrent/ivar'
-require 'concurrent/map'
+require 'async'
+require 'async/notification'
 require 'digest'
 require 'time'
 
@@ -9,22 +9,61 @@ module Html2rss
   module Web
     module Feeds
       ##
-      # Small synchronous cache for canonical feed results.
+      # Fiber-native cache for canonical feed results.
       module Cache
         # rubocop:disable ThreadSafety/ClassInstanceVariable
         def self.entries
-          @entries ||= Concurrent::Map.new
+          @entries ||= {}
         end
         private_class_method :entries
 
         def self.in_flight
-          @in_flight ||= Concurrent::Map.new
+          @in_flight ||= {}
         end
         private_class_method :in_flight
         # rubocop:enable ThreadSafety/ClassInstanceVariable
 
         Entry = Data.define(:result, :expires_at)
         DEFAULT_TTL_SECONDS = 3600
+
+        ##
+        # Coordinates in-flight fiber coalescing for identical cache keys.
+        class InFlight
+          def initialize
+            @notification = Async::Notification.new
+            @completed = false
+            @result = nil
+            @error = nil
+          end
+
+          # @return [Object]
+          def wait
+            return @result if @completed && !@error
+            raise @error if @completed && @error
+
+            @notification.wait
+            raise @error if @error
+
+            @result
+          end
+
+          # @param result [Object]
+          # @return [void]
+          def success!(result)
+            @result = result
+            @completed = true
+            @notification.signal(result)
+          end
+
+          # @param error [Exception]
+          # @return [void]
+          def failure!(error)
+            @error = error
+            @completed = true
+            @notification.signal(error)
+          end
+        end
+        private_constant :InFlight
 
         class << self
           # Converts feed-provided minutes to seconds with a safe fallback.
@@ -44,26 +83,12 @@ module Html2rss
           # @param cacheable [Boolean, Proc]
           # @yieldreturn [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # rubocop:disable-next Metrics/MethodLength
-          def fetch(key, ttl_seconds:, cacheable: true)
+          def fetch(key, ttl_seconds:, cacheable: true, &)
             entry = read_entry(key)
             return entry.result if fresh?(entry)
+            return in_flight[key].wait if in_flight.key?(key)
 
-            ivar = Concurrent::IVar.new
-            actual_ivar = in_flight.put_if_absent(key, ivar)
-            return actual_ivar.value! if actual_ivar
-
-            begin
-              result = yield
-              write_entry(key, ttl_seconds, result) if cacheable_result?(cacheable, result)
-              ivar.set(result)
-              result
-            rescue StandardError => error
-              ivar.fail(error)
-              raise
-            ensure
-              in_flight.delete_pair(key, ivar)
-            end
+            execute_fetch(key, ttl_seconds, cacheable, &)
           end
 
           # @param reason [String]
@@ -114,20 +139,34 @@ module Html2rss
 
           def prune_expired
             now = Time.now.utc
-            entries.each_pair { |k, v| entries.delete(k) if v && now >= v.expires_at }
+            entries.delete_if { |_k, v| v && now >= v.expires_at }
+          end
+
+          def execute_fetch(key, ttl_seconds, cacheable) # rubocop:disable Metrics/MethodLength
+            job = in_flight[key] = InFlight.new
+            begin
+              result = yield
+              write_entry(key, ttl_seconds, result) if cacheable_result?(cacheable, result)
+              job.success!(result)
+              result
+            rescue Exception => error # rubocop:disable Lint/RescueException -- Async::Stop inherits from Exception
+              job.failure!(error)
+              raise
+            ensure
+              in_flight.delete(key)
+            end
           end
 
           def prune_excess(max)
             excess = entries.size - (max * 0.9).to_i
             return if excess <= 0
 
-            entries_by_expiration.first(excess).each { entries.delete(it.first) }
+            entries_by_expiration.first(excess).each { |pair| entries.delete(pair.first) }
           end
 
           def entries_by_expiration
-            candidates = []
-            entries.each_pair { |k, v| candidates << [k, v.expires_at] if v&.expires_at }
-            candidates.sort_by!(&:last)
+            entries.select { |_k, v| v&.expires_at }
+                   .sort_by { |_k, v| v.expires_at }
           end
 
           # @param cacheable [Boolean, Proc]

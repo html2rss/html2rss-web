@@ -28,7 +28,7 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
       HTML2RSS_TOTAL_TIMEOUT_SECONDS: 50
-      RACK_TIMEOUT_SERVICE_TIMEOUT: 55
+      REQUEST_TIMEOUT_SECONDS: 55
       BOTASAURUS_SCRAPE_TIMEOUT_SECONDS: 45
       BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS: 30
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
@@ -39,14 +39,6 @@ services:
     #     source: ./config/feeds.yml
     #     target: /app/config/feeds.yml
     #     read_only: true
-
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - "${HOME}/.docker/config.json:/config.json"
-    command: --cleanup --interval 7200
 
   botasaurus:
     image: html2rss/botasaurus-scrape-api:latest
