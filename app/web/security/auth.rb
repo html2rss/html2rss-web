@@ -47,6 +47,18 @@ module Html2rss
           with_validated_token(token, decoded.url, decoded: decoded) { |validated| validated }
         end
 
+        # @param request [Rack::Request]
+        # @return [String, nil]
+        def extract_token(request)
+          auth_header = request.env['HTTP_AUTHORIZATION']
+          return unless auth_header&.start_with?('Bearer ')
+
+          token = auth_header.delete_prefix('Bearer ')
+          return nil if token.empty? || token.length > 1024
+
+          token
+        end
+
         private
 
         # @param request [Rack::Request]
@@ -64,18 +76,6 @@ module Html2rss
           assign_request_context_actor(account[:username])
           SecurityLogger.log_auth_success(account[:username], request.ip)
           account
-        end
-
-        # @param request [Rack::Request]
-        # @return [String, nil]
-        def extract_token(request)
-          auth_header = request.env['HTTP_AUTHORIZATION']
-          return unless auth_header&.start_with?('Bearer ')
-
-          token = auth_header.delete_prefix('Bearer ')
-          return nil if token.empty? || token.length > 1024
-
-          token
         end
 
         # Keeps success/failure logging in one branch so authenticate remains

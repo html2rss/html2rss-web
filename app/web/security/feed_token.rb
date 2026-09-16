@@ -185,7 +185,7 @@ module Html2rss
           def signatures_match?(first, second)
             return false unless first && second && first.bytesize == second.bytesize
 
-            first.each_byte.zip(second.each_byte).reduce(0) { |acc, (a, b)| acc | (a ^ b) }.zero?
+            OpenSSL.secure_compare(first, second)
           end
 
           # @param username [Object]

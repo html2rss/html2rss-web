@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'openssl'
 require 'time'
 
 module Html2rss
@@ -73,23 +74,11 @@ module Html2rss
             # @return [Boolean]
             def env_health_check_token?(request)
               configured_token = RuntimeEnv.health_check_token.to_s
-              provided_token = bearer_token(request)
+              provided_token = Auth.extract_token(request)
               return false if configured_token.empty? || provided_token.nil?
               return false unless configured_token.bytesize == provided_token.bytesize
 
-              Rack::Utils.secure_compare(provided_token, configured_token)
-            end
-
-            # @param request [Rack::Request]
-            # @return [String, nil]
-            def bearer_token(request)
-              auth_header = request.env['HTTP_AUTHORIZATION']
-              return unless auth_header&.start_with?('Bearer ')
-
-              token = auth_header.delete_prefix('Bearer ')
-              return if token.empty?
-
-              token
+              OpenSSL.secure_compare(provided_token, configured_token)
             end
 
             # @return [void]
