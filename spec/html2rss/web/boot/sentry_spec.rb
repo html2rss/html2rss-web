@@ -2,8 +2,6 @@
 
 require 'spec_helper'
 
-require_relative '../../../../app'
-
 RSpec.describe Html2rss::Web::Boot::Sentry do
   let(:sentry_dsn) { 'https://example@sentry.invalid/1' }
   let(:captured_config) do

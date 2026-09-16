@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::ErrorClassifier do
   def stub_no_feed_items_extracted

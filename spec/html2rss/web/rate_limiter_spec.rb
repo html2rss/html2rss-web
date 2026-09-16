@@ -3,7 +3,6 @@
 require 'spec_helper'
 require 'rack/mock'
 require 'climate_control'
-require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::RateLimiter do
   let(:inner_app) { ->(_env) { [200, { 'Content-Type' => 'text/plain' }, ['ok']] } }

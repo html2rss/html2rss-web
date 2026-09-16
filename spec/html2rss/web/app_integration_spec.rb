@@ -6,7 +6,6 @@ require 'cgi'
 require 'climate_control'
 require 'json'
 require 'securerandom'
-require_relative '../../../app'
 
 RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpec/MultipleMemoizedHelpers
   include Rack::Test::Methods

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::FormatNegotiation do
   def rack_request(path:, accept: nil)

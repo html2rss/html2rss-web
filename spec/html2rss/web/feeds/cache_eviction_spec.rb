@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app'
 
 # rubocop:disable-next RSpec/ExampleLength
 RSpec.describe 'Cache Eviction' do

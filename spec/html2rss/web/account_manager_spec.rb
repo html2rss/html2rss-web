@@ -2,8 +2,6 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/web/security/account_manager'
-
 RSpec.describe Html2rss::Web::AccountManager do
   describe '.get_account' do
     it 'returns account by token' do

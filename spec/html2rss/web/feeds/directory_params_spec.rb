@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::DirectoryParams do
   it 'matches when params equal defaults', :aggregate_failures do

@@ -2,7 +2,6 @@
 
 if ENV['OPENAPI']
   require 'rspec/openapi'
-  require_relative '../../config/version'
 
   RSpec::OpenAPI.path = 'public/openapi.yaml'
   RSpec::OpenAPI.title = 'html2rss-web API'

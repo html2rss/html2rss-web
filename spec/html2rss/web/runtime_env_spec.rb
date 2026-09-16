@@ -3,8 +3,6 @@
 require 'spec_helper'
 require 'climate_control'
 
-require_relative '../../../app/web/config/runtime_env'
-
 RSpec.describe Html2rss::Web::RuntimeEnv do
   describe '.admin_access_token' do
     it 'returns the configured access token when present' do

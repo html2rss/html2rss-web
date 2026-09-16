@@ -3,10 +3,6 @@
 require 'spec_helper'
 require 'rack/mock'
 
-require_relative '../../../app/web/request/request_context'
-require_relative '../../../app/web/security/log_sanitizer'
-require_relative '../../../app/web/request/request_context_middleware'
-
 RSpec.describe Html2rss::Web::RequestContextMiddleware do
   it 'sets route group in request context' do
     response = Rack::MockRequest.new(middleware_app).get('/api/v1/health')

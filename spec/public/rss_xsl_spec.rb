@@ -2,7 +2,6 @@
 
 require 'spec_helper'
 require 'nokogiri'
-require_relative '../../app'
 
 # rubocop:disable-next RSpec/MultipleExpectations
 RSpec.describe 'public/rss.xsl' do

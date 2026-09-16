@@ -3,8 +3,6 @@
 require 'spec_helper'
 require 'climate_control'
 
-require_relative '../../../../app'
-
 RSpec.describe Html2rss::Web::Boot::Setup do
   let(:boot_secret_key) { 'secret-key-123456789012345678901234' }
   let(:sentry_dsn) { 'https://example@sentry.invalid/1' }
