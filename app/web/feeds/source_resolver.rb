@@ -8,8 +8,6 @@ module Html2rss
       ##
       # Resolves static and token-backed requests into shared generator inputs.
       module SourceResolver
-        SUPPORTED_STRATEGIES = Set.new(Html2rss::RequestService.strategy_names.map(&:to_s)).freeze
-
         class << self
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -134,7 +132,9 @@ module Html2rss
             strategy = feed_token.strategy.to_s.strip
             return default_strategy_name if strategy.empty?
             return strategy if strategy == default_strategy_name
-            raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless SUPPORTED_STRATEGIES.include?(strategy)
+            unless Html2rss::RequestService.strategy_registered?(strategy)
+              raise Html2rss::Web::BadRequestError, 'Unsupported strategy'
+            end
 
             strategy
           end

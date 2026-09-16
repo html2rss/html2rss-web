@@ -43,8 +43,13 @@ RSpec.describe 'Dockerized API smoke test', :docker do
   end
 
   def expect_json_feed_response(path)
-    feed_response, = get_response(path, headers: { 'Accept' => 'application/feed+json' })
-    expect(feed_response['Content-Type']).to include('application/feed+json')
+    feed_response, body = get_response(path, headers: { 'Accept' => 'application/feed+json' })
+    content_type = feed_response['Content-Type'].to_s
+    unless content_type.include?('application/feed+json')
+      raise RSpec::Expectations::ExpectationNotMetError,
+            "expected Content-Type to include application/feed+json, got #{content_type.inspect} " \
+            "(status=#{feed_response.code}, body=#{body.to_s[0, 240].inspect})"
+    end
     expect(feed_response.code).not_to eq('401')
   end
 
