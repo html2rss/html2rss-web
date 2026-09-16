@@ -9,9 +9,6 @@ module Html2rss
     # progressively migrate away from dynamic hash contracts.
     module ConfigSnapshot
       ##
-      # Immutable stylesheet entry model.
-      StylesheetEntry = Data.define(:href, :media, :type)
-      ##
       # Immutable auth account model.
       AuthAccount = Data.define(:username, :token, :allowed_urls)
       ##
@@ -37,6 +34,23 @@ module Html2rss
             feeds: feeds_hash.freeze,
             accounts: accounts.freeze
           )
+        end
+
+        # Deep-duplicates nested config structures to avoid mutating shared data.
+        #
+        # @param value [Object]
+        # @return [Object]
+        def deep_dup(value)
+          case value
+          when Hash
+            deep_dup_hash(value)
+          when Array
+            deep_dup_array(value)
+          when String
+            value.dup
+          else
+            value
+          end
         end
 
         private
@@ -84,21 +98,6 @@ module Html2rss
             { username: account.username, token: account.token, allowed_urls: account.allowed_urls.dup }
           end
           auth
-        end
-
-        # @param value [Object]
-        # @return [Object]
-        def deep_dup(value)
-          case value
-          when Hash
-            deep_dup_hash(value)
-          when Array
-            deep_dup_array(value)
-          when String
-            value.dup
-          else
-            value
-          end
         end
 
         # @param value [Hash]
