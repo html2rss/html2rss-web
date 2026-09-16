@@ -2,10 +2,6 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/web/config/runtime_env'
-require_relative '../../../app/web/telemetry/app_logger'
-require_relative '../../../app/web/telemetry/sentry_logs'
-
 RSpec.describe Html2rss::Web::SentryLogs do
   let(:logger_class) do
     Struct.new(:captured_call) do

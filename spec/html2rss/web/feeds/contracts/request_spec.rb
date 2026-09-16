@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::Contracts::Request do
   let(:request) { instance_double(Rack::Request, params: { 'page' => '2' }) }

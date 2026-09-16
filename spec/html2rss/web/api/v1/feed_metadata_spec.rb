@@ -3,8 +3,6 @@
 require 'spec_helper'
 require 'digest'
 
-require_relative '../../../../../app'
-
 RSpec.describe Html2rss::Web::Api::V1::FeedMetadata do
   let(:account) { { username: 'alice', token: 'account-token' } }
   let(:name) { 'Example Feed' }

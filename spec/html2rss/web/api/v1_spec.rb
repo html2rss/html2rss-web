@@ -2,7 +2,6 @@
 
 require 'spec_helper'
 require 'climate_control'
-require_relative '../../../../app'
 
 RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   include Rack::Test::Methods

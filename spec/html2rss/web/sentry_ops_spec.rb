@@ -2,11 +2,6 @@
 
 require 'spec_helper'
 
-require_relative '../../../app/web/config/runtime_env'
-require_relative '../../../app/web/errors/error_classifier'
-require_relative '../../../app/web/telemetry/observability'
-require_relative '../../../app/web/telemetry/sentry_ops'
-
 RSpec.describe Html2rss::Web::SentryOps do
   let(:capture_store) { {} }
   let(:diagnostics) do

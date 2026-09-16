@@ -3,13 +3,6 @@
 require 'spec_helper'
 require 'stringio'
 
-require_relative '../../../app/web/request/request_context'
-require_relative '../../../app/web/security/security_logger'
-require_relative '../../../app/web/telemetry/app_logger'
-require_relative '../../../app/web/telemetry/log_event'
-require_relative '../../../app/web/security/log_sanitizer'
-require_relative '../../../app/web/telemetry/observability'
-
 RSpec.describe Html2rss::Web::LogSanitizer do
   let(:io) { StringIO.new }
   let(:test_logger) { Logger.new(io).tap { |log| log.formatter = Html2rss::Web::AppLogger.send(:method, :format_entry) } }

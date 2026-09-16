@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::Service do
   subject(:result) { described_class.call(resolved_source) }

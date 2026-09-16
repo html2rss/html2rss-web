@@ -3,8 +3,6 @@
 require 'spec_helper'
 require 'stringio'
 
-require_relative '../../../app'
-
 RSpec.describe Html2rss::Web::ErrorResponder do
   def build_request(path:, accept: nil, target: nil, rack_errors: StringIO.new)
     env = { 'rack.errors' => rack_errors, Html2rss::Web::RequestTarget::ENV_KEY => target }

@@ -3,8 +3,6 @@
 require 'spec_helper'
 require 'zeitwerk'
 
-require_relative '../../../../app/web/boot/development_reloader'
-
 RSpec.describe Html2rss::Web::Boot::DevelopmentReloader do
   let(:loader) { instance_double(Zeitwerk::Loader, reload: nil) }
   let(:rack_app) { ->(_env) { [200, { 'Content-Type' => 'text/plain' }, ['ok']] } }

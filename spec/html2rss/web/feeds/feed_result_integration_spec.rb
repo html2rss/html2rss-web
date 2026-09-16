@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../../../app'
 
 RSpec.describe 'FeedResult pipeline integration' do
   let(:page_url) { 'https://example.com/integration-feed' }

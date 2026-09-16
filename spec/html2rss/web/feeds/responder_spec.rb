@@ -3,7 +3,6 @@
 require 'spec_helper'
 require 'climate_control'
 require 'rack'
-require_relative '../../../../app'
 
 RSpec.describe Html2rss::Web::Feeds::Responder do
   let(:response) { Rack::Response.new }

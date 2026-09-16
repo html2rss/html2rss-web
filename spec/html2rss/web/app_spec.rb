@@ -4,8 +4,6 @@ require 'spec_helper'
 require 'climate_control'
 require 'securerandom'
 
-require_relative '../../../app'
-
 RSpec.describe Html2rss::Web::App do
   def json_feed_response_tuple
     [last_response.status, last_response.headers['Content-Type'], JSON.parse(last_response.body)]

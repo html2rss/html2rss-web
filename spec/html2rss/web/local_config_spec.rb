@@ -4,8 +4,6 @@ require 'spec_helper'
 require 'climate_control'
 require 'tempfile'
 
-require_relative '../../../app'
-
 RSpec.describe Html2rss::Web::LocalConfig do
   let(:empty_snapshot) { Html2rss::Web::ConfigSnapshot::Snapshot.new(global: {}, feeds: {}, accounts: []) }
 

@@ -3,11 +3,6 @@
 require 'spec_helper'
 require 'climate_control'
 
-require_relative '../../../app/web/config/environment_validator'
-require_relative '../../../app/web/config/flags'
-require_relative '../../../app/web/security/account_manager'
-require_relative '../../../app/web/telemetry/observability'
-
 RSpec.describe Html2rss::Web::EnvironmentValidator do
   def stub_validation_logging
     allow(Html2rss::Web::Observability).to receive(:emit)

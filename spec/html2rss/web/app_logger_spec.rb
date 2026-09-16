@@ -3,10 +3,6 @@
 require 'spec_helper'
 require 'stringio'
 
-require_relative '../../../app/web/config/runtime_env'
-require_relative '../../../app/web/telemetry/sentry_logs'
-require_relative '../../../app/web/telemetry/app_logger'
-
 RSpec.describe Html2rss::Web::AppLogger do
   let(:io) { StringIO.new }
   let(:test_logger) { Logger.new(io).tap { |log| log.formatter = described_class.send(:method, :format_entry) } }
