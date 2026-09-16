@@ -17,7 +17,8 @@ module Html2rss
           ftc.gov/press-releases
           icrc.org/news
         ].freeze
-        private_constant :COLD_SEED_IDS
+        COLD_SEED_RANK = COLD_SEED_IDS.each_with_index.to_h.freeze
+        private_constant :COLD_SEED_IDS, :COLD_SEED_RANK
 
         class << self
           ##
@@ -54,8 +55,7 @@ module Html2rss
           # @param id [String]
           # @return [Integer]
           def cold_seed_rank(id)
-            index = COLD_SEED_IDS.index(id)
-            index.nil? ? COLD_SEED_IDS.size : index
+            COLD_SEED_RANK.fetch(id, COLD_SEED_IDS.size)
           end
         end
       end

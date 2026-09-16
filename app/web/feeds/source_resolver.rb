@@ -8,6 +8,8 @@ module Html2rss
       ##
       # Resolves static and token-backed requests into shared generator inputs.
       module SourceResolver
+        SUPPORTED_STRATEGIES = Set.new(Html2rss::RequestService.strategy_names.map(&:to_s)).freeze
+
         class << self
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -88,8 +90,8 @@ module Html2rss
           # @param params [Hash{Object=>Object}]
           # @return [String]
           def static_cache_identity(feed_name, params)
-            normalized_params = params.to_h.sort_by(&:to_s)
-            digest = Digest::SHA256.hexdigest(Marshal.dump(normalized_params))
+            bag = params.to_h
+            digest = bag.empty? ? 'empty' : Digest::SHA256.hexdigest(Marshal.dump(bag.sort_by(&:to_s)))
             "static:#{feed_name}:#{digest}"
           end
 
@@ -132,9 +134,7 @@ module Html2rss
             strategy = feed_token.strategy.to_s.strip
             return default_strategy_name if strategy.empty?
             return strategy if strategy == default_strategy_name
-
-            supported = Html2rss::RequestService.strategy_names.map(&:to_s)
-            raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless supported.include?(strategy)
+            raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless SUPPORTED_STRATEGIES.include?(strategy)
 
             strategy
           end
