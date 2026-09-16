@@ -2,7 +2,6 @@
 
 require 'erb'
 require 'yaml'
-require_relative 'runtime_env'
 begin
   require 'html2rss/configs'
 rescue LoadError => error
@@ -135,14 +134,7 @@ module Html2rss
         # @param value [Object]
         # @return [Object]
         def deep_dup(value)
-          case value
-          when Hash
-            value.transform_values { |val| deep_dup(val) }
-          when Array
-            value.map { |element| deep_dup(element) }
-          else
-            value
-          end
+          ConfigSnapshot.deep_dup(value)
         end
       end
     end
