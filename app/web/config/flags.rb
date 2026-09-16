@@ -68,8 +68,10 @@ module Html2rss
         )
       }.freeze
       MANAGED_ENV_PREFIXES = %w[
-        AUTO_SOURCE_ ASYNC_FEED_REFRESH_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
+        AUTO_SOURCE_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
       ].freeze
+      KNOWN_ENV_KEYS = Set.new(DEFINITIONS.values.map(&:env_key)).freeze
+      DEV_OR_TEST_ENVS = Set['development', 'test'].freeze
 
       class << self
         # @return [Boolean]
@@ -181,9 +183,8 @@ module Html2rss
 
         # @return [void]
         def validate_unknown_feature_keys!
-          known = DEFINITIONS.values.map(&:env_key)
           unknown = ENV.keys.select do |key|
-            MANAGED_ENV_PREFIXES.any? { |prefix| key.start_with?(prefix) } && !known.include?(key)
+            MANAGED_ENV_PREFIXES.any? { |prefix| key.start_with?(prefix) } && !KNOWN_ENV_KEYS.include?(key)
           end
           return if unknown.empty?
 
@@ -192,8 +193,7 @@ module Html2rss
 
         # @return [Boolean]
         def development_or_test?
-          env = ENV.fetch('RACK_ENV', 'development')
-          %w[development test].include?(env)
+          DEV_OR_TEST_ENVS.include?(ENV.fetch('RACK_ENV', 'development'))
         end
       end
     end
