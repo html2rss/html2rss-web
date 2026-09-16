@@ -9,6 +9,7 @@ module Html2rss
     # Sanitizes request paths and log payloads before they are emitted.
     module LogSanitizer
       FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/?]+?)(\.(?:json|xml|rss))?\z}
+      PATH_KEYS = Set['endpoint', 'path'].freeze
 
       class << self
         # @param path [String, nil]
@@ -51,7 +52,7 @@ module Html2rss
         # @param key [Object]
         # @return [Boolean]
         def path_key?(key)
-          %w[endpoint path].include?(key.to_s)
+          PATH_KEYS.include?(key.to_s)
         end
 
         # @param value [Object]

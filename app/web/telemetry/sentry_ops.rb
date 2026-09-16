@@ -10,10 +10,10 @@ module Html2rss
     # Separate from {SentryLogs} (opt-in via +SENTRY_ENABLE_LOGS+). Uses
     # {ErrorClassifier::Decision} codes only.
     module SentryOps
-      OPERATIONAL_CODES = %w[
-        INTERNAL_SERVER_ERROR
-        SCRAPER_UNAVAILABLE
-        SERVICE_UNAVAILABLE
+      OPERATIONAL_CODES = Set[
+        'INTERNAL_SERVER_ERROR',
+        'SCRAPER_UNAVAILABLE',
+        'SERVICE_UNAVAILABLE'
       ].freeze
       SERVICE_NAME = 'html2rss-web'
 

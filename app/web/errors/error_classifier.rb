@@ -11,6 +11,8 @@ module Html2rss
     # Acts as the single source of truth for error-to-HTTP mapping across both
     # XML feed and JSON API endpoints.
     module ErrorClassifier # rubocop:disable Metrics/ModuleLength
+      QUEUE_OR_BOOT_PHASES = Set['queue', 'boot'].freeze
+
       ##
       # Immutable HTTP decision for a classified error.
       Decision = Data.define(
@@ -259,7 +261,7 @@ module Html2rss
            return false unless timed_out
 
            phase = timed_out.respond_to?(:timeout_phase) ? timed_out.timeout_phase : nil
-           %w[queue boot].include?(phase)
+           QUEUE_OR_BOOT_PHASES.include?(phase)
          }, SERVICE_UNAVAILABLE],
         [lambda { |c, _|
            # Gem wall-clock timeout (Botasaurus 504 / HTTPX timeout) — not Timeout::Error.

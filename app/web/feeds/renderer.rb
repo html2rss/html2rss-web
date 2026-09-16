@@ -9,6 +9,8 @@ module Html2rss
       ##
       # Builds feed HTTP envelopes: status, headers, and serialized bodies.
       module Renderer # rubocop:disable Metrics/ModuleLength
+        PLAIN_RESPONSE_STATUSES = Set[:empty, :error].freeze
+
         class << self # rubocop:disable Metrics/ClassLength
           # Renders a RenderResult and configures the HTTP response headers and status.
           #
@@ -134,7 +136,7 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Boolean]
           def plain_response?(result)
-            %i[empty error].include?(result.status)
+            PLAIN_RESPONSE_STATUSES.include?(result.status)
           end
 
           # @param response [Rack::Response]
@@ -171,7 +173,7 @@ module Html2rss
           # @return [void]
           def vary(response, *fields)
             existing = response['Vary'].to_s.split(',').map(&:strip).reject(&:empty?)
-            response['Vary'] = (existing + fields).uniq.join(', ')
+            response['Vary'] = (existing + fields).to_set.join(', ')
           end
 
           # @param response [Rack::Response]
