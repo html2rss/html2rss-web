@@ -3,7 +3,6 @@
 require 'rack/request'
 require 'securerandom'
 require 'time'
-require_relative '../security/log_sanitizer'
 
 module Html2rss
   module Web

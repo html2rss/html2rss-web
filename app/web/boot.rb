@@ -18,6 +18,7 @@ module Html2rss
           @mutex.synchronize do
             return @loader if @setup
 
+            require_relative '../../config/version'
             @loader ||= build_loader
             @loader.enable_reloading if reloadable
             @loader.setup
@@ -63,6 +64,12 @@ module Html2rss
           new_loader.inflector.inflect('api_v1' => 'ApiV1')
         end
 
+        ##
+        # Flat utility dirs collapse into +Html2rss::Web+ (e.g. +Auth+,
+        # +RateLimiter+) rather than nested namespaces. Nested dirs under
+        # +app/web+ (+api+, +boot+, +catalog+, +feeds+, +routes+) keep their
+        # own modules.
+        #
         # @return [Array<String>]
         def collapsed_web_dirs
           %w[config errors request security telemetry].map do |dir|

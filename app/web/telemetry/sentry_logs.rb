@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative '../security/log_sanitizer'
-
 module Html2rss
   module Web
     ##
@@ -9,8 +7,11 @@ module Html2rss
     # enabled for the current runtime.
     module SentryLogs
       OMIT = Object.new.freeze
-      ALLOWED_LEVELS = %i[debug info warn error fatal].freeze
-      SENSITIVE_ATTRIBUTE_KEYS = %w[actor email ip remote_ip user_agent username x_forwarded_for].freeze
+      ALLOWED_LEVELS = Set[:debug, :info, :warn, :error, :fatal].freeze
+      ALLOWED_LEVEL_STRINGS = Set['debug', 'info', 'warning', 'warn', 'error', 'fatal'].freeze
+      SENSITIVE_ATTRIBUTE_KEYS = Set[
+        'actor', 'email', 'ip', 'remote_ip', 'user_agent', 'username', 'x_forwarded_for'
+      ].freeze
       BREADCRUMB_KEYS = %i[event_name security_event outcome request_id route_group strategy component details].freeze
       BREADCRUMB_CATEGORY_KEYS = %i[event_name security_event component].freeze
       BREADCRUMB_MESSAGE_KEYS = %i[message event_name security_event component].freeze
@@ -98,7 +99,7 @@ module Html2rss
         def breadcrumb_level(payload)
           requested_level = payload.fetch(:level, 'info').to_s.downcase
           return 'warning' if requested_level == 'warn'
-          return requested_level if ALLOWED_LEVELS.map(&:to_s).include?(requested_level)
+          return requested_level if ALLOWED_LEVEL_STRINGS.include?(requested_level)
 
           'info'
         end
