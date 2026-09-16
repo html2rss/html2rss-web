@@ -20,9 +20,7 @@ module Html2rss
           def match?(defaults, params)
             default_bag = normalize_bag(defaults)
             param_bag = normalize_bag(params)
-            return false unless (param_bag.keys - default_bag.keys).empty?
-
-            default_bag.merge(param_bag) == default_bag
+            param_bag.all? { |key, value| default_bag.key?(key) && default_bag[key] == value }
           end
 
           private
