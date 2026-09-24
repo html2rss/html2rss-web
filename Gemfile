@@ -4,8 +4,9 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-gem 'html2rss', '~> 0.30'
-# gem 'html2rss', github: 'html2rss/html2rss', branch: 'master'
+# Pinned by revision, not by branch. This ref is feat/suggest-selector-candidates.
+# Bump it deliberately; do not swap it for `branch:` or a rubygems constraint.
+gem 'html2rss', github: 'html2rss/html2rss', ref: '09d1b7964eaa3b5c50abf1f07b17d5042675f6db'
 gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 # Use these instead of the two above (uncomment them) when developing locally:

@@ -63,3 +63,4 @@ frontend/.astro
 
 # Local agent artifacts
 /.agents/
+.agents/plan

@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useFeedCreation } from './useFeedCreation';
-import { decideJourney } from './decideJourney';
+import { decideJourney, type UnresolvedWorkspace } from './decideJourney';
 import { clearFeedDraftState, loadFeedDraftState, saveFeedDraftState } from '../utils/feedWorkflowStorage';
 import { expandCreateUrl } from '../utils/url';
 import type { FeedCreationError } from '../api/contracts';
+import type { StudioSelectors } from '../studio/selectorDraft';
+import { isFeedCreationError } from '../feeds/feedsService';
 import { COPY } from '../journey/copy';
 import type { AppRoute } from '../routes/appRoute';
 import type { MayCreateResult } from '../session';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
+const EXTRACTION_EMPTY = 'EXTRACTION_EMPTY';
 
 interface RouteNavigationOptions {
   replace?: boolean;
@@ -18,6 +21,7 @@ export interface FeedFlowDependencies {
   token: string | undefined;
   isLoading: boolean;
   feedCreationEnabled: boolean;
+  isStudioEnabled: boolean;
   mayCreate: (accessToken?: string) => MayCreateResult;
   saveToken: (token: string) => Promise<void>;
   clearToken: () => void;
@@ -33,6 +37,7 @@ export function useFeedFlow({
   token,
   isLoading,
   feedCreationEnabled,
+  isStudioEnabled,
   mayCreate,
   saveToken,
   clearToken,
@@ -56,8 +61,9 @@ export function useFeedFlow({
   const [tokenError, setTokenError] = useState('');
   const [bookmarkletNotice, setBookmarkletNotice] = useState('');
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
+  const [unresolved, setUnresolved] = useState<UnresolvedWorkspace | undefined>();
 
-  const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
+  const routePrefillUrl = route.kind === 'create' || route.kind === 'token' ? route.prefillUrl : undefined;
   const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
   const hasAutoSubmittedReference = useRef(false);
   const previousRouteKindReference = useRef(route.kind);
@@ -89,6 +95,13 @@ export function useFeedFlow({
     });
     setFeedFieldErrors((previous) => ({ ...previous, url: '', form: '' }));
     clearError();
+  };
+
+  const openUnresolvedWorkspace = (url: string, notice: string) => {
+    setUnresolved({ url, notice });
+    setFeedFieldErrors(EMPTY_FEED_ERRORS);
+    clearError();
+    navigate({ kind: 'result' });
   };
 
   const attemptFeedCreation = async (accessToken: string) => {
@@ -123,6 +136,7 @@ export function useFeedFlow({
       setFeedFormData((previous) => ({ ...previous, url: normalizedUrl }));
       const createdResult = await createFeed(normalizedUrl, accessToken);
       clearFeedDraftState();
+      setUnresolved(undefined);
       navigate({ kind: 'result', feedToken: createdResult.feed.feed_token });
       setTokenError('');
       return true;
@@ -136,6 +150,11 @@ export function useFeedFlow({
         if (route.kind !== 'token') navigate({ kind: 'token', prefillUrl: normalizedUrl });
         setTokenError(COPY.tokenRejected);
         setFeedFieldErrors(EMPTY_FEED_ERRORS);
+        return false;
+      }
+
+      if (canRecoverEmptyExtraction(failure, isStudioEnabled, accessToken)) {
+        openUnresolvedWorkspace(normalizedUrl, failure.message);
         return false;
       }
 
@@ -191,16 +210,23 @@ export function useFeedFlow({
     void attemptFeedCreation(token ?? '');
   }, [feedFormData.url, isLoading, mayCreate, navigate, route.kind, token]);
 
-  // Recover unmatched result routes onto a remounted create view.
+  // Keep the hash aligned with in-memory result; only bounce empty deep links to create.
   useEffect(() => {
     if (route.kind !== 'result') return;
 
-    const isMatched = Boolean(result && result.feed.feed_token === route.feedToken);
-    if (isMatched) return;
+    if (result) {
+      if (result.feed.feed_token === route.feedToken) return;
+      // Studio re-generate commits the new token before navigate runs; follow memory, do not clear.
+      navigate({ kind: 'result', feedToken: result.feed.feed_token }, { replace: true });
+      return;
+    }
+
+    // Unresolved workspace is in-memory only — cold `#/result` without it recovers to create.
+    if (!route.feedToken && unresolved) return;
 
     // Do not carry a prefill URL — that would re-trigger auto-submit and bounce back to result.
     navigate({ kind: 'create' }, { replace: true });
-  }, [navigate, result, route]);
+  }, [navigate, result, route, unresolved]);
 
   useEffect(() => {
     const previousKind = previousRouteKindReference.current;
@@ -215,6 +241,7 @@ export function useFeedFlow({
     if (!didKindChangeToCreate && !isSameKindCreateEntry) return;
 
     clearResult();
+    setUnresolved(undefined);
     setTokenError('');
     setTokenDraft('');
     if (isSameKindCreateEntry) {
@@ -231,6 +258,44 @@ export function useFeedFlow({
     setFocusCreateComposerKey((current) => current + 1);
   }, [clearError, clearResult, createEntryKey, feedFieldErrors.form, route]);
 
+  const sourceUrl = inMemorySourceUrl(feedFormData.url, result?.feed.url, unresolved?.url);
+
+  const generateFromStudio = async (selectors: StudioSelectors) => {
+    const expanded = expandCreateUrl(sourceUrl);
+    if ('error' in expanded) {
+      throw new Error(expanded.error === 'empty' ? COPY.urlRequired : COPY.invalidUrlFormat);
+    }
+
+    try {
+      const createdResult = await createFeed(expanded.ok, token ?? '', selectors);
+      clearFeedDraftState();
+      setUnresolved(undefined);
+      navigate({ kind: 'result', feedToken: createdResult.feed.feed_token });
+      setTokenError('');
+    } catch (submitError) {
+      if (!isFeedCreationError(submitError)) throw submitError;
+
+      if (submitError.kind === 'auth' || submitError.nextAction === 'enter_token') {
+        clearToken();
+        clearError();
+        setTokenDraft('');
+        if (route.kind !== 'token') navigate({ kind: 'token', prefillUrl: expanded.ok });
+        setTokenError(COPY.tokenRejected);
+        return;
+      }
+
+      // Keep unresolved workspace anchored when save still returns empty extraction.
+      if (canRecoverEmptyExtraction(submitError, isStudioEnabled, token ?? '') && unresolved) {
+        setUnresolved({ url: expanded.ok, notice: submitError.message });
+        clearError();
+        throw submitError;
+      }
+
+      clearError();
+      throw submitError;
+    }
+  };
+
   const viewModel = decideJourney({
     creationError,
     feedFieldErrors,
@@ -238,6 +303,7 @@ export function useFeedFlow({
     route,
     tokenError,
     result,
+    unresolved,
   });
 
   return {
@@ -272,12 +338,38 @@ export function useFeedFlow({
     },
     onCreateAnother: () => {
       clearResult();
+      setUnresolved(undefined);
       setFocusCreateComposerKey((current) => current + 1);
-      navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
+      // Keep the prior URL in the form; omit route prefill so the prefill effect
+      // does not clear hasAutoSubmitted and auto-resubmit an empty extraction.
+      hasAutoSubmittedReference.current = true;
+      navigate({ kind: 'create' });
     },
+    generateFromStudio,
     onRetryPreview: retryPreviewFetch,
+    sourceUrl,
     setBookmarkletNotice,
     setTokenDraft,
     setTokenError,
   };
+}
+
+function canRecoverEmptyExtraction(
+  failure: FeedCreationError,
+  isStudioEnabled: boolean,
+  accessToken: string
+): boolean {
+  return failure.code === EXTRACTION_EMPTY && isStudioEnabled && accessToken.trim().length > 0;
+}
+
+function inMemorySourceUrl(
+  formUrl: string,
+  pageUrl: string | undefined,
+  unresolvedUrl: string | undefined
+): string {
+  const fromForm = formUrl.trim();
+  if (fromForm) return fromForm;
+  const fromUnresolved = unresolvedUrl?.trim() ?? '';
+  if (fromUnresolved) return fromUnresolved;
+  return pageUrl?.trim() ?? '';
 }

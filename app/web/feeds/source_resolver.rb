@@ -8,8 +8,6 @@ module Html2rss
       ##
       # Resolves static and token-backed requests into shared generator inputs.
       module SourceResolver
-        SUPPORTED_STRATEGIES = Set.new(Html2rss::RequestService.strategy_names.map(&:to_s)).freeze
-
         class << self
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -63,7 +61,7 @@ module Html2rss
           # @param feed_token [Html2rss::Web::FeedToken]
           # @return [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           def build_token_source(feed_request, feed_token)
-            generator_input = token_generator_input(feed_token.url, resolved_strategy(feed_token))
+            generator_input = expanded_generator_input(feed_token)
             resolved_source(
               source_kind: :token,
               cache_identity: token_cache_identity(feed_request.token),
@@ -72,6 +70,20 @@ module Html2rss
               feed_name: nil,
               directory_defaults: {},
               request_params: {}
+            )
+          end
+
+          # Re-runs the full allowlist, including schema validation, against the wire
+          # document. Reached only after {#authorize_feed_token!} verified the signature.
+          #
+          # @param feed_token [Html2rss::Web::FeedToken]
+          # @return [Hash{Symbol=>Object}]
+          def expanded_generator_input(feed_token)
+            selectors = feed_token.selectors
+            GeneratorInput.for_token(
+              url: feed_token.url,
+              strategy: feed_token.strategy,
+              selectors: selectors.nil? ? nil : SelectorsDocument.from_verified_wire(selectors.to_wire)
             )
           end
 
@@ -126,36 +138,6 @@ module Html2rss
             return feed_token if UrlValidator.url_allowed?(account, feed_token.url)
 
             raise Html2rss::Web::ForbiddenError, 'Access Denied'
-          end
-
-          # @param feed_token [Html2rss::Web::FeedToken]
-          # @return [String]
-          def resolved_strategy(feed_token)
-            strategy = feed_token.strategy.to_s.strip
-            return default_strategy_name if strategy.empty?
-            return strategy if strategy == default_strategy_name
-            raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless SUPPORTED_STRATEGIES.include?(strategy)
-
-            strategy
-          end
-
-          # @param url [String]
-          # @param strategy [String]
-          # @return [Hash{Symbol=>Object}]
-          def token_generator_input(url, strategy)
-            LocalConfig.global.slice(:stylesheets, :headers).merge(
-              channel: { url: },
-              auto_source: {},
-              strategy: strategy.to_sym
-            )
-          end
-
-          # @return [String]
-          def default_strategy_name
-            configured = Html2rss::Config.default_strategy_name.to_s
-            return configured unless configured.strip.empty?
-
-            'auto'
           end
         end
       end

@@ -24,6 +24,13 @@ module Html2rss
           default: -> { development_or_test? },
           validator: nil
         ),
+        studio_enabled: Definition.new(
+          name: :studio_enabled,
+          env_key: 'STUDIO_ENABLED',
+          type: :boolean,
+          default: -> { development_or_test? },
+          validator: nil
+        ),
         config_catalog_enabled: Definition.new(
           name: :config_catalog_enabled,
           env_key: 'CONFIG_CATALOG_ENABLED',
@@ -68,7 +75,7 @@ module Html2rss
         )
       }.freeze
       MANAGED_ENV_PREFIXES = %w[
-        AUTO_SOURCE_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_
+        AUTO_SOURCE_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_ STUDIO_
       ].freeze
       KNOWN_ENV_KEYS = Set.new(DEFINITIONS.values.map(&:env_key)).freeze
       DEV_OR_TEST_ENVS = Set['development', 'test'].freeze
@@ -107,6 +114,11 @@ module Html2rss
         # @return [Boolean]
         def auto_source_enabled?
           fetch(:auto_source_enabled)
+        end
+
+        # @return [Boolean]
+        def studio_enabled?
+          fetch(:studio_enabled)
         end
 
         # Validates all known flags and managed env key prefixes.
@@ -191,9 +203,13 @@ module Html2rss
           raise ArgumentError, "Unknown feature flags: #{unknown.sort.join(', ')}"
         end
 
+        # An unset RACK_ENV is not development. {EnvironmentValidator} already treats
+        # it as production, so defaulting it to development here would open the studio
+        # and live-fetch surfaces on a deployment that merely forgot the variable.
+        #
         # @return [Boolean]
         def development_or_test?
-          DEV_OR_TEST_ENVS.include?(ENV.fetch('RACK_ENV', 'development'))
+          DEV_OR_TEST_ENVS.include?(ENV.fetch('RACK_ENV', nil))
         end
       end
     end

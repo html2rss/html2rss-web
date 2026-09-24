@@ -231,7 +231,8 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         Html2rss::Web::FeedToken,
         url: feed_url,
         username: account[:username],
-        strategy: 'default'
+        strategy: 'default',
+        selectors: nil
       )
 
       allow(Html2rss::Web::FeedToken::Codec).to receive(:decode).with(raw_token).and_return(escaped_token_payload)
@@ -377,17 +378,25 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       end
 
       it 'returns corrective extraction-empty failure when extraction is empty', :aggregate_failures do
-        stub_create_service_result(
-          status: :empty,
-          decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
-          cache_key: 'feed_result:create-empty',
-          empty_reason: 'content_extraction_empty'
-        )
+        stub_empty_extraction_create(cache_key: 'feed_result:create-empty')
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 
         expect(last_response.status).to eq(422)
         expect(json_body).to include('error' => include(extraction_empty_error_fields))
+      end
+
+      it 'returns EXTRACTION_EMPTY JSON in development instead of the exception page', :aggregate_failures do
+        stub_empty_extraction_create(cache_key: 'feed_result:create-empty-dev')
+
+        ClimateControl.modify('RACK_ENV' => 'development') do
+          post '/api/v1/feeds', request_payload.to_json, auth_headers
+        end
+
+        expect(last_response.status).to eq(422)
+        expect(last_response.content_type).to include('application/json')
+        expect(json_body).to include('error' => include(extraction_empty_error_fields))
+        expect(last_response.body).not_to include('DecidedError')
       end
 
       it 'preserves blocked-surface Decision on create fail-closed', :aggregate_failures do
@@ -446,6 +455,17 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       'next_action' => 'correct_input',
       'retry_action' => 'none'
     }
+  end
+
+  # @param cache_key [String]
+  # @return [void]
+  def stub_empty_extraction_create(cache_key:)
+    stub_create_service_result(
+      status: :empty,
+      decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY,
+      cache_key:,
+      empty_reason: 'content_extraction_empty'
+    )
   end
 
   # @param attrs [Hash{Symbol=>Object}]

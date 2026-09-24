@@ -25,13 +25,15 @@ module Html2rss
         # @param username [String]
         # @param url [String]
         # @param strategy [String, nil]
+        # @param selectors [Html2rss::Web::SelectorsDocument, nil]
         # @param expires_in [Integer] seconds (default: 10 years)
         # @return [String, nil] signed feed token when generation succeeds.
-        def generate_feed_token(username, url, strategy: nil, expires_in: FeedToken::DEFAULT_EXPIRY)
+        def generate_feed_token(username, url, strategy: nil, selectors: nil, expires_in: FeedToken::DEFAULT_EXPIRY)
           token = FeedToken::Signer.create(
             username: username,
             url: url,
             strategy: strategy,
+            selectors: selectors,
             expires_in: expires_in,
             secret_key: secret_key
           )

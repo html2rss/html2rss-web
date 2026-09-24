@@ -7,6 +7,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 - **Start here for contributors**: This document.
 - **Architecture & Request Lifecycle**: [docs/architecture.md](architecture.md)
 - **UI/Design rules**: [docs/design-system.md](design-system.md)
+- **Personas & surface ownership**: org workspace [`docs/personas.md`](../../docs/personas.md) (not this repo)
 - **Agent execution constraints**: [AGENTS.md](../AGENTS.md)
 - **Generated contract artifacts**: `public/openapi.yaml`
 - **Public-facing intro**: [README.md](../README.md)
@@ -38,28 +39,30 @@ Running the app directly on the host is not supported.
 
 ### Common Commands (Inside Dev Container)
 
-| Command                        | Purpose                                                    |
-| ------------------------------ | ---------------------------------------------------------- |
-| `make setup`                   | Install Ruby and Node dependencies.                        |
-| `make dev`                     | Run Ruby (port 4000) and frontend (port 4001) dev servers. |
-| `make ready`                   | Pre-commit gate: `make quick-check` + `bundle exec rspec`. |
+| Command                        | Purpose                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------- |
+| `make setup`                   | Install Ruby and Node dependencies.                                        |
+| `make dev`                     | Run Ruby (port 4000) and frontend (port 4001) dev servers.                 |
+| `make ready`                   | Pre-commit gate: `make quick-check` + `bundle exec rspec`.                 |
 | `make ci-ready`                | CI parity gate: `make ready` + `make openapi-verify` + frontend e2e smoke. |
-| `make test`                    | Run Ruby and frontend test suites.                         |
-| `make lint`                    | Run all linters.                                           |
-| `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.      |
-| `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.       |
-| `make openapi-verify`          | Verify generated OpenAPI and frontend client artifacts are current. |
-| `make openapi-lint`            | Lint OpenAPI with Redocly + Spectral.                      |
+| `make test`                    | Run Ruby and frontend test suites.                                         |
+| `make lint`                    | Run all linters.                                                           |
+| `make yard-verify-public-docs` | Enforce typed YARD docs for public methods in `app/`.                      |
+| `make openapi`                 | Regenerate `public/openapi.yaml` from request specs.                       |
+| `make openapi-verify`          | Verify generated OpenAPI and frontend client artifacts are current.        |
+| `make openapi-lint`            | Lint OpenAPI with Redocly + Spectral.                                      |
 
 ### Frontend pnpm Scripts
 
-| Command                 | Purpose                                      |
-| ----------------------- | -------------------------------------------- |
-| `pnpm run dev`          | Vite dev server with hot reload (port 4001). |
-| `pnpm run build`        | Build static assets into `frontend/dist/`.   |
-| `pnpm run lint`         | Run ESLint across the frontend workspace.    |
-| `pnpm run test:run`     | Unit tests (Vitest).                         |
-| `pnpm run test:contract`| Contract tests with MSW.                     |
+| Command                  | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `pnpm run dev`           | Vite dev server with hot reload (port 4001). |
+| `pnpm run build`         | Build static assets into `frontend/dist/`.   |
+| `pnpm run lint`          | Run ESLint across the frontend workspace.    |
+| `pnpm run test:run`      | All Vitest projects (Node unit + jsdom integration). |
+| `pnpm run test:unit`     | Node project: parsers, routes, drafts, storage, apiHttp. |
+| `pnpm run test:integration` | jsdom project: App, ConfigStudio, ResultDisplay, timer hooks. |
+| `pnpm run test:e2e`      | Playwright smoke (one worker).               |
 
 Development routing defaults:
 
@@ -76,7 +79,7 @@ To change or add API endpoints, follow this sequence:
 1. **Ruby Request Spec**: Define the new behavior or endpoint in `spec/html2rss/web/app_integration_spec.rb` or a dedicated request spec.
 2. **OpenAPI Generation**: Run `make openapi` inside the Dev Container to regenerate `public/openapi.yaml` from the spec metadata.
 3. **Verify Contract**: Run `make openapi-verify` and `make openapi-lint` to ensure the generated file matches the specs and is valid.
-4. **Frontend Client**: Keep generated client artifacts in `frontend/src/api/generated` aligned with `public/openapi.yaml`.
+4. **Frontend Client**: Regenerate with `make openapi-client` (`frontend/openapi-ts.config.ts`). Do not hand-edit `frontend/src/api/generated/**`. Only `frontend/src/api/http/*.ts` may value-import that tree; parsers own domain types after unwrap. JSON Feed preview stays `fetch(json_public_url)` and is not the SDK.
 
 Always verify the contract before committing API changes.
 
@@ -100,12 +103,13 @@ make ci-ready
 
 ### Testing Layers
 
-| Layer             | Tooling                  | Focus                                                |
-| ----------------- | ------------------------ | ---------------------------------------------------- |
-| Ruby API          | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
-| Frontend unit     | Vitest + Testing Library | Component rendering and hooks with mocked fetch.     |
-| Frontend contract | Vitest + MSW             | End-to-end fetch flows against mocked API responses. |
-| Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
+| Layer                  | Tooling                  | Focus                                                |
+| ---------------------- | ------------------------ | ---------------------------------------------------- |
+| Ruby API               | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
+| Frontend unit          | Vitest (Node)            | Parsers, routes, drafts, storage, apiHttp adapters.  |
+| Frontend integration   | Vitest (jsdom) + MSW     | App and ConfigStudio with real hooks; timer hooks.   |
+| Frontend e2e           | Playwright               | Stubbed SPA smoke: create/token/result/refine journeys. |
+| Docker smoke           | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
 
 ---
 
@@ -140,7 +144,7 @@ make ci-ready
 - Regenerate with `make openapi`.
 - Drift must fail with `make openapi-verify`.
 - Quality must fail with `make openapi-lint`.
-- Frontend generated client code under `frontend/src/api/generated` is machine-generated only.
+- Frontend generated client code under `frontend/src/api/generated` is machine-generated only (`make openapi-client`). Value-import it only from `frontend/src/api/http/*.ts`. The client `baseUrl` is `/api/v1` (same-origin); public OpenAPI `servers` stay unchanged. Domain types live in parsers after unwrap. JSON Feed preview is `fetch(json_public_url)`, not `renderFeedByToken`.
 
 ---
 
@@ -177,6 +181,7 @@ Search these pages for examples, plugins, and configuration options:
 - **Frontend Style**:
   - Follow visual and CSS rules in [design-system.md](design-system.md).
   - Use Preact components in `frontend/src/`.
+  - SPA JSON transport lives in `frontend/src/api/http/` (generated client + unwrap). UI modules must not value-import `frontend/src/api/generated`.
   - Use shared styles in `public/shared-ui.css` or app-specific styles in `frontend/src/styles/`.
   - Do not modify `frontend/dist/` directly.
 - **Testing**:
@@ -189,14 +194,15 @@ Search these pages for examples, plugins, and configuration options:
 
 Managed flags and environment keys:
 
-| Name                              | Env key                           | Type           | Default                                  |
-| --------------------------------- | --------------------------------- | -------------- | ---------------------------------------- |
-| `auto_source_enabled`             | `AUTO_SOURCE_ENABLED`             | boolean        | `true` in development/test, else `false` |
-| `health_check_token`              | `HEALTH_CHECK_TOKEN`              | string         | `nil`                                    |
-| `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
-| `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
-| `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
-| `sentry_enable_logs`              | `SENTRY_ENABLE_LOGS`              | boolean        | `false`                                  |
+| Name                  | Env key               | Type    | Default                                  |
+| --------------------- | --------------------- | ------- | ---------------------------------------- |
+| `auto_source_enabled` | `AUTO_SOURCE_ENABLED` | boolean | `true` in development/test, else `false` |
+| `studio_enabled`      | `STUDIO_ENABLED`      | boolean | `true` in development/test, else `false` |
+| `health_check_token`  | `HEALTH_CHECK_TOKEN`  | string  | `nil`                                    |
+| `build_tag`           | `BUILD_TAG`           | string  | `unknown` outside production             |
+| `git_sha`             | `GIT_SHA`             | string  | `unknown` outside production             |
+| `sentry_dsn`          | `SENTRY_DSN`          | string  | `nil`                                    |
+| `sentry_enable_logs`  | `SENTRY_ENABLE_LOGS`  | boolean | `false`                                  |
 
 Rules:
 
@@ -205,6 +211,10 @@ Rules:
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
 - Add or change flags in code, tests, and this table together.
+
+`STUDIO_ENABLED=true` exposes the config refinement studio: `POST /api/v1/feeds/validate`, `POST /api/v1/feeds/preview`, and `POST /api/v1/feeds/suggest_selectors`. All three require a valid access token and return `403 Studio is disabled` when the flag is off. `POST /api/v1/feeds` returns the same `403` when the body carries a `selectors` object, because those selectors are studio output; a body without `selectors` stays the automatic path and keeps working with the flag off. `preview` and `suggest_selectors` additionally need `AUTO_SOURCE_ENABLED=true` because they fetch the caller's URL live, and they only accept URLs the caller's account is allowed to reach. Validate accepts the same page URL and, when it is present and allowed, exports it as `channel.url` beside the selectors. Authenticated preview samples are capped at 10 items and include only safe HTTP(S) image URLs. `GET /api/v1` advertises `instance.studio.enabled` so the SPA can hide selector controls when the flag is off. Refinement stays on `#/result/:token`. Leave the flag off in production unless you intend to let token holders run live extraction against arbitrary allowed URLs.
+
+Rate limiting still uses the shared `RATE_LIMIT_MAX_REQUESTS` budget over `RATE_LIMIT_WINDOW_SECONDS`. `POST /api/v1/feeds`, `POST /api/v1/feeds/preview`, and `POST /api/v1/feeds/suggest_selectors` each consume five request slots because they run live extraction. Validate stays at one slot. Admission counts the current size and then charges the cost, so a budget of N can overrun by cost − 1. A successful preview page is kept for the process lifetime in `PreviewPageCache` and reused for the same URL until a different URL replaces the slot or the process exits (which removes the temp file). This fixed weighting protects the more expensive HTTP/browser extraction paths without adding another deployment flag.
 
 ---
 
@@ -218,9 +228,9 @@ Critical-path event families: auth, feed create, feed render, request errors.
 
 Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never share a DSN.
 
-| Env var | Service | Project |
-| --- | --- | --- |
-| `SENTRY_DSN` | html2rss-web | A (web) |
+| Env var                 | Service               | Project     |
+| ----------------------- | --------------------- | ----------- |
+| `SENTRY_DSN`            | html2rss-web          | A (web)     |
 | `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
 
 Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`${BOTASAURUS_SENTRY_DSN:-}`). It does not fall back to web `SENTRY_DSN`. Leave it unset until you want scraper error reporting.
@@ -229,14 +239,14 @@ Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`$
 
 Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem client, and html2rss-web so the scraper exhausts its budget before the web tier aborts the request. Keep **scrape total (45) ≤ feed build (50) ≤ Falcon (55)**; the **work** budget (30) applies only after the browser is ready on the scraper.
 
-| Variable | Service | Default | Role |
-| --- | --- | --- | --- |
-| `SCRAPE_TIMEOUT_SECONDS` | botasaurus-scrape-api | `45` | Handler wall (queue, boot, navigate, wait) |
-| `SCRAPE_WORK_TIMEOUT_SECONDS` | botasaurus-scrape-api | `30` | Post-boot navigate, selector wait, scroll |
-| `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS` | html2rss (web) | `45` | HTTPX POST `/scrape` cap (mirrors scrape total) |
-| `BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS` | html2rss | `30` | Max `wait_timeout_seconds` in feed YAML |
-| `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
-| `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
+| Variable                                 | Service               | Default | Role                                            |
+| ---------------------------------------- | --------------------- | ------- | ----------------------------------------------- |
+| `SCRAPE_TIMEOUT_SECONDS`                 | botasaurus-scrape-api | `45`    | Handler wall (queue, boot, navigate, wait)      |
+| `SCRAPE_WORK_TIMEOUT_SECONDS`            | botasaurus-scrape-api | `30`    | Post-boot navigate, selector wait, scroll       |
+| `BOTASAURUS_SCRAPE_TIMEOUT_SECONDS`      | html2rss (web)        | `45`    | HTTPX POST `/scrape` cap (mirrors scrape total) |
+| `BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS` | html2rss              | `30`    | Max `wait_timeout_seconds` in feed YAML         |
+| `HTML2RSS_TOTAL_TIMEOUT_SECONDS`         | html2rss-web          | `50`    | Feed build budget (scrape + extraction)         |
+| `REQUEST_TIMEOUT_SECONDS`                | html2rss-web          | `55`    | Falcon server request timeout                   |
 
 When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or `error_category:timeout`, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder (see **Alert baselines**).
 
@@ -260,6 +270,7 @@ Start triage from the newest `feed.create`, `feed.render`, and `request.error` e
    - `GATEWAY_TIMEOUT` / `timeout` with `timeout_phase` `work` (or nil transport hop) → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
 
 Outer scraper deadlines reclaim Chromium via WorkLease (session force-close) so worker slots free before the HTTP 504 returns; lingering `timeout_phase:queue` under light traffic after deploy usually means reclaim or per-host admit saturation (`SCRAPE_MAX_PER_HOST`), not soft-cancel theater.
+
 ### Alert baselines
 
 After baseline traffic, configure per project:

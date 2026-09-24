@@ -43,6 +43,7 @@ export function App() {
     saveToken,
     clearToken,
     feedCreationEnabled,
+    studioEnabled,
     mayCreate,
   } = useSession();
 
@@ -62,7 +63,9 @@ export function App() {
     onCancelTokenPrompt,
     onRetryCreate,
     onCreateAnother,
+    generateFromStudio,
     onRetryPreview,
+    sourceUrl,
     setBookmarkletNotice,
     setTokenDraft,
     setTokenError,
@@ -70,6 +73,7 @@ export function App() {
     token,
     isLoading: sessionLoading,
     feedCreationEnabled,
+    isStudioEnabled: studioEnabled,
     mayCreate,
     saveToken,
     clearToken,
@@ -101,11 +105,20 @@ export function App() {
       </Notice>
     );
   } else if (viewModel.kind === 'result') {
+    const studio =
+      studioEnabled && token?.trim() && sourceUrl
+        ? {
+            token,
+            url: sourceUrl,
+            onGenerate: generateFromStudio,
+          }
+        : undefined;
     bodyContent = (
       <ResultDisplay
         viewModel={viewModel}
         onCreateAnother={onCreateAnother}
         onRetryPreview={onRetryPreview}
+        studio={studio}
       />
     );
   } else {
