@@ -123,10 +123,11 @@ ready: ## Pre-commit gate (quick checks + RSpec)
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
 
-ci-ready: ## CI parity gate (ready + OpenAPI verify + frontend e2e smoke)
+ci-ready: ## CI parity gate (ready + OpenAPI verify/lint + frontend e2e smoke)
 	@echo "Running CI parity checks..."
 	$(MAKE) ready
 	$(MAKE) openapi-verify
+	$(MAKE) openapi-lint
 	$(MAKE) test-frontend-e2e
 	@echo "CI parity checks complete!"
 
