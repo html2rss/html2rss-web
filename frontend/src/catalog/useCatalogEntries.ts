@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ApiMetadataRecord } from '../api/contracts';
+import { requestConfigCatalog } from '../api/http/catalog';
 import { parseCatalog } from './parseCatalog';
 import type { CatalogEntry } from './types';
 
@@ -15,10 +16,10 @@ const EMPTY: CatalogHookState = { entries: [], starters: [] };
  */
 export function useCatalogEntries(metadata?: ApiMetadataRecord): CatalogHookState {
   const [snapshot, setSnapshot] = useState<CatalogHookState>(EMPTY);
-  const catalog = metadata?.instance.catalog;
+  const isCatalogEnabled = metadata?.instance.catalog?.enabled === true;
 
   useEffect(() => {
-    if (!catalog?.enabled || !catalog.url) {
+    if (!isCatalogEnabled) {
       setSnapshot(EMPTY);
       return;
     }
@@ -27,13 +28,7 @@ export function useCatalogEntries(metadata?: ApiMetadataRecord): CatalogHookStat
 
     const load = async () => {
       try {
-        const response = await fetch(catalog.url, { headers: { Accept: 'application/json' } });
-        if (!response.ok) {
-          if (!isCancelled) setSnapshot(EMPTY);
-          return;
-        }
-
-        const payload: unknown = await response.json();
+        const payload = await requestConfigCatalog();
         if (isCancelled) return;
         const parsed = parseCatalog(payload);
         setSnapshot({ entries: parsed.entries, starters: parsed.starters });
@@ -46,7 +41,7 @@ export function useCatalogEntries(metadata?: ApiMetadataRecord): CatalogHookStat
     return () => {
       isCancelled = true;
     };
-  }, [catalog?.enabled, catalog?.url]);
+  }, [isCatalogEnabled]);
 
   return snapshot;
 }

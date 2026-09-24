@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
+import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, PreviewFeedData, PreviewFeedResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses, SuggestSelectorsData, SuggestSelectorsErrors, SuggestSelectorsResponses, ValidateFeedConfigData, ValidateFeedConfigErrors, ValidateFeedConfigResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -55,6 +55,51 @@ export const optionsConfigCatalog = <ThrowOnError extends boolean = false>(optio
 export const createFeed = <ThrowOnError extends boolean = false>(options: Options<CreateFeedData, ThrowOnError>): RequestResult<CreateFeedResponses, CreateFeedErrors, ThrowOnError> => (options.client ?? client).post<CreateFeedResponses, CreateFeedErrors, ThrowOnError>({
   security: [{ scheme: 'bearer', type: 'http' }],
   url: '/feeds',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Preview a selectors document feed
+ *
+ * Preview a selectors document feed
+ */
+export const previewFeed = <ThrowOnError extends boolean = false>(options: Options<PreviewFeedData, ThrowOnError>): RequestResult<PreviewFeedResponses, unknown, ThrowOnError> => (options.client ?? client).post<PreviewFeedResponses, unknown, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/feeds/preview',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Suggest selectors for a page
+ *
+ * Suggest selectors for a page
+ */
+export const suggestSelectors = <ThrowOnError extends boolean = false>(options: Options<SuggestSelectorsData, ThrowOnError>): RequestResult<SuggestSelectorsResponses, SuggestSelectorsErrors, ThrowOnError> => (options.client ?? client).post<SuggestSelectorsResponses, SuggestSelectorsErrors, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/feeds/suggest_selectors',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Validate a selectors document
+ *
+ * Validate a selectors document
+ */
+export const validateFeedConfig = <ThrowOnError extends boolean = false>(options: Options<ValidateFeedConfigData, ThrowOnError>): RequestResult<ValidateFeedConfigResponses, ValidateFeedConfigErrors, ThrowOnError> => (options.client ?? client).post<ValidateFeedConfigResponses, ValidateFeedConfigErrors, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/feeds/validate',
   ...options,
   headers: {
     'Content-Type': 'application/json',

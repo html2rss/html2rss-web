@@ -38,31 +38,35 @@ If a page looks like it came from a different product, the change is wrong even 
 
 ## Journey Grammar (enforced)
 
-- **Create:** URL field is the task. Visiting `#/create` or `#!/create` remounts create; hashbang aliases canonicalize to `#/create`. Bare create does not auto-submit. When the typed query finds catalog entries (URL equivalence or text substring), show matching feeds as a subordinate list under the field — never a second primary task or in-app catalog browser. On an empty Create URL, up to three Feed Directory starters may appear as subordinate chrome (lean: `.ui-eyebrow` + list + demoted `utility-link` escape under the list when creation is enabled; Notice when creation is disabled). Escape and utility-strip share **Browse Feed Directory (N)** (`catalogEntries.length`); hide starters and the under-list escape while typing, when find has hits, or while creating.
-- **Token gate:** a native `<dialog>` over the still-mounted, inert URL task (one interactive task). Auth copy is in-field (`tokenError`); ActionFeedback stays on create. Access Token persists until Logout with no storage UI.
-- **Result:** primary CTA is **Copy feed URL**. Open feed / JSON / feed-reader are demoted secondary actions and stay available while preview loads. Preview is non-blocking confirmation only.
-- **Unmatched result:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens recover onto remounted `#/create` (no API rehydrate, no failure chrome, no durable shareable result page).
-- **Status eyebrow:** one vocabulary (`Feed ready`) on the result header; preview progress lives in the preview section.
-- **Focus:** create autofocuses the URL field; token autofocuses the token field; result focuses the Copy control.
+- **Create:** URL field is the task. Visiting `#/create` or `#!/create` remounts create; hashbang aliases canonicalize to `#/create`. Bare create does not auto-submit. When the typed query finds catalog entries (URL equivalence or text substring), show matching feeds as a subordinate list under the field — never a second primary task or in-app catalog browser. On an empty Create URL, up to three Feed Directory starters may appear as subordinate chrome (lean: `.ui-eyebrow` + list + demoted `utility-link` escape under the list when creation is enabled; Notice when creation is disabled). Escape and utility-strip share **Browse Feed Directory (N)** (`catalogEntries.length`); hide starters and the under-list escape while typing, when find has hits, or while creating. Create busy stays in-control (`DominantField`); no loading `Notice` under the field.
+- **Token gate:** a native `<dialog>` over the still-mounted, inert URL task (one interactive task). Auth copy is in-field (`tokenError`); ActionFeedback stays on create for failure only. Access Token persists until Logout with no storage UI.
+- **Ready (member):** one result frame (`data-state` `ready`). Primary CTA is **Copy feed URL** (initial focus). Open feed / JSON / feed-reader and **Create another feed** are demoted. Guest results stay compact: at most 5 items, no images, no selector controls. Authenticated studio-enabled results mount the flat editor immediately (zero clicks to reveal). **Save and generate feed** stays disabled and demoted until the draft changes, then becomes the sole `btn--primary`. Focus stays on Copy on ready entry. When studio is disabled or there is no token, the editor stays hidden. There is no `#/refine` route.
+- **Unresolved:** when create returns `EXTRACTION_EMPTY`, studio is enabled, and an access token is present, the same result frame opens with the flat editor already mounted (`data-state` `unresolved`). Listing URL is the subject; wire `Decision#message` is the single ResultDisplay notice; **Save and generate feed** is the only primary immediately (no edit gate). No **Feed ready**, no **Copy feed URL**, no directory handoff. Demoted **Create another feed** sits below the studio workspace. Hash is in-memory `#/result` (no feed token). Empty extraction with studio off or no token stays a create error (**Try again** when retryable).
+- **Flat editor:** Items stays visible (proportional mono input, not `input--lg`). Optional Title / Link / Published appear only with selector, candidate, issue, or manual evidence. Field + chips are one `.studio-field` unit; chips use `COPY.choicesFor` only (no bare field-name eyebrow). Inline Enhance (no card). One `.studio-actions` row → `.ui-item-list--grid` meadow (2-col wide / 1-col below `48rem`). Suggest status uses reserved-height `.studio-suggestion-status`; suggest/save must not re-echo the unresolved Decision notice. No Refine toggle, Advanced expander, field-status panels, or View-as-YAML disclosure.
+- **Utilities:** **Copy YAML** copies the current channel URL + selectors document in one click (no expandable preview). Ready-only **Open Feed Directory issue** opens a prefilled html2rss-configs GitHub issue (channel URL + selectors YAML + blank `directory.title` / `directory.topics`); never includes access or feed tokens. Native-feed Notice may appear above Save when the preview reports one.
+- **Known limits:** On authenticated studio-enabled results, validate and suggest run eagerly on mount; the first live preview still waits for an edit so the create-time meadow stays single. Edits keep the previous meadow visible and mark it loading until live studio output replaces it — one list only; no return to create-time meadow once a studio sample exists. Until that sample exists (including first preview load), keep the create-time meadow and show **neutral** labels on visible optional fields — found/missing metadata appears only after the first studio sample. Studio meadow caption (page already fetched) only when sample items are present — no filler chrome when the meadow is empty. Member previews may show up to 10 items and safe HTTP(S) images. Unmatched `#/result/:token` / bare `#/result` without matching in-memory state recover onto remounted `#/create` (no API rehydrate, no durable shareable result page). Invalid URL and auth stay on create / token.
+- **Status eyebrow:** ready uses `Feed ready`; unresolved uses `URL` with the listing as the title; preview progress lives in the preview section.
+- **Focus:** create autofocuses the URL field; token autofocuses the token field; ready focuses the Copy control; unresolved keeps Save and generate as the primary task (no Copy).
 
 ### Vocabulary
 
-| Job | Words |
-| --- | --- |
-| Input | **URL** |
-| Output | **Feed URL** |
-| Create | **Create feed** / **Creating feed** |
-| Result | **Feed ready** / **Copy feed URL** |
-| Retry | **Try again** (button only) |
-| Preview | **Checking preview** / **Check again** |
-| Catalog | **Feed Directory** |
-| Token | **Access token** |
+| Job     | Words                                                                                                              |
+| ------- | ------------------------------------------------------------------------------------------------------------------ |
+| Input   | **URL**                                                                                                            |
+| Output  | **Feed URL**                                                                                                       |
+| Create  | **Create feed** / **Creating feed**                                                                                |
+| Result  | **Feed ready** / **Copy feed URL**                                                                                 |
+| Studio  | **Headline choices** / **Add** / **Remove** / **Save and generate feed** / **Copy YAML** / **Open Feed Directory issue** |
+| Retry   | **Try again** (button only)                                                                                        |
+| Preview | **Checking preview** / **Check again** / **Based on the page already fetched for this URL** (with items only)      |
+| Catalog | **Feed Directory**                                                                                                 |
+| Token   | **Access token**                                                                                                   |
 
 ## Non-Negotiable Surface Rules
 
 - Background must use the same dark canvas and top-light treatment defined in `shared-ui.css`.
 - Shared cards must use the same border, radius, and surface treatment via `.ui-card` (plus modifiers). No page-local framed-surface forks.
-- Shared feed/preview items must use `.ui-item-list` / `.ui-item` / `.ui-item__*` grammar.
+- Shared feed/preview items must use `.ui-item-list` / `.ui-item` / `.ui-item__*` grammar. Meadow previews compose `.ui-item-list--grid` (2 columns on wide rail; collapses to 1 column below `48rem`).
 - Serif display typography is reserved for major titles (`.ui-display-title`) and the wordmark.
 - Sans UI typography is the default for controls, supporting copy, and metadata.
 - Mono is reserved for URLs, tokens, and machine-like values.
@@ -173,6 +177,7 @@ Prefer composing these primitives before inventing new classes:
 - `ui-eyebrow`
 - `ui-eyebrow--ghost`
 - `ui-item-list`
+- `ui-item-list--grid`
 - `ui-item`
 - `ui-item__meta`
 - `ui-item__title` (link child when URL present)
@@ -294,6 +299,8 @@ These are common signs that the system is drifting:
 - semantic states are encoded as a growing list of presentational classes
 - result actions gated on preview loading
 - ActionFeedback stacked under the token dialog
+- create loading Notice under the URL field (create busy belongs in DominantField only)
+- unresolved Decision notice echoed again by studio save or suggest failure
 - token gate replacing the URL composer instead of a dialog over inert create
 
 If you see one of these, consolidate instead of layering more CSS.

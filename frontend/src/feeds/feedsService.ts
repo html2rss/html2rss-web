@@ -1,4 +1,6 @@
 import type { FeedRecord } from '../api/contracts';
+import { postCreateFeed } from '../api/http/feeds';
+import type { StudioSelectors } from '../studio/selectorDraft';
 import { COPY } from '../journey/copy';
 import {
   buildStructuredError,
@@ -6,7 +8,6 @@ import {
   type RawApiResponse,
 } from './feedErrors';
 import { normalizeString } from './feedParsers';
-import { readJsonResponse } from './feedPreviewClient';
 
 export * from './feedErrors';
 export * from './feedParsers';
@@ -23,28 +24,35 @@ interface RawFeedRecord {
   updated_at?: unknown;
 }
 
-interface RawFeedPayload {
-  feed?: RawFeedRecord;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
-interface RawFeedApiResponse extends RawApiResponse {
-  data?: RawFeedPayload;
+function feedApiResponse(body: unknown): RawApiResponse | undefined {
+  if (!isRecord(body)) return;
+  return { success: body.success, data: body.data, error: body.error };
 }
 
-export async function requestFeedCreation(url: string, token: string): Promise<FeedRecord> {
-  const response = await fetch(resolveApiUrl('feeds'), {
-    method: 'POST',
-    headers: buildCreateHeaders(token),
-    body: JSON.stringify({ url }),
-  });
+function rawFeedRecord(body: unknown): RawFeedRecord | undefined {
+  const payload = feedApiResponse(body);
+  if (!isRecord(payload?.data)) return;
+  const feed = payload.data.feed;
+  return isRecord(feed) ? feed : undefined;
+}
 
-  const payload = await readJsonResponse<RawFeedApiResponse>(response);
+export async function requestFeedCreation(
+  url: string,
+  token: string,
+  selectors?: StudioSelectors
+): Promise<FeedRecord> {
+  const envelope = await postCreateFeed(url, token, selectors);
+  const payload = feedApiResponse(envelope.body);
 
-  if (!response.ok) {
-    throw normalizeFeedCreationErrorFromResponse(response.status, payload?.error, payload);
+  if (!envelope.ok) {
+    throw normalizeFeedCreationErrorFromResponse(envelope.status, payload?.error, payload);
   }
 
-  const feed = normalizeFeedRecord(payload?.data?.feed);
+  const feed = normalizeFeedRecord(rawFeedRecord(envelope.body));
   if (!feed) {
     throw buildStructuredError(
       'server',
@@ -53,7 +61,7 @@ export async function requestFeedCreation(url: string, token: string): Promise<F
       'retry',
       'primary',
       COPY.unableToStartCreation,
-      response.status
+      envelope.status
     );
   }
 
@@ -80,22 +88,4 @@ export function normalizeFeedRecord(raw?: RawFeedRecord): FeedRecord | undefined
     created_at: normalizeString(raw.created_at) || new Date().toISOString(),
     updated_at: normalizeString(raw.updated_at) || new Date().toISOString(),
   };
-}
-
-export function resolveApiUrl(path: string): string {
-  return `/api/v1/${path.replace(/^\/+/, '')}`;
-}
-
-export function buildCreateHeaders(token: string): HeadersInit {
-  const normalizedToken = token.trim();
-  const headers: Record<string, string> = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-  };
-
-  if (normalizedToken) {
-    headers.Authorization = `Bearer ${normalizedToken}`;
-  }
-
-  return headers;
 }

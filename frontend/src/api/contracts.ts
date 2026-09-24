@@ -32,11 +32,15 @@ export type FeedCreationErrorCode =
   | 'UNKNOWN_ERROR'
   | (string & {});
 
+/** Guest stays compact. Member is the token used when the feed was created. */
+export type PreviewAudience = 'guest' | 'member';
+
 export interface FeedPreviewItem {
   title: string;
   excerpt: string;
   publishedLabel: string;
   url?: string;
+  imageUrl?: string;
 }
 
 export interface FeedPreviewWarning {
@@ -74,6 +78,9 @@ export interface ApiMetadataRecord {
     feed_creation: {
       enabled: boolean;
       access_token_required: boolean;
+    };
+    studio?: {
+      enabled: boolean;
     };
     catalog?: {
       enabled: boolean;

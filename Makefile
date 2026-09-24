@@ -54,11 +54,11 @@ test-ruby: ## Run Ruby tests only
 test-frontend: ## Run frontend tests only
 	@cd frontend && pnpm run test:ci
 
-test-frontend-unit: ## Run frontend unit tests only
+test-frontend-unit: ## Run frontend Node unit tests only
 	@cd frontend && pnpm run test:unit
 
-test-frontend-contract: ## Run frontend contract tests only
-	@cd frontend && pnpm run test:contract
+test-frontend-integration: ## Run frontend jsdom integration tests only
+	@cd frontend && pnpm run test:integration
 
 test-frontend-e2e: ## Run frontend Playwright smoke tests
 	@cd frontend && pnpm run test:e2e

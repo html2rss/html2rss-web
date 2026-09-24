@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { CreatedFeedResult, FeedCreationError } from '../api/contracts';
+import type { CreatedFeedResult, FeedCreationError, PreviewAudience } from '../api/contracts';
+import type { StudioSelectors } from '../studio/selectorDraft';
+import { isAbortError } from '../api/http/client';
 import {
   normalizeFeedCreationError,
   requestFeedCreation,
@@ -8,7 +10,7 @@ import {
   buildPreviewWarning,
   loadPreviewItemsWithRetry,
   PREVIEW_UNAVAILABLE_MESSAGE,
-  isAbortError,
+  previewAudienceForToken,
 } from '../feeds/feedsService';
 
 interface CreationState {
@@ -24,6 +26,7 @@ interface CreationState {
 export function useFeedCreation() {
   const requestIdReference = useRef(0);
   const previewAbortControllerReference = useRef<AbortController | undefined>(undefined);
+  const previewAudienceReference = useRef<PreviewAudience>('guest');
   const [state, setState] = useState<CreationState>({ isCreating: false });
 
   const cancelPreview = () => {
@@ -39,17 +42,28 @@ export function useFeedCreation() {
     []
   );
 
-  async function createFeed(normalizedUrl: string, token: string) {
+  async function createFeed(normalizedUrl: string, token: string, selectors?: StudioSelectors) {
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
     cancelPreview();
     setState((previous) => ({ ...previous, isCreating: true, error: undefined }));
 
     try {
-      const feed = await requestFeedCreation(normalizedUrl, token);
+      const feed = await requestFeedCreation(normalizedUrl, token, selectors);
+      const audience = previewAudienceForToken(token);
+      if (requestIdReference.current === requestId) {
+        previewAudienceReference.current = audience;
+      }
       const result = buildCreatedFeedResult(feed);
       commitResult(result, requestId, setState, requestIdReference);
-      void hydrateFeedPreview(feed, requestId, setState, requestIdReference, previewAbortControllerReference);
+      void hydrateFeedPreview(
+        feed,
+        audience,
+        requestId,
+        setState,
+        requestIdReference,
+        previewAbortControllerReference
+      );
       return result;
     } catch (error) {
       const structuredError = normalizeFeedCreationError(error);
@@ -83,6 +97,7 @@ export function useFeedCreation() {
 
     void hydrateFeedPreview(
       currentResult.feed,
+      previewAudienceReference.current,
       requestId,
       setState,
       requestIdReference,
@@ -103,6 +118,7 @@ export function useFeedCreation() {
 
 async function hydrateFeedPreview(
   feed: CreatedFeedResult['feed'],
+  audience: PreviewAudience,
   requestId: number,
   setState: (value: CreationState | ((previous: CreationState) => CreationState)) => void,
   requestIdReference: { current: number },
@@ -115,7 +131,7 @@ async function hydrateFeedPreview(
   commitResult(buildPreviewLoadingResult(feed), requestId, setState, requestIdReference);
 
   try {
-    const previewResult = await loadPreviewItemsWithRetry(feed.json_public_url, controller.signal);
+    const previewResult = await loadPreviewItemsWithRetry(feed.json_public_url, controller.signal, audience);
     if (requestIdReference.current !== requestId) return;
 
     commitResult(

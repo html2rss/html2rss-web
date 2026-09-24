@@ -1,10 +1,11 @@
 import { useMemo } from 'preact/hooks';
 import type { CatalogEntry } from '../catalog';
 import { selectStarterFeeds, useCatalogEntries } from '../catalog';
-import { useApiMetadata } from '../hooks/useApiMetadata';
 import { useAccessToken } from './accessToken';
+import { useApiMetadata } from './useApiMetadata';
 
 const DEFAULT_FEED_CREATION = { enabled: true, access_token_required: true };
+const isStudioEnabledByDefault = false;
 
 /** Closed gate outcome for attempting feed creation with an optional token. */
 export type MayCreateResult = 'proceed' | 'needToken' | 'disabled';
@@ -28,6 +29,7 @@ export function useSession() {
   const isLoading = tokenLoading || metadataLoading;
   const feedCreation = metadata?.instance.feed_creation ?? DEFAULT_FEED_CREATION;
   const feedCreationEnabled = feedCreation.enabled;
+  const studioEnabled = metadata?.instance.studio?.enabled ?? isStudioEnabledByDefault;
   const catalog = useCatalogEntries(metadata);
   const catalogEntries = catalog.entries;
   const featuredFeeds: CatalogEntry[] = useMemo(
@@ -54,6 +56,7 @@ export function useSession() {
     saveToken,
     clearToken,
     feedCreationEnabled,
+    studioEnabled,
     mayCreate,
   };
 }
