@@ -3,16 +3,31 @@
 
 set -e
 
+# Caller wins (make up sets the host loopback URL). .env must not clobber it.
+preset_botasaurus_url="${BOTASAURUS_SCRAPER_URL-}"
+
 # Load .env if exists
 if [ -f .env ]; then
   export $(cat .env | grep -v '^#' | xargs)
 fi
 
+if [ -n "$preset_botasaurus_url" ]; then
+  export BOTASAURUS_SCRAPER_URL="$preset_botasaurus_url"
+fi
+
 export RACK_ENV=${RACK_ENV:-development}
 
-# BusyBox lsof in this image reports internal FDs and exits 0, so prefer netstat.
+# BusyBox lsof reports internal FDs and exits 0, so the container keeps Linux netstat.
+# macOS netstat has no -l listening flag, so the same check never sees port 4000.
 port_in_use() {
-  netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1$"
+  case "$(uname -s)" in
+    Darwin)
+      lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+      ;;
+    *)
+      netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1$"
+      ;;
+  esac
 }
 
 # Cleanup function for graceful shutdown

@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev up down clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
+
+# Host-side local app. Distinct project so this does not stop the published web stack.
+DEV_COMPOSE = docker compose -p html2rss-dev -f docker-compose.botasaurus.yml
 
 RUBOCOP_FLAGS ?= --cache false
 
@@ -25,6 +28,15 @@ setup: ## Full development setup
 dev: ## Start development server with live reload
 	@echo "Starting html2rss-web development environment..."
 	@bin/dev
+
+up: ## Local web app (this checkout) plus published Botasaurus
+	$(DEV_COMPOSE) up -d
+	BOTASAURUS_SCRAPER_URL=http://127.0.0.1:4010 bin/dev
+
+down: ## Stop the local web app and published Botasaurus
+	-pkill -f "falcon.*html2rss-web" || true
+	-pkill -f "vite.*4001" || true
+	$(DEV_COMPOSE) down
 
 dev-ruby: ## Start Ruby server only
 	@bin/dev-ruby
