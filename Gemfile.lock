@@ -1,4 +1,28 @@
 GIT
+  remote: https://github.com/html2rss/html2rss
+  revision: 09d1b7964eaa3b5c50abf1f07b17d5042675f6db
+  ref: 09d1b7964eaa3b5c50abf1f07b17d5042675f6db
+  specs:
+    html2rss (0.30.0)
+      addressable (~> 2.7)
+      brotli
+      dry-validation
+      httpx (~> 1.8)
+      kramdown
+      mcp (~> 1.2)
+      mime-types (> 3.0)
+      nokogiri (>= 1.10, < 2.0)
+      rack (~> 3.0)
+      rackup (~> 2.0)
+      regexp_parser
+      rss
+      sanitize
+      thor
+      tzinfo
+      webrick (~> 1.9)
+      zeitwerk
+
+GIT
   remote: https://github.com/html2rss/html2rss-configs
   revision: 2355ce1b4189b01282acfb99f8e4548fe3ec417a
   specs:
@@ -69,7 +93,7 @@ GEM
       bigdecimal
       samovar (~> 2.1)
     base64 (0.3.0)
-    bigdecimal (4.1.2)
+    bigdecimal (4.1.3)
     brotli (0.8.0)
     builder (3.3.0)
     climate_control (1.2.0)
@@ -141,26 +165,8 @@ GEM
     fiber-storage (1.0.1)
     hana (1.3.7)
     hashdiff (1.2.1)
-    html2rss (0.30.0)
-      addressable (~> 2.7)
-      brotli
-      dry-validation
-      httpx (~> 1.8)
-      kramdown
-      mcp (~> 1.2)
-      mime-types (> 3.0)
-      nokogiri (>= 1.10, < 2.0)
-      rack (~> 3.0)
-      rackup (~> 2.0)
-      regexp_parser
-      rss
-      sanitize
-      thor
-      tzinfo
-      webrick (~> 1.9)
-      zeitwerk
-    http-2 (1.2.2)
-    httpx (1.8.3)
+    http-2 (1.2.3)
+    httpx (1.8.4)
       http-2 (>= 1.2.0)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
@@ -191,7 +197,7 @@ GEM
     loofah (2.25.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    mcp (1.5.0)
+    mcp (1.5.1)
       json_schemer (>= 2.4)
     mime-types (3.7.0)
       logger
@@ -370,7 +376,7 @@ DEPENDENCIES
   base64
   climate_control
   falcon
-  html2rss (~> 0.30)
+  html2rss!
   html2rss-configs!
   irb
   rack-test
@@ -407,7 +413,7 @@ CHECKSUMS
   async-utilization (0.5.0) sha256=96c347634e09edcbcb7f70cf8c5a1ae058c64d88186341e3f924a44440f95981
   bake (0.25.0) sha256=a47bdc6a26addc048827debc36fe27bb4d5d71ac2958ad910b5386e9baf49869
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
-  bigdecimal (4.1.2) sha256=53d217666027eab4280346fba98e7d5b66baaae1b9c3c1c0ffe89d48188a3fbd
+  bigdecimal (4.1.3) sha256=61ebe1e5e559bdc3cc6f2c0ee7f427321fc838f59611c294356eb04d6e21cf66
   brotli (0.8.0) sha256=0c5a42046b3b603fb109656881147fd76064c034b7d19c1b4fcc32a093a4d55d
   builder (3.3.0) sha256=497918d2f9dca528fdca4b88d84e4ef4387256d984b8154e9d5d3fe5a9c8835f
   climate_control (1.2.0) sha256=36b21896193fa8c8536fa1cd843a07cf8ddbd03aaba43665e26c53ec1bd70aa5
@@ -434,10 +440,10 @@ CHECKSUMS
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hana (1.3.7) sha256=5425db42d651fea08859811c29d20446f16af196308162894db208cac5ce9b0d
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.30.0) sha256=a0ec169cf4a41954b2ec327625b15e81d718061a59a0bd27670ca01f238a2852
+  html2rss (0.30.0)
   html2rss-configs (0.2.0)
-  http-2 (1.2.2) sha256=81b5d45f50fd4cd5f8c5d09651184bec9401e3ef169c3eb3e5b003d5614a92b9
-  httpx (1.8.3) sha256=cb88f2285c4ef17164d803a640dc393d28722cba7f282ad0e7f9f926cd02dc47
+  http-2 (1.2.3) sha256=f4e3a7000e9a8ab97595f09eac44c6ec10a2aa438360758124df0ca5bcb280d4
+  httpx (1.8.4) sha256=1782ecde81eb4e961ad8735ec74a6fec8e60efeaa4592c6b2f55d72e19aaeca8
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.9.2) sha256=efa74f891dd03c0939a931dfc6e74c2813d904763d456ea9762b0525e748db08
   io-endpoint (0.18.0) sha256=720d186bcd584e8ba490bfc91dab332cc3c5ffee848b5b03894555cb275151aa
@@ -452,7 +458,7 @@ CHECKSUMS
   localhost (1.8.0) sha256=df7ea825b4f64949c588c17efac86bc47ddc4460d723778abe933b71759b2701
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   loofah (2.25.2) sha256=2007f746959ac65552456e04b433e83deb22759ab38c838b4445c70e43425918
-  mcp (1.5.0) sha256=6f97785fa6e069eb667aa3d50299851ea9aca904b4abe8306f156bb8fd9eaff0
+  mcp (1.5.1) sha256=883ddd0f59e5bf43805e300158c7ecc4b6a559d126d584d41bd241355545bedf
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.0701) sha256=cd8811e1fb89d836499ba0582368a10ee74cef929ba956d1d5ddca045e6a730f
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
@@ -529,4 +535,4 @@ CHECKSUMS
   zeitwerk (2.8.3) sha256=2c85125a8467ce069e20123d1e709a08955c9d29c118c25b46b7b7fafdbb92e5
 
 BUNDLED WITH
-  4.0.9
+  4.0.3
