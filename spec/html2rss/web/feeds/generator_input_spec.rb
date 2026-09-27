@@ -27,12 +27,14 @@ RSpec.describe Html2rss::Web::Feeds::GeneratorInput do
       )
     end
 
-    it 'merges signed selectors without replacing the token url' do
+    it 'replaces automatic extraction with signed selectors' do
       selectors = Html2rss::Web::SelectorsDocument.from_client(
         selectors: { items: { selector: 'article', enhance: true } }
       )
 
-      expect(described_class.for_token(url:, strategy: 'default', selectors:)).to include(
+      expect(described_class.for_token(url:, strategy: 'default', selectors:)).to eq(
+        stylesheets: ['/rss.xsl'],
+        headers: { 'User-Agent' => 'html2rss-web' },
         channel: { url: },
         strategy: :default,
         selectors: { items: { selector: 'article', enhance: true } }

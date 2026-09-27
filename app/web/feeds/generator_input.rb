@@ -19,6 +19,11 @@ module Html2rss
           # A nil or blank +strategy+ resolves to the configured default, or +auto+
           # when that default is blank. An explicit name must be supported.
           #
+          # A nil or empty +selectors+ document keeps +auto_source+ so the gem runs
+          # automatic extraction. A non-empty document replaces that path: the
+          # returned config has the signed selectors and no +auto_source+ key, so
+          # the gem does not also run the general scrapers.
+          #
           # @param url [String] channel URL bound to the token
           # @param strategy [String, Symbol, nil] token strategy, or nil for the configured default
           # @param selectors [Html2rss::Web::SelectorsDocument, nil] signed selector fragment
@@ -26,10 +31,9 @@ module Html2rss
           def for_token(url:, strategy: nil, selectors: nil)
             expanded = LocalConfig.global.slice(:stylesheets, :headers).merge(
               channel: { url: },
-              auto_source: {},
               strategy: resolve_strategy(strategy).to_sym
             )
-            return expanded if selectors.nil? || selectors.empty?
+            return expanded.merge(auto_source: {}) if selectors.nil? || selectors.empty?
 
             expanded.merge(selectors.to_config_fragment)
           end
