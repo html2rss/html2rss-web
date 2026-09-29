@@ -67,4 +67,32 @@ export const COPY = {
   footerNav: 'Footer navigation',
   previewStatus: 'Feed preview status',
   previewRegion: 'Feed preview',
+  itemsSelector: 'Items selector',
+  enhanceItems: 'Enhance items',
+  /** Ranked selector choices; buckets may be empty. */
+  selectorChoices: 'Headline choices',
+  selectorSuggestionsLoading: 'Finding selector choices',
+  selectorSuggestionsEmpty: 'No additional selector choices found.',
+  /** Suggest failure when wire message equals the unresolved Decision notice — never re-echo EXTRACTION_EMPTY. */
+  selectorSuggestionsFailed: 'Selector choices unavailable',
+  retrySelectorSuggestions: 'Try choices again',
+  choicesFor: (name: string) => `${name} options`,
+  addSelector: (label: string) => `Add ${label}`,
+  removeSelector: (label: string) => `Remove ${label}`,
+  saveAndGenerate: 'Save and generate feed',
+  /** One-click YAML utility — no expandable preview. */
+  copyYaml: 'Copy YAML',
+  /** Ready-phase handoff — opens a prefilled Feed Directory GitHub issue. */
+  proposeDirectory: 'Open Feed Directory issue',
+  /** Compact one-click activators for dormant optional selector fields. */
+  addOptionalFields: 'Add optional selectors',
+  addOptionalField: (name: string) => `Add ${name}`,
+  previewFetchedCaption: 'Based on the page already fetched for this URL',
+  nativeFeedTitle: 'This site already publishes a feed.',
+  fieldTitle: 'Title',
+  fieldLink: 'Link',
+  fieldPublished: 'Published date',
+  fieldFound: (name: string) => `${name} — found`,
+  fieldMissing: (name: string) => `${name} — not found`,
+  selector: 'Selector',
 } as const;

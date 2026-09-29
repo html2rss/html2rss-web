@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
 require 'time'
 
 module Html2rss
@@ -9,14 +8,31 @@ module Html2rss
       module V1
         ##
         # Creates stable feed records from authenticated API requests.
-        module CreateFeed # rubocop:disable Metrics/ModuleLength
+        module CreateFeed
           FEED_ATTRIBUTE_KEYS = %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
-          MAX_BODY_BYTES = 64 * 1024
           ABSOLUTE_URL_REGEXP = %r{\A[a-z][a-z0-9+\-.]*://}i
           HOSTNAME_INPUT_REGEXP = %r{
             \A(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
             (?:[/?#].*)?\z
           }ix
+
+          # Gates an optional selectors object through {SelectorsDocument} before it is signed.
+          # Absent keeps legacy tokens valid and keeps create on the automatic path, which the
+          # studio flag does not gate. Present means the caller authored the selectors in the
+          # studio, so the same kill switch the studio POSTs enforce applies here.
+          #
+          # @param request [Rack::Request]
+          # @return [Html2rss::Web::SelectorsDocument, nil]
+          # @raise [Html2rss::Web::ForbiddenError] when selectors are sent while the studio is disabled
+          def self.selectors_for(request)
+            raw = request_params(request)['selectors']
+            return nil if raw.nil?
+
+            raise Html2rss::Web::ForbiddenError, 'Studio is disabled' unless Flags.studio_enabled?
+
+            SelectorsDocument.from_client({ selectors: raw })
+          end
+          private_class_method :selectors_for
 
           class << self
             # Creates a feed and returns a normalized API success payload.
@@ -26,8 +42,7 @@ module Html2rss
             def call(request)
               account = require_account(request)
               params = build_create_params(request, account)
-              feed_data = create_feed(params, account)
-
+              feed_data = create_feed(params, account, request)
               emit_create(status: :success, details: { url: params.url })
               Response.success(response: request.response, status: 201,
                                data: { feed: feed_attributes(feed_data) }, meta: { created: true })
@@ -39,14 +54,11 @@ module Html2rss
             private
 
             def require_account(request)
-              account = Auth.authenticate(request)
-              raise Html2rss::Web::UnauthorizedError, 'Authentication required' unless account
-
-              account
+              Auth.authenticate(request) || raise(Html2rss::Web::UnauthorizedError, 'Authentication required')
             end
 
             def build_create_params(request, account)
-              enforce_body_limit!(request)
+              JsonBody.enforce_limit!(request)
               params = request_params(request)
               url = validated_url(params['url'], account)
               name = params['name'].to_s.strip
@@ -54,37 +66,10 @@ module Html2rss
               FeedMetadata::CreateParams.new(url:, name:)
             end
 
-            def enforce_body_limit!(request)
-              return unless request.content_length.to_i > MAX_BODY_BYTES
-
-              raise Html2rss::Web::BadRequestError, 'Payload too large'
-            end
-
             def request_params(request)
               return request.params unless json_request?(request)
 
-              request.GET.merge(parsed_json_body(request))
-            end
-
-            def parsed_json_body(request)
-              raw_body = read_limited_body(request)
-              return {} if raw_body.strip.empty?
-
-              parsed = JSON.parse(raw_body)
-              raise Html2rss::Web::BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
-
-              parsed
-            rescue JSON::ParserError
-              raise Html2rss::Web::BadRequestError, 'Invalid JSON payload'
-            end
-
-            def read_limited_body(request)
-              enforce_body_limit!(request)
-
-              request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
-                request.body.rewind
-                raise Html2rss::Web::BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
-              end
+              request.GET.merge(JsonBody.object(request))
             end
 
             def json_request?(request)
@@ -117,15 +102,15 @@ module Html2rss
               HOSTNAME_INPUT_REGEXP.match?(url) ? "https://#{url}" : url
             end
 
-            # Extracts via {Feeds::Service} before minting so create and serve share one expansion path.
-            #
             # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
             # @param account [Hash]
+            # @param request [Rack::Request]
             # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
-            def create_feed(params, account)
+            def create_feed(params, account, request)
+              selectors = selectors_for(request)
               raise Html2rss::Web::AutoSourceDisabledError unless Flags.auto_source_enabled?
 
-              feed_token = Auth.generate_feed_token(account[:username], params.url)
+              feed_token = Auth.generate_feed_token(account[:username], params.url, selectors:)
               raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_token
 
               result = Feeds::Service.call(resolved_source_for(feed_token))

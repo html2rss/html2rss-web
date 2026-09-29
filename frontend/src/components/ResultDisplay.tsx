@@ -1,71 +1,122 @@
 import type { ComponentChildren } from 'preact';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
+import type { FeedPreviewState, FeedPreviewWarning } from '../api/contracts';
 import type { AppViewModel } from '../feed';
+import { useClipboard } from '../hooks/useClipboard';
 import { COPY } from '../journey/copy';
+import { ConfigStudio, type AuthenticatedStudioCapability } from '../studio';
 import { DominantField } from './DominantField';
+import { Notice } from './Notice';
+import { PreviewFeedback } from './PreviewFeedback';
 import { PreviewItem } from './PreviewItem';
 
 interface ResultDisplayProperties {
   viewModel: Extract<AppViewModel, { kind: 'result' }>;
   onCreateAnother: () => void;
   onRetryPreview: () => void;
+  studio?: AuthenticatedStudioCapability;
 }
 
-interface PreviewSectionProperties {
-  ariaLabel: string;
-  eyebrow?: string;
-  children: ComponentChildren;
-}
+export function ResultDisplay({
+  viewModel,
+  onCreateAnother,
+  onRetryPreview,
+  studio,
+}: ResultDisplayProperties) {
+  if (viewModel.phase === 'unresolved') {
+    return (
+      <UnresolvedResult
+        url={viewModel.url}
+        notice={viewModel.notice}
+        studio={studio}
+        onCreateAnother={onCreateAnother}
+      />
+    );
+  }
 
-function PreviewSection({ ariaLabel, eyebrow, children }: PreviewSectionProperties) {
   return (
-    <section class="layout-rail-reading layout-stack layout-section-divided" aria-label={ariaLabel}>
-      {eyebrow && <p class="ui-eyebrow">{eyebrow}</p>}
-      {children}
+    <ReadyResult
+      viewModel={viewModel}
+      onCreateAnother={onCreateAnother}
+      onRetryPreview={onRetryPreview}
+      studio={studio}
+    />
+  );
+}
+
+function UnresolvedResult({
+  url,
+  notice,
+  studio,
+  onCreateAnother,
+}: {
+  readonly url: string;
+  readonly notice: string;
+  readonly studio?: AuthenticatedStudioCapability;
+  readonly onCreateAnother: () => void;
+}) {
+  return (
+    <section class="result-shell layout-stack" aria-live="polite" data-state="unresolved">
+      <header class="result-header layout-rail-reading layout-stack layout-stack--tight">
+        <p class="ui-eyebrow">{COPY.urlLabel}</p>
+        <h1 class="result-title ui-display-title input--mono">{url}</h1>
+      </header>
+
+      <div class="layout-rail-reading">
+        <Notice tone="error">
+          <p>{notice}</p>
+        </Notice>
+      </div>
+
+      {studio ? (
+        <ConfigStudio
+          url={studio.url}
+          token={studio.token}
+          mode="unresolved"
+          decisionNotice={notice}
+          onGenerate={studio.onGenerate}
+        />
+      ) : undefined}
+
+      <div class="ui-actions layout-rail-reading">
+        <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
+          {COPY.createAnother}
+        </button>
+      </div>
     </section>
   );
 }
 
-export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: ResultDisplayProperties) {
-  const [copied, setCopied] = useState(false);
-  const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
+function ReadyResult({
+  viewModel,
+  onCreateAnother,
+  onRetryPreview,
+  studio,
+}: {
+  readonly viewModel: Extract<AppViewModel, { kind: 'result'; phase: 'ready' }>;
+  readonly onCreateAnother: () => void;
+  readonly onRetryPreview: () => void;
+  readonly studio?: AuthenticatedStudioCapability;
+}) {
+  const { feedback, copy } = useClipboard();
   const copyButtonReference = useRef<HTMLButtonElement>(null);
   const { feed, preview, warnings } = viewModel;
-
-  const fullUrl = feed.public_url.startsWith('http')
-    ? feed.public_url
-    : `${location.origin}${feed.public_url}`;
-  const jsonFeedUrl = feed.json_public_url.startsWith('http')
-    ? feed.json_public_url
-    : `${location.origin}${feed.json_public_url}`;
+  const meadow = <ResultMeadow preview={preview} warnings={warnings} onRetryPreview={onRetryPreview} />;
+  const fullUrl = absoluteUrl(feed.public_url);
+  const jsonFeedUrl = absoluteUrl(feed.json_public_url);
   const subscribeUrl = /^https?:\/\//i.test(fullUrl) ? `feed:${fullUrl}` : undefined;
-  const canManuallyRetryPreview =
-    preview.status === 'preview_failed' && warnings.some((warning) => warning.retryable);
-  const previewMessage = warnings[0]?.message ?? '';
-  const hasPreviewItems = preview.items.length > 0;
-  const isShowPreviewError =
-    preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
 
   useEffect(() => {
     copyButtonReference.current?.focus();
-    return () => {
-      if (copyResetReference.current) clearTimeout(copyResetReference.current);
-    };
-  }, []);
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      if (copyResetReference.current) clearTimeout(copyResetReference.current);
-      copyResetReference.current = setTimeout(() => setCopied(false), 2500);
-    } catch {
-      // Clipboard may be unavailable in restricted contexts.
-    }
-  };
+  }, [feed.feed_token]);
 
   return (
-    <section class="result-shell layout-stack" aria-live="polite" data-state={viewModel.kind}>
+    <section
+      class="result-shell layout-stack"
+      aria-live="polite"
+      data-state="ready"
+      data-clipboard={feedback}
+    >
       <header class="result-header layout-rail-reading layout-stack layout-stack--tight">
         <p class="ui-eyebrow">{COPY.feedReady}</p>
         <h1 class="result-title ui-display-title">{feed.name}</h1>
@@ -79,9 +130,11 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
         readOnly
         actionRef={copyButtonReference}
         actionLabel={COPY.copyFeedUrl}
-        actionText={copied ? COPY.copied : COPY.copy}
-        actionVariant={copied ? 'soft' : 'default'}
-        onAction={() => void copyToClipboard(fullUrl)}
+        actionText={feedback === 'copied' ? COPY.copied : COPY.copy}
+        actionVariant={feedback === 'copied' ? 'soft' : 'default'}
+        onAction={() => {
+          void copy(fullUrl);
+        }}
       />
 
       <div class="ui-actions layout-rail-reading">
@@ -91,54 +144,94 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
         <a href={jsonFeedUrl} class="btn btn--ghost" target="_blank" rel="noopener noreferrer">
           {COPY.openJsonFeed}
         </a>
-        {subscribeUrl && (
+        {subscribeUrl ? (
           <a href={subscribeUrl} class="btn btn--ghost">
             {COPY.openInFeedReader}
           </a>
-        )}
+        ) : undefined}
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
           {COPY.createAnother}
         </button>
       </div>
 
-      {preview.isLoading && (
-        <PreviewSection ariaLabel={COPY.previewStatus}>
-          <div class="preview-feedback preview-feedback--loading">
-            <span class="preview-feedback__spinner" aria-hidden="true" />
-            <span>{COPY.previewChecking}</span>
-          </div>
-        </PreviewSection>
-      )}
-
-      {!preview.isLoading && hasPreviewItems && (
-        <PreviewSection ariaLabel={COPY.previewRegion} eyebrow={COPY.previewItemCount(preview.items.length)}>
-          <ul class="ui-item-list" role="list">
-            {preview.items.map((item) => (
-              <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
-                <PreviewItem
-                  title={item.title}
-                  excerpt={item.excerpt}
-                  url={item.url}
-                  publishedLabel={item.publishedLabel}
-                />
-              </li>
-            ))}
-          </ul>
-        </PreviewSection>
-      )}
-
-      {isShowPreviewError && (
-        <PreviewSection ariaLabel={COPY.previewStatus}>
-          <div class="preview-feedback preview-feedback--error">
-            <span>{previewMessage}</span>
-            {canManuallyRetryPreview && (
-              <button type="button" class="btn btn--quiet btn--linkish" onClick={onRetryPreview}>
-                {COPY.checkAgain}
-              </button>
-            )}
-          </div>
-        </PreviewSection>
+      {studio ? (
+        <ConfigStudio
+          key={feed.feed_token}
+          url={studio.url}
+          token={studio.token}
+          mode="ready"
+          onGenerate={studio.onGenerate}
+          fallback={meadow}
+          directoryHandoff
+        />
+      ) : (
+        meadow
       )}
     </section>
   );
+}
+
+function ResultMeadow({
+  preview,
+  warnings,
+  onRetryPreview,
+}: {
+  readonly preview: FeedPreviewState;
+  readonly warnings: readonly FeedPreviewWarning[];
+  readonly onRetryPreview: () => void;
+}) {
+  const previewMessage = warnings[0]?.message ?? '';
+  const hasPreviewItems = preview.items.length > 0;
+  const isShowError =
+    preview.status === 'preview_failed' && !preview.isLoading && !hasPreviewItems && !!previewMessage;
+  const canRetry = isShowError && warnings.some((warning) => warning.retryable);
+
+  let body: ComponentChildren;
+  if (preview.isLoading) {
+    body = <PreviewFeedback tone="loading">{COPY.previewChecking}</PreviewFeedback>;
+  } else if (hasPreviewItems) {
+    body = (
+      <ul class="ui-item-list ui-item-list--grid" role="list">
+        {preview.items.map((item) => (
+          <li key={`${item.title}-${item.publishedLabel || 'undated'}`} class="ui-item">
+            <PreviewItem
+              title={item.title}
+              excerpt={item.excerpt}
+              url={item.url}
+              publishedLabel={item.publishedLabel}
+              imageUrl={item.imageUrl}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  } else if (isShowError) {
+    body = (
+      <PreviewFeedback
+        tone="error"
+        onRetry={canRetry ? onRetryPreview : undefined}
+        retryLabel={canRetry ? COPY.checkAgain : undefined}
+      >
+        {previewMessage}
+      </PreviewFeedback>
+    );
+  } else {
+    return;
+  }
+
+  return (
+    <section
+      class="layout-rail-reading layout-stack layout-section-divided"
+      aria-label={hasPreviewItems && !preview.isLoading ? COPY.previewRegion : COPY.previewStatus}
+    >
+      {hasPreviewItems && !preview.isLoading ? (
+        <p class="ui-eyebrow">{COPY.previewItemCount(preview.items.length)}</p>
+      ) : undefined}
+      {body}
+    </section>
+  );
+}
+
+function absoluteUrl(path: string): string {
+  return path.startsWith('http') ? path : `${location.origin}${path}`;
 }

@@ -160,6 +160,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1', openapi: {
     summary: 'API metadata',
+    description: 'API metadata',
     operation_id: 'getApiMetadata',
     tags: ['Root'],
     security: [{}]
@@ -193,6 +194,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
+    it 'returns studio capability', :aggregate_failures do
+      get '/api/v1'
+
+      expect(last_response.status).to eq(200)
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'instance', 'studio')).to eq('enabled' => true)
+    end
+
     it 'returns catalog pointer metadata', :aggregate_failures do
       get '/api/v1'
 
@@ -217,6 +226,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/configs', openapi: {
     summary: 'Config catalog',
+    description: 'Config catalog',
     operation_id: 'getConfigCatalog',
     tags: ['Catalog'],
     security: [{}]
@@ -292,6 +302,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'OPTIONS /api/v1/configs', openapi: {
     summary: 'Config catalog preflight',
+    description: 'Config catalog preflight',
     operation_id: 'optionsConfigCatalog',
     tags: ['Catalog'],
     security: [{}]
@@ -332,6 +343,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/health', openapi: {
     summary: 'Authenticated health check',
+    description: 'Authenticated health check',
     operation_id: 'getHealthStatus',
     tags: ['Health'],
     security: [{ 'BearerAuth' => [] }]
@@ -408,6 +420,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/health/ready', openapi: {
     summary: 'Readiness probe',
+    description: 'Readiness probe',
     operation_id: 'getReadinessProbe',
     tags: ['Health'],
     security: [{}]
@@ -424,6 +437,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/health/live', openapi: {
     summary: 'Liveness probe',
+    description: 'Liveness probe',
     operation_id: 'getLivenessProbe',
     tags: ['Health'],
     security: [{}]
@@ -440,6 +454,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/strategies', openapi: {
     summary: 'List extraction strategies',
+    description: 'List extraction strategies',
     operation_id: 'listStrategies',
     tags: ['Strategies'],
     security: [{}]
@@ -458,10 +473,10 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'GET /api/v1/feeds/:token', openapi: {
     summary: 'Render feed by token',
+    description: 'Render feed by token',
     operation_id: 'renderFeedByToken',
     tags: ['Feeds'],
-    security: [{}],
-    example_mode: :multiple
+    security: [{}]
   } do
     before do
       stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
@@ -694,6 +709,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
   describe 'POST /api/v1/feeds', openapi: {
     summary: 'Create a feed',
+    description: 'Create a feed',
     operation_id: 'createFeed',
     tags: ['Feeds'],
     security: [{ 'BearerAuth' => [] }]
@@ -727,6 +743,29 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       next_action: 'enter_token',
       retry_action: 'none'
     }
+
+    it 'signs optional selectors into the feed token', :aggregate_failures do
+      selectors = {
+        items: { selector: 'article', enhance: true },
+        title: { selector: 'h2', extractor: 'text' },
+        url: { selector: 'a', extractor: 'href' },
+        published_at: { selector: 'time', extractor: 'text' }
+      }
+      post_feed_request(url: feed_url, selectors:)
+
+      token = expect_success_response(last_response).dig('data', 'feed', 'feed_token')
+      fragment = Html2rss::Web::Auth.validate_and_decode_feed_token(token).selectors.to_config_fragment
+      expect(fragment.dig(:selectors, :items, :selector)).to eq('article')
+      expect(fragment.dig(:selectors, :title, :extractor)).to eq('text')
+    end
+
+    it 'signs pagination selectors into the feed token', :aggregate_failures do
+      post_feed_request(url: feed_url, selectors: SelectorsContractFixtures::PAGINATION_INTEGER)
+
+      token = expect_success_response(last_response).dig('data', 'feed', 'feed_token')
+      fragment = Html2rss::Web::Auth.validate_and_decode_feed_token(token).selectors.to_config_fragment
+      expect(fragment.dig(:selectors, :items, :pagination)).to eq(2)
+    end
 
     it 'creates a feed when request is valid', :aggregate_failures do
       header 'Authorization', "Bearer #{admin_token}"
@@ -790,6 +829,24 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(json.dig('error', 'message')).to eq(Html2rss::Web::AutoSourceDisabledError::DEFAULT_MESSAGE)
     end
 
+    it 'rejects client-authored selectors while the studio is disabled', :aggregate_failures, openapi: false do
+      ClimateControl.modify(STUDIO_ENABLED: 'false') do
+        post_feed_request(url: feed_url, selectors: { items: { selector: 'article' } })
+      end
+
+      expect(last_response.status).to eq(403)
+      expect(JSON.parse(last_response.body).dig('error', 'message')).to eq('Studio is disabled')
+    end
+
+    it 'still creates a url-only feed while the studio is disabled', :aggregate_failures, openapi: false do
+      ClimateControl.modify(STUDIO_ENABLED: 'false', AUTO_SOURCE_ENABLED: 'true') do
+        post_feed_request(url: feed_url)
+      end
+
+      expect(last_response.status).to eq(201)
+      expect(expect_success_response(last_response).dig('data', 'feed', 'url')).to eq(feed_url)
+    end
+
     it 'returns 429 when rate limit is exceeded', :aggregate_failures do
       allow(Html2rss::Web::Flags).to receive_messages(
         rate_limit_enabled?: true,
@@ -830,6 +887,467 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.status).to eq(400)
       json = JSON.parse(last_response.body)
       expect(json.dig('error', 'message')).to eq('Payload too large')
+    end
+  end
+
+  describe 'POST /api/v1/feeds/validate', openapi: {
+    summary: 'Validate a selectors document',
+    description: 'Validate a selectors document',
+    operation_id: 'validateFeedConfig',
+    tags: ['Studio'],
+    security: [{ 'BearerAuth' => [] }]
+  } do
+    def post_validate(payload)
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/validate', payload.to_json
+    end
+
+    let(:perform_request) do
+      lambda {
+        header 'Content-Type', 'application/json'
+        post '/api/v1/feeds/validate', {
+          selectors: { items: { selector: 'article' } },
+          url: 'https://example.com/articles'
+        }.to_json
+      }
+    end
+
+    it_behaves_like 'api error contract', {
+      status: 401,
+      code: Html2rss::Web::UnauthorizedError::CODE,
+      kind: 'auth',
+      retryable: false,
+      next_action: 'enter_token',
+      retry_action: 'none'
+    }
+
+    it 'returns a structured report for a selectors document', :aggregate_failures do
+      selectors = {
+        items: { selector: 'article', enhance: true },
+        title: { selector: 'h2', extractor: 'text' },
+        url: { selector: 'a', extractor: 'href' },
+        published_at: { selector: 'time', extractor: 'text' }
+      }
+      post_validate({ selectors:, url: 'https://example.com/articles' })
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'report', 'success')).to be(true)
+      expect(json.dig('data', 'selectors', 'items', 'selector')).to eq('article')
+      expect(json.dig('data', 'selectors', 'title', 'extractor')).to eq('text')
+      expect(json.dig('data', 'selectors', 'url', 'extractor')).to eq('href')
+    end
+
+    it 'exports the page url beside the selectors' do
+      post_validate({ selectors: { items: { selector: 'article' } }, url: 'https://example.com/articles' })
+
+      json = expect_success_response(last_response)
+      exported = YAML.safe_load(json.dig('data', 'yaml'))
+      expect(exported.dig('channel', 'url')).to eq(Html2rss::Web::UrlValidator.canonical_url('https://example.com/articles'))
+      expect(exported.dig('selectors', 'items', 'selector')).to eq('article')
+    end
+
+    it 'rejects an unusable page url' do
+      post_validate({ selectors: { items: { selector: 'article' } }, url: 'not a url' })
+
+      expect(last_response.status).to eq(400)
+      expect(JSON.parse(last_response.body).dig('error', 'message')).to eq('Invalid URL format')
+    end
+
+    it 'returns a parse issue for unparseable yaml' do
+      post_validate(yaml: "selectors: [\n")
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'report', 'issues', 0, 'code')).to eq('parse')
+    end
+
+    it 'rejects channel so the token url cannot be replaced' do
+      post_validate(yaml: "channel:\n  url: https://evil.example\nselectors:\n  items:\n    selector: article\n")
+
+      expect(last_response.status).to eq(400)
+      expect(JSON.parse(last_response.body).dig('error', 'message')).to eq('channel is not allowed')
+    end
+  end
+
+  describe 'POST /api/v1/feeds/preview', openapi: {
+    summary: 'Preview a selectors document feed',
+    description: 'Preview a selectors document feed',
+    operation_id: 'previewFeed',
+    tags: ['Studio'],
+    security: [{ 'BearerAuth' => [] }]
+  } do
+    let(:preview_result) do
+      Html2rss::Test::Result.new(
+        success: true, item_count: 2,
+        sample_items: [{
+          'title' => 'A',
+          'url' => 'https://example.com/a',
+          'published_at' => '2026-01-02T03:04:05Z'
+        }],
+        channel_title: 'Example',
+        channel_url: feed_url, strategy_used: :auto, duration_seconds: 0.1, validation_issues: [],
+        error_message: nil, failure_kind: nil, rss: '<rss>do-not-leak</rss>'
+      )
+    end
+    let(:failed_preview_result) do
+      Html2rss::Test::Result.new(
+        success: false, item_count: 0, sample_items: [], channel_title: nil,
+        channel_url: feed_url, strategy_used: :auto, duration_seconds: 0.1, validation_issues: [],
+        error_message: 'no items', failure_kind: Html2rss::Test::FailureKind.new(name: :min_items), rss: nil,
+        quality_report: Html2rss::Test::QualityReport.new(
+          warnings: [:short_titles], metrics: { 'short_title_count' => 2 }, native_feed: nil, defer_reason: nil
+        )
+      )
+    end
+
+    def imaged_preview_result
+      preview_result.with(
+        sample_items: [{ 'title' => 'A' }, { 'title' => 'Plain' }, { 'title' => 'Enclosed' }],
+        rss: %(<rss version="2.0"><channel><title>t</title>#{imaged_items}</channel></rss>)
+      )
+    end
+
+    def imaged_items
+      [
+        '<item><title>A</title><description>&lt;img src="https://cdn.example/a.jpg"&gt;</description></item>',
+        '<item><title>Plain</title><enclosure url="https://cdn.example/b.mp3" type="audio/mpeg" length="1"/></item>',
+        '<item><title>Enclosed</title><enclosure url="https://cdn.example/c.jpg" type="image/jpeg" length="2"/></item>'
+      ].join
+    end
+
+    def capped_preview_result
+      rss = %(<rss version="2.0"><channel><title>t</title>#{capped_items}</channel></rss>)
+      preview_result.with(item_count: 12, rss:)
+    end
+
+    def capped_items
+      (1..12).map { |index| capped_item(index) }.join
+    end
+
+    def capped_item(index)
+      %(<item><title>Item #{index}</title><link>https://example.com/#{index}</link>#{capped_image(index)}</item>)
+    end
+
+    def capped_image(index)
+      case index
+      when 1 then '<description>&lt;img src="https://cdn.example/1.jpg"&gt;</description>'
+      when 2 then '<description>&lt;img src="javascript:alert(1)"&gt;</description>'
+      when 3 then '<enclosure url="data:image/png;base64,aaaa" type="image/png" length="1"/>'
+      when 4 then '<enclosure url="http://cdn.example/4.jpg" type="image/jpeg" length="2"/>'
+      else ''
+      end
+    end
+
+    def expected_capped_rows
+      images = ['https://cdn.example/1.jpg', nil, nil, 'http://cdn.example/4.jpg', *Array.new(6)]
+      (1..10).map { |index| ["Item #{index}", images[index - 1]] }
+    end
+
+    before do
+      Html2rss::Web::Api::V1::PreviewPageCache.clear!
+      allow(Html2rss).to receive(:test).and_return(preview_result)
+    end
+
+    after do
+      Html2rss::Web::Api::V1::PreviewPageCache.clear!
+    end
+
+    def post_preview(url)
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url:, selectors: { items: { selector: 'article' } } }.to_json
+    end
+
+    def preview_strategy
+      Html2rss::Web::Feeds::GeneratorInput.for_token(url: feed_url, strategy: nil)[:strategy]
+    end
+
+    def record_preview_results(results)
+      pending = results.dup
+      configs = []
+      cached_pages = []
+      allow(Html2rss).to receive(:test) do |config, **|
+        path = config.dig(:request, :local_file_path)
+        cached_pages << (path && File.file?(path) ? File.read(path) : nil)
+        configs << config
+        pending.shift || preview_result
+      end
+      [configs, cached_pages]
+    end
+
+    def kept_page_result
+      preview_result.with(response_body: '<html>kept</html>')
+    end
+
+    def rejected_page_results
+      [
+        kept_page_result,
+        failed_preview_result.with(response_body: '<html>failed</html>'),
+        preview_result.with(response_body: '   '),
+        kept_page_result
+      ]
+    end
+
+    it 'selects test fields and never returns the rss body', :aggregate_failures do
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      json = expect_success_response(last_response)
+      expect(json.fetch('data').keys).to contain_exactly(
+        'item_count', 'sample_items', 'quality_report', 'failure_kind', 'validation_issues'
+      )
+      expect(json.dig('data', 'item_count')).to eq(2)
+    end
+
+    it 'reports the failure kind and quality report when extraction comes up empty', :aggregate_failures do
+      allow(Html2rss).to receive(:test).and_return(failed_preview_result)
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'failure_kind')).to eq('min_items')
+      expect(json.dig('data', 'quality_report', 'warnings')).to eq(['short_titles'])
+    end
+
+    it 'adds one image url per sample item and still omits the rss document', :aggregate_failures do
+      allow(Html2rss).to receive(:test).and_return(imaged_preview_result)
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'sample_items').map { it['image'] }).to eq(
+        ['https://cdn.example/a.jpg', nil, 'https://cdn.example/c.jpg']
+      )
+      expect(json.fetch('data').keys).not_to include('rss')
+    end
+
+    it 'caps the meadow at ten items and keeps only http(s) images', :aggregate_failures do
+      allow(Html2rss).to receive(:test).and_return(capped_preview_result)
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      json = expect_success_response(last_response)
+      samples = json.dig('data', 'sample_items')
+      expect(json.dig('data', 'item_count')).to eq(12)
+      expect(samples.map { it.values_at('title', 'image') }).to eq(expected_capped_rows)
+    end
+
+    it 'keeps gem samples when the rss document cannot be parsed', :aggregate_failures do
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      json = expect_success_response(last_response)
+      expect(json.dig('data', 'sample_items', 0, 'title')).to eq('A')
+      expect(json.dig('data', 'sample_items', 0)).not_to have_key('image')
+    end
+
+    it 'replays the same url from the cached page and fetches a different url', :aggregate_failures do
+      configs, pages = record_preview_results([kept_page_result, kept_page_result, kept_page_result])
+      post_preview(feed_url)
+      post_preview(feed_url)
+      post_preview('https://other.example/news')
+
+      expect(configs.map { it[:strategy] }).to eq([preview_strategy, :local_file, preview_strategy])
+      expect(pages[1]).to eq('<html>kept</html>')
+    end
+
+    it 'removes the temp file when the cache is cleared' do
+      configs, = record_preview_results([kept_page_result, kept_page_result])
+      post_preview(feed_url)
+      post_preview(feed_url)
+      path = configs[1].dig(:request, :local_file_path)
+      Html2rss::Web::Api::V1::PreviewPageCache.clear!
+
+      expect(File.file?(path)).to be(false)
+    end
+
+    it 'keeps the stored page when a later body is empty or failed', :aggregate_failures do
+      configs, pages = record_preview_results(rejected_page_results)
+      post_preview(feed_url)
+      post_preview(feed_url)
+      post_preview('https://other.example/empty')
+      post_preview(feed_url)
+
+      expect(configs.map { it[:strategy] }).to eq([preview_strategy, :local_file, preview_strategy, :local_file])
+      expect(pages.values_at(1, 3)).to eq(['<html>kept</html>', '<html>kept</html>'])
+    end
+
+    it 'previews through the token generator config' do
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      selectors = Html2rss::Web::SelectorsDocument.from_client(selectors: { items: { selector: 'article' } })
+      post '/api/v1/feeds/preview', { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+      expect(Html2rss).to have_received(:test).with(
+        Html2rss::Web::Feeds::GeneratorInput.for_token(url: feed_url, selectors:),
+        min_items: 1
+      )
+    end
+  end
+
+  describe 'POST /api/v1/feeds/suggest_selectors', openapi: {
+    summary: 'Suggest selectors for a page',
+    description: 'Suggest selectors for a page',
+    operation_id: 'suggestSelectors',
+    tags: ['Studio'],
+    security: [{ 'BearerAuth' => [] }]
+  } do
+    def ranked_candidates
+      {
+        items: [
+          { selector: 'article', enhance: false, sample: 'First story' },
+          { selector: '.story', enhance: true, sample: 'Second story' }
+        ],
+        title: [{ selector: 'h2', sample: 'First story' }],
+        link: [{ selector: 'a', sample: 'First story' }],
+        published: [{ selector: 'time', sample: 'Yesterday' }]
+      }
+    end
+
+    def wire_candidates
+      {
+        'items' => [
+          { 'selector' => 'article', 'enhance' => false, 'sample' => 'First story' },
+          { 'selector' => '.story', 'enhance' => true, 'sample' => 'Second story' }
+        ],
+        'title' => [{ 'selector' => 'h2', 'sample' => 'First story' }],
+        'link' => [{ 'selector' => 'a', 'sample' => 'First story' }],
+        'published' => [{ 'selector' => 'time', 'sample' => 'Yesterday' }]
+      }
+    end
+
+    def empty_candidates = { items: [], title: [], link: [], published: [] }
+
+    def empty_wire_candidates
+      { 'items' => [], 'title' => [], 'link' => [], 'published' => [] }
+    end
+
+    def capture_double(candidates, admission_drops: { 'chrome' => 2 })
+      instance_double(
+        Html2rss::Capture::CaptureResult,
+        segment_strategy: :list,
+        admission_drops:,
+        candidates:
+      )
+    end
+
+    def post_suggest
+      header 'Authorization', "Bearer #{admin_token}"
+      header 'Content-Type', 'application/json'
+      post '/api/v1/feeds/suggest_selectors', { url: feed_url, items_selector: 'h2' }.to_json
+    end
+
+    before { Html2rss::Web::Api::V1::PreviewPageCache.clear! }
+    after { Html2rss::Web::Api::V1::PreviewPageCache.clear! }
+
+    it 'returns empty candidate buckets as success', :aggregate_failures do
+      allow(Html2rss).to receive(:capture).and_return(capture_double(empty_candidates, admission_drops: {}))
+      post_suggest
+
+      json = expect_success_response(last_response)
+      expect(last_response.status).to eq(200)
+      expect(json.dig('data', 'candidates')).to eq(empty_wire_candidates)
+    end
+
+    it 'returns ranked selector candidates', :aggregate_failures do
+      allow(Html2rss).to receive(:capture).and_return(capture_double(ranked_candidates))
+      post_suggest
+
+      json = expect_success_response(last_response)
+      expect(last_response.status).to eq(200)
+      expect(json.fetch('data')).to eq(
+        'candidates' => wire_candidates,
+        'segment_strategy' => 'list',
+        'admission_drops' => { 'chrome' => 2 }
+      )
+    end
+
+    it 'replays the cached preview page instead of capturing live', :aggregate_failures do
+      page = '<html><body><article>Cached</article></body></html>'
+      result = instance_double(Html2rss::Test::Result, success: true, response_body: page)
+      Html2rss::Web::Api::V1::PreviewPageCache.store(feed_url, result)
+      path = Html2rss::Web::Api::V1::PreviewPageCache.path_for(feed_url)
+      allow(Html2rss).to receive(:capture).and_return(capture_double(empty_candidates, admission_drops: {}))
+
+      post_suggest
+
+      expect(Html2rss).to have_received(:capture).with(
+        feed_url,
+        hash_including(strategy: :auto, items_selector: 'h2', local_file_path: path)
+      )
+      expect(path).to be_a(String)
+      expect(File.read(path)).to eq(page)
+    end
+
+    it 'captures live when the preview cache has no matching URL', :aggregate_failures do
+      allow(Html2rss).to receive(:capture).and_return(capture_double(empty_candidates, admission_drops: {}))
+
+      post_suggest
+
+      expect(Html2rss).to have_received(:capture).with(
+        feed_url,
+        hash_including(strategy: :auto, items_selector: 'h2')
+      )
+      expect(Html2rss).not_to have_received(:capture).with(anything, hash_including(:local_file_path))
+    end
+
+    def raise_empty_capture!
+      allow(Html2rss).to receive(:capture).and_raise(
+        Html2rss::NoFeedItemsExtracted.new(attempts: [{ strategy: :default, items_count: 0, error_class: nil }])
+      )
+    end
+
+    it 'returns EXTRACTION_EMPTY Decision JSON when capture finds no items', :aggregate_failures do
+      raise_empty_capture!
+      post_suggest
+
+      expect(last_response.status).to eq(422)
+      expect(last_response.content_type).to include('application/json')
+      expect(JSON.parse(last_response.body)).to include(
+        'success' => false,
+        'error' => include(
+          'code' => Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_CODE,
+          'message' => Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE
+        )
+      )
+    end
+
+    it 'returns EXTRACTION_EMPTY JSON in development instead of the exception page', :aggregate_failures do
+      raise_empty_capture!
+
+      ClimateControl.modify('RACK_ENV' => 'development') do
+        post_suggest
+      end
+
+      expect(last_response.status).to eq(422)
+      expect(last_response.content_type).to include('application/json')
+      expect(JSON.parse(last_response.body).dig('error', 'code')).to eq(
+        Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_CODE
+      )
+      expect(last_response.body).not_to include('NoFeedItemsExtracted')
+      expect(last_response.body).not_to include('auto_fallback.rb')
+    end
+  end
+
+  describe 'studio POSTs with STUDIO_ENABLED=false', openapi: false do
+    around do |example|
+      ClimateControl.modify(STUDIO_ENABLED: 'false') { example.run }
+    end
+
+    Html2rss::Web::Routes::ApiV1::FeedRoutes::STUDIO_POSTS.each_key do |path|
+      it "returns 403 for POST /api/v1/feeds/#{path}", :aggregate_failures do
+        header 'Authorization', "Bearer #{admin_token}"
+        header 'Content-Type', 'application/json'
+        post "/api/v1/feeds/#{path}", { url: feed_url, selectors: { items: { selector: 'article' } } }.to_json
+
+        expect(last_response.status).to eq(403)
+        expect(JSON.parse(last_response.body).dig('error', 'message')).to eq('Studio is disabled')
+      end
     end
   end
 end

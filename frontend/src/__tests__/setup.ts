@@ -1,100 +1,40 @@
-import '@testing-library/jest-dom';
-import { afterAll, afterEach, beforeAll, beforeEach, vi } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/preact';
+import { server } from './mocks/server';
 
-let server: typeof import('./mocks/server').server;
-
-// Mock window and document for tests
 Object.defineProperty(globalThis, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: (query: string) => ({
     matches: false,
     media: query,
     onchange: undefined,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }),
 });
 
-// Persistent storage stubs with in-memory backing store
-const createStorageMock = () => {
-  const store = new Map<string, string>();
-
-  return {
-    store,
-    api: {
-      get length() {
-        return store.size;
-      },
-      // eslint-disable-next-line unicorn/no-null -- Web Storage returns null for missing keys.
-      getItem: vi.fn((key: string) => (store.has(key) ? store.get(key)! : null)),
-      setItem: vi.fn((key: string, value: string) => {
-        store.set(key, value);
-      }),
-      removeItem: vi.fn((key: string) => {
-        store.delete(key);
-      }),
-      clear: vi.fn(() => {
-        store.clear();
-      }),
-      // eslint-disable-next-line unicorn/no-null, unicorn/prefer-iterator-to-array -- Web Storage key() returns null for out-of-range indexes.
-      key: vi.fn((index: number) => [...store.keys()][index] ?? null),
-    },
-  };
-};
-
-const local = createStorageMock();
-const session = createStorageMock();
-
-Object.defineProperties(globalThis, {
-  localStorage: {
-    value: local.api,
-    configurable: true,
-    writable: true,
-  },
-  sessionStorage: {
-    value: session.api,
-    configurable: true,
-    writable: true,
-  },
+const clipboardWriteText = vi.fn(() => Promise.resolve());
+Object.defineProperty(navigator, 'clipboard', {
+  configurable: true,
+  value: { writeText: clipboardWriteText },
 });
 
-beforeEach(() => {
-  local.store.clear();
-  session.store.clear();
-  local.api.getItem.mockClear();
-  local.api.setItem.mockClear();
-  local.api.removeItem.mockClear();
-  local.api.clear.mockClear();
-  local.api.key.mockClear();
-  session.api.getItem.mockClear();
-  session.api.setItem.mockClear();
-  session.api.removeItem.mockClear();
-  session.api.clear.mockClear();
-  session.api.key.mockClear();
-});
-
-// Mock clipboard API
-Object.assign(navigator, {
-  clipboard: {
-    writeText: vi.fn(() => Promise.resolve()),
-  },
-});
-
-// Ensure scrollIntoView exists for components relying on it
 Element.prototype.scrollIntoView = vi.fn();
 
-// Wire up MSW in node environment
-beforeAll(async () => {
-  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function
-  ({ server } = await import('./mocks/server'));
+beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
 });
+
 afterEach(() => {
   server.resetHandlers();
   cleanup();
+  clipboardWriteText.mockClear();
 });
-afterAll(() => server.close());
+
+afterAll(() => {
+  server.close();
+});

@@ -89,7 +89,9 @@ module Html2rss
       plugin :not_allowed
       plugin :exception_page
       plugin :error_handler do |error|
-        next exception_page(error) if development? && !error.is_a?(HttpError)
+        # Owned Decision mappings (EXTRACTION_EMPTY, BLOCKED_SURFACE, …) stay JSON API surface in
+        # development. Only unclassified INTERNAL_SERVER_ERROR gets the exception page.
+        next exception_page(error) if development? && development_exception_page?(error)
 
         ErrorResponder.respond(request: request, response: response, error: error)
       end
@@ -107,6 +109,15 @@ module Html2rss
       end
 
       private
+
+      # @param error [Exception]
+      # @return [Boolean]
+      def development_exception_page?(error)
+        return false if error.is_a?(HttpError)
+        return false if error.is_a?(ErrorClassifier::DecidedError)
+
+        ErrorClassifier.classify(error).code == ErrorClassifier::INTERNAL_SERVER_ERROR.code
+      end
 
       def render_index_page(router)
         router.response['Content-Type'] = 'text/html'
