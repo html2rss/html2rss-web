@@ -177,7 +177,7 @@ module Openapi
         return unless code.is_a?(Hash)
 
         code[:type] = 'string'
-        code[:enum] = Html2rss::Config::CODES.map(&:to_s).sort
+        code[:enum] = Html2rss::Config::ValidationIssue::CODES.map(&:to_s).sort
       end
 
       def stamp_open_value(value)

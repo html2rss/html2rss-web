@@ -175,7 +175,7 @@ RSpec.describe Openapi::Document do
     described_class.apply!(spec, components: {})
 
     code = spec.dig(:components, :schemas, :ValidationIssue, :properties, :code)
-    expect(code[:enum]).to eq(Html2rss::Config::CODES.map(&:to_s).sort)
+    expect(code[:enum]).to eq(Html2rss::Config::ValidationIssue::CODES.map(&:to_s).sort)
     expect(code[:type]).to eq('string')
 
     %i[expected actual].each do |field|

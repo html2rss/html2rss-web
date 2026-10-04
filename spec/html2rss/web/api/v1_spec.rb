@@ -993,7 +993,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       Html2rss::Test::Result.new(
         success: false, item_count: 0, sample_items: [], channel_title: nil,
         channel_url: feed_url, strategy_used: :auto, duration_seconds: 0.1, validation_issues: [],
-        error_message: 'no items', failure_kind: Html2rss::Test::FailureKind.new(name: :min_items), rss: nil,
+        error_message: 'no items', failure_kind: Html2rss::Test::FailureKind[:min_items], rss: nil,
         quality_report: Html2rss::Test::QualityReport.new(
           warnings: [:short_titles], metrics: { 'short_title_count' => 2 }, native_feed: nil, defer_reason: nil
         )
