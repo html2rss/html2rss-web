@@ -171,6 +171,21 @@ RSpec.describe Html2rss::Web::FeedToken do
         expect(described_class.decode(nil)).to be_nil
       end
 
+      it 'rejects a selectors wire key that is not an object' do
+        bad_token = Base64.urlsafe_encode64(Zlib::Deflate.deflate({
+          p: { u: 'alice', l: 'https://example.com/feed', e: 123, c: 'nope' }, s: 'sig'
+        }.to_json))
+
+        expect(described_class.decode(bad_token)).to be_nil
+      end
+
+      it 'rejects selector wire outside the allowlist' do
+        wire = { u: 'alice', l: 'https://example.com/feed', e: 123, c: { channel: { url: 'https://evil.example' } } }
+        bad_token = Base64.urlsafe_encode64(Zlib::Deflate.deflate({ p: wire, s: 'sig' }.to_json))
+
+        expect(described_class.decode(bad_token)).to be_nil
+      end
+
       it 'rejects payloads with incorrect types', :aggregate_failures do
         invalid_payloads = [
           { u: 'alice', l: 'https://example.com/feed', e: '123456' },
@@ -203,15 +218,58 @@ RSpec.describe Html2rss::Web::FeedToken do
     end
   end
 
+  describe 'selectors document' do
+    let(:secret_key) { 'test-secret' }
+    let(:url) { 'https://example.com/feed' }
+    let(:selectors) do
+      Html2rss::Web::SelectorsDocument.from_client(selectors: { items: { selector: 'article', enhance: true } })
+    end
+
+    it 'keeps the legacy signature when selectors are absent' do
+      token = Html2rss::Web::FeedToken::Signer.create(username: 'alice', url:, secret_key:, strategy: 'some_strategy')
+      legacy = { username: 'alice', url:, expires_at: token.expires_at, strategy: 'some_strategy' }
+      digest = OpenSSL::HMAC.hexdigest('SHA256', secret_key, JSON.generate(legacy))
+
+      expect(token.signature).to eq(digest)
+    end
+
+    it 'round-trips signed selectors and rejects a swap', :aggregate_failures do
+      token = Html2rss::Web::FeedToken::Signer.create(
+        username: 'alice', url:, secret_key:, strategy: 'some_strategy', selectors:
+      )
+      encoded = Html2rss::Web::FeedToken::Codec.encode(token)
+      swapped = Html2rss::Web::SelectorsDocument.from_client(selectors: { items: { selector: 'section' } })
+      tampered = Html2rss::Web::FeedToken::Codec.encode(token.with(selectors: swapped))
+
+      expect(Html2rss::Web::FeedToken::Signer.validate(encoded, url, secret_key).selectors).to eq(selectors)
+      expect(Html2rss::Web::FeedToken::Signer.validate(tampered, url, secret_key)).to be_nil
+    end
+
+    it 'signs selectors passed through Auth.generate_feed_token' do
+      encoded = Html2rss::Web::Auth.generate_feed_token('admin', url, selectors:)
+
+      expect(Html2rss::Web::Auth.validate_and_decode_feed_token(encoded).selectors).to eq(selectors)
+    end
+  end
+
   describe '#expired?' do
     it 'returns true for past timestamps' do
-      token = described_class.new('alice', 'https://example.com/feed', Time.now.to_i - 1, 'sig', nil)
+      token = described_class.new(
+        username: 'alice',
+        url: 'https://example.com/feed',
+        expires_at: Time.now.to_i - 1,
+        signature: 'sig',
+        strategy: nil
+      )
 
       expect(token.expired?).to be(true)
     end
 
     it 'returns false for future timestamps' do
-      token = described_class.new('alice', 'https://example.com/feed', Time.now.to_i + 3600, 'sig', nil)
+      token = described_class.new(
+        username: 'alice', url: 'https://example.com/feed', expires_at: Time.now.to_i + 3600, signature: 'sig',
+        strategy: nil
+      )
 
       expect(token.expired?).to be(false)
     end

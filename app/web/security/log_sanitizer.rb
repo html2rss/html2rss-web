@@ -12,12 +12,18 @@ module Html2rss
       PATH_KEYS = Set['endpoint', 'path'].freeze
 
       class << self
+        # Redacts the feed-token segment while keeping named sub-routes readable, so
+        # studio calls stay attributable in the audit trail.
+        #
         # @param path [String, nil]
         # @return [String, nil]
         def sanitize_path(path)
           return if path.nil?
 
-          path.to_s.gsub(FEED_TOKEN_ROUTE, '\1[REDACTED]\3')
+          path.to_s.gsub(FEED_TOKEN_ROUTE) do
+            prefix, segment, extension = Regexp.last_match.captures
+            named_feed_route?(segment) ? Regexp.last_match(0) : "#{prefix}[REDACTED]#{extension}"
+          end
         end
 
         # @param details [Hash]
@@ -29,6 +35,15 @@ module Html2rss
         end
 
         private
+
+        # Route names are owned by the router; asking it keeps one list of
+        # non-token segments under +/api/v1/feeds+.
+        #
+        # @param segment [String, nil]
+        # @return [Boolean]
+        def named_feed_route?(segment)
+          Routes::ApiV1::FeedRoutes::STUDIO_POSTS.key?(segment)
+        end
 
         # @param key [Object]
         # @param value [Object]

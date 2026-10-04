@@ -89,7 +89,8 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           Html2rss::Web::FeedToken,
           username: 'admin',
           url: 'https://example.com/private',
-          strategy: 'default'
+          strategy: 'default',
+          selectors: nil
         )
       end
 
@@ -174,6 +175,32 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
         expect { described_class.call(feed_request) }
           .to raise_error(Html2rss::Web::ForbiddenError, 'Access Denied')
+      end
+
+      it 're-checks selector wire before building the generator config' do
+        allow(feed_token).to receive(:selectors).and_return(
+          instance_double(
+            Html2rss::Web::SelectorsDocument,
+            to_wire: { channel: { url: 'https://evil.example' } }
+          )
+        )
+
+        expect { described_class.call(feed_request) }
+          .to raise_error(Html2rss::Web::BadRequestError, 'channel is not allowed')
+      end
+
+      it 'keeps the token url when selectors are signed' do
+        selectors = Html2rss::Web::SelectorsDocument.from_client(
+          selectors: { items: { selector: 'article' } }
+        )
+        allow(feed_token).to receive(:selectors).and_return(selectors)
+
+        resolved = described_class.call(feed_request)
+
+        expect(resolved.generator_input).to include(
+          channel: { url: 'https://example.com/private' },
+          selectors: { items: { selector: 'article' } }
+        )
       end
     end
   end

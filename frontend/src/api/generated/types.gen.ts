@@ -4,6 +4,230 @@ export type ClientOptions = {
   baseUrl: 'https://api.html2rss.dev/api/v1' | 'http://127.0.0.1:4000/api/v1' | (string & {});
 };
 
+/**
+ * One ranked field selector with a sample headline. Best match is first.
+ */
+export type FieldSelectorCandidate = {
+  /**
+   * Visible text of a matched node
+   */
+  sample: string;
+  selector: string;
+};
+
+/**
+ * attribute
+ *
+ * Return the value of an HTML attribute on the selected element. Requires sibling selector option `attribute` (attribute name).
+ */
+export type Html2RssExtractorAttribute = 'attribute';
+
+/**
+ * href
+ *
+ * Return the absolute URL from the selected element's `href` attribute (relative hrefs are resolved against the page base URL).
+ */
+export type Html2RssExtractorHref = 'href';
+
+/**
+ * html
+ *
+ * Return the outer HTML of the selected element. Sanitize during post-processing (e.g. `sanitize_html`).
+ */
+export type Html2RssExtractorHtml = 'html';
+
+/**
+ * static
+ *
+ * Return a fixed value from sibling selector option `static` (no DOM read).
+ */
+export type Html2RssExtractorStatic = 'static';
+
+/**
+ * text
+ *
+ * Return collapsed visible text of the selected element (default extractor).
+ */
+export type Html2RssExtractorText = 'text';
+
+/**
+ * gsub
+ *
+ * Replace matches of `pattern` in the extracted string with `replacement` (Ruby String#gsub; pattern may be a regexp-like string). Patterns over 256 characters as written, or with nested quantifiers, are rejected.
+ */
+export type Html2RssPostProcessorGsub = {
+  name: 'gsub';
+  pattern: string;
+  replacement: string | {
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+/**
+ * markdown_to_html
+ *
+ * Convert Markdown to HTML (Kramdown) and sanitize the result. Often chained after `template`.
+ */
+export type Html2RssPostProcessorMarkdownToHtml = {
+  name: 'markdown_to_html';
+  [key: string]: unknown;
+};
+
+/**
+ * parse_time
+ *
+ * Parse a time string with Time.parse and return RFC822, using the channel `time_zone`.
+ */
+export type Html2RssPostProcessorParseTime = {
+  name: 'parse_time';
+  [key: string]: unknown;
+};
+
+/**
+ * parse_uri
+ *
+ * Normalize a URL string; resolve relative URLs against the channel URL.
+ */
+export type Html2RssPostProcessorParseUri = {
+  name: 'parse_uri';
+  [key: string]: unknown;
+};
+
+/**
+ * sanitize_html
+ *
+ * Sanitize HTML (sanitize gem RELAXED plus html2rss defaults: absolute URLs, safe link/img attributes, wrap lone images in anchors).
+ */
+export type Html2RssPostProcessorSanitizeHtml = {
+  name: 'sanitize_html';
+  [key: string]: unknown;
+};
+
+/**
+ * substring
+ *
+ * Return a slice of the extracted string using Integer `start` and optional `end` (Ruby String#[] range semantics; end may be omitted).
+ */
+export type Html2RssPostProcessorSubstring = {
+  end?: number;
+  name: 'substring';
+  start: number;
+  [key: string]: unknown;
+};
+
+/**
+ * template
+ *
+ * Format a string with Kernel#format-style placeholders (`%{key}` / `%<key>s`). `%{self}` is the current selector value; other keys resolve sibling selectors.
+ */
+export type Html2RssPostProcessorTemplate = {
+  name: 'template';
+  string: string;
+  [key: string]: unknown;
+};
+
+/**
+ * One ranked items selector with a sample headline. Best match is first.
+ */
+export type ItemsSelectorCandidate = {
+  enhance: boolean;
+  /**
+   * Visible text of a matched node
+   */
+  sample: string;
+  selector: string;
+};
+
+/**
+ * One preview meadow row returned by POST /feeds/preview.
+ */
+export type PreviewSampleItem = {
+  image?: string | null;
+  published_at?: string | null;
+  title: string;
+  url?: string | null;
+};
+
+/**
+ * Ranked selector candidates. Empty buckets are a successful response.
+ */
+export type SelectorCandidates = {
+  items: Array<ItemsSelectorCandidate>;
+  link: Array<FieldSelectorCandidate>;
+  published: Array<FieldSelectorCandidate>;
+  title: Array<FieldSelectorCandidate>;
+};
+
+/**
+ * Selectors used to extract article attributes.
+ */
+export type SelectorsDocument = {
+  /**
+   * List of selector keys whose values will be used as categories. Each entry must reference a sibling selector key; runtime validation enforces those references.
+   */
+  categories?: Array<string>;
+  /**
+   * Describes enclosure extraction settings.
+   */
+  enclosure?: {
+    attribute?: string;
+    content_type?: string;
+    /**
+     * Extractor used to pull a value from the selected element.
+     */
+    extractor?: Html2RssExtractorAttribute | Html2RssExtractorHref | Html2RssExtractorHtml | Html2RssExtractorStatic | Html2RssExtractorText;
+    /**
+     * Ordered transforms applied to the extracted value.
+     */
+    post_process?: Array<Html2RssPostProcessorGsub | Html2RssPostProcessorMarkdownToHtml | Html2RssPostProcessorParseTime | Html2RssPostProcessorParseUri | Html2RssPostProcessorSanitizeHtml | Html2RssPostProcessorSubstring | Html2RssPostProcessorTemplate>;
+    static?: string;
+  };
+  /**
+   * List of selector keys used to build the GUID. Each entry must reference a sibling selector key; runtime validation enforces those references.
+   */
+  guid?: Array<string>;
+  /**
+   * Defines the items selector and list-card enhance settings.
+   */
+  items?: {
+    /**
+     * List-card enrichment: run Html::ArticleExtractor on each matched item node to fill missing fields from the card HTML.
+     */
+    enhance?: boolean;
+    order?: 'reverse';
+    /**
+     * Pagination configuration or maximum page count integer.
+     */
+    pagination?: number | {
+      cursor_path?: string;
+      increment?: number;
+      max_pages?: number;
+      next_url_path?: string;
+      param?: string;
+      selector?: string;
+      start_offset?: number;
+      start_page?: number;
+      step?: number;
+      strategy?: 'rel_next' | 'custom_selector' | 'url_template' | 'offset' | 'json_cursor';
+      [key: string]: unknown;
+    };
+    selector?: string;
+  };
+  [key: string]: unknown | {
+    attribute?: string;
+    /**
+     * Extractor used to pull a value from the selected element.
+     */
+    extractor?: Html2RssExtractorAttribute | Html2RssExtractorHref | Html2RssExtractorHtml | Html2RssExtractorStatic | Html2RssExtractorText;
+    /**
+     * Ordered transforms applied to the extracted value.
+     */
+    post_process?: Array<Html2RssPostProcessorGsub | Html2RssPostProcessorMarkdownToHtml | Html2RssPostProcessorParseTime | Html2RssPostProcessorParseUri | Html2RssPostProcessorSanitizeHtml | Html2RssPostProcessorSubstring | Html2RssPostProcessorTemplate>;
+    static?: string;
+  };
+};
+
 export type GetApiMetadataData = {
   body?: never;
   path?: never;
@@ -13,7 +237,7 @@ export type GetApiMetadataData = {
 
 export type GetApiMetadataResponses = {
   /**
-   * returns catalog pointer metadata
+   * API metadata
    */
   200: {
     data: {
@@ -29,6 +253,9 @@ export type GetApiMetadataResponses = {
         };
         feed_creation: {
           access_token_required: boolean;
+          enabled: boolean;
+        };
+        studio: {
           enabled: boolean;
         };
       };
@@ -48,7 +275,7 @@ export type GetConfigCatalogData = {
 
 export type GetConfigCatalogErrors = {
   /**
-   * returns 404 when the catalog is disabled
+   * Config catalog
    */
   404: {
     error: string;
@@ -59,7 +286,7 @@ export type GetConfigCatalogError = GetConfigCatalogErrors[keyof GetConfigCatalo
 
 export type GetConfigCatalogResponses = {
   /**
-   * returns the merged catalog with CORS headers
+   * Config catalog
    */
   200: {
     data: {
@@ -140,7 +367,7 @@ export type OptionsConfigCatalogData = {
 
 export type OptionsConfigCatalogResponses = {
   /**
-   * responds to preflight requests with CORS headers
+   * Config catalog preflight
    */
   204: void;
 };
@@ -150,6 +377,7 @@ export type OptionsConfigCatalogResponse = OptionsConfigCatalogResponses[keyof O
 export type CreateFeedData = {
   body?: {
     name?: string;
+    selectors?: SelectorsDocument;
     url: string;
   };
   headers: {
@@ -162,7 +390,7 @@ export type CreateFeedData = {
 
 export type CreateFeedErrors = {
   /**
-   * returns 400 when request body exceeds maximum allowed bytes
+   * Create a feed
    */
   400: {
     error: {
@@ -176,7 +404,7 @@ export type CreateFeedErrors = {
     success: boolean;
   };
   /**
-   * returns 401 with UNAUTHORIZED error payload
+   * Create a feed
    */
   401: {
     error: {
@@ -190,7 +418,7 @@ export type CreateFeedErrors = {
     success: boolean;
   };
   /**
-   * returns forbidden for authenticated requests when auto source is disabled
+   * Create a feed
    */
   403: {
     error: {
@@ -204,7 +432,7 @@ export type CreateFeedErrors = {
     success: boolean;
   };
   /**
-   * returns 429 when rate limit is exceeded
+   * Create a feed
    */
   429: {
     error: {
@@ -223,7 +451,7 @@ export type CreateFeedError = CreateFeedErrors[keyof CreateFeedErrors];
 
 export type CreateFeedResponses = {
   /**
-   * normalizes hostname-only input to https before feed creation
+   * Create a feed
    */
   201: {
     data: {
@@ -247,6 +475,170 @@ export type CreateFeedResponses = {
 
 export type CreateFeedResponse = CreateFeedResponses[keyof CreateFeedResponses];
 
+export type PreviewFeedData = {
+  body?: {
+    selectors: SelectorsDocument;
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/feeds/preview';
+};
+
+export type PreviewFeedResponses = {
+  /**
+   * Preview a selectors document feed
+   */
+  200: {
+    data: {
+      failure_kind: string | null;
+      item_count: number;
+      quality_report: {
+        metrics: {
+          short_title_count: number;
+        };
+        warnings: Array<string>;
+      } | null;
+      sample_items: Array<PreviewSampleItem>;
+      validation_issues: Array<unknown>;
+    };
+    success: boolean;
+  };
+};
+
+export type PreviewFeedResponse = PreviewFeedResponses[keyof PreviewFeedResponses];
+
+export type SuggestSelectorsData = {
+  body?: {
+    items_selector: string;
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/feeds/suggest_selectors';
+};
+
+export type SuggestSelectorsErrors = {
+  /**
+   * Suggest selectors for a page
+   */
+  422: {
+    error: {
+      code: string;
+      kind: string;
+      message: string;
+      next_action: string;
+      retry_action: string;
+      retryable: boolean;
+    };
+    success: boolean;
+  };
+};
+
+export type SuggestSelectorsError = SuggestSelectorsErrors[keyof SuggestSelectorsErrors];
+
+export type SuggestSelectorsResponses = {
+  /**
+   * Suggest selectors for a page
+   */
+  200: {
+    data: {
+      admission_drops: {
+        chrome?: number;
+      };
+      candidates: SelectorCandidates;
+      segment_strategy: string;
+    };
+    success: boolean;
+  };
+};
+
+export type SuggestSelectorsResponse = SuggestSelectorsResponses[keyof SuggestSelectorsResponses];
+
+export type ValidateFeedConfigData = {
+  body?: {
+    selectors?: SelectorsDocument;
+    url?: string;
+    yaml?: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/feeds/validate';
+};
+
+export type ValidateFeedConfigErrors = {
+  /**
+   * Validate a selectors document
+   */
+  400: {
+    error: {
+      code: string;
+      kind: string;
+      message: string;
+      next_action: string;
+      retry_action: string;
+      retryable: boolean;
+    };
+    success: boolean;
+  };
+  /**
+   * Validate a selectors document
+   */
+  401: {
+    error: {
+      code: string;
+      kind: string;
+      message: string;
+      next_action: string;
+      retry_action: string;
+      retryable: boolean;
+    };
+    success: boolean;
+  };
+};
+
+export type ValidateFeedConfigError = ValidateFeedConfigErrors[keyof ValidateFeedConfigErrors];
+
+export type ValidateFeedConfigResponses = {
+  /**
+   * Validate a selectors document
+   */
+  200: {
+    data: {
+      report: {
+        issues: Array<{
+          /**
+           * JSON-ish value, or null when the issue carries none.
+           */
+          actual: unknown;
+          code: 'constraint' | 'invalid_value' | 'missing_key' | 'parse' | 'type_mismatch' | 'unknown_value';
+          /**
+           * JSON-ish value, or null when the issue carries none.
+           */
+          expected: unknown;
+          message: string;
+          path: Array<string>;
+        }>;
+        success: boolean;
+      };
+      selectors: null | SelectorsDocument;
+      yaml: string | null;
+    };
+    success: boolean;
+  };
+};
+
+export type ValidateFeedConfigResponse = ValidateFeedConfigResponses[keyof ValidateFeedConfigResponses];
+
 export type RenderFeedByTokenData = {
   body?: never;
   path: {
@@ -258,31 +650,31 @@ export type RenderFeedByTokenData = {
 
 export type RenderFeedByTokenErrors = {
   /**
-   * returns unauthorized for invalid tokens
+   * Render feed by token
    */
   401: string;
   /**
-   * returns forbidden when auto source is disabled
+   * Render feed by token
    */
   403: string;
   /**
-   * returns 422 for empty extraction feeds in xml representation
+   * Render feed by token
    */
   422: string;
   /**
-   * returns 429 when rate limit is exceeded
+   * Render feed by token
    */
   429: string;
   /**
-   * returns non-cacheable feed errors when service generation fails
+   * Render feed by token
    */
   500: string;
   /**
-   * returns 503 when the scraper queue times out
+   * Render feed by token
    */
   503: string;
   /**
-   * returns 504 when the gateway times out
+   * Render feed by token
    */
   504: string;
 };
@@ -291,7 +683,7 @@ export type RenderFeedByTokenError = RenderFeedByTokenErrors[keyof RenderFeedByT
 
 export type RenderFeedByTokenResponses = {
   /**
-   * renders feed for a valid token
+   * Render feed by token
    */
   200: string;
 };
@@ -310,7 +702,7 @@ export type GetHealthStatusData = {
 
 export type GetHealthStatusErrors = {
   /**
-   * returns 401 with UNAUTHORIZED error payload
+   * Authenticated health check
    */
   401: {
     error: {
@@ -324,7 +716,7 @@ export type GetHealthStatusErrors = {
     success: boolean;
   };
   /**
-   * returns error when configuration fails
+   * Authenticated health check
    */
   500: {
     error: {
@@ -343,7 +735,7 @@ export type GetHealthStatusError = GetHealthStatusErrors[keyof GetHealthStatusEr
 
 export type GetHealthStatusResponses = {
   /**
-   * returns health status when token is valid
+   * Authenticated health check
    */
   200: {
     data: {
@@ -372,7 +764,7 @@ export type GetLivenessProbeData = {
 
 export type GetLivenessProbeResponses = {
   /**
-   * returns liveness status without authentication
+   * Liveness probe
    */
   200: {
     data: {
@@ -396,7 +788,7 @@ export type GetReadinessProbeData = {
 
 export type GetReadinessProbeResponses = {
   /**
-   * returns readiness status without authentication
+   * Readiness probe
    */
   200: {
     data: {
@@ -425,7 +817,7 @@ export type ListStrategiesData = {
 
 export type ListStrategiesResponses = {
   /**
-   * returns available strategies
+   * List extraction strategies
    */
   200: {
     data: {
