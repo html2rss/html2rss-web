@@ -11,7 +11,8 @@ export type AppRoute =
     }
   | {
       kind: 'result';
-      feedToken: string;
+      /** Absent on the in-memory unresolved workspace hash `#/result`. */
+      feedToken?: string;
     };
 
 interface RouteNavigationOptions {
@@ -27,6 +28,7 @@ interface RouteLocationLike {
 const ROUTE_PATHS = {
   create: '/create',
   token: '/token',
+  result: '/result',
   resultPrefix: '/result/',
 } as const;
 
@@ -41,6 +43,10 @@ export function readAppRoute(locationLike: RouteLocationLike = getCurrentLocatio
 
   if (pathname === ROUTE_PATHS.token) {
     return prefillUrl ? { kind: 'token', prefillUrl } : { kind: 'token' };
+  }
+
+  if (pathname === ROUTE_PATHS.result) {
+    return { kind: 'result' };
   }
 
   if (pathname.startsWith(ROUTE_PATHS.resultPrefix)) {
@@ -72,7 +78,7 @@ export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()):
     return url.href;
   }
 
-  url.hash = `${ROUTE_PATHS.resultPrefix}${route.feedToken}`;
+  url.hash = route.feedToken ? `${ROUTE_PATHS.resultPrefix}${route.feedToken}` : ROUTE_PATHS.result;
   url.search = '';
   return url.href;
 }
@@ -91,7 +97,12 @@ export function useAppRoute() {
 
     const canonicalize = (source: 'mount' | 'navigation') => {
       const nextRoute = readAppRoute();
-      const needsReplace = !location.hash || location.pathname !== '/' || location.hash.startsWith('#!');
+      const canonicalHref = buildAppRouteHref(nextRoute);
+      const needsReplace =
+        !location.hash ||
+        location.pathname !== '/' ||
+        location.hash.startsWith('#!') ||
+        location.href !== canonicalHref;
 
       if (needsReplace) replaceRoute(nextRoute);
       setRoute(nextRoute);

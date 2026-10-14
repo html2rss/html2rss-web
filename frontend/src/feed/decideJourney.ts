@@ -7,6 +7,12 @@ import type {
 } from '../api/contracts';
 import type { AppRoute } from '../routes/appRoute';
 
+/** In-memory unresolved result workspace (empty extraction + studio recovery). */
+export interface UnresolvedWorkspace {
+  readonly url: string;
+  readonly notice: string;
+}
+
 /** Closed UI journey kinds owned by Feed Flow. */
 export type AppViewModel =
   | { kind: 'create' }
@@ -14,9 +20,16 @@ export type AppViewModel =
   | { kind: 'token_prompt'; tokenError: string; error?: FeedCreationError }
   | {
       kind: 'result';
+      phase: 'ready';
       feed: FeedRecord;
       preview: FeedPreviewState;
       warnings: FeedPreviewWarning[];
+    }
+  | {
+      kind: 'result';
+      phase: 'unresolved';
+      url: string;
+      notice: string;
     }
   | {
       kind: 'error';
@@ -37,6 +50,7 @@ export function decideJourney({
   route,
   tokenError,
   result,
+  unresolved,
 }: {
   creationError?: FeedCreationError;
   feedFieldErrors: { url: string; form: string };
@@ -44,14 +58,33 @@ export function decideJourney({
   route: AppRoute;
   tokenError: string;
   result?: CreatedFeedResult;
+  unresolved?: UnresolvedWorkspace;
 }): AppViewModel {
-  if (route.kind === 'result' && result && result.feed.feed_token === route.feedToken) {
+  // Ready result: keep the panel mounted even when studio re-generate advances
+  // the token before the hash catches up.
+  if (route.kind === 'result' && result) {
     return {
       kind: 'result',
+      phase: 'ready',
       feed: result.feed,
       preview: result.preview,
       warnings: result.warnings,
     };
+  }
+
+  // Unresolved workspace: in-memory only; cold `#/result` without unresolved recovers to create.
+  if (route.kind === 'result' && unresolved) {
+    return {
+      kind: 'result',
+      phase: 'unresolved',
+      url: unresolved.url,
+      notice: unresolved.notice,
+    };
+  }
+
+  // Unmatched / cold result hash without in-memory workspace — Feed Flow recovers to create.
+  if (route.kind === 'result') {
+    return { kind: 'create' };
   }
 
   // Token prompt: URL adapter kind and/or in-field token error after Feed Flow navigates.

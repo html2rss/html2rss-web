@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev up down clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
+
+# Host-side local app. Distinct project so this does not stop the published web stack.
+DEV_COMPOSE = docker compose -p html2rss-dev -f docker-compose.botasaurus.yml
 
 RUBOCOP_FLAGS ?= --cache false
 
@@ -26,6 +29,15 @@ dev: ## Start development server with live reload
 	@echo "Starting html2rss-web development environment..."
 	@bin/dev
 
+up: ## Local web app (this checkout) plus published Botasaurus
+	$(DEV_COMPOSE) up -d
+	BOTASAURUS_SCRAPER_URL=http://127.0.0.1:4010 bin/dev
+
+down: ## Stop the local web app and published Botasaurus
+	-pkill -f "falcon.*html2rss-web" || true
+	-pkill -f "vite.*4001" || true
+	$(DEV_COMPOSE) down
+
 dev-ruby: ## Start Ruby server only
 	@bin/dev-ruby
 
@@ -42,11 +54,11 @@ test-ruby: ## Run Ruby tests only
 test-frontend: ## Run frontend tests only
 	@cd frontend && pnpm run test:ci
 
-test-frontend-unit: ## Run frontend unit tests only
+test-frontend-unit: ## Run frontend Node unit tests only
 	@cd frontend && pnpm run test:unit
 
-test-frontend-contract: ## Run frontend contract tests only
-	@cd frontend && pnpm run test:contract
+test-frontend-integration: ## Run frontend jsdom integration tests only
+	@cd frontend && pnpm run test:integration
 
 test-frontend-e2e: ## Run frontend Playwright smoke tests
 	@cd frontend && pnpm run test:e2e
@@ -111,10 +123,11 @@ ready: ## Pre-commit gate (quick checks + RSpec)
 	bundle exec rspec
 	@echo "Pre-commit checks complete!"
 
-ci-ready: ## CI parity gate (ready + OpenAPI verify + frontend e2e smoke)
+ci-ready: ## CI parity gate (ready + OpenAPI verify/lint + frontend e2e smoke)
 	@echo "Running CI parity checks..."
 	$(MAKE) ready
 	$(MAKE) openapi-verify
+	$(MAKE) openapi-lint
 	$(MAKE) test-frontend-e2e
 	@echo "CI parity checks complete!"
 

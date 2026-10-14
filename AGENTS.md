@@ -58,19 +58,50 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 
 Public feed-directory metadata for embedded and local configs.
 
-| Item | Detail |
-| --- | --- |
-| Endpoint | `GET /api/v1/configs` |
-| Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
-| Disabled response | `404` with `{ "error": "catalog_disabled" }` |
-| Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
-| Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
-| Starter feeds (UI) | Server `meta.starters` via `Catalog::Starters.pick`; frontend `selectStarterFeeds(entries, starters)` |
-| Catalog find | `findCatalogEntries` → multi-hit list under create URL; demotes `empty`/`error`; links via `catalogFeedHref` |
-| last_result | Required on every catalog entry (`ok`/`empty`/`error`/`unknown`); process-local `Feeds::LastResults` |
-| catalog_version | `2` (clients fail-closed on other versions) |
-| CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
-| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
-| Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
+| Item               | Detail                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Endpoint           | `GET /api/v1/configs`                                                                                        |
+| Flag               | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable)                                            |
+| Disabled response  | `404` with `{ "error": "catalog_disabled" }`                                                                 |
+| Embedded entries   | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler                                    |
+| Local entries      | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set                               |
+| Starter feeds (UI) | Server `meta.starters` via `Catalog::Starters.pick`; frontend `selectStarterFeeds(entries, starters)`        |
+| Catalog find       | `findCatalogEntries` → multi-hit list under create URL; demotes `empty`/`error`; links via `catalogFeedHref` |
+| last_result        | Required on every catalog entry (`ok`/`empty`/`error`/`unknown`); process-local `Feeds::LastResults`         |
+| catalog_version    | `2` (clients fail-closed on other versions)                                                                  |
+| CORS               | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`)                                                    |
+| Root metadata      | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` and `instance.studio: { enabled }`              |
+| Contract SSOT      | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml`                   |
 
 After handler or envelope changes: `make openapi` and `make ci-ready`.
+
+## Config studio API
+
+Token-holder refinement of the selectors subtree, then generate via create.
+
+| Item              | Detail                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoints         | `POST /api/v1/feeds/validate`, `POST /api/v1/feeds/preview`, `POST /api/v1/feeds/suggest_selectors`                                   |
+| Create            | `POST /api/v1/feeds` accepts optional `selectors` (same access token and flag as validate; URL-only create is unaffected by the flag) |
+| Flag              | `STUDIO_ENABLED` (development/test default `true`; otherwise `false`); advertised as `instance.studio.enabled` on `GET /api/v1` |
+| Disabled response | `403` when the flag is off                                                                                                            |
+| Auth              | Access token required on validate, preview, suggest, and create                                                                       |
+| Live fetch        | Preview and suggest also need `AUTO_SOURCE_ENABLED`                                                                                   |
+| Frontend          | Successful results refine inline on `#/result/:token`. There is no `#/refine` route. |
+| Contract SSOT     | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml`                                            |
+
+After handler or envelope changes: `make openapi` and `make ci-ready`.
+
+`SelectorsDocument` is `Openapi::JsonSchema` output from `Html2rss::Config::Schema.json_schema` at generate time (full gem selectors subtree). Runtime ownership is `Html2rss::Web::SelectorsDocument`. The SPA refine draft uses `StudioSelectors` / `StudioDraft` (items, enhance, title, url, published_at only). The published document is OpenAPI 3.1. Preview sample, selector candidate, and validation-issue stamps stay runtime-owned in `Openapi::Document`.
+
+## Generated OpenAPI SPA transport
+
+The frontend JSON API is the generated Hey API client, not hand-written `fetch`.
+
+| Item          | Detail                                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Regen         | `make openapi-client` (`frontend/openapi-ts.config.ts`). Never hand-edit `frontend/src/api/generated/**`                              |
+| Value imports | Only `frontend/src/api/http/*.ts` and `src/__tests__/apiHttp*.test.ts`. Type-only imports are allowed elsewhere                       |
+| Layers        | Generated owns wire. Adapters in `frontend/src/api/http/` own transport (`unwrap` → `{ ok, status, body }`). Parsers own domain types |
+| baseUrl       | `/api/v1` same-origin. Do not change public OpenAPI `servers` or `RSpec::OpenAPI.servers`                                             |
+| Preview       | JSON Feed stays `fetch(json_public_url)`. Do not use `renderFeedByToken`                                                              |

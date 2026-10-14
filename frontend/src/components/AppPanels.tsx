@@ -349,40 +349,31 @@ function TokenGateSection({
   );
 }
 
-interface ActionFeedbackProperties {
-  failureMessage: string;
-  isCreating: boolean;
-  isShowRetryButton: boolean;
-  onRetryCreate: () => void;
-}
-
 function ActionFeedback({
   failureMessage,
-  isCreating,
   isShowRetryButton,
   onRetryCreate,
-}: ActionFeedbackProperties) {
+}: {
+  failureMessage: string;
+  isShowRetryButton: boolean;
+  onRetryCreate: () => void;
+}) {
+  if (!failureMessage) return;
   return (
-    <>
-      {failureMessage && (
-        <Notice
-          className="layout-rail-reading"
-          tone="error"
-          title={isShowRetryButton ? COPY.createFailedRetryTitle : COPY.createFailedTitle}
-          actions={
-            isShowRetryButton && (
-              <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
-                {COPY.tryAgain}
-              </button>
-            )
-          }
-        >
-          <p>{failureMessage}</p>
-        </Notice>
-      )}
-
-      {isCreating && <Notice className="layout-rail-reading" state="loading" title={COPY.creating} />}
-    </>
+    <Notice
+      className="layout-rail-reading"
+      tone="error"
+      title={isShowRetryButton ? COPY.createFailedRetryTitle : COPY.createFailedTitle}
+      actions={
+        isShowRetryButton ? (
+          <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
+            {COPY.tryAgain}
+          </button>
+        ) : undefined
+      }
+    >
+      <p>{failureMessage}</p>
+    </Notice>
   );
 }
 
@@ -491,7 +482,6 @@ export function CreateFeedPanel({
         />
         <ActionFeedback
           failureMessage={failureMessage}
-          isCreating={isCreatingFeed}
           isShowRetryButton={isShowRetryButton}
           onRetryCreate={onRetryCreate}
         />

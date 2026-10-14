@@ -19,6 +19,18 @@ describe('appRoute', () => {
     );
   });
 
+  it('reads and builds the unresolved workspace hash without a feed token', () => {
+    expect(
+      readAppRoute({
+        pathname: '/',
+        search: '',
+        hash: '#/result',
+      })
+    ).toEqual({ kind: 'result' });
+
+    expect(buildAppRouteHref({ kind: 'result' }, 'http://localhost/')).toBe('http://localhost/#/result');
+  });
+
   it('keeps create and token prefill on their own variants only', () => {
     expect(
       readAppRoute({
@@ -51,12 +63,16 @@ describe('appRoute', () => {
     ).toEqual({ kind: 'create', prefillUrl: 'https://example.com/articles' });
   });
 
-  it('canonicalizes hashbang create hashes to #/create and bumps createEntryKey', () => {
-    history.replaceState({}, '', 'http://localhost:3000/#!/create');
+  it('canonicalizes hashbang create hashes, preserves prefill, and bumps createEntryKey', () => {
+    history.replaceState({}, '', 'http://localhost:3000/#!/create?url=https%3A%2F%2Fexample.com%2Farticles');
 
     const { result, unmount } = renderHook(() => useAppRoute());
 
-    expect(location.hash).toBe('#/create');
+    expect(location.hash).toBe('#/create?url=https%3A%2F%2Fexample.com%2Farticles');
+    expect(result.current.route).toEqual({
+      kind: 'create',
+      prefillUrl: 'https://example.com/articles',
+    });
     expect(result.current.createEntryKey).toBeGreaterThan(0);
     unmount();
   });
@@ -76,16 +92,21 @@ describe('appRoute', () => {
     unmount();
   });
 
-  it('canonicalizes hashbang create hashes with a url query', () => {
-    history.replaceState({}, '', 'http://localhost:3000/#!/create?url=https%3A%2F%2Fexample.com%2Farticles');
+  it('treats an unknown hash as create and canonicalizes onto #/create', () => {
+    expect(
+      readAppRoute({
+        pathname: '/',
+        search: '',
+        hash: '#/unknown?url=https%3A%2F%2Fexample.com',
+      })
+    ).toEqual({ kind: 'create', prefillUrl: 'https://example.com' });
+
+    history.replaceState({}, '', 'http://localhost:3000/#/unknown');
 
     const { result, unmount } = renderHook(() => useAppRoute());
 
-    expect(location.hash).toBe('#/create?url=https%3A%2F%2Fexample.com%2Farticles');
-    expect(result.current.route).toEqual({
-      kind: 'create',
-      prefillUrl: 'https://example.com/articles',
-    });
+    expect(location.hash).toBe('#/create');
+    expect(result.current.route).toEqual({ kind: 'create' });
     unmount();
   });
 });

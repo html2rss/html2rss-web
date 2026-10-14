@@ -27,14 +27,31 @@ module Html2rss
             # @return [Hash{Symbol=>Object}]
             def instance_payload(router)
               {
-                feed_creation: {
-                  enabled: Flags.auto_source_enabled?,
-                  access_token_required: Flags.auto_source_enabled?
-                },
-                catalog: {
-                  enabled: Flags.config_catalog_enabled?,
-                  url: "#{router.base_url}/api/v1/configs"
-                }
+                feed_creation: feed_creation_payload,
+                studio: studio_payload,
+                catalog: catalog_payload(router)
+              }
+            end
+
+            # @return [Hash{Symbol=>Boolean}]
+            def feed_creation_payload
+              {
+                enabled: Flags.auto_source_enabled?,
+                access_token_required: Flags.auto_source_enabled?
+              }
+            end
+
+            # @return [Hash{Symbol=>Boolean}]
+            def studio_payload
+              { enabled: Flags.studio_enabled? }
+            end
+
+            # @param router [Roda::RodaRequest]
+            # @return [Hash{Symbol=>Object}]
+            def catalog_payload(router)
+              {
+                enabled: Flags.config_catalog_enabled?,
+                url: "#{router.base_url}/api/v1/configs"
               }
             end
           end

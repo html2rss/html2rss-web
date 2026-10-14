@@ -181,9 +181,7 @@ textarea {
 }
 
 .layout-shell-padding {
-  padding:
-    clamp(0.85rem, 3vh, 2rem)
-    clamp(var(--space-3), 3vw, var(--space-4))
+  padding: clamp(0.85rem, 3vh, 2rem) clamp(var(--space-3), 3vw, var(--space-4))
     var(--layout-shell-padding-bottom, var(--space-5));
 }
 
@@ -302,6 +300,11 @@ textarea {
   border-top: var(--border-width) solid var(--border-subtle);
 }
 
+.ui-item-list--grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--space-4);
+}
+
 .ui-item {
   min-width: 0;
   padding: var(--space-3) 0;
@@ -381,7 +384,10 @@ textarea {
   min-height: var(--control-input-lg-min-height, 4.5rem);
   padding-inline: var(--control-input-lg-padding-inline, 1.25rem 5rem);
   font-size: var(--control-input-lg-font-size, clamp(1.05rem, 2.3vw, 1.5rem));
-  letter-spacing: var(--control-input-lg-letter-spacing, var(--letter-spacing-display));
+  letter-spacing: var(
+    --control-input-lg-letter-spacing,
+    var(--letter-spacing-display)
+  );
 }
 
 .input:disabled {
@@ -517,5 +523,9 @@ textarea {
     display: grid;
     grid-template-columns: 1fr;
     width: 100%;
+  }
+
+  .ui-item-list--grid {
+    grid-template-columns: 1fr;
   }
 }

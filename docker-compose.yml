@@ -23,6 +23,8 @@ services:
       HTML2RSS_SECRET_KEY: ${HTML2RSS_SECRET_KEY:?set HTML2RSS_SECRET_KEY in .env (generate with `openssl rand -hex 32`)}
       HTML2RSS_ACCESS_TOKEN: ${HTML2RSS_ACCESS_TOKEN:?set HTML2RSS_ACCESS_TOKEN in .env (generate with `openssl rand -hex 32`)}
       AUTO_SOURCE_ENABLED: ${AUTO_SOURCE_ENABLED:-true}
+      # Config refinement studio (validate/preview/suggest_selectors); token-gated, off by default.
+      STUDIO_ENABLED: ${STUDIO_ENABLED:-false}
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:-}
       # Web Sentry (Project A): SENTRY_DSN; logs opt-in via SENTRY_ENABLE_LOGS=true
       SENTRY_DSN: ${SENTRY_DSN:-}

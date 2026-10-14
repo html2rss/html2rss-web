@@ -10,6 +10,15 @@ module Html2rss
     # Rack middleware providing IP-based rate limiting with fiber-native tracking,
     # automated pruning, and standardized 429 error formatting.
     class RateLimiter
+      # Live-fetch weights. Create is +POST /api/v1/feeds+ because that route runs
+      # {Feeds::Service}. Studio paths that only validate stay at one slot.
+      LIVE_FETCH_PATH_COSTS = {
+        'POST /api/v1/feeds' => 5,
+        'POST /api/v1/feeds/preview' => 5,
+        'POST /api/v1/feeds/suggest_selectors' => 5
+      }.freeze
+      private_constant :LIVE_FETCH_PATH_COSTS
+
       ##
       # Encapsulates timestamp tracking and rate limit logic for a single client IP.
       class RequestTrack
@@ -23,11 +32,15 @@ module Html2rss
 
         # Records request time, prunes old timestamps, and checks if limit is exceeded.
         #
+        # Admission looks at the current size, then appends +cost+ timestamps.
+        # A budget of N can overrun by cost - 1.
+        #
         # @param now [Integer]
         # @param window_seconds [Integer]
         # @param max_requests [Integer]
+        # @param cost [Integer] slots consumed by this request
         # @return [Array<(Boolean, Integer)>] limit exceeded flag and retry_after seconds.
-        def record_and_check_limit(now, window_seconds, max_requests)
+        def record_and_check_limit(now, window_seconds, max_requests, cost: 1)
           window_start = now - window_seconds
           @timestamps.reject! { |t| t < window_start }
 
@@ -36,7 +49,7 @@ module Html2rss
             retry_after = [1, oldest + window_seconds - now].max
             [true, retry_after]
           else
-            @timestamps << now
+            @timestamps.concat([now] * cost)
             [false, 0]
           end
         end
@@ -80,16 +93,16 @@ module Html2rss
         limit_exceeded, retry_after = track.record_and_check_limit(
           now,
           Flags.rate_limit_window_seconds,
-          Flags.rate_limit_max_requests
+          Flags.rate_limit_max_requests,
+          cost: request_cost(request, path)
         )
 
         if limit_exceeded
           SecurityLogger.log_rate_limit_exceeded(client_key, path, Flags.rate_limit_max_requests)
 
-          # Ensure feed endpoints get feed-formatted errors
-          if path.start_with?('/api/v1/feeds/') || !path.start_with?('/api/v1/')
-            env[RequestTarget::ENV_KEY] = RequestTarget::FEED
-          end
+          # Ensure token and public feed endpoints get feed-formatted errors.
+          # Studio POSTs remain API-shaped even though they share the feeds prefix.
+          env[RequestTarget::ENV_KEY] = RequestTarget::FEED if feed_response_path?(path)
 
           error = TooManyRequestsError.new
           response = Rack::Response.new
@@ -105,6 +118,31 @@ module Html2rss
       end
 
       private
+
+      # @param request [Rack::Request]
+      # @param path [String]
+      # @return [Integer]
+      def request_cost(request, path)
+        LIVE_FETCH_PATH_COSTS.fetch("#{request.request_method} #{path}", 1)
+      end
+
+      # Studio POST names come from {Routes::ApiV1::FeedRoutes::STUDIO_POSTS}.
+      #
+      # @param path [String]
+      # @return [Boolean]
+      def studio_path?(path)
+        Routes::ApiV1::FeedRoutes::STUDIO_POSTS.each_key.any? do |name|
+          path == "/api/v1/feeds/#{name}"
+        end
+      end
+
+      # @param path [String]
+      # @return [Boolean]
+      def feed_response_path?(path)
+        return true unless path.start_with?('/api/v1/')
+
+        path.start_with?('/api/v1/feeds/') && !studio_path?(path)
+      end
 
       # Bypasses rate limiting for root, static assets, and health checks.
       #

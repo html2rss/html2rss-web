@@ -51,6 +51,9 @@ module Html2rss
         'static'
       end
 
+      # Reads the query string only. Touching +params+ would make Rack buffer the
+      # whole request body here, ahead of rate limiting and every handler body cap.
+      #
       # @param request [Rack::Request]
       # @return [Html2rss::Web::RequestContext::Context]
       def build_context(request)
@@ -61,7 +64,7 @@ module Html2rss
           http_method: request.request_method.to_s.upcase,
           route_group: route_group_for(path),
           actor: nil,
-          strategy: request.params['strategy'],
+          strategy: request.GET['strategy'],
           started_at: Time.now.utc.iso8601
         )
       end

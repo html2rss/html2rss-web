@@ -1,0 +1,11 @@
+# Published scraper for local `make up`. The web app stays on the host via bin/dev.
+services:
+  botasaurus:
+    image: html2rss/botasaurus-scrape-api:latest
+    restart: unless-stopped
+    environment:
+      SENTRY_DSN: ${BOTASAURUS_SENTRY_DSN:-}
+      SCRAPE_TIMEOUT_SECONDS: 45
+      SCRAPE_WORK_TIMEOUT_SECONDS: 30
+    ports:
+      - "127.0.0.1:4010:4010"

@@ -13,7 +13,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom", "msw"]
+    "types": ["@testing-library/jest-dom", "msw"]
   },
   "include": ["src", "e2e", "playwright.config.ts", "vite.config.ts", "vitest*.ts", "vitest.config.js"]
 }

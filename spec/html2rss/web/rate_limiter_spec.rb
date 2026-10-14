@@ -38,6 +38,60 @@ RSpec.describe Html2rss::Web::RateLimiter do
     expect(body.dig('error', 'code')).to eq('TOO_MANY_REQUESTS')
   end
 
+  %w[preview suggest_selectors].each do |endpoint|
+    it "weights #{endpoint} and keeps its 429 response API-shaped", :aggregate_failures do
+      allow(Html2rss::Web::Flags).to receive(:rate_limit_max_requests).and_return(10)
+
+      2.times do
+        expect(request_builder.post("/api/v1/feeds/#{endpoint}").status).to eq(200)
+      end
+
+      response = request_builder.post("/api/v1/feeds/#{endpoint}")
+      expect(response.status).to eq(429)
+      expect(response['Content-Type']).to eq('application/json')
+      expect(JSON.parse(response.body).dig('error', 'code')).to eq('TOO_MANY_REQUESTS')
+    end
+  end
+
+  it 'weights feed creation as a live fetch', :aggregate_failures do
+    allow(Html2rss::Web::Flags).to receive(:rate_limit_max_requests).and_return(10)
+
+    2.times do
+      expect(request_builder.post('/api/v1/feeds').status).to eq(200)
+    end
+
+    response = request_builder.post('/api/v1/feeds')
+    expect(response.status).to eq(429)
+    expect(response['Content-Type']).to eq('application/json')
+  end
+
+  it 'keeps a new studio POST API-shaped on 429', :aggregate_failures do
+    stub_const(
+      'Html2rss::Web::Routes::ApiV1::FeedRoutes::STUDIO_POSTS',
+      { 'future_tool' => Html2rss::Web::Api::V1::PreviewFeed }.freeze
+    )
+    allow(Html2rss::Web::Flags).to receive(:rate_limit_max_requests).and_return(1)
+    builder = Rack::MockRequest.new(described_class.new(inner_app))
+
+    expect(builder.post('/api/v1/feeds/future_tool').status).to eq(200)
+
+    response = builder.post('/api/v1/feeds/future_tool')
+    expect(response.status).to eq(429)
+    expect(response['Content-Type']).to eq('application/json')
+    expect(JSON.parse(response.body).dig('error', 'code')).to eq('TOO_MANY_REQUESTS')
+  end
+
+  it 'keeps a feed path outside the studio post set feed-shaped on 429', :aggregate_failures do
+    allow(Html2rss::Web::Flags).to receive(:rate_limit_max_requests).and_return(1)
+    builder = Rack::MockRequest.new(described_class.new(inner_app))
+
+    builder.get('/api/v1/feeds/not-a-studio-post')
+    response = builder.get('/api/v1/feeds/not-a-studio-post')
+
+    expect(response.status).to eq(429)
+    expect(response['Content-Type']).to eq(Html2rss::Web::Feeds::FormatNegotiation::TEXT_PLAIN_CONTENT_TYPE)
+  end
+
   it 'bypasses rate limiting for health check routes' do
     4.times do
       response = request_builder.get('/api/v1/health')

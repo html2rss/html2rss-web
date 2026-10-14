@@ -4,7 +4,9 @@ import type {
   FeedPreviewStatus,
   FeedPreviewWarning,
   FeedRecord,
+  PreviewAudience,
 } from '../api/contracts';
+import { isAbortError } from '../api/http/client';
 import { COPY } from '../journey/copy';
 import { buildPreviewWarning } from './feedErrors';
 import { normalizePreviewItems } from './feedParsers';
@@ -26,13 +28,6 @@ interface JsonFeedResponse {
 
 export function isTransientHttpStatus(status: number): boolean {
   return [408, 409, 425, 429, 500, 502, 503, 504].includes(status);
-}
-
-export function isAbortError(error: unknown): boolean {
-  return (
-    (error instanceof DOMException && error.name === 'AbortError') ||
-    (error instanceof Error && error.name === 'AbortError')
-  );
 }
 
 export async function wait(delayMs: number, signal?: AbortSignal): Promise<void> {
@@ -131,7 +126,8 @@ export function buildPreviewLoadingResult(feed: FeedRecord): CreatedFeedResult {
 
 export async function loadPreviewItemsWithRetry(
   previewUrl: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  audience: PreviewAudience = 'guest'
 ): Promise<PreviewLoadResult> {
   const delays = [0, ...PREVIEW_RETRY_DELAYS_MS];
   let latestRetryableFailure: PreviewLoadResult | undefined;
@@ -139,7 +135,7 @@ export async function loadPreviewItemsWithRetry(
   for (const [index, delayMs] of delays.entries()) {
     if (delayMs > 0) await wait(delayMs, signal);
 
-    const result = await loadPreviewItems(previewUrl, signal);
+    const result = await loadPreviewItems(previewUrl, signal, audience);
     if (result.status === 'preview_ready') return result;
     if (result.warnings.every((warning) => !warning.retryable)) return result;
 
@@ -156,7 +152,11 @@ export async function loadPreviewItemsWithRetry(
   );
 }
 
-export async function loadPreviewItems(previewUrl: string, signal?: AbortSignal): Promise<PreviewLoadResult> {
+export async function loadPreviewItems(
+  previewUrl: string,
+  signal?: AbortSignal,
+  audience: PreviewAudience = 'guest'
+): Promise<PreviewLoadResult> {
   let response: Response;
 
   try {
@@ -193,7 +193,7 @@ export async function loadPreviewItems(previewUrl: string, signal?: AbortSignal)
   try {
     const payload = (await response.json()) as JsonFeedResponse;
     return {
-      items: normalizePreviewItems(payload.items),
+      items: normalizePreviewItems(payload.items, audience),
       warnings: [],
       status: 'preview_ready',
     };

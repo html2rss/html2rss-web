@@ -1,20 +1,408 @@
 ---
-openapi: 3.0.3
+components:
+  schemas:
+    FieldSelectorCandidate:
+      additionalProperties: false
+      description: One ranked field selector with a sample headline. Best match is
+        first.
+      properties:
+        sample:
+          description: Visible text of a matched node
+          type: string
+        selector:
+          type: string
+      required:
+      - selector
+      - sample
+      type: object
+    Html2rssExtractorAttribute:
+      const: attribute
+      description: Return the value of an HTML attribute on the selected element.
+        Requires sibling selector option `attribute` (attribute name).
+      examples:
+      - attribute
+      title: attribute
+      type: string
+    Html2rssExtractorHref:
+      const: href
+      description: Return the absolute URL from the selected element's `href` attribute
+        (relative hrefs are resolved against the page base URL).
+      examples:
+      - href
+      title: href
+      type: string
+    Html2rssExtractorHtml:
+      const: html
+      description: Return the outer HTML of the selected element. Sanitize during
+        post-processing (e.g. `sanitize_html`).
+      examples:
+      - html
+      title: html
+      type: string
+    Html2rssExtractorStatic:
+      const: static
+      description: Return a fixed value from sibling selector option `static` (no
+        DOM read).
+      examples:
+      - static
+      title: static
+      type: string
+    Html2rssExtractorText:
+      const: text
+      description: Return collapsed visible text of the selected element (default
+        extractor).
+      examples:
+      - text
+      title: text
+      type: string
+    Html2rssPostProcessorGsub:
+      additionalProperties: true
+      description: Replace matches of `pattern` in the extracted string with `replacement`
+        (Ruby String#gsub; pattern may be a regexp-like string). Patterns over 256
+        characters as written, or with nested quantifiers, are rejected.
+      examples:
+      - name: gsub
+        pattern: boo
+        replacement: baz
+      properties:
+        name:
+          const: gsub
+          type: string
+        pattern:
+          maxLength: 256
+          type: string
+        replacement:
+          type:
+          - string
+          - object
+      required:
+      - name
+      - pattern
+      - replacement
+      title: gsub
+      type: object
+    Html2rssPostProcessorMarkdownToHtml:
+      additionalProperties: true
+      description: Convert Markdown to HTML (Kramdown) and sanitize the result. Often
+        chained after `template`.
+      examples:
+      - name: markdown_to_html
+      properties:
+        name:
+          const: markdown_to_html
+          type: string
+      required:
+      - name
+      title: markdown_to_html
+      type: object
+    Html2rssPostProcessorParseTime:
+      additionalProperties: true
+      description: Parse a time string with Time.parse and return RFC822, using the
+        channel `time_zone`.
+      examples:
+      - name: parse_time
+      properties:
+        name:
+          const: parse_time
+          type: string
+      required:
+      - name
+      title: parse_time
+      type: object
+    Html2rssPostProcessorParseUri:
+      additionalProperties: true
+      description: Normalize a URL string; resolve relative URLs against the channel
+        URL.
+      examples:
+      - name: parse_uri
+      properties:
+        name:
+          const: parse_uri
+          type: string
+      required:
+      - name
+      title: parse_uri
+      type: object
+    Html2rssPostProcessorSanitizeHtml:
+      additionalProperties: true
+      description: 'Sanitize HTML (sanitize gem RELAXED plus html2rss defaults: absolute
+        URLs, safe link/img attributes, wrap lone images in anchors).'
+      examples:
+      - name: sanitize_html
+      properties:
+        name:
+          const: sanitize_html
+          type: string
+      required:
+      - name
+      title: sanitize_html
+      type: object
+    Html2rssPostProcessorSubstring:
+      additionalProperties: true
+      description: Return a slice of the extracted string using Integer `start` and
+        optional `end` (Ruby String#[] range semantics; end may be omitted).
+      examples:
+      - end: 6
+        name: substring
+        start: 4
+      properties:
+        end:
+          type: integer
+        name:
+          const: substring
+          type: string
+        start:
+          type: integer
+      required:
+      - name
+      - start
+      title: substring
+      type: object
+    Html2rssPostProcessorTemplate:
+      additionalProperties: true
+      description: Format a string with Kernel#format-style placeholders (`%{key}`
+        / `%<key>s`). `%{self}` is the current selector value; other keys resolve
+        sibling selectors.
+      examples:
+      - name: template
+        string: "`%{self}` (`%{price}`)"
+      properties:
+        name:
+          const: template
+          type: string
+        string:
+          type: string
+      required:
+      - name
+      - string
+      title: template
+      type: object
+    ItemsSelectorCandidate:
+      additionalProperties: false
+      description: One ranked items selector with a sample headline. Best match is
+        first.
+      properties:
+        enhance:
+          type: boolean
+        sample:
+          description: Visible text of a matched node
+          type: string
+        selector:
+          type: string
+      required:
+      - selector
+      - enhance
+      - sample
+      type: object
+    PreviewSampleItem:
+      description: One preview meadow row returned by POST /feeds/preview.
+      properties:
+        image:
+          type:
+          - string
+          - 'null'
+        published_at:
+          type:
+          - string
+          - 'null'
+        title:
+          type: string
+        url:
+          type:
+          - string
+          - 'null'
+      required:
+      - title
+      type: object
+    SelectorCandidates:
+      additionalProperties: false
+      description: Ranked selector candidates. Empty buckets are a successful response.
+      properties:
+        items:
+          items:
+            "$ref": "#/components/schemas/ItemsSelectorCandidate"
+          type: array
+        link:
+          items:
+            "$ref": "#/components/schemas/FieldSelectorCandidate"
+          type: array
+        published:
+          items:
+            "$ref": "#/components/schemas/FieldSelectorCandidate"
+          type: array
+        title:
+          items:
+            "$ref": "#/components/schemas/FieldSelectorCandidate"
+          type: array
+      required:
+      - items
+      - title
+      - link
+      - published
+      type: object
+    SelectorsDocument:
+      additionalProperties: true
+      description: Selectors used to extract article attributes.
+      patternProperties:
+        "^(?!items$|enclosure$|guid$|categories$).+$":
+          description: Dynamic selector definition keyed by attribute name.
+          properties:
+            attribute:
+              minLength: 1
+              type: string
+            extractor:
+              description: Extractor used to pull a value from the selected element.
+              oneOf:
+              - "$ref": "#/components/schemas/Html2rssExtractorAttribute"
+              - "$ref": "#/components/schemas/Html2rssExtractorHref"
+              - "$ref": "#/components/schemas/Html2rssExtractorHtml"
+              - "$ref": "#/components/schemas/Html2rssExtractorStatic"
+              - "$ref": "#/components/schemas/Html2rssExtractorText"
+            post_process:
+              description: Ordered transforms applied to the extracted value.
+              items:
+                oneOf:
+                - "$ref": "#/components/schemas/Html2rssPostProcessorGsub"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorMarkdownToHtml"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorParseTime"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorParseUri"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorSanitizeHtml"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorSubstring"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorTemplate"
+              type: array
+            static:
+              minLength: 1
+              type: string
+          required: []
+          type: object
+      properties:
+        categories:
+          description: List of selector keys whose values will be used as categories.
+            Each entry must reference a sibling selector key; runtime validation enforces
+            those references.
+          items:
+            description: Selector key defined elsewhere in this object.
+            type: string
+          minItems: 1
+          type: array
+        enclosure:
+          description: Describes enclosure extraction settings.
+          properties:
+            attribute:
+              minLength: 1
+              type: string
+            content_type:
+              minLength: 1
+              pattern: "^[\\w-]+\\/[\\w-]+$"
+              type: string
+            extractor:
+              description: Extractor used to pull a value from the selected element.
+              oneOf:
+              - "$ref": "#/components/schemas/Html2rssExtractorAttribute"
+              - "$ref": "#/components/schemas/Html2rssExtractorHref"
+              - "$ref": "#/components/schemas/Html2rssExtractorHtml"
+              - "$ref": "#/components/schemas/Html2rssExtractorStatic"
+              - "$ref": "#/components/schemas/Html2rssExtractorText"
+            post_process:
+              description: Ordered transforms applied to the extracted value.
+              items:
+                oneOf:
+                - "$ref": "#/components/schemas/Html2rssPostProcessorGsub"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorMarkdownToHtml"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorParseTime"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorParseUri"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorSanitizeHtml"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorSubstring"
+                - "$ref": "#/components/schemas/Html2rssPostProcessorTemplate"
+              type: array
+            static:
+              minLength: 1
+              type: string
+          required: []
+          type: object
+        guid:
+          description: List of selector keys used to build the GUID. Each entry must
+            reference a sibling selector key; runtime validation enforces those references.
+          items:
+            description: Selector key defined elsewhere in this object.
+            type: string
+          minItems: 1
+          type: array
+        items:
+          description: Defines the items selector and list-card enhance settings.
+          properties:
+            enhance:
+              description: 'List-card enrichment: run Html::ArticleExtractor on each
+                matched item node to fill missing fields from the card HTML.'
+              not:
+                type: 'null'
+              type: boolean
+            order:
+              enum:
+              - reverse
+              not:
+                type: 'null'
+            pagination:
+              description: Pagination configuration or maximum page count integer.
+              oneOf:
+              - exclusiveMinimum: 0
+                type: integer
+              - additionalProperties: true
+                properties:
+                  cursor_path:
+                    type: string
+                  increment:
+                    exclusiveMinimum: 0
+                    type: integer
+                  max_pages:
+                    exclusiveMinimum: 0
+                    type: integer
+                  next_url_path:
+                    type: string
+                  param:
+                    type: string
+                  selector:
+                    type: string
+                  start_offset:
+                    type: integer
+                  start_page:
+                    type: integer
+                  step:
+                    exclusiveMinimum: 0
+                    type: integer
+                  strategy:
+                    enum:
+                    - rel_next
+                    - custom_selector
+                    - url_template
+                    - offset
+                    - json_cursor
+                    type: string
+                type: object
+            selector:
+              default: a[href]
+              minLength: 1
+              type: string
+          required: []
+          type: object
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      description: Bearer token authentication for API access.
+      scheme: bearer
+      type: http
 info:
-  title: html2rss-web API
-  version: 1.13.0
-  description: RESTful API for converting websites to RSS feeds.
   contact:
     name: html2rss-web Support
     url: https://github.com/html2rss/html2rss-web
+  description: RESTful API for converting websites to RSS feeds.
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
-servers:
-- url: https://api.html2rss.dev/api/v1
-  description: Production server
-- url: http://127.0.0.1:4000/api/v1
-  description: Development server
+  title: html2rss-web API
+  version: 1.13.0
+openapi: 3.1.0
 paths:
   "/":
     get:
@@ -64,8 +452,16 @@ paths:
                             - enabled
                             - access_token_required
                             type: object
+                          studio:
+                            properties:
+                              enabled:
+                                type: boolean
+                            required:
+                            - enabled
+                            type: object
                         required:
                         - feed_creation
+                        - studio
                         - catalog
                         type: object
                     required:
@@ -78,7 +474,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns catalog pointer metadata
+          description: API metadata
       security:
       - {}
       summary: API metadata
@@ -132,11 +528,13 @@ paths:
                             last_result:
                               properties:
                                 at:
-                                  nullable: true
-                                  type: string
+                                  type:
+                                  - string
+                                  - 'null'
                                 code:
-                                  nullable: true
-                                  type: string
+                                  type:
+                                  - string
+                                  - 'null'
                                 state:
                                   type: string
                               required:
@@ -149,85 +547,99 @@ paths:
                                 defaults:
                                   properties:
                                     blog:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     id:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     region:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     repository:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     section:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     user_id:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     username:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                   type: object
                                 schema:
                                   properties:
                                     blog:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     id:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     region:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     repository:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     section:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     user_id:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     username:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                   type: object
                               required:
                               - schema
@@ -272,7 +684,7 @@ paths:
                 - data
                 - meta
                 type: object
-          description: returns the merged catalog with CORS headers
+          description: Config catalog
         '404':
           content:
             application/json:
@@ -283,7 +695,7 @@ paths:
                 required:
                 - error
                 type: object
-          description: returns 404 when the catalog is disabled
+          description: Config catalog
       security:
       - {}
       summary: Config catalog
@@ -300,7 +712,7 @@ paths:
               type: object
       responses:
         '204':
-          description: responds to preflight requests with CORS headers
+          description: Config catalog preflight
       security:
       - {}
       summary: Config catalog preflight
@@ -323,6 +735,8 @@ paths:
               properties:
                 name:
                   type: string
+                selectors:
+                  "$ref": "#/components/schemas/SelectorsDocument"
                 url:
                   type: string
               required:
@@ -381,7 +795,7 @@ paths:
                 - data
                 - meta
                 type: object
-          description: normalizes hostname-only input to https before feed creation
+          description: Create a feed
         '400':
           content:
             application/json:
@@ -415,7 +829,7 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns 400 when request body exceeds maximum allowed bytes
+          description: Create a feed
         '401':
           content:
             application/json:
@@ -449,7 +863,7 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns 401 with UNAUTHORIZED error payload
+          description: Create a feed
         '403':
           content:
             application/json:
@@ -483,8 +897,7 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns forbidden for authenticated requests when auto source
-            is disabled
+          description: Create a feed
         '429':
           content:
             application/json:
@@ -518,10 +931,9 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns 429 when rate limit is exceeded
+          description: Create a feed
           headers:
             Retry-After:
-              description: The number of seconds to wait before retrying the request.
               schema:
                 type: integer
       security:
@@ -529,6 +941,342 @@ paths:
       summary: Create a feed
       tags:
       - Feeds
+  "/feeds/preview":
+    post:
+      description: Preview a selectors document feed
+      operationId: previewFeed
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                selectors:
+                  "$ref": "#/components/schemas/SelectorsDocument"
+                url:
+                  type: string
+              required:
+              - url
+              - selectors
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      failure_kind:
+                        type:
+                        - string
+                        - 'null'
+                      item_count:
+                        type: integer
+                      quality_report:
+                        properties:
+                          metrics:
+                            properties:
+                              short_title_count:
+                                type: integer
+                            required:
+                            - short_title_count
+                            type: object
+                          warnings:
+                            items:
+                              type: string
+                            type: array
+                        required:
+                        - warnings
+                        - metrics
+                        type:
+                        - object
+                        - 'null'
+                      sample_items:
+                        items:
+                          "$ref": "#/components/schemas/PreviewSampleItem"
+                        type: array
+                      validation_issues:
+                        items: {}
+                        type: array
+                    required:
+                    - item_count
+                    - sample_items
+                    - quality_report
+                    - failure_kind
+                    - validation_issues
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: Preview a selectors document feed
+      security:
+      - BearerAuth: []
+      summary: Preview a selectors document feed
+      tags:
+      - Studio
+  "/feeds/suggest_selectors":
+    post:
+      description: Suggest selectors for a page
+      operationId: suggestSelectors
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                items_selector:
+                  type: string
+                url:
+                  type: string
+              required:
+              - url
+              - items_selector
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      admission_drops:
+                        properties:
+                          chrome:
+                            type: integer
+                        type: object
+                      candidates:
+                        "$ref": "#/components/schemas/SelectorCandidates"
+                      segment_strategy:
+                        type: string
+                    required:
+                    - candidates
+                    - segment_strategy
+                    - admission_drops
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: Suggest selectors for a page
+        '422':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - code
+                    - message
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: Suggest selectors for a page
+      security:
+      - BearerAuth: []
+      summary: Suggest selectors for a page
+      tags:
+      - Studio
+  "/feeds/validate":
+    post:
+      description: Validate a selectors document
+      operationId: validateFeedConfig
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                selectors:
+                  "$ref": "#/components/schemas/SelectorsDocument"
+                url:
+                  type: string
+                yaml:
+                  type: string
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      report:
+                        properties:
+                          issues:
+                            items:
+                              properties:
+                                actual:
+                                  description: JSON-ish value, or null when the issue
+                                    carries none.
+                                code:
+                                  enum:
+                                  - constraint
+                                  - invalid_value
+                                  - missing_key
+                                  - parse
+                                  - type_mismatch
+                                  - unknown_value
+                                  type: string
+                                expected:
+                                  description: JSON-ish value, or null when the issue
+                                    carries none.
+                                message:
+                                  type: string
+                                path:
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - path
+                              - code
+                              - message
+                              - expected
+                              - actual
+                              type: object
+                            type: array
+                          success:
+                            type: boolean
+                        required:
+                        - success
+                        - issues
+                        type: object
+                      selectors:
+                        oneOf:
+                        - type: 'null'
+                        - "$ref": "#/components/schemas/SelectorsDocument"
+                      yaml:
+                        type:
+                        - string
+                        - 'null'
+                    required:
+                    - report
+                    - selectors
+                    - yaml
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: Validate a selectors document
+        '400':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - code
+                    - message
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: Validate a selectors document
+        '401':
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    properties:
+                      code:
+                        type: string
+                      kind:
+                        type: string
+                      message:
+                        type: string
+                      next_action:
+                        type: string
+                      retry_action:
+                        type: string
+                      retryable:
+                        type: boolean
+                    required:
+                    - code
+                    - message
+                    - kind
+                    - retryable
+                    - next_action
+                    - retry_action
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - error
+                type: object
+          description: Validate a selectors document
+      security:
+      - BearerAuth: []
+      summary: Validate a selectors document
+      tags:
+      - Studio
   "/feeds/{token}":
     get:
       description: Render feed by token
@@ -548,70 +1296,100 @@ paths:
             application/xml:
               schema:
                 type: string
-          description: renders feed for a valid token
+          description: Render feed by token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            Link:
+              schema:
+                type: string
+            Vary:
+              schema:
+                type: string
         '401':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns unauthorized for invalid tokens
+          description: Render feed by token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
         '403':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns forbidden when auto source is disabled
+          description: Render feed by token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
         '422':
           content:
             text/plain:
-              example: We could not extract feed items from this page yet. Try a more
-                specific listing URL or explicit selectors.
               schema:
                 type: string
-          description: returns 422 for empty extraction feeds in xml representation
+          description: Render feed by token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            Vary:
+              schema:
+                type: string
         '429':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns 429 when rate limit is exceeded
+          description: Render feed by token
           headers:
+            Cache-Control:
+              schema:
+                type: string
             Retry-After:
-              description: The number of seconds to wait before retrying the request.
               schema:
                 type: integer
         '500':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns non-cacheable feed errors when service generation fails
+          description: Render feed by token
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+            Vary:
+              schema:
+                type: string
         '503':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns 503 when the scraper queue times out
+          description: Render feed by token
           headers:
+            Cache-Control:
+              schema:
+                type: string
             Retry-After:
-              description: The number of seconds to wait before retrying the request.
               schema:
                 type: integer
         '504':
           content:
             text/plain:
-              example: 'Failed to generate feed: Invalid token'
               schema:
                 type: string
-          description: returns 504 when the gateway times out
+          description: Render feed by token
           headers:
+            Cache-Control:
+              schema:
+                type: string
             Retry-After:
-              description: The number of seconds to wait before retrying the request.
               schema:
                 type: integer
       security:
@@ -667,7 +1445,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns health status when token is valid
+          description: Authenticated health check
         '401':
           content:
             application/json:
@@ -701,7 +1479,7 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns 401 with UNAUTHORIZED error payload
+          description: Authenticated health check
         '500':
           content:
             application/json:
@@ -735,7 +1513,7 @@ paths:
                 - success
                 - error
                 type: object
-          description: returns error when configuration fails
+          description: Authenticated health check
       security:
       - BearerAuth: []
       summary: Authenticated health check
@@ -772,7 +1550,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns liveness status without authentication
+          description: Liveness probe
       security:
       - {}
       summary: Liveness probe
@@ -820,7 +1598,7 @@ paths:
                 - success
                 - data
                 type: object
-          description: returns readiness status without authentication
+          description: Readiness probe
       security:
       - {}
       summary: Readiness probe
@@ -870,27 +1648,27 @@ paths:
                 - data
                 - meta
                 type: object
-          description: returns available strategies
+          description: List extraction strategies
       security:
       - {}
       summary: List extraction strategies
       tags:
       - Strategies
-components:
-  securitySchemes:
-    BearerAuth:
-      description: Bearer token authentication for API access.
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+servers:
+- description: Production server
+  url: https://api.html2rss.dev/api/v1
+- description: Development server
+  url: http://127.0.0.1:4000/api/v1
 tags:
-- name: Root
-  description: API metadata and service-level information.
-- name: Catalog
-  description: Public feed-directory catalog metadata.
-- name: Health
-  description: Health and readiness endpoints.
-- name: Strategies
-  description: Feed extraction strategy discovery.
-- name: Feeds
-  description: Feed creation and feed rendering operations.
+- description: API metadata and service-level information.
+  name: Root
+- description: Public feed-directory catalog metadata.
+  name: Catalog
+- description: Health and readiness endpoints.
+  name: Health
+- description: Feed extraction strategy discovery.
+  name: Strategies
+- description: Feed creation and feed rendering operations.
+  name: Feeds
+- description: Validate, preview, and suggest refined feed configs.
+  name: Studio

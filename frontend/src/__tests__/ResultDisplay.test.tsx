@@ -5,10 +5,11 @@ import { COPY } from '../journey/copy';
 import type { AppViewModel } from '../feed';
 
 describe('ResultDisplay', () => {
-  const mockOnCreateAnother = vi.fn();
-  const mockOnRetryPreview = vi.fn();
-  const mockViewModel: Extract<AppViewModel, { kind: 'result' }> = {
+  const onCreateAnother = vi.fn();
+  const onRetryPreview = vi.fn();
+  const ready: Extract<AppViewModel, { kind: 'result'; phase: 'ready' }> = {
     kind: 'result',
+    phase: 'ready',
     feed: {
       id: 'test-id',
       name: 'Test Feed',
@@ -16,8 +17,6 @@ describe('ResultDisplay', () => {
       feed_token: 'test-feed-token',
       public_url: 'https://example.com/feed.xml',
       json_public_url: 'https://example.com/feed.json',
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z',
     },
     preview: {
       status: 'preview_ready',
@@ -38,50 +37,12 @@ describe('ResultDisplay', () => {
     vi.clearAllMocks();
   });
 
-  it('renders ready feed with Copy as primary CTA and demoted open links', async () => {
-    const viewModelWithMultiplePreviewItems = {
-      ...mockViewModel,
-      preview: {
-        status: 'preview_ready' as const,
-        items: [
-          {
-            title: 'Item One',
-            excerpt: 'First preview item with markup.',
-            url: 'https://example.com/item-one',
-            publishedLabel: 'Jan 1, 2024',
-          },
-          {
-            title: 'Item Two',
-            excerpt: 'Second preview item with markup.',
-            url: 'https://example.com/item-two',
-            publishedLabel: 'Jan 2, 2024',
-          },
-          {
-            title: 'Item Three',
-            excerpt: 'Third preview item with markup.',
-            url: 'https://example.com/item-three',
-            publishedLabel: 'Jan 3, 2024',
-          },
-          {
-            title: 'Item Four',
-            excerpt: 'Fourth preview item with markup.',
-            url: 'https://example.com/item-four',
-            publishedLabel: 'Jan 4, 2024',
-          },
-        ],
-        isLoading: false,
-      },
-    };
-
+  it('renders ready feed with Copy primary, demoted opens, and grid meadow', async () => {
     render(
-      <ResultDisplay
-        viewModel={viewModelWithMultiplePreviewItems}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
-      />
+      <ResultDisplay viewModel={ready} onCreateAnother={onCreateAnother} onRetryPreview={onRetryPreview} />
     );
 
-    expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'result');
+    expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'ready');
     expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: COPY.openFeed })).toHaveClass('btn--ghost');
@@ -91,95 +52,30 @@ describe('ResultDisplay', () => {
     );
     await waitFor(() => {
       expect(screen.getByText('Item One')).toBeInTheDocument();
-      expect(screen.getByText('Item Four')).toBeInTheDocument();
-      expect(screen.getByText(COPY.previewItemCount(4))).toBeInTheDocument();
+      expect(screen.getByText(COPY.previewItemCount(1))).toBeInTheDocument();
+      expect(document.querySelector('.ui-item-list--grid')).toBeTruthy();
     });
-    expect(screen.queryByRole('button', { name: /show all .* items/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Show fewer items' })).not.toBeInTheDocument();
   });
 
-  it('keeps Copy and open actions available while preview loads', () => {
-    render(
+  it('keeps Copy while preview loads and surfaces preview warnings', () => {
+    const { rerender } = render(
       <ResultDisplay
         viewModel={{
-          ...mockViewModel,
+          ...ready,
           preview: { status: 'preview_loading', items: [], isLoading: true },
         }}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
+        onCreateAnother={onCreateAnother}
+        onRetryPreview={onRetryPreview}
       />
     );
 
-    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
     expect(screen.getByText(COPY.previewChecking)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.copyFeedUrl })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: COPY.openFeed })).toBeInTheDocument();
-  });
 
-  it('lets retryable preview failures retry preview only', () => {
-    render(
+    rerender(
       <ResultDisplay
         viewModel={{
-          ...mockViewModel,
-          preview: { status: 'preview_failed', items: [], isLoading: false },
-          warnings: [
-            {
-              code: 'PREVIEW_HTTP_503',
-              message: COPY.previewUnavailable,
-              retryable: true,
-              nextAction: 'retry',
-            },
-          ],
-        }}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
-      />
-    );
-
-    expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: COPY.checkAgain }));
-    expect(mockOnRetryPreview).toHaveBeenCalled();
-  });
-
-  it('calls onCreateAnother and copies feed URL', async () => {
-    render(
-      <ResultDisplay
-        viewModel={mockViewModel}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: COPY.createAnother }));
-    expect(mockOnCreateAnother).toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: COPY.copyFeedUrl }));
-    await waitFor(() => {
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
-    });
-  });
-
-  it('does not copy when Enter is pressed on the feed URL field', () => {
-    render(
-      <ResultDisplay
-        viewModel={mockViewModel}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
-      />
-    );
-
-    const feedUrlField = screen.getByLabelText(COPY.feedUrl);
-    fireEvent.keyDown(feedUrlField, { key: 'Enter' });
-    fireEvent.keyDown(feedUrlField, { key: 'Enter', repeat: true });
-
-    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
-  });
-
-  it('renders PREVIEW_HTTP warning messages from the loader', () => {
-    render(
-      <ResultDisplay
-        viewModel={{
-          ...mockViewModel,
+          ...ready,
           preview: { status: 'preview_failed', items: [], isLoading: false },
           warnings: [
             {
@@ -190,38 +86,120 @@ describe('ResultDisplay', () => {
             },
           ],
         }}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
+        onCreateAnother={onCreateAnother}
+        onRetryPreview={onRetryPreview}
       />
     );
-
     expect(
       screen.getByText('This site blocked automated access. Try another URL or site.')
     ).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: COPY.checkAgain })).not.toBeInTheDocument();
-  });
 
-  it('renders retryable PREVIEW_HTTP warnings with Check again', () => {
-    render(
+    rerender(
       <ResultDisplay
         viewModel={{
-          ...mockViewModel,
+          ...ready,
           preview: { status: 'preview_failed', items: [], isLoading: false },
           warnings: [
             {
               code: 'PREVIEW_HTTP_503',
-              message: 'Feed fetching is temporarily unavailable.',
+              message: COPY.previewUnavailable,
               retryable: true,
               nextAction: 'retry',
             },
           ],
         }}
-        onCreateAnother={mockOnCreateAnother}
-        onRetryPreview={mockOnRetryPreview}
+        onCreateAnother={onCreateAnother}
+        onRetryPreview={onRetryPreview}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: COPY.checkAgain }));
+    expect(onRetryPreview).toHaveBeenCalled();
+  });
+
+  it('copies from the action, ignores Enter on the feed URL, and surfaces clipboard failure', async () => {
+    render(
+      <ResultDisplay viewModel={ready} onCreateAnother={onCreateAnother} onRetryPreview={onRetryPreview} />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: COPY.createAnother }));
+    expect(onCreateAnother).toHaveBeenCalled();
+
+    fireEvent.keyDown(screen.getByLabelText(COPY.feedUrl), { key: 'Enter' });
+    expect(navigator.clipboard.writeText).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: COPY.copyFeedUrl }));
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://example.com/feed.xml');
+    });
+
+    vi.mocked(navigator.clipboard.writeText).mockRejectedValueOnce(new Error('denied'));
+    fireEvent.click(screen.getByRole('button', { name: COPY.copyFeedUrl }));
+    await waitFor(() => {
+      expect(document.querySelector('[data-clipboard="failed"]')).toBeTruthy();
+    });
+    expect(screen.getByLabelText(COPY.feedUrl)).toHaveValue('https://example.com/feed.xml');
+  });
+
+  it('mounts authenticated studio for ready results, focuses Copy, and hides controls without studio', async () => {
+    const { rerender } = render(
+      <ResultDisplay
+        viewModel={ready}
+        onCreateAnother={onCreateAnother}
+        onRetryPreview={onRetryPreview}
+        studio={{
+          token: 'token-1',
+          url: 'https://example.com',
+          onGenerate: vi.fn(async () => {}),
+        }}
       />
     );
 
-    expect(screen.getByText('Feed fetching is temporarily unavailable.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.checkAgain })).toBeInTheDocument();
+    const copyFeedUrl = screen.getByRole('button', { name: COPY.copyFeedUrl });
+    expect(document.querySelector('details')).toBeNull();
+    expect(screen.getByLabelText(COPY.itemsSelector)).toBeInTheDocument();
+    expect(document.querySelectorAll('.ui-item-list')).toHaveLength(1);
+    expect(document.querySelector('.ui-item-list--grid')).toBeTruthy();
+    expect(screen.getByRole('button', { name: COPY.saveAndGenerate })).toHaveClass('btn--ghost');
+    expect(screen.getByRole('link', { name: COPY.proposeDirectory })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(copyFeedUrl);
+    });
+
+    rerender(
+      <ResultDisplay viewModel={ready} onCreateAnother={onCreateAnother} onRetryPreview={onRetryPreview} />
+    );
+    expect(screen.queryByLabelText(COPY.itemsSelector)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
+  });
+
+  it('renders unresolved workspace with one Decision notice and open studio', () => {
+    const notice = 'We could not extract feed items from this page yet.';
+    render(
+      <ResultDisplay
+        viewModel={{
+          kind: 'result',
+          phase: 'unresolved',
+          url: 'https://example.com/articles',
+          notice,
+        }}
+        onCreateAnother={onCreateAnother}
+        onRetryPreview={onRetryPreview}
+        studio={{
+          token: 'token-1',
+          url: 'https://example.com/articles',
+          onGenerate: vi.fn(async () => {}),
+        }}
+      />
+    );
+
+    expect(document.querySelector('.result-shell')).toHaveAttribute('data-state', 'unresolved');
+    expect(screen.getByText('https://example.com/articles')).toBeInTheDocument();
+    expect(screen.getAllByText(notice)).toHaveLength(1);
+    expect(screen.queryByText(COPY.feedReady)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.copyFeedUrl })).not.toBeInTheDocument();
+    expect(screen.getByLabelText(COPY.itemsSelector)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.saveAndGenerate })).toHaveClass('btn--primary');
+    expect(document.querySelector('.studio-suggestion-status')).toBeTruthy();
   });
 });

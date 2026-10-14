@@ -43,7 +43,13 @@ describe('previewHydration', () => {
 
   it('normalizes json feed items and caps at five', () => {
     const items = normalizePreviewItems([
-      { title: 'One', content_text: 'A', date_published: '2024-01-01', url: 'https://example.com/1' },
+      {
+        title: 'One',
+        content_text: 'A',
+        date_published: '2024-01-01',
+        url: 'https://example.com/1',
+        image: 'https://cdn.example/a.jpg',
+      },
       { title: 'Two', description: 'B', publishedLabel: 'Jan 2' },
       { title: 'Three' },
       { title: 'Four' },
@@ -60,6 +66,31 @@ describe('previewHydration', () => {
       publishedLabel: '2024-01-01',
       url: 'https://example.com/1',
     });
+    expect(items[0]).not.toHaveProperty('imageUrl');
+  });
+
+  it('keeps ten member items and only safe http(s) images', () => {
+    const items = normalizePreviewItems(
+      [
+        { title: 'Safe', image: 'https://cdn.example/a.jpg' },
+        // HTTP is an accepted image scheme; the assertion below must stay non-HTTPS.
+        // eslint-disable-next-line unicorn/prefer-https
+        { title: 'Plain http', image: 'http://cdn.example/b.jpg' },
+        { title: 'Script', image: 'javascript:alert(1)' },
+        { title: 'Data', image: 'data:image/png;base64,aaaa' },
+        { title: 'Spaced', image: 'https://cdn.example/a b.jpg' },
+        ...Array.from({ length: 7 }, (_, index) => ({ title: `Extra ${index}` })),
+      ],
+      'member'
+    );
+
+    expect(items).toHaveLength(10);
+    expect(items[0]?.imageUrl).toBe('https://cdn.example/a.jpg');
+    // eslint-disable-next-line unicorn/prefer-https -- same accepted HTTP image as the fixture
+    expect(items[1]?.imageUrl).toBe('http://cdn.example/b.jpg');
+    expect(items[2]).not.toHaveProperty('imageUrl');
+    expect(items[3]).not.toHaveProperty('imageUrl');
+    expect(items[4]).not.toHaveProperty('imageUrl');
   });
 
   it('marks non-transient preview HTTP failures as non-retryable', async () => {

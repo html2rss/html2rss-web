@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { ApiMetadataRecord } from '../api/contracts';
+import { requestApiMetadata } from '../api/http/metadata';
 import { COPY } from '../journey/copy';
 
 interface ApiMetadataState {
   metadata?: ApiMetadataRecord;
   isLoading: boolean;
   error?: string;
-}
-
-interface ApiMetadataPayload {
-  success?: boolean;
-  data?: unknown;
 }
 
 export function useApiMetadata() {
@@ -25,13 +21,9 @@ export function useApiMetadata() {
       setState((previous) => ({ ...previous, isLoading: true, error: undefined }));
 
       try {
-        const response = await fetch('/api/v1', {
-          headers: { Accept: 'application/json' },
-        });
-        const payload = await parseMetadataPayload(response);
-        const metadata = payload.data as ApiMetadataRecord | undefined;
-
-        if (!response.ok || !payload.success || !metadata?.instance) {
+        const payload = await requestApiMetadata();
+        const metadata = payload?.data;
+        if (!metadata?.instance) {
           throw new Error(COPY.instanceUnavailable);
         }
         if (isCancelled) return;
@@ -57,15 +49,4 @@ export function useApiMetadata() {
   }, []);
 
   return state;
-}
-
-async function parseMetadataPayload(response: Response): Promise<ApiMetadataPayload> {
-  const body = await response.text();
-  if (!body.trim()) return {};
-
-  try {
-    return JSON.parse(body) as ApiMetadataPayload;
-  } catch {
-    return {};
-  }
 }
