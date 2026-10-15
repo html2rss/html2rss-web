@@ -1,7 +1,11 @@
 precedence:
+  - local
   - official
 
 registries:
+  local:
+    path: data/registries/local
+    catalog: false
   official:
     sync:
       channel: html2rss-official
@@ -19,4 +23,3 @@ registries:
     #   max_version: v2026.08.22
     # allowed_channel_domains:
     #   - anthropic.com
-

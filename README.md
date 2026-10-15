@@ -13,6 +13,8 @@ Test drive the app with these steps:
 3. Open [`http://localhost:4000/`](http://localhost:4000/) in your browser
 4. When prompted for a token, use `CHANGE_ME_ADMIN_TOKEN`
 
+Add a custom feed YAML with `html2rss-web registry add path/to/feed.yml` (writes into the built-in `local` registry bundle under `data/registries/local`).
+
 > [!IMPORTANT]
 > This is a first-run demo path, not a production-ready setup.
 

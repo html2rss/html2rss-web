@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require 'stringio'
+require 'climate_control'
 require_relative '../../../app'
 require_relative '../../../app/web/cli'
 
@@ -119,6 +121,141 @@ RSpec.describe Html2rss::Web::CLI do
         exit_code = described_class.run(%w[registry invalid-sub], out: stdout, err: stderr)
         expect(exit_code).to eq(1)
         expect(stderr.string).to include('Unknown registry command: "invalid-sub"')
+      end
+    end
+
+    context 'with registry add' do
+      let(:local_root) { File.join(Dir.pwd, 'tmp', 'cli-local-registry') }
+      let(:config_path) { File.join(Dir.pwd, 'tmp', 'cli-local-registries.yml') }
+
+      before do
+        FileUtils.rm_rf(local_root)
+        FileUtils.mkdir_p(File.dirname(config_path))
+        File.write(config_path, <<~YAML)
+          precedence:
+            - local
+          registries:
+            local:
+              path: #{local_root}
+              catalog: false
+        YAML
+      end
+
+      after do
+        FileUtils.rm_rf(local_root)
+        FileUtils.rm_f(config_path)
+      end
+
+      def with_local_registry(&)
+        ClimateControl.modify('REGISTRIES_CONFIG' => config_path) do
+          Html2rss::Web::Registry::Index.reload!
+          yield
+        end
+      end
+
+      def write_feed(path, id:, title: 'Example') # rubocop:disable Metrics/MethodLength
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, <<~YAML)
+          registry:
+            id: #{id}
+          directory:
+            title: #{title}
+          channel:
+            url: https://example.com/#{id}
+            title: #{title}
+          selectors:
+            items:
+              selector: article
+            title:
+              selector: h1
+            url:
+              extractor: href
+        YAML
+      end
+
+      def run_add(path)
+        described_class.run(['registry', 'add', path], out: stdout, err: stderr)
+      end
+
+      it 'accepts one valid feed file', :aggregate_failures do
+        feed = File.join(Dir.pwd, 'tmp', 'cli-add-feed.yml')
+        write_feed(feed, id: 'example.com/feed')
+
+        with_local_registry do
+          expect(run_add(feed)).to eq(0)
+          expect(stdout.string).to include('example.com/feed', local_root)
+          expect(Html2rss::Web::Registry::Index.current.config_for('example.com/feed'))
+            .to include(channel: hash_including(title: 'Example'))
+        end
+      ensure
+        FileUtils.rm_f(feed)
+      end
+
+      it 'rejects missing registry.id', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+        feed = File.join(Dir.pwd, 'tmp', 'cli-add-missing-id.yml')
+        File.write(feed, <<~YAML)
+          channel:
+            url: https://example.com/feed
+            title: Example
+          selectors:
+            items:
+              selector: article
+            title:
+              selector: h1
+            url:
+              extractor: href
+        YAML
+
+        with_local_registry do
+          expect(run_add(feed)).to eq(1)
+          expect(stderr.string).to match(/registry\.id|Registry add failed/)
+          expect(File).not_to exist(File.join(local_root, 'manifest.json'))
+        end
+      ensure
+        FileUtils.rm_f(feed)
+      end
+
+      it 'rejects invalid YAML', :aggregate_failures do
+        feed = File.join(Dir.pwd, 'tmp', 'cli-add-invalid.yml')
+        File.write(feed, "registry:\n  id: [broken")
+
+        with_local_registry do
+          expect(run_add(feed)).to eq(1)
+          expect(stderr.string).to include('Registry add failed')
+        end
+      ensure
+        FileUtils.rm_f(feed)
+      end
+
+      it 'upserts the same registry.id', :aggregate_failures do
+        feed = File.join(Dir.pwd, 'tmp', 'cli-add-upsert.yml')
+        write_feed(feed, id: 'example.com/feed', title: 'First')
+
+        with_local_registry do
+          run_add(feed)
+          write_feed(feed, id: 'example.com/feed', title: 'Second')
+          expect(run_add(feed)).to eq(0)
+          expect(Html2rss::Web::Registry::Index.current.config_for('example.com/feed'))
+            .to include(channel: hash_including(title: 'Second'))
+        end
+      ensure
+        FileUtils.rm_f(feed)
+      end
+
+      it 'leaves the previous bundle when a directory add fails', :aggregate_failures do
+        dir = File.join(Dir.pwd, 'tmp', 'cli-add-dir')
+        good = File.join(dir, 'good.yml')
+        write_feed(good, id: 'example.com/good', title: 'Keep Me')
+
+        with_local_registry do
+          run_add(good)
+          File.write(File.join(dir, 'bad.yml'), "registry:\n  id: [broken")
+          expect(run_add(dir)).to eq(1)
+          expect(Html2rss::Web::Registry::Index.current.config_for('example.com/good'))
+            .to include(channel: hash_including(title: 'Keep Me'))
+        end
+      ensure
+        FileUtils.rm_rf(dir)
       end
     end
   end

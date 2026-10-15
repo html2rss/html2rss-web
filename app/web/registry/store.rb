@@ -185,6 +185,26 @@ module Html2rss
             File.file?(manifest_file) ? File.mtime(manifest_file) : nil
           end
 
+          ##
+          # Atomically replaces +target+ with +source+ (backup + rename).
+          #
+          # @param source [String]
+          # @param target [String]
+          # @return [void]
+          def replace_directory!(source, target) # rubocop:disable Metrics/MethodLength
+            FileUtils.mkdir_p(File.dirname(target))
+            backup = "#{target}.backup.#{Process.pid}"
+            FileUtils.mv(target, backup) if File.exist?(target)
+            begin
+              File.rename(source, target)
+            rescue StandardError
+              FileUtils.mv(backup, target) if File.exist?(backup) && !File.exist?(target)
+              raise
+            ensure
+              FileUtils.rm_rf(backup)
+            end
+          end
+
           private
 
           def sync_state_path
@@ -206,19 +226,6 @@ module Html2rss
             Html2rss::Registry::Manifest.parse(File.read(manifest_file)).version
           rescue Html2rss::Registry::ManifestError
             nil
-          end
-
-          def replace_directory!(source, target)
-            backup = "#{target}.backup.#{Process.pid}"
-            FileUtils.mv(target, backup) if File.exist?(target)
-            begin
-              File.rename(source, target)
-            rescue StandardError
-              FileUtils.mv(backup, target) if File.exist?(backup) && !File.exist?(target)
-              raise
-            ensure
-              FileUtils.rm_rf(backup)
-            end
           end
 
           def staging_swap_dir(registry_id)

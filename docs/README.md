@@ -26,7 +26,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 - **Runtime behavior**: Application code plus tests.
 - **HTTP contract**: Request specs plus generated OpenAPI.
-- **Config catalog API**: `GET /api/v1/configs` — catalog rows from `Registry::Index` (verified registry bundles per `config/registries.yml`, merged with local `feeds.yml` entries that include `directory.title`). Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
+- **Config catalog API**: `GET /api/v1/configs` — catalog rows from `Registry::Index` (verified registry bundles per `config/registries.yml`; the built-in `local` path bundle is omitted while `catalog: false`). Disabled when `CONFIG_CATALOG_ENABLED=false` (`404`, `catalog_disabled`). CORS is enabled on this route only.
 - **This file**: Contributor conventions and current project rules.
 
 ---

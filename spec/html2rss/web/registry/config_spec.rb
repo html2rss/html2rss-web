@@ -90,4 +90,28 @@ RSpec.describe Html2rss::Web::Registry::Config do
       end
     end
   end
+
+  describe 'built-in local registry' do
+    it 'includes local before official in the zero-config document', :aggregate_failures do
+      ClimateControl.modify('REGISTRIES_CONFIG' => nil) do
+        described_class.reload!
+
+        expect(described_class.precedence).to eq(%w[local official])
+        expect(described_class.entry('local')).to have_attributes(
+          mode: :path,
+          catalog: false,
+          path: File.expand_path('data/registries/local', Dir.pwd)
+        )
+      end
+    end
+
+    it 'loads local from config/registries.yml', :aggregate_failures do
+      ClimateControl.modify('REGISTRIES_CONFIG' => 'config/registries.yml') do
+        described_class.reload!
+
+        expect(described_class.precedence).to eq(%w[local official])
+        expect(described_class.entry('local')).to have_attributes(mode: :path, catalog: false)
+      end
+    end
+  end
 end

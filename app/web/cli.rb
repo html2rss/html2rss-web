@@ -39,12 +39,13 @@ module Html2rss
       # @param out [IO]
       # @param err [IO]
       # @return [Integer]
-      def run_registry(args, out:, err:) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength
+      def run_registry(args, out:, err:) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength
         case args.first
         when 'status' then registry_status(args[1..] || [], out:)
         when 'sync' then registry_sync(args[1..] || [])
         when 'promote' then registry_promote(args[1..] || [])
         when 'verify' then registry_verify(args[1..] || [], out:, err:)
+        when 'add' then registry_add(args[1..] || [], out:, err:)
         when '-h', '--help', 'help', nil
           print_registry_help(out:)
           0
@@ -133,6 +134,26 @@ module Html2rss
       end
 
       ##
+      # @param args [Array<String>]
+      # @param out [IO]
+      # @param err [IO]
+      # @return [Integer]
+      def registry_add(args, out:, err:) # rubocop:disable Metrics/MethodLength
+        source = args.first
+        if source.to_s.strip.empty?
+          err.puts 'Usage: html2rss-web registry add FILE_OR_DIR'
+          return 1
+        end
+
+        result = Registry::LocalBundle.add!(source)
+        out.puts "Added #{result.ids.join(', ')} to local registry at #{result.path}"
+        0
+      rescue StandardError => error
+        err.puts "Registry add failed: #{error.message}"
+        1
+      end
+
+      ##
       # @param out [IO]
       # @param err [IO]
       # @return [Integer]
@@ -163,7 +184,7 @@ module Html2rss
       ##
       # @param out [IO]
       # @return [void]
-      def print_root_help(out:)
+      def print_root_help(out:) # rubocop:disable Metrics/MethodLength
         out.puts <<~HELP
           Usage: html2rss-web [command] [options]
 
@@ -172,6 +193,7 @@ module Html2rss
             registry sync [--registry ID] [--dry-run]   Fetch, verify, and sync registry bundles
             registry promote [--registry ID]            Promote verified staged bundle to active
             registry verify [--registry ID] [--dir DIR] Verify registry bundle signature and integrity
+            registry add FILE_OR_DIR                    Add feed YAML into the local registry bundle
             healthcheck                                 Verify container process liveness
             version                                     Print version and runtime information
         HELP
@@ -189,6 +211,7 @@ module Html2rss
             sync      Fetch and verify remote registry bundle(s)
             promote   Promote staged verified bundle to active
             verify    Verify bundle signature and file integrity against pinned configuration
+            add       Add feed YAML file(s) into the built-in local registry bundle
         HELP
       end
 
@@ -227,8 +250,9 @@ module Html2rss
       def format_time(value) = value ? value.utc.iso8601 : '-'
 
       private_class_method :run_registry, :registry_status, :registry_sync, :registry_promote,
-                           :registry_verify, :run_healthcheck, :run_version, :print_root_help,
-                           :print_registry_help, :target_registry_ids, :print_status_table, :format_time
+                           :registry_verify, :registry_add, :run_healthcheck, :run_version,
+                           :print_root_help, :print_registry_help, :target_registry_ids,
+                           :print_status_table, :format_time
     end
   end
 end

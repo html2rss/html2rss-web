@@ -35,7 +35,8 @@ module Html2rss
       # Parses registry configuration and applies zero-config defaults.
       module Config # rubocop:disable Metrics/ModuleLength
         REGISTRIES_FILE = 'config/registries.yml'
-        DEFAULT_PRECEDENCE = %w[official].freeze
+        DEFAULT_PRECEDENCE = %w[local official].freeze
+        DEFAULT_LOCAL_PATH = 'data/registries/local'
         DEFAULT_OFFICIAL_SYNC_CHANNEL = 'html2rss-official'
         OFFICIAL_RELEASE_URL = 'https://github.com/html2rss/html2rss-configs/releases/latest/download/registry-bundle.tar.gz'
         DEFAULT_PUBLIC_KEY_PEM = <<~PEM
@@ -126,6 +127,10 @@ module Html2rss
             {
               precedence: DEFAULT_PRECEDENCE,
               registries: {
+                'local' => {
+                  path: DEFAULT_LOCAL_PATH,
+                  catalog: false
+                },
                 'official' => {
                   sync: { channel: DEFAULT_OFFICIAL_SYNC_CHANNEL },
                   catalog: true,

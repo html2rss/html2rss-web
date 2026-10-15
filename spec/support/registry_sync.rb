@@ -59,7 +59,8 @@ module RegistrySyncTestHelpers
   def pack_bundle_dir(bundle_dir)
     dir = File.dirname(tarball_path = File.join(Dir.mktmpdir('registry-sync-tarball'), 'bundle.tar.gz'))
     env = { 'COPYFILE_DISABLE' => '1' }
-    success = system(env, 'tar', '--format=ustar', '-czf', tarball_path, '-C', bundle_dir, '.', exception: false)
+    # BusyBox tar (Alpine Dev Container) has no --format=ustar; GNU tar accepts omitting it.
+    success = system(env, 'tar', '-czf', tarball_path, '-C', bundle_dir, '.', exception: false)
     raise "Failed to pack registry test bundle from #{bundle_dir}" unless success
 
     File.binread(tarball_path)

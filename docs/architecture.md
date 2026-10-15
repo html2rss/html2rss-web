@@ -22,9 +22,9 @@ flowchart TD
 Requests enter via `app.rb` and are dispatched to `app/web/routes/`.
 
 - **Static feed pages (`/<feed_name>`)**: Routed by `app/web/routes/feed_pages.rb` and resolved as `target_kind: :static`.
-  - Source: static config in `config/feeds.yml` (via `LocalConfig.find`).
+  - Source: registry bundle configs via `Registry::Index.config_for` (official + built-in `local`).
   - Auth boundary: no feed token required on this route.
-  - Failure mode: unknown feed names fail at static config lookup.
+  - Failure mode: unknown feed names fail at index lookup.
 - **Token-backed feed reads (`/api/v1/feeds/:token`)**: Routed by `app/web/routes/api_v1/feed_routes.rb` and resolved as `target_kind: :token`.
   - Token scope: `FeedAccess.authorize_feed_token!` validates signature/expiry and re-checks account URL access.
   - Constraint: disabled when AutoSource is off (`ForbiddenError` from `SourceResolver.ensure_auto_source_enabled!`).
@@ -34,8 +34,8 @@ Requests enter via `app.rb` and are dispatched to `app/web/routes/`.
 
 The `Html2rss::Web::Feeds::SourceResolver` determines where feed configuration comes from based on route target:
 
-- **Static (`target_kind: :static`)**: Pre-defined in `config/feeds.yml`.
-- **Token (`target_kind: :token`)**: Generated from validated feed token payload + AutoSource globals.
+- **Static (`target_kind: :static`)**: Pre-defined in a registry bundle (add custom feeds with `html2rss-web registry add`).
+- **Token (`target_kind: :token`)**: Generated from validated feed token payload + `FeedChrome` defaults.
 
 ### 3. Fetching & Rendering
 
@@ -61,7 +61,7 @@ To add or configure strategies, see `app/web/feeds/source_resolver.rb` and the `
 
 ## Feed Registries & Storage Architecture
 
-Feed configs are dynamically resolved from curated registry bundles and local feeds via `Registry::Index`:
+Feed configs are dynamically resolved from curated registry bundles (including the built-in `local` path bundle) via `Registry::Index`:
 
 ```mermaid
 flowchart TD

@@ -56,7 +56,7 @@ Audit channel: snake_case `security_event` with IP / user-agent / token hash. Au
 Shared emit plumbing for both channels (`RequestContext`, `LogSanitizer`, `AppLogger` / Sentry). Not a third public facade.
 
 ### Registry Index
-Backend merge owner for registry bundles and local `feeds.yml` feeds. Builds catalog wire rows (`Registry::Index::CatalogRow`), enforces load-time trust and channel-domain allowlists, and serves `config_for` / `catalog_rows` / `status`.
+Sole feed repository over registry bundles (official sync/path plus the built-in `local` path bundle). Builds catalog wire rows, enforces load-time trust and channel-domain allowlists, and serves `config_for` / `catalog_rows` / `status`.
 
 ### Registry Sync
 Backend orchestration for fetch → verify → stage/promote of signed registry bundles. Owns boot initialization, background refresh, CLI exit codes, and catalog-change telemetry after promotion.
