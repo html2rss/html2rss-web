@@ -11,9 +11,9 @@ RSpec.describe Html2rss::Web::Boot::DevelopmentReloader do
   let(:instance) { described_class.new(loader:, app_provider: -> { rack_app }) }
 
   before do
-    stub_const('Html2rss::Web::LocalConfig', Class.new { def self.reload!(reason:); end })
+    stub_const('Html2rss::Web::Registry::Index', Class.new { def self.reload!; end })
     stub_const('Html2rss::Web::AccountManager', Class.new { def self.reload!(reason:); end })
-    allow(Html2rss::Web::LocalConfig).to receive(:reload!)
+    allow(Html2rss::Web::Registry::Index).to receive(:reload!)
     allow(Html2rss::Web::AccountManager).to receive(:reload!)
   end
 
@@ -27,7 +27,7 @@ RSpec.describe Html2rss::Web::Boot::DevelopmentReloader do
     status, headers, body = instance.call({})
 
     expect(loader).to have_received(:reload).once
-    expect(Html2rss::Web::LocalConfig).to have_received(:reload!).with(reason: 'code_reload').once
+    expect(Html2rss::Web::Registry::Index).to have_received(:reload!).once
     expect(Html2rss::Web::AccountManager).to have_received(:reload!).with(reason: 'code_reload').once
     expect([status, headers['Content-Type'], body.each.to_a]).to eq([200, 'text/plain', ['ok']])
   end

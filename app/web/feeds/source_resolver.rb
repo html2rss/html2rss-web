@@ -132,7 +132,7 @@ module Html2rss
           # @param strategy [String]
           # @return [Hash{Symbol=>Object}]
           def token_generator_input(url, strategy)
-            LocalConfig.global.slice(:stylesheets, :headers).merge(
+            FeedChrome.generator_defaults.merge(
               channel: { url: },
               auto_source: {},
               strategy: strategy.to_sym

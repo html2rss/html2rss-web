@@ -61,7 +61,7 @@ module Html2rss
 
         # @return [void]
         def reset_runtime_caches!
-          Html2rss::Web::LocalConfig.reload!(reason: 'code_reload') if defined?(Html2rss::Web::LocalConfig)
+          Html2rss::Web::Registry::Index.reload! if defined?(Html2rss::Web::Registry::Index)
           Html2rss::Web::AccountManager.reload!(reason: 'code_reload') if defined?(Html2rss::Web::AccountManager)
         end
       end

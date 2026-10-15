@@ -3,10 +3,10 @@
 module Html2rss
   module Web
     ##
-    # Thread-safe account snapshot cache.
+    # Thread-safe account snapshot cache built from RuntimeEnv tokens.
     #
-    # Keeps config reads cheap by materializing one immutable snapshot and
-    # exposing narrow lookup helpers for auth and authorization flows.
+    # Admin always exists (full URL access). Health-check exists only when
+    # +HEALTH_CHECK_TOKEN+ is set to a non-placeholder value.
     module AccountManager
       @mutex = Mutex.new
       @snapshot = nil
@@ -54,8 +54,7 @@ module Html2rss
         end
 
         def build_snapshot
-          raw_accounts = LocalConfig.global.dig(:auth, :accounts)
-          accounts = normalized_accounts(raw_accounts)
+          accounts = build_accounts
           token_index = index_accounts(accounts, :token)
           username_index = index_accounts(accounts, :username)
 
@@ -67,10 +66,33 @@ module Html2rss
           { accounts: accounts, token_index: token_index, username_index: username_index }.freeze
         end
 
-        # @param raw_accounts [Array<Hash>, nil]
         # @return [Array<Hash{Symbol=>Object}>]
-        def normalized_accounts(raw_accounts)
-          Array(raw_accounts).map { |account| account.transform_keys(&:to_sym).freeze }.freeze
+        def build_accounts
+          accounts = [admin_account]
+          health = health_check_account
+          accounts << health if health
+          accounts.freeze
+        end
+
+        # @return [Hash{Symbol=>Object}]
+        def admin_account
+          {
+            username: 'admin',
+            token: RuntimeEnv.admin_access_token,
+            allowed_urls: ['*'].freeze
+          }.freeze
+        end
+
+        # @return [Hash{Symbol=>Object}, nil]
+        def health_check_account
+          token = RuntimeEnv.health_check_token
+          return nil if token == RuntimeEnv::HEALTH_CHECK_TOKEN_PLACEHOLDER
+
+          {
+            username: 'health-check',
+            token:,
+            allowed_urls: [].freeze
+          }.freeze
         end
 
         # @param accounts [Array<Hash{Symbol=>Object}>]

@@ -27,14 +27,10 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
     }
   end
 
-  let(:accounts_config) do
-    {
-      auth: {
-        accounts: [account, { username: 'admin', token: 'admin-token-xyz789', allowed_urls: ['*'] }]
-      }
-    }
+  let(:admin_account) do
+    { username: 'admin', token: 'admin-token-xyz789', allowed_urls: ['*'] }
   end
-  let(:config_snapshot) { Html2rss::Web::ConfigSnapshot.load(accounts_config) }
+  let(:accounts) { [account, admin_account] }
 
   let(:json_headers) { { 'CONTENT_TYPE' => 'application/json' } }
   let(:auth_headers) { json_headers.merge('HTTP_AUTHORIZATION' => "Bearer #{account[:token]}") }
@@ -56,7 +52,13 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
   end
 
   before do
-    allow(Html2rss::Web::LocalConfig).to receive_messages(global: config_snapshot.global, snapshot: config_snapshot)
+    allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(accounts)
+    allow(Html2rss::Web::AccountManager).to receive(:get_account) { |token|
+      accounts.find { it[:token] == token }
+    }
+    allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username) { |username|
+      accounts.find { it[:username] == username }
+    }
     stub_const('Html2rss::FeedChannel', Class.new { attr_reader :ttl })
     stub_const('Html2rss::Feed', Class.new { attr_reader :channel })
     allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)

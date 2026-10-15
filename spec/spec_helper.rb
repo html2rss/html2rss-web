@@ -56,7 +56,6 @@ RSpec.configure do |config|
     Html2rss::Web::SecurityLogger.reset_logger! if defined?(Html2rss::Web::SecurityLogger)
     Html2rss::Web::RuntimeEnv.reset! if defined?(Html2rss::Web::RuntimeEnv)
     Html2rss::Web::AccountManager.reload! if defined?(Html2rss::Web::AccountManager)
-    Html2rss::Web::LocalConfig.reload! if defined?(Html2rss::Web::LocalConfig)
   end
 
   config.after do

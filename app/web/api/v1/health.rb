@@ -94,7 +94,7 @@ module Html2rss
 
             # @return [void]
             def verify_configuration!
-              LocalConfig.load_snapshot
+              Registry::Index.current
             rescue StandardError
               raise Html2rss::Web::HealthCheckFailedError
             end

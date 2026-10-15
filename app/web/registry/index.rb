@@ -31,8 +31,10 @@ module Html2rss
       end
 
       ##
-      # Sole feed repository combining registry bundles and local feeds.
+      # Sole feed repository over registry bundles.
       class Index # rubocop:disable Metrics/ClassLength
+        FEED_EXTENSION_PATTERN = /\.(json|rss|xml)\z/
+
         ##
         # Immutable container holding a loaded registry bundle's manifest, configs, and catalog entries.
         RegistryBundle = Data.define(:registry_id, :manifest, :configs, :catalog_entries)
@@ -78,8 +80,6 @@ module Html2rss
         # @return [Hash{Symbol => Object}, nil]
         def config_for(feed_id)
           id = normalize_feed_id(feed_id)
-          local = local_config_for(id)
-          return local if local
 
           loaded_bundles.each_value do |bundle|
             config = bundle.configs[id]
@@ -92,9 +92,7 @@ module Html2rss
         ##
         # @return [Array<Html2rss::Registry::CatalogEntry>]
         def catalog_entries
-          registry_entries = build_registry_catalog_entries
-          local_entries = build_local_catalog_entries
-          registry_entries.merge(local_entries).values.sort_by(&:id)
+          build_registry_catalog_entries.values.sort_by(&:id)
         end
 
         ##
@@ -102,9 +100,7 @@ module Html2rss
         #
         # @return [Array<Hash{Symbol => Object}>]
         def catalog_rows
-          registry_rows = build_registry_catalog_rows
-          local_rows = build_local_catalog_rows
-          registry_rows.merge(local_rows).values.sort_by { it.fetch(:id) }
+          build_registry_catalog_rows.values.sort_by { it.fetch(:id) }
         end
 
         ##
@@ -178,17 +174,6 @@ module Html2rss
           end
         end
 
-        def build_local_catalog_entries
-          LocalConfig.feeds.filter_map do |feed_name, feed_config|
-            entry = build_local_catalog_entry(feed_name, feed_config)
-            [entry.id, entry] if entry
-          end.to_h
-        end
-
-        def build_local_catalog_rows
-          build_local_catalog_entries.transform_values { |entry| entry.to_h.merge(source: 'local') }
-        end
-
         def load_bundle(registry_id) # rubocop:disable Metrics/MethodLength
           definition = Config.entry(registry_id)
           directory = bundle_directory(definition)
@@ -239,31 +224,7 @@ module Html2rss
         end
 
         def normalize_feed_id(feed_id)
-          feed_id.to_s.delete_prefix('/').sub(LocalConfig::FEED_EXTENSION_PATTERN, '')
-        end
-
-        def local_config_for(feed_id)
-          feeds = LocalConfig.feeds
-          feed = feeds[feed_id.to_sym] || feeds[feed_id]
-          feed ? StructuredData.deep_dup(feed) : nil
-        rescue StandardError
-          nil
-        end
-
-        def build_local_catalog_entry(feed_name, feed_config) # rubocop:disable Metrics/MethodLength
-          directory = feed_config[:directory] || {}
-          title = directory[:title]&.to_s
-          return nil if title.to_s.strip.empty?
-
-          id = feed_name.to_s
-          channel = feed_config[:channel] || {}
-          Html2rss::Registry::CatalogEntry.new(
-            id:,
-            path: "/#{id}.rss",
-            directory: Html2rss::Registry::CatalogBuilder.directory_payload(directory, title),
-            channel: Html2rss::Registry::CatalogBuilder.channel_payload(channel, title),
-            parameters: { schema: {}, defaults: {} }
-          )
+          feed_id.to_s.delete_prefix('/').sub(FEED_EXTENSION_PATTERN, '')
         end
       end
     end

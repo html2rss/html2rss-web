@@ -74,26 +74,6 @@ RSpec.describe Html2rss::Web::Registry::Index do
 
       expect(deepmind.fetch(:registry)).to eq('official')
     end
-
-    it 'merges local feeds.yml rows after registry rows', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
-      allow(Html2rss::Web::LocalConfig).to receive(:feeds).and_return(
-        'team/releases' => {
-          directory: { title: 'Team Releases', summary: 'Internal release notes' },
-          channel: { url: 'https://team.example/releases', title: 'Team Releases' }
-        }
-      )
-
-      rows = described_class.current.catalog_rows
-      local = rows.find { it.fetch(:id) == 'team/releases' }
-
-      expect(local).to include(
-        source: 'local',
-        path: '/team/releases.rss',
-        directory: hash_including(title: 'Team Releases'),
-        channel: hash_including(url: 'https://team.example/releases')
-      )
-      expect(local).not_to have_key(:registry)
-    end
   end
 
   describe '#status' do

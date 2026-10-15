@@ -92,7 +92,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           .with({ username: 'admin' }, 'https://example.com/private').and_return(true)
         allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
         allow(Html2rss::RequestService).to receive(:strategy_names).and_return([:faraday])
-        allow(Html2rss::Web::LocalConfig).to receive(:global)
+        allow(Html2rss::Web::Feeds::FeedChrome).to receive(:generator_defaults)
           .and_return({ headers: { 'User-Agent' => 'html2rss-web' } })
       end
 
@@ -101,7 +101,8 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
         expect(resolved_tuple(resolved)).to match(
           [:token, start_with('token:'), 300,
-           include(strategy: :faraday, channel: { url: 'https://example.com/private' }, auto_source: {})]
+           include(strategy: :faraday, channel: { url: 'https://example.com/private' }, auto_source: {},
+                   headers: { 'User-Agent' => 'html2rss-web' })]
         )
         expect(resolved).to have_attributes(
           url: 'https://example.com/private',

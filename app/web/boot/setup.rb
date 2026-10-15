@@ -32,12 +32,9 @@ module Html2rss
 
           # @return [void]
           def configure_gem_defaults!
-            global_config = LocalConfig.global
-            headers = global_config[:headers]
-            stylesheets = global_config[:stylesheets]
             Html2rss.configure do |config|
-              config.headers = headers if headers
-              config.stylesheets = stylesheets if stylesheets
+              config.headers = Feeds::FeedChrome.headers
+              config.stylesheets = Feeds::FeedChrome.stylesheets
             end
           end
 
