@@ -1,0 +1,335 @@
+{
+  "version": 8,
+  "folder": "default",
+  "dashboardId": "",
+  "title": "html2rss-web ops",
+  "description": "Product outcomes, server spans, and JSON logs for a self-hosted html2rss-web instance.",
+  "role": "",
+  "owner": "",
+  "created": "2026-10-18T00:00:00Z",
+  "defaultDatetimeDuration": {
+    "type": "relative",
+    "relativeTimePeriod": "24h"
+  },
+  "tabs": [
+    {
+      "tabId": "default",
+      "name": "Default",
+      "panels": [
+        {
+          "id": "log-lines",
+          "type": "line",
+          "title": "Log lines per minute",
+          "description": "JSON log lines for html2rss-web.",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, count(*) AS log_lines FROM \"html2rss_web\" WHERE service_name = 'html2rss-web' GROUP BY x_axis_1",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_web",
+                "stream_type": "logs",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 0, "w": 192, "h": 16, "i": 1 }
+        },
+        {
+          "id": "spans",
+          "type": "line",
+          "title": "Spans per minute",
+          "description": "Span volume and error spans for html2rss-web.",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, count(*) AS spans FROM \"html2rss_web\" WHERE service_name = 'html2rss-web' GROUP BY x_axis_1",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_web",
+                "stream_type": "traces",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "spans"
+              }
+            },
+            {
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, count(*) AS error_spans FROM \"html2rss_web\" WHERE service_name = 'html2rss-web' AND span_status = 'ERROR' GROUP BY x_axis_1",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_web",
+                "stream_type": "traces",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "error spans"
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 16, "w": 192, "h": 16, "i": 2 }
+        },
+        {
+          "id": "render-outcomes",
+          "type": "line",
+          "title": "Render outcomes per minute",
+          "description": "feed.render outcomes split by result and reason, including hit and success.",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "promql",
+          "queries": [
+            {
+              "query": "sum by (result, reason) (increase(html2rss_outcome_total{service_name=\"html2rss-web\",operation=\"feed.render\",result=~\"hit|success|empty|failure\"}[1m]))",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_outcome_total",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "{{result}} {{reason}}"
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 32, "w": 192, "h": 16, "i": 3 }
+        },
+        {
+          "id": "create-failures",
+          "type": "line",
+          "title": "Create failures per minute",
+          "description": "feed.create failures split by reason.",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "promql",
+          "queries": [
+            {
+              "query": "sum by (reason) (increase(html2rss_outcome_total{service_name=\"html2rss-web\",operation=\"feed.create\",result=\"failure\"}[1m]))",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_outcome_total",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": "{{reason}}"
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 48, "w": 192, "h": 16, "i": 4 }
+        },
+        {
+          "id": "server-latency",
+          "type": "line",
+          "title": "Render and create server-span p95 latency",
+          "description": "Server-span p95 for feed render and feed create, in milliseconds.",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, approx_percentile_cont(duration, 0.95) / 1000 AS p95_ms FROM \"html2rss_web\" WHERE service_name = 'html2rss-web' AND span_kind = '2' AND html2rss_operation IN ('feed.render', 'feed.create') GROUP BY x_axis_1, html2rss_operation, html2rss_result, html2rss_reason",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_web",
+                "stream_type": "traces",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 64, "w": 192, "h": 16, "i": 5 }
+        },
+        {
+          "id": "server-5xx",
+          "type": "line",
+          "title": "5xx server spans",
+          "description": "Server spans at status 500 and above, excluding route group health (/api/v1/health/live, /api/v1/health/ready, /api/v1/health, /metrics).",
+          "config": {
+            "show_legends": true,
+            "legends_position": "bottom"
+          },
+          "queryType": "sql",
+          "queries": [
+            {
+              "query": "SELECT histogram(_timestamp) AS x_axis_1, count(*) AS server_errors FROM \"html2rss_web\" WHERE service_name = 'html2rss-web' AND span_kind = '2' AND http_response_status_code >= 500 AND html2rss_route_group != 'health' GROUP BY x_axis_1",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_web",
+                "stream_type": "traces",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 80, "w": 192, "h": 16, "i": 6 }
+        },
+        {
+          "id": "up",
+          "type": "line",
+          "title": "html2rss_up",
+          "description": "Live worker gauge for html2rss-web.",
+          "config": {
+            "show_legends": false
+          },
+          "queryType": "promql",
+          "queries": [
+            {
+              "query": "max(html2rss_up{service_name=\"html2rss-web\"})",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_up",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 96, "w": 192, "h": 16, "i": 7 }
+        },
+        {
+          "id": "build",
+          "type": "line",
+          "title": "Build revision",
+          "description": "html2rss_build_info for html2rss-web.",
+          "config": {
+            "show_legends": false
+          },
+          "queryType": "promql",
+          "queries": [
+            {
+              "query": "max(html2rss_build_info{service_name=\"html2rss-web\"})",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_build_info",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 112, "w": 192, "h": 16, "i": 8 }
+        },
+        {
+          "id": "request-fault",
+          "type": "line",
+          "title": "request.fault",
+          "description": "Unexpected non-HTTP failures for html2rss-web.",
+          "config": {
+            "show_legends": false
+          },
+          "queryType": "promql",
+          "queries": [
+            {
+              "query": "sum(increase(html2rss_outcome_total{service_name=\"html2rss-web\",operation=\"request.fault\"}[1m]))",
+              "customQuery": true,
+              "fields": {
+                "stream": "html2rss_outcome_total",
+                "stream_type": "metrics",
+                "x": [],
+                "y": [],
+                "z": [],
+                "filter": {
+                  "filterType": "group",
+                  "logicalOperator": "AND",
+                  "conditions": []
+                }
+              },
+              "config": {
+                "promql_legend": ""
+              }
+            }
+          ],
+          "layout": { "x": 0, "y": 128, "w": 192, "h": 16, "i": 9 }
+        }
+      ]
+    }
+  ]
+}
