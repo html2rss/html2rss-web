@@ -9,13 +9,17 @@ module Html2rss
     ##
     # Rack middleware that initializes request correlation context.
     class RequestContextMiddleware
-      ROUTE_PREFIX_TO_GROUP = {
-        '/api/v1' => 'api_v1'
-      }.freeze
+      HEALTH_PATHS = %w[
+        /metrics
+        /api/v1/health
+        /api/v1/health/live
+        /api/v1/health/ready
+      ].freeze
+      FEED_RENDER_PATH = %r{\A/api/v1/feeds/[^/]+\z}
 
       # @param app [#call]
       def initialize(app)
-        @app = app
+        @app = Telemetry::Tracing.wrap(app)
       end
 
       # @param env [Hash]
@@ -42,11 +46,21 @@ module Html2rss
       end
 
       # @param path [String]
+      # @param http_method [String]
       # @return [String]
-      def route_group_for(path)
-        ROUTE_PREFIX_TO_GROUP.each do |prefix, group|
-          return group if path == prefix || path.start_with?("#{prefix}/")
-        end
+      def route_group_for(path, http_method)
+        return 'health' if HEALTH_PATHS.include?(path)
+
+        api_route_group(path, http_method)
+      end
+
+      # @param path [String]
+      # @param http_method [String]
+      # @return [String]
+      def api_route_group(path, http_method)
+        return 'catalog' if http_method == 'GET' && path == '/api/v1/configs'
+        return 'feed_create' if http_method == 'POST' && path == '/api/v1/feeds'
+        return 'feed_render' if http_method == 'GET' && FEED_RENDER_PATH.match?(path)
 
         'static'
       end
@@ -55,14 +69,11 @@ module Html2rss
       # @return [Html2rss::Web::RequestContext::Context]
       def build_context(request)
         path = request.path_info.to_s
+        http_method = request.request_method.to_s.upcase
         RequestContext::Context.new(
-          request_id: request_id_for(request),
-          path: LogSanitizer.sanitize_path(path),
-          http_method: request.request_method.to_s.upcase,
-          route_group: route_group_for(path),
-          actor: nil,
-          strategy: request.params['strategy'],
-          started_at: Time.now.utc.iso8601
+          request_id: request_id_for(request), path: LogSanitizer.sanitize_path(path),
+          http_method: http_method, route_group: route_group_for(path, http_method),
+          actor: nil, strategy: request.params['strategy'], started_at: Time.now.utc.iso8601
         )
       end
 

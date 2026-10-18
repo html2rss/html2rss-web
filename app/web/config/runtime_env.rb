@@ -10,7 +10,7 @@ module Html2rss
       HEALTH_CHECK_TOKEN_PLACEHOLDER = 'CHANGE_ME_HEALTH_CHECK_TOKEN'
       SENSITIVE_KEYS = %w[HTML2RSS_SECRET_KEY HTML2RSS_ACCESS_TOKEN HEALTH_CHECK_TOKEN SENTRY_DSN].freeze
       BOOT_METADATA_KEYS = %w[
-        BUILD_TAG GIT_SHA RACK_ENV SENTRY_ENABLE_LOGS PORT WEB_CONCURRENCY REQUEST_TIMEOUT_SECONDS
+        BUILD_TAG GIT_SHA RACK_ENV PORT WEB_CONCURRENCY REQUEST_TIMEOUT_SECONDS
       ].freeze
       # rubocop:disable ThreadSafety/ClassInstanceVariable
       @values = nil
@@ -58,11 +58,6 @@ module Html2rss
         # @return [Boolean]
         def sentry_enabled?
           !sentry_dsn.to_s.strip.empty?
-        end
-
-        # @return [Boolean]
-        def sentry_logs_enabled?
-          parse_boolean(fetch('SENTRY_ENABLE_LOGS', 'false'), default: false)
         end
 
         # @return [String]
@@ -124,18 +119,6 @@ module Html2rss
 
           SENSITIVE_KEYS.each { |key| ENV.delete(key) }
           nil
-        end
-
-        # @param value [Object]
-        # @param default [Boolean]
-        # @return [Boolean]
-        def parse_boolean(value, default:)
-          normalized = value.to_s.strip.downcase
-          return true if normalized == 'true'
-          return false if normalized == 'false'
-          return default if normalized.empty?
-
-          raise ArgumentError, "Malformed env 'SENTRY_ENABLE_LOGS': expected true/false, got '#{value}'"
         end
       end
     end

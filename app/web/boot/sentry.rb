@@ -4,7 +4,7 @@ module Html2rss
   module Web
     module Boot
       ##
-      # Configures Sentry boot-time error and structured log capture.
+      # Configures Sentry boot-time exception capture.
       module Sentry
         class << self
           # @return [void]
@@ -38,22 +38,8 @@ module Html2rss
             config.environment = RuntimeEnv.rack_env
             config.send_default_pii = false
             config.release = release_name
-            apply_log_settings(config)
-          end
-
-          # sentry-ruby 7+ enables structured logs by default and removed
-          # +enable_logs+. Keep +SENTRY_ENABLE_LOGS+ opt-in: patch stdlib
-          # +Logger+ when enabled, otherwise drop log events at send time.
-          #
-          # @param config [Object]
-          # @return [void]
-          def apply_log_settings(config)
-            if RuntimeEnv.sentry_logs_enabled?
-              config.enabled_patches += [:logger]
-              return
-            end
-
-            config.before_send_log = ->(_log) {}
+            config.traces_sample_rate = 0
+            config.profiles_sample_rate = 0
           end
 
           # @return [String]

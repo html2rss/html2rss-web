@@ -14,6 +14,11 @@ gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 gem 'base64'
 gem 'falcon'
+gem 'opentelemetry-exporter-otlp', require: false
+gem 'opentelemetry-instrumentation-faraday', require: false
+gem 'opentelemetry-instrumentation-net_http', require: false
+gem 'opentelemetry-instrumentation-rack', require: false
+gem 'opentelemetry-sdk', require: false
 gem 'roda'
 gem 'zeitwerk'
 

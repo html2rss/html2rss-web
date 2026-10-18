@@ -34,8 +34,11 @@ module Html2rss
         # @param message [String]
         # @return [String]
         def format_entry(severity, datetime, _progname, message)
-          payload = base_payload(severity, datetime).merge(normalize_message(message))
-          emit_to_sentry(payload)
+          payload = base_payload(severity, datetime)
+                    .merge(normalize_message(message))
+                    .merge(trace_fields)
+          return "#{human_line(payload)}\n" if development?
+
           "#{payload.to_json}\n"
         end
 
@@ -44,10 +47,65 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def base_payload(severity, datetime)
           {
-            timestamp: datetime.iso8601,
+            timestamp: utc_timestamp(datetime),
             level: severity,
             service: 'html2rss-web'
           }
+        end
+
+        # @param datetime [Time]
+        # @return [String]
+        def utc_timestamp(datetime)
+          datetime.utc.iso8601(3)
+        end
+
+        # @return [Boolean]
+        def development?
+          RuntimeEnv.rack_env == 'development'
+        end
+
+        # @param payload [Hash{Symbol=>Object}]
+        # @return [String]
+        def human_line(payload)
+          fields = payload.map { |key, value| "#{key}=#{human_value(value)}" }
+          fields.join(' ').gsub(/[\r\n]+/, ' ')
+        end
+
+        # @param value [Object]
+        # @return [String]
+        def human_value(value)
+          return 'null' if value.nil?
+
+          text = value.to_s.gsub(/[\r\n]+/, ' ')
+          text.match?(/[\s=]/) ? text.inspect : text
+        end
+
+        # @return [Hash{Symbol=>String, nil}]
+        def trace_fields
+          span = current_span
+          return { trace_id: nil, span_id: nil } unless recording_span?(span)
+
+          context = span.context
+          { trace_id: context.hex_trace_id, span_id: context.hex_span_id }
+        rescue StandardError
+          { trace_id: nil, span_id: nil }
+        end
+
+        # @return [Object, nil]
+        def current_span
+          return unless defined?(OpenTelemetry::Trace)
+
+          OpenTelemetry::Trace.current_span
+        end
+
+        # @param span [Object, nil]
+        # @return [Boolean]
+        def recording_span?(span)
+          return false unless span.respond_to?(:recording?) && span.recording?
+          return false unless span.respond_to?(:context)
+
+          context = span.context
+          context.respond_to?(:valid?) && context.valid? && context.respond_to?(:hex_trace_id)
         end
 
         # @param message [Object]
@@ -97,23 +155,6 @@ module Html2rss
           return value.to_f if value.match?(/\A-?\d+\.\d+\z/)
 
           value
-        end
-
-        # @param payload [Hash{Symbol=>Object}]
-        # @return [void]
-        def emit_to_sentry(payload)
-          return unless sentry_payload?(payload)
-
-          SentryLogs.record_breadcrumb(payload)
-          SentryLogs.emit(payload)
-        rescue StandardError
-          nil
-        end
-
-        # @param payload [Hash{Symbol=>Object}]
-        # @return [Boolean]
-        def sentry_payload?(payload)
-          payload.key?(:event_name) || payload.key?(:security_event)
         end
       end
     end

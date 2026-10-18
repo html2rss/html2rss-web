@@ -7,7 +7,7 @@ module Html2rss
     ##
     # Emits P0 operational failures to Sentry Issues.
     #
-    # Separate from {SentryLogs} (opt-in via +SENTRY_ENABLE_LOGS+). Uses
+    # Records classified feed failures. Uses
     # {ErrorClassifier::Decision} codes only.
     module SentryOps
       OPERATIONAL_CODES = Set[

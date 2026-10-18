@@ -5,6 +5,8 @@ require 'bundler/setup'
 require_relative 'app/web/boot/development_reloader'
 require_relative 'app'
 
+Html2rss::Web::Telemetry::Boot.start!
+
 use Sentry::Rack::CaptureExceptions if Html2rss::Web::Boot::Setup.sentry_enabled?
 
 dev = ENV.fetch('RACK_ENV', nil) == 'development'
