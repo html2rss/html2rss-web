@@ -15,6 +15,7 @@ module Html2rss
           html2rss.route_group html2rss.operation html2rss.result html2rss.reason
         ].freeze
         CLASS_NAME = /\A[A-Z][\w:]*\z/
+        NULL_IDS = { trace_id: nil, span_id: nil }.freeze
 
         ##
         # Rewrites span attributes at finish, before the SDK freezes them.
@@ -206,6 +207,21 @@ module Html2rss
             nil
           rescue StandardError
             nil
+          end
+
+          # Trace and span ids for the recording span, or nulls when none is recording.
+          #
+          # @return [Hash{Symbol=>String, nil}]
+          def correlation_ids
+            span = current_span
+            return NULL_IDS unless span
+
+            context = span.context
+            return NULL_IDS unless context.respond_to?(:valid?) && context.valid?
+
+            { trace_id: context.hex_trace_id, span_id: context.hex_span_id }
+          rescue StandardError
+            NULL_IDS
           end
 
           # @param config [Object]

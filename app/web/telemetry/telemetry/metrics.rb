@@ -68,9 +68,9 @@ module Html2rss
 
           # @return [void]
           def install_store!
-            ::Prometheus::Client.config.data_store = ::Prometheus::Client::DataStores::DirectFileStore.new(
-              dir: store_dir
-            )
+            dir = store_dir
+            FileUtils.mkdir_p(dir)
+            ::Prometheus::Client.config.data_store = ::Prometheus::Client::DataStores::DirectFileStore.new(dir:)
             nil
           end
 
@@ -125,13 +125,8 @@ module Html2rss
             # rubocop:disable-next ThreadSafety/ClassInstanceVariable
             @up.set(1)
             # rubocop:disable-next ThreadSafety/ClassInstanceVariable
-            @build.set(1, labels: { version: build_version })
+            @build.set(1, labels: { version: Boot.revision })
             nil
-          end
-
-          # @return [String]
-          def build_version
-            "#{RuntimeEnv.build_tag}+#{RuntimeEnv.git_sha}"
           end
 
           # Removes DirectFileStore files whose process is gone so gauge sums ignore them.

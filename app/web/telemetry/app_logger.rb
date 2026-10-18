@@ -82,30 +82,7 @@ module Html2rss
 
         # @return [Hash{Symbol=>String, nil}]
         def trace_fields
-          span = current_span
-          return { trace_id: nil, span_id: nil } unless recording_span?(span)
-
-          context = span.context
-          { trace_id: context.hex_trace_id, span_id: context.hex_span_id }
-        rescue StandardError
-          { trace_id: nil, span_id: nil }
-        end
-
-        # @return [Object, nil]
-        def current_span
-          return unless defined?(OpenTelemetry::Trace)
-
-          OpenTelemetry::Trace.current_span
-        end
-
-        # @param span [Object, nil]
-        # @return [Boolean]
-        def recording_span?(span)
-          return false unless span.respond_to?(:recording?) && span.recording?
-          return false unless span.respond_to?(:context)
-
-          context = span.context
-          context.respond_to?(:valid?) && context.valid? && context.respond_to?(:hex_trace_id)
+          Telemetry::Tracing.correlation_ids
         end
 
         # @param message [Object]

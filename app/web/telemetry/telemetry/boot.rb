@@ -39,6 +39,13 @@ module Html2rss
             @started_pid == Process.pid
           end
 
+          # Deploy revision shared by traces and +html2rss_build_info+.
+          #
+          # @return [String]
+          def revision
+            "#{RuntimeEnv.build_tag}+#{RuntimeEnv.git_sha}"
+          end
+
           private
 
           # @return [void]
@@ -87,7 +94,7 @@ module Html2rss
           def configure_sdk!
             OpenTelemetry::SDK.configure do |config|
               config.service_name = service_name
-              config.service_version = service_version
+              config.service_version = revision
               Tracing.install(config)
             end
             nil
@@ -97,11 +104,6 @@ module Html2rss
           def service_name
             name = ENV.fetch('OTEL_SERVICE_NAME', '').strip
             name.empty? ? 'html2rss-web' : name
-          end
-
-          # @return [String]
-          def service_version
-            "#{RuntimeEnv.build_tag}+#{RuntimeEnv.git_sha}"
           end
 
           # @return [void]
