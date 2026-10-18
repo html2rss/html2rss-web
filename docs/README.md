@@ -196,7 +196,12 @@ Managed flags and environment keys:
 | `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
 | `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
 | `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
-| `sentry_enable_logs`              | `SENTRY_ENABLE_LOGS`              | boolean        | `false`                                  |
+| `otel_exporter_otlp_endpoint`     | `OTEL_EXPORTER_OTLP_ENDPOINT`     | string         | blank (traces off)                       |
+| `otel_exporter_otlp_protocol`     | `OTEL_EXPORTER_OTLP_PROTOCOL`     | string         | `http/protobuf` when unset               |
+| `otel_service_name`               | `OTEL_SERVICE_NAME`               | string         | `html2rss-web`                           |
+| `otel_traces_sampler`             | `OTEL_TRACES_SAMPLER`             | string         | `parentbased_traceidratio` when blank    |
+| `otel_traces_sampler_arg`         | `OTEL_TRACES_SAMPLER_ARG`         | string         | `0.1` when blank                         |
+| `prometheus_multiproc_dir`        | `PROMETHEUS_MULTIPROC_DIR`        | string         | a directory under `/tmp`                 |
 
 Rules:
 
@@ -204,6 +209,8 @@ Rules:
 - Invalid managed integer flag values must fail fast at boot.
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
+- `HEALTH_CHECK_TOKEN` is the credential for `GET /metrics` and private `/api/v1/health`. A blank value and `CHANGE_ME_HEALTH_CHECK_TOKEN` are rejected.
+- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, and `PROMETHEUS_MULTIPROC_DIR` are telemetry pass-throughs read by boot. They are not `RuntimeEnv` feature flags.
 - Add or change flags in code, tests, and this table together.
 
 ---
@@ -238,53 +245,40 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
 | `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
 
-When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or `error_category:timeout`, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder (see **Alert baselines**).
+When triaging `gateway_timeout`, capacity-shaped `service_unavailable` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Those exits are `html2rss_outcome_total` reasons, not a Sentry issue queue.
 
-## Sentry Runbook
+## Operator product view
 
-With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational server failures (`SentryOps`: `SCRAPER_UNAVAILABLE`, `SERVICE_UNAVAILABLE`, `INTERNAL_SERVER_ERROR`) to Sentry Issues. Transient target timeouts (`GATEWAY_TIMEOUT`) and extraction warnings stay in structured stdout logs (`feed.render` / `request.error`) and Sentry breadcrumbs to prevent alert fatigue from slow external websites. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
+Self-hosted operators read this product view. With `OTEL_EXPORTER_OTLP_ENDPOINT` unset, operators use stdout JSON and `GET /metrics`. With it set, traces carry the same `html2rss.operation`, `html2rss.result`, and `html2rss.reason` as the counter. A null `trace_id` is an unsampled line or a line outside a span.
 
-Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs` or the stdlib `Logger` → Sentry patch.
+### Journeys
 
-Start triage from the newest `feed.create`, `feed.render`, and `request.error` events. Check release, route group, strategy, and outcome.
+1. **Render subscribed feed.** `feed.render` records `hit`, `success`, `empty`, or `failure`. A cache hit is `hit`. Empty uses `feed_empty` or `extraction_empty`. Failure uses a closed reason below.
+2. **Create hosted feed.** `feed.create` records `success` or `failure`. Empty extraction is `failure` with `extraction_empty`.
+3. **Read catalog.** Server spans for route group `catalog` show status and duration. There is no `catalog.build` counter.
+4. **Instance health.** `/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` and `/metrics` need a real `HEALTH_CHECK_TOKEN`. `/metrics` is not a restart signal. `html2rss_up` and `html2rss_build_info` stay on the scrape. `request.fault` is the unexpected non-HTTP 500 only (`failure` / `internal`).
 
-### On-call triage
+### Scrape target
 
-1. **Confirm project** — `SENTRY_DSN` (web) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper errors in the web project usually mean DSN mix-up.
-2. **Correlate** — copy `request_id` from one issue and search the other project.
-3. **Decision tree**
-   - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
-   - `SERVICE_UNAVAILABLE` with scraper `timeout_phase` `queue` or `boot` → our capacity (queue backlog) or Chromium boot (RAM/shm/prewarm) — not the target site
-   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal). Unclean or unreadable hung Botasaurus surfaces fail closed as `challenge_block` (not `timeout`/`work`).
-   - `EXTRACTION_EMPTY` → selectors/config (product signal)
-   - `GATEWAY_TIMEOUT` / `timeout` with `timeout_phase` `work` (or nil transport hop) → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
+The scrape target is only `:4000/metrics` on the Falcon web port. The scheme follows that endpoint.
 
-Outer scraper deadlines reclaim Chromium via WorkLease (session force-close) so worker slots free before the HTTP 504 returns; lingering `timeout_phase:queue` under light traffic after deploy usually means reclaim or per-host admit saturation (`SCRAPE_MAX_PER_HOST`), not soft-cancel theater.
-### Alert baselines
+### Series
 
-After baseline traffic, configure per project:
+`html2rss_up`, `html2rss_build_info`, and `html2rss_outcome_total{operation,result,reason}`.
 
-**Project B (scraper)**
+Closed reasons from `Telemetry::Outcome`: `none`, `feed_empty`, `extraction_empty`, `scraper_unavailable`, `service_unavailable`, `gateway_timeout`, `blocked_surface`, `forbidden`, and `internal`.
 
-- P0: `error_category:navigation_error` above baseline
-- P0: sustained `error_category:timeout` with `timeout_phase` in `{queue, boot}` (capacity / Chromium) — scale workers or check RAM/shm/prewarm
-- P1: sustained `error_category:timeout` with `timeout_phase:work` (slow or hostile targets) — distinct from capacity
-- Metric: `scrape.challenge_block` anomaly (product signal; not a timeout)
+An operator can attach `increase(html2rss_outcome_total{result="failure"}[15m])` in their own system. This repo does not create that alert.
 
-**Project A (web)**
+### Not collected
 
-- P0: `error_code:SCRAPER_UNAVAILABLE` sustained
-- P0: `error_code:SERVICE_UNAVAILABLE` sustained when correlated with scraper queue/boot timeouts (capacity)
-- Metric / Log: `error_code:GATEWAY_TIMEOUT` rate (slow targets / ladder mismatch; monitored via structured logs, not Sentry Issues)
-- P0: `request.error` spike with `kind:server`
+Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, URLs, tokens, bodies, SQL, raw paths, queue depth, botasaurus traces, OTEL metrics, and OTEL logs while those SDKs are Development.
 
-### Dashboard baselines
+### Collector
 
-**Scraper (B)**: outcomes by `error_category`, top `host`, `render_ms`, `scrape.challenge_block` trend
+Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse or `trace_id` stays inside the body. The app does not send `stream-name`. Phase 04 adds the OpenObserve stream names the collector should send.
 
-**Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
-
-Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
+With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on the series above. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
 
 ---
 
