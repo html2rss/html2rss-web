@@ -102,7 +102,8 @@ module Html2rss
 
         r.public
 
-        Routes::ApiV1.call(r) ||
+        Routes::Metrics.call(r) ||
+          Routes::ApiV1.call(r) ||
           Routes::FeedPages.call(r, index_renderer: ->(router_ctx) { render_index_page(router_ctx) })
       end
 

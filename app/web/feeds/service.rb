@@ -5,23 +5,35 @@ module Html2rss
     module Feeds
       ##
       # Shared synchronous feed service around the html2rss gem.
-      module Service
-        class << self
+      module Service # rubocop:disable Metrics/ModuleLength
+        class << self # rubocop:disable Metrics/ClassLength
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def call(resolved_source)
-            cache_key = "feed_result:#{resolved_source.cache_identity}"
+            yielded = false
+            result = read_cache(resolved_source) do
+              yielded = true
+            end
+            record_render('hit', 'none') unless yielded
+            result
+          end
 
-            Cache.fetch(
-              cache_key,
-              ttl_seconds: resolved_source.ttl_seconds,
-              cacheable: ->(result) { result.status != :error }
-            ) do
+          private
+
+          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
+          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          def read_cache(resolved_source)
+            cache_key = "feed_result:#{resolved_source.cache_identity}"
+            Cache.fetch(cache_key, ttl_seconds: resolved_source.ttl_seconds, cacheable: cacheable_result) do
+              yield
               build_result(resolved_source, cache_key)
             end
           end
 
-          private
+          # @return [Proc]
+          def cacheable_result
+            ->(cached) { cached.status != :error }
+          end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
@@ -156,8 +168,28 @@ module Html2rss
           end
 
           # @param attrs [Hash{Symbol=>Object}]
+          # @return [void]
+          def record_rendered(attrs)
+            case attrs[:status]
+            when :ok then record_render('success', 'none')
+            when :empty then record_render('empty', Telemetry::Outcome.empty_reason_for(attrs[:empty_reason]))
+            when :error then record_render('failure', Telemetry::Outcome.reason_for(attrs[:decision]))
+            end
+            nil
+          end
+
+          # @param result [String]
+          # @param reason [String]
+          # @return [void]
+          def record_render(result, reason)
+            Telemetry::Outcome.record(operation: 'feed.render', result:, reason:)
+            nil
+          end
+
+          # @param attrs [Hash{Symbol=>Object}]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def render_result(**attrs)
+            record_rendered(attrs)
             Contracts::RenderResult.new(
               payload: nil,
               error_message: nil,

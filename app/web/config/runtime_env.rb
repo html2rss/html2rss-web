@@ -33,10 +33,24 @@ module Html2rss
           fetch('HTML2RSS_SECRET_KEY')
         end
 
-        # @return [String]
+        # Stripped +HEALTH_CHECK_TOKEN+, or nil when blank.
+        # The placeholder is returned only when it is the configured value.
+        #
+        # @return [String, nil]
         def health_check_token
           token = fetch('HEALTH_CHECK_TOKEN', '').to_s.strip
-          token.empty? ? HEALTH_CHECK_TOKEN_PLACEHOLDER : token
+          token.empty? ? nil : token
+        end
+
+        # Credential for private +/api/v1/health+ and +/metrics+.
+        # Blank and {HEALTH_CHECK_TOKEN_PLACEHOLDER} are rejected.
+        #
+        # @return [String, nil]
+        def private_probe_token
+          token = health_check_token
+          return if token.nil? || token == HEALTH_CHECK_TOKEN_PLACEHOLDER
+
+          token
         end
 
         # @return [String]

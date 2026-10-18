@@ -94,6 +94,19 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       )
     end
 
+    it 'records a cache hit and does not record success for that hit' do
+      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'hit', reason: 'none'
+      ).once
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'success', reason: 'none'
+      ).once
+    end
+
     it 'reuses the cached result for repeated requests' do
       described_class.call(resolved_source)
       described_class.call(resolved_source)
@@ -169,6 +182,20 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
     it 'drops the feed payload' do
       expect(result.payload).to be_nil
+    end
+
+    it 'records scraper unavailable on a miss' do
+      unavailable = Class.new(StandardError)
+      stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', unavailable)
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
+                                              .and_raise(unavailable, 'down')
+      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
+
+      described_class.call(resolved_source)
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'failure', reason: 'scraper_unavailable'
+      )
     end
 
     it 'does not cache the failure result' do

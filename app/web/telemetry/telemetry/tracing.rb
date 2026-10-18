@@ -181,6 +181,33 @@ module Html2rss
         end
 
         class << self
+          # Marks the current recording span with a journey before it finishes.
+          #
+          # @param group [String]
+          # @return [void]
+          def route_group!(group)
+            current_span&.set_attribute('html2rss.route_group', group.to_s)
+            nil
+          rescue StandardError
+            nil
+          end
+
+          # Copies an outcome onto the current recording span.
+          #
+          # @param outcome [Html2rss::Web::Telemetry::Outcome]
+          # @return [void]
+          def annotate!(outcome)
+            span = current_span
+            return if span.nil?
+
+            span.set_attribute('html2rss.operation', outcome.operation)
+            span.set_attribute('html2rss.result', outcome.result)
+            span.set_attribute('html2rss.reason', outcome.reason)
+            nil
+          rescue StandardError
+            nil
+          end
+
           # @param config [Object]
           # @return [void]
           def install(config)
@@ -206,6 +233,16 @@ module Html2rss
           end
 
           private
+
+          # @return [Object, nil]
+          def current_span
+            return unless defined?(::OpenTelemetry::Trace)
+
+            span = ::OpenTelemetry::Trace.current_span
+            return unless span.respond_to?(:recording?) && span.recording?
+
+            span
+          end
 
           # Rack, Faraday, and Net::HTTP in this bundle do not capture bodies.
           # Empty Rack header lists keep headers off the span. Those libraries

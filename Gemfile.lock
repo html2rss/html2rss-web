@@ -291,6 +291,8 @@ GEM
       prettyprint
     prettyprint (0.2.0)
     prism (1.9.0)
+    prometheus-client (5.0.0)
+      base64
     protocol-hpack (1.5.1)
     protocol-http (0.71.0)
     protocol-http1 (0.41.0)
@@ -444,6 +446,7 @@ DEPENDENCIES
   opentelemetry-instrumentation-net_http
   opentelemetry-instrumentation-rack
   opentelemetry-sdk
+  prometheus-client
   rack-test
   rake
   roda
@@ -562,6 +565,7 @@ CHECKSUMS
   pp (0.6.4) sha256=dfcb0fce700c41456265922884f9fe195d7fbb0674a3578e6c0f69588e82b570
   prettyprint (0.2.0) sha256=2bc9e15581a94742064a3cc8b0fb9d45aae3d03a1baa6ef80922627a0766f193
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
+  prometheus-client (5.0.0) sha256=18cdb3c26964bc4847e64729900cb0d3ecf5d8d51cd8b10e7d5fbf983e1b053f
   protocol-hpack (1.5.1) sha256=6feca238b8078da1cd295677d6f306c6001af92d75fe0643d33e6956cbc3ad91
   protocol-http (0.71.0) sha256=38577bf3df0bf0c3f7ee7e21b43fcb4bd7624e36f697dbe9c3eea344f14bd9ba
   protocol-http1 (0.41.0) sha256=9863874a1228948a896c3e7ea16d13a680c8f3ed50706007c78b7033018b0ea3

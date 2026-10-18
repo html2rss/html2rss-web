@@ -154,7 +154,6 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     header 'Accept', nil
   end
 
-  let(:health_token) { Html2rss::Web::RuntimeEnv.health_check_token }
   let(:admin_token) { 'CHANGE_ME_ADMIN_TOKEN' }
   let(:feed_url) { 'https://example.com/articles' }
 
@@ -352,12 +351,32 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     }
 
     it 'returns health status when token is valid', :aggregate_failures do
-      header 'Authorization', "Bearer #{health_token}"
-      get '/api/v1/health'
+      ClimateControl.modify(HEALTH_CHECK_TOKEN: 'health-token') do
+        header 'Authorization', 'Bearer health-token'
+        get '/api/v1/health'
 
-      expect(last_response.status).to eq(200)
-      json = expect_success_response(last_response)
-      expect(json.dig('data', 'health', 'status')).to eq('healthy')
+        expect(last_response.status).to eq(200)
+        json = expect_success_response(last_response)
+        expect(json.dig('data', 'health', 'status')).to eq('healthy')
+      end
+    end
+
+    it 'rejects a blank health token', :aggregate_failures, openapi: false do
+      ClimateControl.modify(HEALTH_CHECK_TOKEN: '   ') do
+        header 'Authorization', 'Bearer health-token'
+        get '/api/v1/health'
+
+        expect(last_response.status).to eq(401)
+      end
+    end
+
+    it 'rejects the placeholder health token', :aggregate_failures, openapi: false do
+      ClimateControl.modify(HEALTH_CHECK_TOKEN: 'CHANGE_ME_HEALTH_CHECK_TOKEN') do
+        header 'Authorization', 'Bearer CHANGE_ME_HEALTH_CHECK_TOKEN'
+        get '/api/v1/health'
+
+        expect(last_response.status).to eq(401)
+      end
     end
 
     it 'returns health status when the configured environment token is valid', :aggregate_failures, openapi: false do
@@ -388,12 +407,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       end
     end
 
-    it 'returns error when configuration fails', :aggregate_failures do
+    it 'returns error when configuration fails', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Auth).to receive(:authenticate).and_return({ username: 'health-check' })
       allow(Html2rss::Web::LocalConfig).to receive(:load_snapshot).and_raise(StandardError, 'boom')
-      header 'Authorization', "Bearer #{health_token}"
 
-      get '/api/v1/health'
+      ClimateControl.modify(HEALTH_CHECK_TOKEN: 'health-token') do
+        header 'Authorization', 'Bearer health-token'
+        get '/api/v1/health'
+      end
 
       expect(last_response.status).to eq(500)
       json = expect_error_response(last_response,
@@ -412,6 +433,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     tags: ['Health'],
     security: [{}]
   } do
+    it 'does not report ready when configuration cannot load', :aggregate_failures, openapi: false do
+      allow(Html2rss::Web::LocalConfig).to receive(:load_snapshot).and_raise(StandardError, 'boom')
+
+      get '/api/v1/health/ready'
+
+      expect(last_response.status).not_to eq(200)
+    end
+
     it 'returns readiness status without authentication', :aggregate_failures do
       get '/api/v1/health/ready'
 
@@ -428,6 +457,14 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     tags: ['Health'],
     security: [{}]
   } do
+    it 'stays alive when configuration cannot load', :aggregate_failures, openapi: false do
+      allow(Html2rss::Web::LocalConfig).to receive(:load_snapshot).and_raise(StandardError, 'boom')
+
+      get '/api/v1/health/live'
+
+      expect(last_response.status).to eq(200)
+    end
+
     it 'returns liveness status without authentication', :aggregate_failures do
       get '/api/v1/health/live'
 
@@ -727,6 +764,20 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       next_action: 'enter_token',
       retry_action: 'none'
     }
+
+    it 'records empty extraction as a create failure', :aggregate_failures, openapi: false do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
+      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
+
+      post_feed_request(url: feed_url)
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.create', result: 'failure', reason: 'extraction_empty'
+      )
+      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
+        hash_including(operation: 'request.fault')
+      )
+    end
 
     it 'creates a feed when request is valid', :aggregate_failures do
       header 'Authorization', "Bearer #{admin_token}"

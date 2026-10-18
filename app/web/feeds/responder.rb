@@ -11,6 +11,7 @@ module Html2rss
           # @param identifier [String]
           # @return [String] serialized feed body.
           def call(request:, target_kind:, identifier:)
+            Telemetry::Tracing.route_group!('feed_render')
             feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
             body = Renderer.render(result, response: request.response, request: request)
             emit_result(target_kind:, identifier: feed_request.feed_name || identifier, resolved_source:, result:)
@@ -77,19 +78,16 @@ module Html2rss
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
-          def emit_error(target_kind:, identifier:, resolved_source:, result:) # rubocop:disable Metrics/MethodLength
-            SentryOps.emit_failure_telemetry(
-              decision: result.decision,
-              diagnostics: result.diagnostics,
+          def emit_error(target_kind:, identifier:, resolved_source:, result:)
+            Observability.emit(
               event_name: 'feed.render',
+              outcome: 'failure',
               details: render_details(
                 resolved_source, identifier, target_kind,
                 error_code: result.decision.code,
-                error_message: result.error_message || result.client_message,
                 **result.diagnostics.to_h
               ),
-              level: :warn,
-              context: { url: resolved_source.url, strategy: resolved_source.strategy }
+              level: :warn
             )
           end
 
@@ -145,11 +143,20 @@ module Html2rss
           def emit_failure(target_kind:, identifier:, error:)
             decision = ErrorClassifier.classify(error)
             diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-            SentryOps.emit_failure_telemetry(
-              decision:, diagnostics:, event_name: 'feed.render',
-              details: exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:),
-              level: :warn
+            record_render_failure(decision)
+            Observability.emit(
+              event_name: 'feed.render', outcome: 'failure', level: :warn,
+              details: exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
             )
+          end
+
+          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+          # @return [void]
+          def record_render_failure(decision)
+            Telemetry::Outcome.record(
+              operation: 'feed.render', result: 'failure', reason: Telemetry::Outcome.reason_for(decision)
+            )
+            nil
           end
 
           # @param target_kind [Symbol]
@@ -161,7 +168,6 @@ module Html2rss
           def exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
             {
               error_class: error.class.name,
-              error_message: error.message,
               error_code: decision.code,
               **diagnostics.to_h
             }.tap do |details|

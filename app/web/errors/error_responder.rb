@@ -70,13 +70,43 @@ module Html2rss
 
         def emit_error_event(error, decision)
           diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-          SentryOps.emit_failure_telemetry(
-            decision:,
-            diagnostics:,
+          Observability.emit(
             event_name: 'request.error',
+            outcome: 'failure',
             details: error_event_details(error, decision, diagnostics),
             level: :error
           )
+          capture_unexpected(error, decision)
+        end
+
+        # @param error [StandardError]
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        # @return [void]
+        def capture_unexpected(error, decision)
+          return unless unexpected_fault?(error, decision)
+
+          Telemetry::Outcome.record(operation: 'request.fault', result: 'failure', reason: 'internal')
+          capture_exception(error)
+          nil
+        rescue StandardError
+          nil
+        end
+
+        # @param error [StandardError]
+        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
+        # @return [Boolean]
+        def unexpected_fault?(error, decision)
+          !error.is_a?(HttpError) && decision.code == ErrorClassifier::INTERNAL_SERVER_ERROR.code
+        end
+
+        # @param error [StandardError]
+        # @return [void]
+        def capture_exception(error)
+          return unless RuntimeEnv.sentry_enabled?
+          return unless defined?(::Sentry) && ::Sentry.respond_to?(:capture_exception)
+
+          ::Sentry.capture_exception(error)
+          nil
         end
 
         # @param error [StandardError]

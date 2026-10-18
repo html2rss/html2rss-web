@@ -19,6 +19,7 @@ gem 'opentelemetry-instrumentation-faraday', require: false
 gem 'opentelemetry-instrumentation-net_http', require: false
 gem 'opentelemetry-instrumentation-rack', require: false
 gem 'opentelemetry-sdk', require: false
+gem 'prometheus-client', require: false
 gem 'roda'
 gem 'zeitwerk'
 

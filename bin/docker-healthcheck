@@ -6,8 +6,6 @@ require 'net/http'
 require 'openssl'
 
 port = ENV.fetch('PORT', '4000')
-token = ENV.fetch('HEALTH_CHECK_TOKEN', nil)
-token = 'CHANGE_ME_HEALTH_CHECK_TOKEN' if token.nil? || token.empty?
 
 tls_cert_path = ENV.fetch('TLS_CERTIFICATE_PATH', nil)
 tls_enabled = tls_cert_path && !tls_cert_path.empty?
@@ -19,9 +17,8 @@ if tls_enabled && File.exist?(tls_cert_path)
 end
 
 scheme = tls_enabled ? 'https' : 'http'
-uri = URI("#{scheme}://localhost:#{port}/api/v1/health")
+uri = URI("#{scheme}://127.0.0.1:#{port}/api/v1/health/live")
 request = Net::HTTP::Get.new(uri)
-request['Authorization'] = "Bearer #{token}"
 
 verify_mode = ENV.fetch('TLS_VERIFY_PEER', 'false') == 'true' ? OpenSSL::SSL::VERIFY_PEER : OpenSSL::SSL::VERIFY_NONE
 

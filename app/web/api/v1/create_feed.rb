@@ -18,25 +18,39 @@ module Html2rss
             (?:[/?#].*)?\z
           }ix
 
-          class << self
+          class << self # rubocop:disable Metrics/ClassLength
             # Creates a feed and returns a normalized API success payload.
             #
             # @param request [Rack::Request] HTTP request with auth context.
             # @return [Hash{Symbol=>Object}] API response payload.
             def call(request)
-              account = require_account(request)
-              params = build_create_params(request, account)
-              feed_data = create_feed(params, account)
-
-              emit_create(status: :success, details: { url: params.url })
-              Response.success(response: request.response, status: 201,
-                               data: { feed: feed_attributes(feed_data) }, meta: { created: true })
+              Telemetry::Tracing.route_group!('feed_create')
+              respond_created(request)
             rescue StandardError => error
-              emit_create(status: :failure, details: { error_class: error.class.name, error_message: error.message })
-              raise
+              fail_create(error)
             end
 
             private
+
+            # @param request [Rack::Request]
+            # @return [Hash{Symbol=>Object}]
+            def respond_created(request)
+              account = require_account(request)
+              params = build_create_params(request, account)
+              feed_data = create_feed(params, account)
+              record_create('success', 'none')
+              emit_create(status: :success, details: { url: params.url })
+              Response.success(response: request.response, status: 201,
+                               data: { feed: feed_attributes(feed_data) }, meta: { created: true })
+            end
+
+            # @param error [StandardError]
+            # @return [void]
+            def fail_create(error)
+              record_create('failure', Telemetry::Outcome.reason_for(ErrorClassifier.classify(error)))
+              emit_create(status: :failure, details: { error_class: error.class.name })
+              raise error
+            end
 
             def require_account(request)
               account = Auth.authenticate(request)
@@ -168,6 +182,14 @@ module Html2rss
             def feed_attributes(feed_data)
               timestamp = Time.now.iso8601
               feed_data.to_h.merge(created_at: timestamp, updated_at: timestamp).slice(*FEED_ATTRIBUTE_KEYS)
+            end
+
+            # @param result [String]
+            # @param reason [String]
+            # @return [void]
+            def record_create(result, reason)
+              Telemetry::Outcome.record(operation: 'feed.create', result:, reason:)
+              nil
             end
 
             # @param status [Symbol]

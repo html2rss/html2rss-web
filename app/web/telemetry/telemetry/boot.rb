@@ -20,6 +20,7 @@ module Html2rss
           #
           # @return [void]
           def start!
+            Metrics.start!
             return if tracing?
 
             return unless endpoint_configured?
