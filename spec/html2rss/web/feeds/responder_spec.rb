@@ -78,6 +78,27 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       )
     end
 
+    it 'records one success after the response is written' do
+      write_response
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'success', reason: 'none'
+      ).once
+    end
+
+    it 'records a cache hit instead of success' do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result.with(cache_hit: true))
+
+      write_response
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'hit', reason: 'none'
+      ).once
+      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
+        operation: 'feed.render', result: 'success', reason: 'none'
+      )
+    end
+
     it 'includes scraper status telemetry when FeedResult exposes status', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(status_telemetry_result)
       allow(Html2rss::Web::Feeds::Renderer).to receive(:render) do |_result, response:, **_kwargs|
@@ -130,6 +151,14 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(response_tuple(write_response)).to eq(
         [500, 'text/plain; charset=utf-8', 'Failed to generate feed: Internal Server Error']
       )
+    end
+
+    it 'records one render failure after the error response' do
+      write_response
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'failure', reason: 'internal'
+      ).once
     end
 
     it 'marks the response as non-cacheable', :aggregate_failures do
@@ -267,6 +296,14 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         level: :warn
       )
     end
+
+    it 'records one empty outcome' do
+      write_response
+
+      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
+        operation: 'feed.render', result: 'empty', reason: 'feed_empty'
+      ).once
+    end
   end
 
   context 'when response rendering fails after feed generation succeeds' do
@@ -301,6 +338,9 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         operation: 'feed.render',
         result: 'failure',
         reason: 'internal'
+      ).once
+      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
+        operation: 'feed.render', result: 'success', reason: 'none'
       )
     end
   end

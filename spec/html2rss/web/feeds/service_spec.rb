@@ -94,17 +94,20 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       )
     end
 
-    it 'records a cache hit and does not record success for that hit' do
+    it 'marks only the repeated call as a cache hit' do
+      miss = described_class.call(resolved_source)
+      hit = described_class.call(resolved_source)
+
+      expect(miss.cache_hit).to be(false)
+      expect(hit.cache_hit).to be(true)
+    end
+
+    it 'does not write a product counter' do
       allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
-      described_class.call(resolved_source)
+
       described_class.call(resolved_source)
 
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'hit', reason: 'none'
-      ).once
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'success', reason: 'none'
-      ).once
+      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record)
     end
 
     it 'reuses the cached result for repeated requests' do
@@ -184,18 +187,17 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.payload).to be_nil
     end
 
-    it 'records scraper unavailable on a miss' do
+    it 'classifies a scraper outage without a product counter' do
       unavailable = Class.new(StandardError)
       stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', unavailable)
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
                                               .and_raise(unavailable, 'down')
       allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
 
-      described_class.call(resolved_source)
+      result = described_class.call(resolved_source)
 
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'failure', reason: 'scraper_unavailable'
-      )
+      expect(result.decision.code).to eq('SCRAPER_UNAVAILABLE')
+      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record)
     end
 
     it 'does not cache the failure result' do

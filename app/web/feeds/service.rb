@@ -14,8 +14,9 @@ module Html2rss
             result = read_cache(resolved_source) do
               yielded = true
             end
-            record_render('hit', 'none') unless yielded
-            result
+            return result if yielded
+
+            result.with(cache_hit: true)
           end
 
           private
@@ -168,28 +169,8 @@ module Html2rss
           end
 
           # @param attrs [Hash{Symbol=>Object}]
-          # @return [void]
-          def record_rendered(attrs)
-            case attrs[:status]
-            when :ok then record_render('success', 'none')
-            when :empty then record_render('empty', Telemetry::Outcome.empty_reason_for(attrs[:empty_reason]))
-            when :error then record_render('failure', Telemetry::Outcome.reason_for(attrs[:decision]))
-            end
-            nil
-          end
-
-          # @param result [String]
-          # @param reason [String]
-          # @return [void]
-          def record_render(result, reason)
-            Telemetry::Outcome.record(operation: 'feed.render', result:, reason:)
-            nil
-          end
-
-          # @param attrs [Hash{Symbol=>Object}]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def render_result(**attrs)
-            record_rendered(attrs)
             Contracts::RenderResult.new(
               payload: nil,
               error_message: nil,

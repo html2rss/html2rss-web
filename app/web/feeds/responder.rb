@@ -14,6 +14,7 @@ module Html2rss
             Telemetry::Tracing.route_group!('feed_render')
             feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
             body = Renderer.render(result, response: request.response, request: request)
+            RenderOutcome.record(result)
             emit_result(target_kind:, identifier: feed_request.feed_name || identifier, resolved_source:, result:)
             body
           rescue StandardError => error
@@ -143,20 +144,11 @@ module Html2rss
           def emit_failure(target_kind:, identifier:, error:)
             decision = ErrorClassifier.classify(error)
             diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-            record_render_failure(decision)
+            RenderOutcome.record_failure(decision)
             Observability.emit(
               event_name: 'feed.render', outcome: 'failure', level: :warn,
               details: exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
             )
-          end
-
-          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-          # @return [void]
-          def record_render_failure(decision)
-            Telemetry::Outcome.record(
-              operation: 'feed.render', result: 'failure', reason: Telemetry::Outcome.reason_for(decision)
-            )
-            nil
           end
 
           # @param target_kind [Symbol]

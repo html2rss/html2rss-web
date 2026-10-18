@@ -64,26 +64,28 @@ module Html2rss
         # +diagnostics+ owns strategy attempts / transport telemetry.
         # +error_message+ is internal observability only.
         RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
-                                   :empty_reason, :diagnostics) do
+                                   :empty_reason, :diagnostics, :cache_hit) do
           class << self
             ##
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             alias_method :__new, :new
             private :__new
 
+            DEFAULTS = {
+              payload: nil,
+              decision: nil,
+              error_message: nil,
+              empty_reason: nil,
+              diagnostics: ErrorClassifier::Diagnostics.empty,
+              cache_hit: false
+            }.freeze
+
             # Defaults keep existing keyword call sites stable when optional fields are absent.
             # Non-ok status requires +decision+ or raises ArgumentError.
             #
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
             def new(**)
-              result = __new(
-                payload: nil,
-                decision: nil,
-                error_message: nil,
-                empty_reason: nil,
-                diagnostics: ErrorClassifier::Diagnostics.empty,
-                **
-              )
+              result = __new(**DEFAULTS, **)
               return result if result.status == :ok || result.decision
 
               raise ArgumentError, 'non-ok RenderResult requires decision'

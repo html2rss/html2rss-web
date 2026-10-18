@@ -47,9 +47,20 @@ module Html2rss
             # @param error [StandardError]
             # @return [void]
             def fail_create(error)
-              record_create('failure', Telemetry::Outcome.reason_for(ErrorClassifier.classify(error)))
+              record_create_failure(error)
               emit_create(status: :failure, details: { error_class: error.class.name })
               raise error
+            end
+
+            # Expected auth and input rejections stay off the failure series.
+            #
+            # @param error [StandardError]
+            # @return [void]
+            def record_create_failure(error)
+              return if error.is_a?(UnauthorizedError) || error.is_a?(BadRequestError)
+
+              record_create('failure', Telemetry::Outcome.reason_for(ErrorClassifier.classify(error)))
+              nil
             end
 
             def require_account(request)
