@@ -6,7 +6,7 @@ interface NoticeProperties {
   tone?: 'error' | 'success' | 'neutral';
   state?: 'loading';
   actions?: ComponentChildren;
-  role?: JSX.HTMLAttributes<HTMLDivElement>['role'];
+  role?: JSX.IntrinsicElements['div']['role'];
   className?: string;
   ariaLabel?: string;
   ariaLive?: 'polite' | 'assertive' | 'off';
