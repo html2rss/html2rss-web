@@ -44,3 +44,5 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint-plugin-unicorn"
         update-types: ["version-update:semver-major"]
+      # 0.99.0 reformats the generated client and fails openapi:verify.
+      - dependency-name: "@hey-api/openapi-ts"
