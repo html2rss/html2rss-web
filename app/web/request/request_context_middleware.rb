@@ -53,9 +53,17 @@ module Html2rss
         case [http_method, path]
         in ['GET', '/api/v1/configs'] then 'catalog'
         in ['POST', '/api/v1/feeds'] then 'feed_create'
-        in ['GET', String] if FEED_RENDER_PATH === path then 'feed_render'
+        in ['GET', String] if feed_render_path?(path) then 'feed_render'
         else 'static'
         end
+      end
+
+      # @param path [String]
+      # @return [Boolean]
+      def feed_render_path?(path)
+        return true if FEED_RENDER_PATH === path
+
+        !path.start_with?(ErrorResponder::API_ROOT_PATH) && Routes::FeedPages.feed_path?(path)
       end
 
       # @param request [Rack::Request]

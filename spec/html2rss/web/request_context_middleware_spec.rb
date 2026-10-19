@@ -27,14 +27,18 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
   private
 
   # @return [Array<Array<(String, String, String)>>]
-  def route_group_rows
+  def route_group_rows # rubocop:disable Metrics/MethodLength
     [
       ['GET', '/api/v1/health', 'health'],
       ['GET', '/api/v1/health/ready', 'health'],
       ['GET', '/api/v1/configs', 'catalog'],
       ['POST', '/api/v1/feeds', 'feed_create'],
       ['GET', '/api/v1/feeds/sensitive-token-value.json', 'feed_render'],
-      ['GET', '/feeds/example', 'static']
+      ['GET', '/apple.com/newsroom.rss', 'feed_render'],
+      ['GET', '/feeds/example', 'feed_render'],
+      ['GET', '/', 'static'],
+      ['GET', '/assets/app.js', 'static'],
+      ['GET', '/api/v1/nope', 'static']
     ]
   end
 

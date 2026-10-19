@@ -7,31 +7,41 @@ module Html2rss
       # Mounts the root page and legacy feed paths.
       module FeedPages
         class << self
+          # True for GET paths that the legacy static feed router serves.
+          #
+          # @param path [String]
+          # @return [Boolean]
+          def feed_path?(path) = feed_name_ok?(path.to_s.delete_prefix('/'))
+
           # @param router [Roda::RodaRequest]
           # @param index_renderer [#call]
           # @return [void]
           def call(router, index_renderer:)
-            router.root do
-              index_renderer.call(router)
-            end
-
-            router.get do
-              feed_name = requested_feed_name(router)
-              next if feed_name.empty?
-              next if feed_name.include?('.') && !feed_name.end_with?('.json', '.xml', '.rss')
-
-              router.env[RequestTarget::ENV_KEY] = RequestTarget::FEED
-              Feeds::Responder.call(request: router, target_kind: :static, identifier: feed_name)
-            end
+            router.root { index_renderer.call(router) }
+            router.get { serve_static_feed(router) }
           end
 
           private
 
+          # @param name [String]
+          # @return [Boolean]
+          def feed_name_ok?(name) =
+            !name.empty? && !(name.include?('.') && !name.end_with?('.json', '.xml', '.rss'))
+
+          # @param router [Roda::RodaRequest]
+          # @return [String, nil]
+          def serve_static_feed(router)
+            return unless feed_path?(router.path_info)
+
+            router.env[RequestTarget::ENV_KEY] = RequestTarget::FEED
+            Feeds::Responder.call(
+              request: router, target_kind: :static, identifier: requested_feed_name(router)
+            )
+          end
+
           # @param router [Roda::RodaRequest]
           # @return [String]
-          def requested_feed_name(router)
-            router.path_info.to_s.delete_prefix('/')
-          end
+          def requested_feed_name(router) = router.path_info.to_s.delete_prefix('/')
         end
       end
     end
