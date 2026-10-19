@@ -1,14 +1,16 @@
 import type { JSX, Ref } from 'preact';
 
+type InputProperties = JSX.IntrinsicElements['input'];
+
 interface DominantFieldProperties {
   className?: string;
   id: string;
   label: string;
   value: string;
   placeholder?: string;
-  type?: string;
-  inputMode?: JSX.HTMLAttributes<HTMLInputElement>['inputMode'];
-  autoCapitalize?: JSX.HTMLAttributes<HTMLInputElement>['autoCapitalize'];
+  type?: 'text' | 'url';
+  inputMode?: InputProperties['inputMode'];
+  autoCapitalize?: InputProperties['autoCapitalize'];
   spellcheck?: boolean;
   readOnly?: boolean;
   autoFocus?: boolean;
@@ -17,8 +19,8 @@ interface DominantFieldProperties {
   actionText: string;
   actionVariant?: 'default' | 'soft';
   onAction?: () => void;
-  onInput?: JSX.GenericEventHandler<HTMLInputElement>;
-  onKeyDown?: JSX.KeyboardEventHandler<HTMLInputElement>;
+  onInput?: InputProperties['onInput'];
+  onKeyDown?: InputProperties['onKeyDown'];
   inputRef?: Ref<HTMLInputElement>;
   actionRef?: Ref<HTMLButtonElement>;
   error?: string;
@@ -72,38 +74,43 @@ export function DominantField({
   'aria-expanded': ariaExpanded,
   'aria-activedescendant': ariaActivedescendant,
 }: DominantFieldProperties) {
+  const handleKeyDown: NonNullable<InputProperties['onKeyDown']> = (event) => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (onAction || event.key !== 'Enter' || event.isComposing || event.repeat) return;
+
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  };
+  const inputProperties = {
+    id,
+    name: id,
+    class: 'input input--mono input--lg',
+    placeholder,
+    inputMode,
+    autoCapitalize,
+    spellcheck,
+    autoFocus,
+    ref: inputRef,
+    value,
+    readOnly,
+    disabled,
+    'aria-controls': ariaControls,
+    'aria-expanded': ariaExpanded,
+    'aria-activedescendant': ariaActivedescendant,
+    onInput,
+    onKeyDown: handleKeyDown,
+  };
+
   return (
     <div class={className ? `dominant-field ${className}` : 'dominant-field'}>
       <label class="field-block field-block--centered" htmlFor={id}>
         <span class="ui-eyebrow ui-eyebrow--ghost">{label}</span>
-        <input
-          id={id}
-          name={id}
-          type={type}
-          class="input input--mono input--lg"
-          placeholder={placeholder}
-          autoComplete={type === 'url' ? 'url' : 'off'}
-          inputMode={inputMode}
-          autoCapitalize={autoCapitalize}
-          spellcheck={spellcheck}
-          autoFocus={autoFocus}
-          ref={inputRef}
-          value={value}
-          readOnly={readOnly}
-          disabled={disabled}
-          aria-controls={ariaControls}
-          aria-expanded={ariaExpanded}
-          aria-activedescendant={ariaActivedescendant}
-          onInput={onInput}
-          onKeyDown={(event) => {
-            onKeyDown?.(event);
-            if (event.defaultPrevented) return;
-            if (onAction || event.key !== 'Enter' || event.isComposing || event.repeat) return;
-
-            event.preventDefault();
-            event.currentTarget.form?.requestSubmit();
-          }}
-        />
+        {type === 'url' ? (
+          <input type="url" autoComplete="url" {...inputProperties} />
+        ) : (
+          <input type="text" autoComplete="off" {...inputProperties} />
+        )}
         {error ? <span class="field-error">{error}</span> : undefined}
       </label>
       <button

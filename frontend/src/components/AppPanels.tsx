@@ -46,7 +46,7 @@ interface UrlEntrySectionProperties {
   feedCreationEnabled: boolean;
   catalogEntries: CatalogEntry[];
   featuredFeeds: CatalogEntry[];
-  inputRef: RefObject<HTMLInputElement>;
+  inputRef: RefObject<HTMLInputElement | null>;
   onInput: (value: string) => void;
 }
 
@@ -185,7 +185,7 @@ function UrlEntrySection({
     setActiveHitIndex(undefined);
   }, [catalogHits]);
 
-  const handleUrlKeyDown: JSX.KeyboardEventHandler<HTMLInputElement> = (event) => {
+  const handleUrlKeyDown: NonNullable<JSX.IntrinsicElements['input']['onKeyDown']> = (event) => {
     if (!hasHits || event.isComposing || event.repeat) return;
 
     if (event.key === 'ArrowDown') {
@@ -274,7 +274,7 @@ interface TokenGateSectionProperties {
   tokenDraft: string;
   tokenError: string;
   isCreating: boolean;
-  inputRef: RefObject<HTMLInputElement>;
+  inputRef: RefObject<HTMLInputElement | null>;
   onTokenDraftChange: (value: string) => void;
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
