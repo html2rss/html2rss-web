@@ -19,7 +19,26 @@ module Html2rss
         end
         # rubocop:enable ThreadSafety/ClassInstanceVariable
 
+        # Formatter for the html2rss gem logger: JSON line with request_id and
+        # a sanitized free-form message (logfmt parsing is skipped).
+        #
+        # @return [Proc]
+        def gem_formatter
+          lambda do |severity, datetime, _progname, msg|
+            format_entry(severity, datetime, nil, gem_message_payload(msg))
+          end
+        end
+
         private
+
+        # @param msg [Object]
+        # @return [Hash{Symbol=>Object}]
+        def gem_message_payload(msg)
+          RequestContext.current_h.merge(
+            component: 'html2rss',
+            message: LogSanitizer.sanitize_text(msg.to_s)
+          )
+        end
 
         # @return [Logger]
         def build_logger

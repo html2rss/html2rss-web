@@ -29,5 +29,30 @@ RSpec.describe Html2rss::Web::AppLogger do
 
       expect(logger_a).to be(logger_b)
     end
+
+    it 'formats gem log lines as JSON with sanitized message text', :aggregate_failures do
+      set_gem_request_context
+      Logger.new(io).tap { it.formatter = described_class.gem_formatter }
+            .warn('no scraper matched https://x.test/a?token=1 (tried faraday)')
+      payload = JSON.parse(io.string)
+
+      expect(payload).to include('level' => 'WARN', 'request_id' => 'req-gem', 'component' => 'html2rss')
+      expect(payload['message']).to include('x.test')
+      expect(payload['message']).not_to include('token=1')
+      expect(payload).not_to have_key('tried')
+    ensure
+      Html2rss::Web::RequestContext.clear!
+    end
+  end
+
+  def set_gem_request_context
+    Html2rss::Web::RequestContext.set!(
+      Html2rss::Web::RequestContext::Context.new(
+        request_id: 'req-gem', path: '/api/v1/feeds/[REDACTED]', http_method: 'GET',
+        route_group: 'feed_render', actor: nil, strategy: nil,
+        started_at: '2026-03-21T00:00:00Z',
+        monotonic_start: Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      )
+    )
   end
 end
