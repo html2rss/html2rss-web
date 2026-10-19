@@ -168,7 +168,6 @@ RSpec.describe Html2rss::Web::Telemetry::Boot do
   before do
     described_class.send(:reset!)
     allow(described_class).to receive(:register_exit_hook)
-    allow(Html2rss::Web::Telemetry::Metrics).to receive(:start!)
   end
 
   after { described_class.send(:reset!) }
@@ -181,14 +180,6 @@ RSpec.describe Html2rss::Web::Telemetry::Boot do
     end
 
     expect(described_class).not_to have_received(:load_sdk!)
-  end
-
-  it 'starts metrics when the endpoint is blank' do
-    ClimateControl.modify('OTEL_EXPORTER_OTLP_ENDPOINT' => nil) do
-      described_class.start!
-    end
-
-    expect(Html2rss::Web::Telemetry::Metrics).to have_received(:start!)
   end
 
   it 'configures once per process and again for a new pid', :aggregate_failures do

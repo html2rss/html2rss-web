@@ -201,7 +201,6 @@ Managed flags and environment keys:
 | `otel_service_name`               | `OTEL_SERVICE_NAME`               | string         | `html2rss-web`                           |
 | `otel_traces_sampler`             | `OTEL_TRACES_SAMPLER`             | string         | `parentbased_traceidratio` when blank    |
 | `otel_traces_sampler_arg`         | `OTEL_TRACES_SAMPLER_ARG`         | string         | `0.1` when blank                         |
-| `prometheus_multiproc_dir`        | `PROMETHEUS_MULTIPROC_DIR`        | string         | a directory under `/tmp`                 |
 
 Rules:
 
@@ -209,8 +208,8 @@ Rules:
 - Invalid managed integer flag values must fail fast at boot.
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
-- `HEALTH_CHECK_TOKEN` is the credential for `GET /metrics` and private `/api/v1/health`. A blank value and `CHANGE_ME_HEALTH_CHECK_TOKEN` are rejected.
-- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER`, `OTEL_TRACES_SAMPLER_ARG`, and `PROMETHEUS_MULTIPROC_DIR` are telemetry pass-throughs read by boot. They are not `RuntimeEnv` feature flags.
+- `HEALTH_CHECK_TOKEN` is the credential for private `/api/v1/health`. A blank value and `CHANGE_ME_HEALTH_CHECK_TOKEN` are rejected.
+- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER`, and `OTEL_TRACES_SAMPLER_ARG` are telemetry pass-throughs read by boot. They are not `RuntimeEnv` feature flags.
 - Add or change flags in code, tests, and this table together.
 
 ---
@@ -245,30 +244,18 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
 | `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
 
-When triaging `gateway_timeout`, capacity-shaped `service_unavailable` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Those exits are `html2rss_outcome_total` reasons, not a Sentry issue queue.
+When triaging `gateway_timeout`, capacity-shaped `service_unavailable` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Those exits are log outcomes, not a Sentry issue queue.
 
 ## Operator product view
 
-Self-hosted operators read this product view. With `OTEL_EXPORTER_OTLP_ENDPOINT` unset, operators use stdout JSON and `GET /metrics`. With it set, traces carry the same `html2rss.operation`, `html2rss.result`, and `html2rss.reason` as the counter. A null `trace_id` is an unsampled line or a line outside a span.
+Self-hosted operators read this product view. With `OTEL_EXPORTER_OTLP_ENDPOINT` unset, operators use stdout JSON. With it set, traces carry `html2rss.operation`, `html2rss.result`, and `html2rss.reason`. A null `trace_id` is an unsampled line or a line outside a span.
 
 ### Journeys
 
-1. **Render subscribed feed.** `feed.render` records `hit`, `success`, `empty`, or `failure`. A cache hit is `hit`. Empty uses `feed_empty` or `extraction_empty`. Failure uses a closed reason below.
-2. **Create hosted feed.** `feed.create` records `success` or `failure`. Empty extraction is `failure` with `extraction_empty`.
-3. **Read catalog.** Server spans for route group `catalog` show status and duration. There is no `catalog.build` counter.
-4. **Instance health.** `/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` and `/metrics` need a real `HEALTH_CHECK_TOKEN`. `/metrics` is not a restart signal. `html2rss_up` and `html2rss_build_info` stay on the scrape. `request.fault` is the unexpected non-HTTP 500 only (`failure` / `internal`).
-
-### Scrape target
-
-The scrape target is only `:4000/metrics` on the Falcon web port. The scheme follows that endpoint.
-
-### Series
-
-`html2rss_up`, `html2rss_build_info`, and `html2rss_outcome_total{operation,result,reason}`.
-
-Closed reasons from `Telemetry::Outcome`: `none`, `feed_empty`, `extraction_empty`, `scraper_unavailable`, `service_unavailable`, `gateway_timeout`, `blocked_surface`, `forbidden`, and `internal`.
-
-An operator can attach `increase(html2rss_outcome_total{result="failure"}[15m])` in their own system. This repo does not create that alert.
+1. **Render subscribed feed.** `feed.render` emits `success` or `failure` on stdout JSON. Empty uses `feed_empty` or `extraction_empty` in details.
+2. **Create hosted feed.** `feed.create` emits `success` or `failure`. Empty extraction is `failure` with the extraction-empty decision.
+3. **Read catalog.** Server spans for route group `catalog` show status and duration.
+4. **Instance health.** `/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` needs a real `HEALTH_CHECK_TOKEN`. Unexpected non-HTTP 500s go to Sentry when configured.
 
 ### Not collected
 
@@ -278,9 +265,9 @@ Not collected: host CPU, memory, disk, network, visitor analytics, per-user stre
 
 Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse or `trace_id` stays inside the body. The app does not send `stream-name`. Phase 04 adds the OpenObserve stream names the collector should send.
 
-Send header `stream-name: html2rss-web` on logs and traces so OpenObserve stores stream `html2rss_web`. Omit `stream-name` on metrics so each series is its own stream. The app still does not send that header. Import the ops board from `docs/observability/html2rss-web.ops.dashboard.json`.
+Send header `stream-name: html2rss-web` on logs and traces so OpenObserve stores stream `html2rss_web`. The app still does not send that header.
 
-With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on the series above. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
+With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on stdout JSON. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
 
 ---
 

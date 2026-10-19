@@ -27,7 +27,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
     allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
     allow(Html2rss::Web::Observability).to receive(:emit)
     allow(Html2rss::Web::Telemetry::Tracing).to receive(:route_group!)
-    allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
   end
 
   context 'with a cacheable success result' do
@@ -75,27 +74,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         outcome: 'success',
         details: include(strategy: :default, url: 'https://example.com', feed_name: 'example'),
         level: :info
-      )
-    end
-
-    it 'records one success after the response is written' do
-      write_response
-
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'success', reason: 'none'
-      ).once
-    end
-
-    it 'records a cache hit instead of success' do
-      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result.with(cache_hit: true))
-
-      write_response
-
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'hit', reason: 'none'
-      ).once
-      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
-        operation: 'feed.render', result: 'success', reason: 'none'
       )
     end
 
@@ -151,14 +129,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(response_tuple(write_response)).to eq(
         [500, 'text/plain; charset=utf-8', 'Failed to generate feed: Internal Server Error']
       )
-    end
-
-    it 'records one render failure after the error response' do
-      write_response
-
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'failure', reason: 'internal'
-      ).once
     end
 
     it 'marks the response as non-cacheable', :aggregate_failures do
@@ -296,14 +266,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         level: :warn
       )
     end
-
-    it 'records one empty outcome' do
-      write_response
-
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render', result: 'empty', reason: 'feed_empty'
-      ).once
-    end
   end
 
   context 'when response rendering fails after feed generation succeeds' do
@@ -320,7 +282,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       allow(Html2rss::Web::Feeds::Renderer).to receive(:render).and_raise(StandardError, 'render failed')
     end
 
-    it 'emits only the failure event' do # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
+    it 'emits only the failure event' do
       expect { write_response }.to raise_error(StandardError, 'render failed')
 
       expect(Html2rss::Web::Observability).to have_received(:emit).once.with(
@@ -333,14 +295,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
             details[:feed_name] == 'example'
         },
         level: :warn
-      )
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.render',
-        result: 'failure',
-        reason: 'internal'
-      ).once
-      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
-        operation: 'feed.render', result: 'success', reason: 'none'
       )
     end
   end

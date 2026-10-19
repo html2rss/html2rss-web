@@ -85,7 +85,6 @@ module Html2rss
         def capture_unexpected(error, decision)
           return unless unexpected_fault?(error, decision)
 
-          Telemetry::Outcome.record(operation: 'request.fault', result: 'failure', reason: 'internal')
           capture_exception(error)
           nil
         rescue StandardError

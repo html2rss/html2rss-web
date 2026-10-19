@@ -10,7 +10,6 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
 
     expect(request.get('/api/v1/health').body).to eq('health:GET')
     expect(request.get('/api/v1/health/ready').body).to eq('health:GET')
-    expect(request.get('/metrics').body).to eq('health:GET')
     expect(request.get('/api/v1/configs').body).to eq('catalog:GET')
     expect(request.post('/api/v1/feeds').body).to eq('feed_create:POST')
     expect(request.get('/api/v1/feeds/sensitive-token-value.json').body).to eq('feed_render:GET')

@@ -36,6 +36,8 @@ module Html2rss
               Response.success(data: { health: { status: 'alive', timestamp: Time.now.iso8601 } })
             end
 
+            private
+
             # True when the request presents the real private-probe token.
             #
             # @param request [Rack::Request]
@@ -46,8 +48,6 @@ module Html2rss
               account = Auth.authenticate(request)
               health_check_account?(account) && accepted_probe_token?(account[:token])
             end
-
-            private
 
             # @return [Hash{Symbol=>Object}]
             def health_response

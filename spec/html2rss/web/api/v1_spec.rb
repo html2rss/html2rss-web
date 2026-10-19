@@ -765,31 +765,6 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       retry_action: 'none'
     }
 
-    it 'leaves auth and input rejections off the product counter', openapi: false do
-      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
-
-      header 'Content-Type', 'application/json'
-      post '/api/v1/feeds', { url: feed_url }.to_json
-      header 'Authorization', "Bearer #{admin_token}"
-      post '/api/v1/feeds', 'not-json'
-
-      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record)
-    end
-
-    it 'records empty extraction as a create failure', :aggregate_failures, openapi: false do
-      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
-      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
-
-      post_feed_request(url: feed_url)
-
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'feed.create', result: 'failure', reason: 'extraction_empty'
-      )
-      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
-        hash_including(operation: 'request.fault')
-      )
-    end
-
     it 'creates a feed when request is valid', :aggregate_failures do
       header 'Authorization', "Bearer #{admin_token}"
       header 'Content-Type', 'application/json'

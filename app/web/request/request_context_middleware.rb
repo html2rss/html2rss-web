@@ -10,7 +10,6 @@ module Html2rss
     # Rack middleware that initializes request correlation context.
     class RequestContextMiddleware
       HEALTH_PATHS = %w[
-        /metrics
         /api/v1/health
         /api/v1/health/live
         /api/v1/health/ready

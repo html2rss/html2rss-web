@@ -112,7 +112,6 @@ module Html2rss
       # @return [Boolean]
       def bypass?(path)
         path == '/' ||
-          path == '/metrics' ||
           path.start_with?('/assets/') ||
           path == '/api/v1/health' ||
           path.start_with?('/api/v1/health/')

@@ -42,7 +42,7 @@ module Html2rss
           token.empty? ? nil : token
         end
 
-        # Credential for private +/api/v1/health+ and +/metrics+.
+        # Credential for private +/api/v1/health+.
         # Blank and {HEALTH_CHECK_TOKEN_PLACEHOLDER} are rejected.
         #
         # @return [String, nil]

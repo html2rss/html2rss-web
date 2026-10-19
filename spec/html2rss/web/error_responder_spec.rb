@@ -80,21 +80,16 @@ RSpec.describe Html2rss::Web::ErrorResponder do
   end
 
   describe '.respond' do
-    it 'records request.fault and captures a non-http internal error', :aggregate_failures do
+    it 'captures a non-http internal error in Sentry' do
       sentry = stub_sentry
-      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
 
       respond_with(error: StandardError.new('boom'), path: '/api/v1/feeds', target: Html2rss::Web::RequestTarget::API)
 
-      expect(Html2rss::Web::Telemetry::Outcome).to have_received(:record).with(
-        operation: 'request.fault', result: 'failure', reason: 'internal'
-      )
       expect(sentry).to have_received(:capture_exception)
     end
 
     it 'does not capture an HttpError classified as internal' do
       sentry = stub_sentry
-      allow(Html2rss::Web::Telemetry::Outcome).to receive(:record)
 
       respond_with(
         error: Html2rss::Web::InternalServerError.new('oops'),
@@ -102,9 +97,6 @@ RSpec.describe Html2rss::Web::ErrorResponder do
         target: Html2rss::Web::RequestTarget::API
       )
 
-      expect(Html2rss::Web::Telemetry::Outcome).not_to have_received(:record).with(
-        hash_including(operation: 'request.fault')
-      )
       expect(sentry).not_to have_received(:capture_exception)
     end
 

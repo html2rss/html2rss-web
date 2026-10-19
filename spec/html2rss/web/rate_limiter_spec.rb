@@ -38,13 +38,6 @@ RSpec.describe Html2rss::Web::RateLimiter do
     expect(body.dig('error', 'code')).to eq('TOO_MANY_REQUESTS')
   end
 
-  it 'bypasses rate limiting for the metrics scrape' do
-    4.times do
-      response = request_builder.get('/metrics')
-      expect(response.status).to eq(200)
-    end
-  end
-
   it 'bypasses rate limiting for health check routes' do
     4.times do
       response = request_builder.get('/api/v1/health')
