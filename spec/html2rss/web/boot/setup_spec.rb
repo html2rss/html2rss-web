@@ -158,7 +158,9 @@ RSpec.describe Html2rss::Web::Boot::Setup do
   end
 
   def build_fake_sentry_config
-    Struct.new(:dsn, :environment, :send_default_pii, :release, :traces_sample_rate, :profiles_sample_rate)
-          .new(nil, nil, nil, nil, nil, nil)
+    Struct.new(
+      :dsn, :environment, :send_default_pii, :release, :traces_sample_rate, :profiles_sample_rate,
+      :before_send_log, :before_send_metric
+    ).new(nil, nil, nil, nil, nil, nil, nil, nil)
   end
 end

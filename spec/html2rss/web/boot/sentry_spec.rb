@@ -5,8 +5,11 @@ require 'spec_helper'
 RSpec.describe Html2rss::Web::Boot::Sentry do
   let(:sentry_dsn) { 'https://example@sentry.invalid/1' }
   let(:captured_config) do
-    Struct.new(:dsn, :environment, :send_default_pii, :release, :traces_sample_rate, :profiles_sample_rate)
-          .new(nil, nil, nil, nil, nil, nil)
+    Class.new do
+      attr_accessor :dsn, :environment, :send_default_pii, :release,
+                    :traces_sample_rate, :profiles_sample_rate,
+                    :before_send_log, :before_send_metric
+    end.new
   end
   let(:captured_scope) do
     Class.new do
@@ -45,6 +48,16 @@ RSpec.describe Html2rss::Web::Boot::Sentry do
     described_class.send(:initialize_sentry!)
 
     expect_sentry_configuration
+  end
+
+  it 'drops SDK logs and metrics so intake stays exception-only', :aggregate_failures do
+    stub_runtime_env_for_sentry('production')
+    described_class.send(:initialize_sentry!)
+
+    expect(captured_config.before_send_log).to respond_to(:call)
+    expect(captured_config.before_send_log.call(Object.new)).to be_nil
+    expect(captured_config.before_send_metric).to respond_to(:call)
+    expect(captured_config.before_send_metric.call(Object.new)).to be_nil
   end
 
   it 'does nothing when a dsn is not present' do

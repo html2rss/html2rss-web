@@ -40,6 +40,18 @@ module Html2rss
             config.release = release_name
             config.traces_sample_rate = 0
             config.profiles_sample_rate = 0
+            drop_sdk_logs_and_metrics!(config)
+          end
+
+          # sentry-ruby 7 enables structured logs and metrics by default.
+          # Keep the web process exception-only: drop SDK log and metric intake.
+          #
+          # @param config [Object]
+          # @return [void]
+          def drop_sdk_logs_and_metrics!(config)
+            config.before_send_log = ->(_log) {}
+            config.before_send_metric = ->(_metric) {} if config.respond_to?(:before_send_metric=)
+            nil
           end
 
           # @return [String]
