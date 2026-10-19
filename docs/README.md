@@ -210,9 +210,23 @@ Rules:
 
 ## Observability Contract
 
-Canonical event fields: `event_name`, `schema_version`, `request_id`, `route_group`, `actor`, `outcome`.
-
 Critical-path event families: auth, feed create, feed render, request errors.
+
+### Log contract
+
+Stdout is one JSON object per line. Operators join app lines to proxy access logs with `request_id` (equal to the `X-Request-Id` response header).
+
+| Field | Role |
+| --- | --- |
+| `event_name` | Family such as `feed.render`, `feed.create`, `request.error` |
+| `outcome` | `success` or `failure` |
+| `details.error_code` | Closed classifier code when present |
+| `details.error_message` | Sanitized free-form failure text (URLs redacted, capped) |
+| `details.strategy` | Requested scrape strategy when set |
+| `details.cache` | `hit` or `miss` on `feed.render` |
+| `duration_ms` | Whole-millisecond request age at emit time |
+| `request_id` | Correlation id; same value as `X-Request-Id` |
+| `route_group` | `health`, `catalog`, `feed_create`, `feed_render`, or `static` |
 
 ### Sentry DSN separation
 
@@ -224,6 +238,8 @@ Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never s
 | `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
 
 Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`${BOTASAURUS_SENTRY_DSN:-}`). It does not fall back to web `SENTRY_DSN`. Leave it unset until you want scraper error reporting.
+
+Sentry covers unexpected non-HTTP exceptions only. Operational alerts are log-based alerts in the operator's log backend.
 
 ### Compose timeout ladder
 
@@ -238,28 +254,28 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
 | `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
 
-When triaging `gateway_timeout`, capacity-shaped `service_unavailable` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Those exits are log outcomes, not a Sentry issue queue.
+When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Use `details.error_message` to separate ladder timeouts from fixed ones.
 
-## Operator product view
+### On-call triage (log queries)
 
-Self-hosted operators read stdout JSON for feed and request outcomes.
+Start from the newest `feed.create`, `feed.render`, and `request.error` lines. Filter on `request_id`, `route_group`, `details.error_code`, and `outcome`.
 
-### Journeys
+1. **Confirm project** — `SENTRY_DSN` (web exceptions) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper faults in the web project usually mean DSN mix-up.
+2. **Correlate** — copy `request_id` / `X-Request-Id` across web logs, proxy access logs, and scraper logs.
+3. **Decision tree**
+   - `SCRAPER_UNAVAILABLE` → scraper down or unreachable
+   - `SERVICE_UNAVAILABLE` with queue/boot timeout wording in `details.error_message` → our capacity or Chromium boot, not the target site
+   - `BLOCKED_SURFACE` → site blocked automation (product signal)
+   - `EXTRACTION_EMPTY` → selectors/config (product signal)
+   - `GATEWAY_TIMEOUT` → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
 
-1. **Render subscribed feed.** `feed.render` emits `success` or `failure` on stdout JSON. Empty uses `feed_empty` or `extraction_empty` in details.
-2. **Create hosted feed.** `feed.create` emits `success` or `failure`. Empty extraction is `failure` with the extraction-empty decision.
-3. **Read catalog.** Route group `catalog` appears on request context for catalog GETs.
-4. **Instance health.** `/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` needs a real `HEALTH_CHECK_TOKEN`. Unexpected non-HTTP 500s go to Sentry when configured.
+### Instance health
+
+`/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` needs a real `HEALTH_CHECK_TOKEN`.
 
 ### Not collected
 
-Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, URLs, tokens, bodies, SQL, raw paths, queue depth, and botasaurus traces.
-
-### Collector
-
-Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse.
-
-With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on stdout JSON. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
+Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, raw URLs, tokens, bodies, SQL, raw feed-token paths, queue depth, and botasaurus traces.
 
 ---
 
