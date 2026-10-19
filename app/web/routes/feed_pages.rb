@@ -25,8 +25,9 @@ module Html2rss
 
           # @param name [String]
           # @return [Boolean]
-          def feed_name_ok?(name) =
+          def feed_name_ok?(name)
             !name.empty? && !(name.include?('.') && !name.end_with?('.json', '.xml', '.rss'))
+          end
 
           # @param router [Roda::RodaRequest]
           # @return [String, nil]

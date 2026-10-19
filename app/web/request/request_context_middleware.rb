@@ -76,7 +76,8 @@ module Html2rss
           path: LogSanitizer.sanitize_path(path),
           http_method:,
           route_group: route_group_for(path, http_method),
-          actor: nil, strategy: request.params['strategy'], started_at: Time.now.utc.iso8601
+          actor: nil, strategy: request.params['strategy'], started_at: Time.now.utc.iso8601,
+          monotonic_start: Process.clock_gettime(Process::CLOCK_MONOTONIC)
         )
       end
 

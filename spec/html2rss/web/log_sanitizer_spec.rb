@@ -21,7 +21,8 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       route_group: 'api_v1',
       actor: nil,
       strategy: 'default',
-      started_at: '2026-03-21T00:00:00Z'
+      started_at: '2026-03-21T00:00:00Z',
+      monotonic_start: Process.clock_gettime(Process::CLOCK_MONOTONIC)
     )
   end
 
@@ -128,6 +129,21 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       timeout: '15000ms',
       state: 'completed'
     )
+  end
+
+  it 'includes non-negative duration_ms for events inside a request' do
+    Html2rss::Web::Observability.emit(event_name: 'boot.test', outcome: 'success', details: {})
+
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+    expect(payload[:duration_ms]).to be_a(Integer).and be >= 0
+  end
+
+  it 'omits duration_ms outside a request' do
+    Html2rss::Web::RequestContext.clear!
+    Html2rss::Web::Observability.emit(event_name: 'boot.test', outcome: 'success', details: {})
+
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+    expect(payload).not_to have_key(:duration_ms)
   end
 
   private

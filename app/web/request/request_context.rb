@@ -7,7 +7,10 @@ module Html2rss
     module RequestContext
       ##
       # Immutable request context model.
-      Context = Data.define(:request_id, :path, :http_method, :route_group, :actor, :strategy, :started_at)
+      # +monotonic_start+ is process-local timing state and is kept out of +context_hash+.
+      Context = Data.define(
+        :request_id, :path, :http_method, :route_group, :actor, :strategy, :started_at, :monotonic_start
+      )
 
       class << self
         # @param context [Context]
@@ -21,6 +24,13 @@ module Html2rss
 
         # @return [Hash{Symbol=>Object}]
         def current_h = current&.then { context_hash(it).compact } || {}
+
+        # Elapsed request time in whole milliseconds, or nil outside a request.
+        #
+        # @return [Integer, nil]
+        def elapsed_ms
+          current&.monotonic_start&.then { ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - it) * 1000).round }
+        end
 
         # @return [nil]
         def clear! = Fiber[:request_context] = nil
