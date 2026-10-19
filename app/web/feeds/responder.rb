@@ -53,7 +53,11 @@ module Html2rss
             case result.status
             in :ok then feed_status_details(result)
             in :empty then { reason: empty_reason_for(result), **result.diagnostics.to_h }
-            in :error then { error_code: result.decision.code, **result.diagnostics.to_h }
+            in :error then {
+              error_code: result.decision.code,
+              error_message: result.error_message || result.client_message,
+              **result.diagnostics.to_h
+            }
             end
           end
 
@@ -110,6 +114,7 @@ module Html2rss
           def exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
             {
               error_class: error.class.name,
+              error_message: error.message,
               error_code: decision.code,
               **diagnostics.to_h
             }.tap do |details|

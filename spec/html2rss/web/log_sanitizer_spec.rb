@@ -54,6 +54,18 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_news_url)
   end
 
+  it 'redacts urls inside error_message text and truncates to 200 chars', :aggregate_failures do
+    long_suffix = 'x' * 180
+    raw_url = 'https://news.ycombinator.com/item?token=secret'
+    message = "failed fetching #{raw_url} #{long_suffix}"
+    sanitized = described_class.sanitize_details(error_message: message)[:error_message]
+    redacted = "https://news.ycombinator.com/[#{url_hash(raw_url)}]"
+
+    expect(sanitized).to include(redacted)
+    expect(sanitized).not_to include('token=secret')
+    expect(sanitized.length).to eq(200)
+  end
+
   it 'falls back to a hash for malformed urls' do
     expect(described_class.sanitize_details(url: '://bad url')).to eq(
       url: { hash: Digest::SHA256.hexdigest('://bad url')[0..11] }

@@ -10,6 +10,7 @@ module Html2rss
     module LogSanitizer
       FEED_TOKEN_ROUTE = %r{\A(/api/v1/feeds/)([^/?]+?)(\.(?:json|xml|rss))?\z}
       PATH_KEYS = Set['endpoint', 'path'].freeze
+      URL_PATTERN = %r{https?://[^\s"'<>]+}i
 
       class << self
         # @param path [String, nil]
@@ -18,6 +19,18 @@ module Html2rss
           return if path.nil?
 
           path.to_s.gsub(FEED_TOKEN_ROUTE, '\1[REDACTED]\3')
+        end
+
+        # Redacts embedded URLs and optionally truncates free-form log text.
+        #
+        # @param text [Object]
+        # @param limit [Integer, nil]
+        # @return [String]
+        def sanitize_text(text, limit: nil)
+          sanitized = text.to_s.gsub(URL_PATTERN) { redacted_url(it) }
+          return sanitized if limit.nil?
+
+          sanitized[0, limit]
         end
 
         # @param details [Hash]
@@ -37,12 +50,22 @@ module Html2rss
           case value
           in Hash then sanitize_details(value)
           in Array then value.map { sanitize_value(key, it) }
+          in String if key.to_s == 'error_message' then sanitize_text(value, limit: 200)
           else
             return sanitize_url(value) if url_key?(key)
             return sanitize_path(value) if path_key?(key)
 
             value
           end
+        end
+
+        # @param url [String]
+        # @return [String]
+        def redacted_url(url)
+          meta = sanitize_url(url)
+          return "[#{meta[:hash]}]" unless meta[:scheme] && meta[:host]
+
+          "#{meta[:scheme]}://#{meta[:host]}/[#{meta[:hash]}]"
         end
 
         # @param key [Object]

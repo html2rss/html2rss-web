@@ -150,7 +150,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         event_name: 'feed.render',
         outcome: 'failure',
         details: satisfy { |details|
-          !details.key?(:error_message) &&
+          details[:error_message] == 'timeout' &&
             details[:strategy] == :default &&
             details[:url] == 'https://example.com' &&
             details[:feed_name] == 'example' &&
@@ -282,7 +282,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         event_name: 'feed.render',
         outcome: 'failure',
         details: satisfy { |details|
-          !details.key?(:error_message) &&
+          details[:error_message] == 'render failed' &&
             details[:error_class] == 'StandardError' &&
             details[:error_code] == 'INTERNAL_SERVER_ERROR' &&
             details[:feed_name] == 'example'

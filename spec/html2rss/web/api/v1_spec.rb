@@ -777,6 +777,21 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.headers['Content-Type']).to include('application/json')
     end
 
+    it 'emits error_message on create failure', openapi: false do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
+      allow(Html2rss::Web::Observability).to receive(:emit).and_call_original
+
+      post_feed_request(url: feed_url)
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        hash_including(
+          event_name: 'feed.create',
+          outcome: 'failure',
+          details: hash_including(:error_message)
+        )
+      )
+    end
+
     it 'adopts scraped site_title from Service execution when available', :aggregate_failures do
       allow(Html2rss::Web::Feeds::Service).to receive(:call)
         .and_return(feed_result_with_site_title('Live Scraped Site Title'))
