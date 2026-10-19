@@ -31,14 +31,6 @@ services:
       BOTASAURUS_SCRAPE_TIMEOUT_SECONDS: 45
       BOTASAURUS_SCRAPE_WORK_TIMEOUT_SECONDS: 30
       BOTASAURUS_SCRAPER_URL: http://botasaurus:4010
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-        labels: service
-    labels:
-      service: html2rss-web
     # Trial runs use the image's bundled config/feeds.yml.
     # To mount custom curated YAML feeds (advanced escape hatch):
     # volumes:

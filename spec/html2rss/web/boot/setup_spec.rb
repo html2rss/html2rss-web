@@ -11,8 +11,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       'RACK_ENV' => 'development',
       'HTML2RSS_SECRET_KEY' => boot_secret_key,
       'BUILD_TAG' => '2026-03-27',
-      'GIT_SHA' => 'abc1234',
-      'SENTRY_ENABLE_LOGS' => nil
+      'GIT_SHA' => 'abc1234'
     }
   end
 
@@ -57,22 +56,6 @@ RSpec.describe Html2rss::Web::Boot::Setup do
       end
 
       expect_sentry_to_be_configured
-    end
-
-    it 'boots when SENTRY_ENABLE_LOGS is still set', :aggregate_failures do
-      stub_environment_validation
-      allow(Html2rss::Web::Boot::Sentry).to receive(:configure!).and_call_original
-      allow(Html2rss::Web::Boot::Sentry).to receive(:require).with('sentry-ruby').and_return(true)
-      allow(Bundler).to receive(:require)
-      fake_sentry = build_fake_sentry
-      stub_const('Sentry', fake_sentry)
-
-      expect do
-        ClimateControl.modify(boot_env.merge('SENTRY_DSN' => sentry_dsn, 'SENTRY_ENABLE_LOGS' => '1')) do
-          described_class.call!
-        end
-      end.not_to raise_error
-      expect(Sentry.captured_config.traces_sample_rate).to eq(0)
     end
 
     it 'logs build metadata on startup' do

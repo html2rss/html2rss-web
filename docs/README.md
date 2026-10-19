@@ -257,9 +257,7 @@ Not collected: host CPU, memory, disk, network, visitor analytics, per-user stre
 
 ### Collector
 
-Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse. The app does not send `stream-name`. Phase 04 adds the OpenObserve stream names the collector should send.
-
-Send header `stream-name: html2rss-web` on logs so OpenObserve stores stream `html2rss_web`. The app still does not send that header.
+Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse.
 
 With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on stdout JSON. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
 
