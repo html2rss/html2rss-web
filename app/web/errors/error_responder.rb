@@ -79,32 +79,19 @@ module Html2rss
           capture_unexpected(error, decision)
         end
 
+        # Captures unexpected non-HTTP internal faults in Sentry when enabled.
+        #
         # @param error [StandardError]
         # @param decision [Html2rss::Web::ErrorClassifier::Decision]
         # @return [void]
         def capture_unexpected(error, decision)
-          return unless unexpected_fault?(error, decision)
-
-          capture_exception(error)
-          nil
-        rescue StandardError
-          nil
-        end
-
-        # @param error [StandardError]
-        # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-        # @return [Boolean]
-        def unexpected_fault?(error, decision)
-          !error.is_a?(HttpError) && decision.code == ErrorClassifier::INTERNAL_SERVER_ERROR.code
-        end
-
-        # @param error [StandardError]
-        # @return [void]
-        def capture_exception(error)
+          return if error.is_a?(HttpError)
+          return unless decision.code == ErrorClassifier::INTERNAL_SERVER_ERROR.code
           return unless RuntimeEnv.sentry_enabled?
-          return unless defined?(::Sentry) && ::Sentry.respond_to?(:capture_exception)
 
           ::Sentry.capture_exception(error)
+          nil
+        rescue StandardError
           nil
         end
 

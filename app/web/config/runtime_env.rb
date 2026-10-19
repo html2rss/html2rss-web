@@ -47,10 +47,7 @@ module Html2rss
         #
         # @return [String, nil]
         def private_probe_token
-          token = health_check_token
-          return if token.nil? || token == HEALTH_CHECK_TOKEN_PLACEHOLDER
-
-          token
+          health_check_token.then { it unless it == HEALTH_CHECK_TOKEN_PLACEHOLDER }
         end
 
         # @return [String]

@@ -34,26 +34,24 @@ module Html2rss
         # @param value [Object]
         # @return [Object]
         def sanitize_value(key, value)
-          return sanitize_details(value) if value.is_a?(Hash)
-          return value.map { |entry| sanitize_value(key, entry) } if value.is_a?(Array)
-          return sanitize_url(value) if url_key?(key)
-          return sanitize_path(value) if path_key?(key)
+          case value
+          in Hash then sanitize_details(value)
+          in Array then value.map { sanitize_value(key, it) }
+          else
+            return sanitize_url(value) if url_key?(key)
+            return sanitize_path(value) if path_key?(key)
 
-          value
+            value
+          end
         end
 
         # @param key [Object]
         # @return [Boolean]
-        def url_key?(key)
-          key_name = key.to_s
-          key_name == 'url' || key_name.end_with?('_url', '_urls')
-        end
+        def url_key?(key) = key.to_s.then { it == 'url' || it.end_with?('_url', '_urls') }
 
         # @param key [Object]
         # @return [Boolean]
-        def path_key?(key)
-          PATH_KEYS.include?(key.to_s)
-        end
+        def path_key?(key) = PATH_KEYS.include?(key.to_s)
 
         # @param value [Object]
         # @return [Hash{Symbol=>Object}, Object]

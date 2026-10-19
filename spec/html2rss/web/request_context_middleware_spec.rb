@@ -8,12 +8,10 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
     app = middleware_app
     request = Rack::MockRequest.new(app)
 
-    expect(request.get('/api/v1/health').body).to eq('health:GET')
-    expect(request.get('/api/v1/health/ready').body).to eq('health:GET')
-    expect(request.get('/api/v1/configs').body).to eq('catalog:GET')
-    expect(request.post('/api/v1/feeds').body).to eq('feed_create:POST')
-    expect(request.get('/api/v1/feeds/sensitive-token-value.json').body).to eq('feed_render:GET')
-    expect(request.get('/feeds/example').body).to eq('static:GET')
+    route_group_rows.each do |http_method, path, group|
+      response = request.request(http_method, path)
+      expect(response.body).to eq("#{group}:#{http_method}"), "expected #{http_method} #{path}"
+    end
   end
 
   it 'sets response request id header' do
@@ -27,6 +25,18 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
   end
 
   private
+
+  # @return [Array<Array<(String, String, String)>>]
+  def route_group_rows
+    [
+      ['GET', '/api/v1/health', 'health'],
+      ['GET', '/api/v1/health/ready', 'health'],
+      ['GET', '/api/v1/configs', 'catalog'],
+      ['POST', '/api/v1/feeds', 'feed_create'],
+      ['GET', '/api/v1/feeds/sensitive-token-value.json', 'feed_render'],
+      ['GET', '/feeds/example', 'static']
+    ]
+  end
 
   # @return [Html2rss::Web::RequestContextMiddleware]
   def middleware_app

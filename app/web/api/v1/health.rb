@@ -80,20 +80,16 @@ module Html2rss
 
             # @param account [Hash, nil]
             # @return [Boolean]
-            def health_check_account?(account)
-              account && account[:username] == 'health-check'
-            end
+            def health_check_account?(account) = account && account[:username] == 'health-check'
 
             # @param provided_token [String, nil]
             # @return [Boolean]
             def accepted_probe_token?(provided_token)
               configured_token = RuntimeEnv.private_probe_token
-              return false if configured_token.nil? || provided_token.nil?
+              return false if configured_token.nil? || provided_token.nil? ||
+                              configured_token.bytesize != provided_token.to_s.bytesize
 
-              provided_token = provided_token.to_s
-              return false unless configured_token.bytesize == provided_token.bytesize
-
-              OpenSSL.secure_compare(provided_token, configured_token)
+              OpenSSL.secure_compare(provided_token.to_s, configured_token)
             end
 
             # @return [void]

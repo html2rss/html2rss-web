@@ -17,23 +17,13 @@ module Html2rss
         end
 
         # @return [Context, nil]
-        def current
-          Fiber[:request_context]
-        end
+        def current = Fiber[:request_context]
 
         # @return [Hash{Symbol=>Object}]
-        def current_h
-          context = current
-          return {} unless context
-
-          context_hash(context).compact
-        end
+        def current_h = current&.then { context_hash(it).compact } || {}
 
         # @return [nil]
-        def clear!
-          Fiber[:request_context] = nil
-          nil
-        end
+        def clear! = Fiber[:request_context] = nil
 
         # @param context [Context]
         # @return [Hash{Symbol=>Object}]

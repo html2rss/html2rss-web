@@ -9,10 +9,10 @@ module Html2rss
     ##
     # Rack middleware that initializes request correlation context.
     class RequestContextMiddleware
-      HEALTH_PATHS = %w[
-        /api/v1/health
-        /api/v1/health/live
-        /api/v1/health/ready
+      HEALTH_PATHS = Set[
+        '/api/v1/health',
+        '/api/v1/health/live',
+        '/api/v1/health/ready'
       ].freeze
       FEED_RENDER_PATH = %r{\A/api/v1/feeds/[^/]+\z}
 
@@ -50,18 +50,12 @@ module Html2rss
       def route_group_for(path, http_method)
         return 'health' if HEALTH_PATHS.include?(path)
 
-        api_route_group(path, http_method)
-      end
-
-      # @param path [String]
-      # @param http_method [String]
-      # @return [String]
-      def api_route_group(path, http_method)
-        return 'catalog' if http_method == 'GET' && path == '/api/v1/configs'
-        return 'feed_create' if http_method == 'POST' && path == '/api/v1/feeds'
-        return 'feed_render' if http_method == 'GET' && FEED_RENDER_PATH.match?(path)
-
-        'static'
+        case [http_method, path]
+        in ['GET', '/api/v1/configs'] then 'catalog'
+        in ['POST', '/api/v1/feeds'] then 'feed_create'
+        in ['GET', String] if FEED_RENDER_PATH === path then 'feed_render'
+        else 'static'
+        end
       end
 
       # @param request [Rack::Request]
@@ -70,8 +64,10 @@ module Html2rss
         path = request.path_info.to_s
         http_method = request.request_method.to_s.upcase
         RequestContext::Context.new(
-          request_id: request_id_for(request), path: LogSanitizer.sanitize_path(path),
-          http_method: http_method, route_group: route_group_for(path, http_method),
+          request_id: request_id_for(request),
+          path: LogSanitizer.sanitize_path(path),
+          http_method:,
+          route_group: route_group_for(path, http_method),
           actor: nil, strategy: request.params['strategy'], started_at: Time.now.utc.iso8601
         )
       end

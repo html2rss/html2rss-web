@@ -39,69 +39,22 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def emit_result(target_kind:, identifier:, resolved_source:, result:)
-            return emit_success(target_kind:, identifier:, resolved_source:, result:) if result.status == :ok
-            return emit_empty(target_kind:, identifier:, resolved_source:, result:) if result.status == :empty
-
-            emit_error(target_kind:, identifier:, resolved_source:, result:)
-          end
-
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [void]
-          def emit_success(target_kind:, identifier:, resolved_source:, result:)
             Observability.emit(
               event_name: 'feed.render',
-              outcome: 'success',
-              details: render_details(resolved_source, identifier, target_kind, **feed_status_details(result)),
-              level: :info
+              outcome: result.status == :ok ? 'success' : 'failure',
+              details: render_details(resolved_source, identifier, target_kind, **status_details(result)),
+              level: result.status == :ok ? :info : :warn
             )
           end
 
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [void]
-          def emit_empty(target_kind:, identifier:, resolved_source:, result:)
-            emit_render_failure(
-              target_kind:, identifier:, resolved_source:,
-              reason: empty_reason_for(result),
-              **result.diagnostics.to_h
-            )
-          end
-
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [void]
-          def emit_error(target_kind:, identifier:, resolved_source:, result:)
-            Observability.emit(
-              event_name: 'feed.render',
-              outcome: 'failure',
-              details: render_details(
-                resolved_source, identifier, target_kind,
-                error_code: result.decision.code,
-                **result.diagnostics.to_h
-              ),
-              level: :warn
-            )
-          end
-
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param extras [Hash{Symbol=>Object}]
-          # @return [void]
-          def emit_render_failure(target_kind:, identifier:, resolved_source:, **extras)
-            Observability.emit(
-              event_name: 'feed.render',
-              outcome: 'failure',
-              details: render_details(resolved_source, identifier, target_kind, **extras),
-              level: :warn
-            )
+          # @return [Hash{Symbol=>Object}]
+          def status_details(result)
+            case result.status
+            in :ok then feed_status_details(result)
+            in :empty then { reason: empty_reason_for(result), **result.diagnostics.to_h }
+            in :error then { error_code: result.decision.code, **result.diagnostics.to_h }
+            end
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
