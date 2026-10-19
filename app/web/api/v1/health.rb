@@ -38,6 +38,17 @@ module Html2rss
 
             private
 
+            # True when the request presents the real private-probe token.
+            #
+            # @param request [Rack::Request]
+            # @return [Boolean]
+            def authorized?(request)
+              return true if accepted_probe_token?(Auth.extract_token(request))
+
+              account = Auth.authenticate(request)
+              health_check_account?(account) && accepted_probe_token?(account[:token])
+            end
+
             # @return [Hash{Symbol=>Object}]
             def health_response
               Response.success(data: { health: health_payload })
@@ -62,23 +73,23 @@ module Html2rss
             # @param request [Rack::Request]
             # @return [void]
             def authorize_health_check!(request)
-              return if env_health_check_token?(request)
-
-              account = Auth.authenticate(request)
-              return if account && account[:username] == 'health-check'
+              return if authorized?(request)
 
               raise Html2rss::Web::UnauthorizedError, 'Health check authentication required'
             end
 
-            # @param request [Rack::Request]
+            # @param account [Hash, nil]
             # @return [Boolean]
-            def env_health_check_token?(request)
-              configured_token = RuntimeEnv.health_check_token.to_s
-              provided_token = Auth.extract_token(request)
-              return false if configured_token.empty? || provided_token.nil?
-              return false unless configured_token.bytesize == provided_token.bytesize
+            def health_check_account?(account) = account && account[:username] == 'health-check'
 
-              OpenSSL.secure_compare(provided_token, configured_token)
+            # @param provided_token [String, nil]
+            # @return [Boolean]
+            def accepted_probe_token?(provided_token)
+              configured_token = RuntimeEnv.private_probe_token
+              return false if configured_token.nil? || provided_token.nil? ||
+                              configured_token.bytesize != provided_token.to_s.bytesize
+
+              OpenSSL.secure_compare(provided_token.to_s, configured_token)
             end
 
             # @return [void]

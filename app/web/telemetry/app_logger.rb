@@ -19,7 +19,26 @@ module Html2rss
         end
         # rubocop:enable ThreadSafety/ClassInstanceVariable
 
+        # Formatter for the html2rss gem logger: JSON line with request_id and
+        # a sanitized free-form message (logfmt parsing is skipped).
+        #
+        # @return [Proc]
+        def gem_formatter
+          lambda do |severity, datetime, _progname, msg|
+            format_entry(severity, datetime, nil, gem_message_payload(msg))
+          end
+        end
+
         private
+
+        # @param msg [Object]
+        # @return [Hash{Symbol=>Object}]
+        def gem_message_payload(msg)
+          RequestContext.current_h.merge(
+            component: 'html2rss',
+            message: LogSanitizer.sanitize_text(msg.to_s)
+          )
+        end
 
         # @return [Logger]
         def build_logger
@@ -35,7 +54,6 @@ module Html2rss
         # @return [String]
         def format_entry(severity, datetime, _progname, message)
           payload = base_payload(severity, datetime).merge(normalize_message(message))
-          emit_to_sentry(payload)
           "#{payload.to_json}\n"
         end
 
@@ -97,23 +115,6 @@ module Html2rss
           return value.to_f if value.match?(/\A-?\d+\.\d+\z/)
 
           value
-        end
-
-        # @param payload [Hash{Symbol=>Object}]
-        # @return [void]
-        def emit_to_sentry(payload)
-          return unless sentry_payload?(payload)
-
-          SentryLogs.record_breadcrumb(payload)
-          SentryLogs.emit(payload)
-        rescue StandardError
-          nil
-        end
-
-        # @param payload [Hash{Symbol=>Object}]
-        # @return [Boolean]
-        def sentry_payload?(payload)
-          payload.key?(:event_name) || payload.key?(:security_event)
         end
       end
     end

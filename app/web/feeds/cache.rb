@@ -118,7 +118,10 @@ module Html2rss
 
           def write_entry(key, ttl_seconds, result)
             prune_if_needed
-            entries[key] = Entry.new(result: result, expires_at: Time.now.utc + normalize_ttl(ttl_seconds))
+            entries[key] = Entry.new(
+              result: result.with(cache_hit: true),
+              expires_at: Time.now.utc + normalize_ttl(ttl_seconds)
+            )
             Observability.emit(
               event_name: 'cache.lifecycle',
               outcome: 'success',

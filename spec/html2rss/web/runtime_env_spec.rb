@@ -25,9 +25,30 @@ RSpec.describe Html2rss::Web::RuntimeEnv do
       end
     end
 
-    it 'falls back to the documented placeholder when the health-check token is blank' do
+    it 'returns nil when the health-check token is blank' do
       ClimateControl.modify('HEALTH_CHECK_TOKEN' => '   ') do
+        expect(described_class.health_check_token).to be_nil
+      end
+    end
+
+    it 'returns nil when the health-check token is unset' do
+      ClimateControl.modify('HEALTH_CHECK_TOKEN' => nil) do
+        expect(described_class.health_check_token).to be_nil
+      end
+    end
+
+    it 'returns the placeholder only when that literal is configured' do
+      ClimateControl.modify('HEALTH_CHECK_TOKEN' => 'CHANGE_ME_HEALTH_CHECK_TOKEN') do
         expect(described_class.health_check_token).to eq('CHANGE_ME_HEALTH_CHECK_TOKEN')
+      end
+    end
+
+    it 'rejects a blank token and the placeholder for private probes' do
+      ClimateControl.modify('HEALTH_CHECK_TOKEN' => '   ') do
+        expect(described_class.private_probe_token).to be_nil
+      end
+      ClimateControl.modify('HEALTH_CHECK_TOKEN' => 'CHANGE_ME_HEALTH_CHECK_TOKEN') do
+        expect(described_class.private_probe_token).to be_nil
       end
     end
   end

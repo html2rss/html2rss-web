@@ -196,7 +196,6 @@ Managed flags and environment keys:
 | `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
 | `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
 | `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
-| `sentry_enable_logs`              | `SENTRY_ENABLE_LOGS`              | boolean        | `false`                                  |
 
 Rules:
 
@@ -204,15 +203,30 @@ Rules:
 - Invalid managed integer flag values must fail fast at boot.
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
+- `HEALTH_CHECK_TOKEN` is the credential for private `/api/v1/health`. A blank value and `CHANGE_ME_HEALTH_CHECK_TOKEN` are rejected.
 - Add or change flags in code, tests, and this table together.
 
 ---
 
 ## Observability Contract
 
-Canonical event fields: `event_name`, `schema_version`, `request_id`, `route_group`, `actor`, `outcome`.
-
 Critical-path event families: auth, feed create, feed render, request errors.
+
+### Log contract
+
+Stdout is one JSON object per line. Operators join app lines to proxy access logs with `request_id` (equal to the `X-Request-Id` response header).
+
+| Field | Role |
+| --- | --- |
+| `event_name` | Family such as `feed.render`, `feed.create`, `request.error` |
+| `outcome` | `success` or `failure` |
+| `details.error_code` | Closed classifier code when present |
+| `details.error_message` | Sanitized free-form failure text (URLs redacted, capped) |
+| `details.strategy` | Requested scrape strategy when set |
+| `details.cache` | `hit` or `miss` on `feed.render` |
+| `duration_ms` | Whole-millisecond request age at emit time |
+| `request_id` | Correlation id; same value as `X-Request-Id` |
+| `route_group` | `health`, `catalog`, `feed_create`, `feed_render`, or `static` |
 
 ### Sentry DSN separation
 
@@ -224,6 +238,8 @@ Use separate Sentry projects for html2rss-web and botasaurus-scrape-api. Never s
 | `BOTASAURUS_SENTRY_DSN` | botasaurus-scrape-api | B (scraper) |
 
 Compose maps `BOTASAURUS_SENTRY_DSN` into the botasaurus service as optional (`${BOTASAURUS_SENTRY_DSN:-}`). It does not fall back to web `SENTRY_DSN`. Leave it unset until you want scraper error reporting.
+
+Sentry covers unexpected non-HTTP exceptions only. Operational alerts are log-based alerts in the operator's log backend.
 
 ### Compose timeout ladder
 
@@ -238,53 +254,28 @@ Default `docker-compose.yml` aligns botasaurus-scrape-api, the html2rss gem clie
 | `HTML2RSS_TOTAL_TIMEOUT_SECONDS` | html2rss-web | `50` | Feed build budget (scrape + extraction) |
 | `REQUEST_TIMEOUT_SECONDS` | html2rss-web | `55` | Falcon server request timeout |
 
-When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or `error_category:timeout`, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder (see **Alert baselines**).
+When triaging `GATEWAY_TIMEOUT`, capacity-shaped `SERVICE_UNAVAILABLE` (queue/boot), or a scraper timeout, confirm both projects use this ladder. Scraper terminal timeouts near **45s** with web failures near **50–55s** indicate aligned budgets; scraper failures near **20–25s** while web waits longer usually mean stale `SCRAPE_*` / `BOTASAURUS_*` env on one side. Split queue/boot timeouts from work timeouts before blaming the ladder. Use `details.error_message` to separate ladder timeouts from fixed ones.
 
-## Sentry Runbook
+### On-call triage (log queries)
 
-With `SENTRY_DSN` set, html2rss-web sends unhandled exceptions (Rack middleware) and P0 operational server failures (`SentryOps`: `SCRAPER_UNAVAILABLE`, `SERVICE_UNAVAILABLE`, `INTERNAL_SERVER_ERROR`) to Sentry Issues. Transient target timeouts (`GATEWAY_TIMEOUT`) and extraction warnings stay in structured stdout logs (`feed.render` / `request.error`) and Sentry breadcrumbs to prevent alert fatigue from slow external websites. Release is `BUILD_TAG+GIT_SHA`; environment is `RACK_ENV`.
+Start from the newest `feed.create`, `feed.render`, and `request.error` lines. Filter on `request_id`, `route_group`, `details.error_code`, and `outcome`.
 
-Structured log intake is opt-in: set `SENTRY_ENABLE_LOGS=true`. A DSN alone does not enable `SentryLogs` or the stdlib `Logger` → Sentry patch.
-
-Start triage from the newest `feed.create`, `feed.render`, and `request.error` events. Check release, route group, strategy, and outcome.
-
-### On-call triage
-
-1. **Confirm project** — `SENTRY_DSN` (web) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper errors in the web project usually mean DSN mix-up.
-2. **Correlate** — copy `request_id` from one issue and search the other project.
+1. **Confirm project** — `SENTRY_DSN` (web exceptions) vs `BOTASAURUS_SENTRY_DSN` (scraper). Scraper faults in the web project usually mean DSN mix-up.
+2. **Correlate** — copy `request_id` / `X-Request-Id` across web logs, proxy access logs, and scraper logs.
 3. **Decision tree**
-   - `SCRAPER_UNAVAILABLE` / `navigation_error` → scraper down or unreachable
-   - `SERVICE_UNAVAILABLE` with scraper `timeout_phase` `queue` or `boot` → our capacity (queue backlog) or Chromium boot (RAM/shm/prewarm) — not the target site
-   - `challenge_block` (scraper) or `BLOCKED_SURFACE` (web) → site blocked automation (product signal). Unclean or unreadable hung Botasaurus surfaces fail closed as `challenge_block` (not `timeout`/`work`).
+   - `SCRAPER_UNAVAILABLE` → scraper down or unreachable
+   - `SERVICE_UNAVAILABLE` with queue/boot timeout wording in `details.error_message` → our capacity or Chromium boot, not the target site
+   - `BLOCKED_SURFACE` → site blocked automation (product signal)
    - `EXTRACTION_EMPTY` → selectors/config (product signal)
-   - `GATEWAY_TIMEOUT` / `timeout` with `timeout_phase` `work` (or nil transport hop) → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
+   - `GATEWAY_TIMEOUT` → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
 
-Outer scraper deadlines reclaim Chromium via WorkLease (session force-close) so worker slots free before the HTTP 504 returns; lingering `timeout_phase:queue` under light traffic after deploy usually means reclaim or per-host admit saturation (`SCRAPE_MAX_PER_HOST`), not soft-cancel theater.
-### Alert baselines
+### Instance health
 
-After baseline traffic, configure per project:
+`/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` needs a real `HEALTH_CHECK_TOKEN`.
 
-**Project B (scraper)**
+### Not collected
 
-- P0: `error_category:navigation_error` above baseline
-- P0: sustained `error_category:timeout` with `timeout_phase` in `{queue, boot}` (capacity / Chromium) — scale workers or check RAM/shm/prewarm
-- P1: sustained `error_category:timeout` with `timeout_phase:work` (slow or hostile targets) — distinct from capacity
-- Metric: `scrape.challenge_block` anomaly (product signal; not a timeout)
-
-**Project A (web)**
-
-- P0: `error_code:SCRAPER_UNAVAILABLE` sustained
-- P0: `error_code:SERVICE_UNAVAILABLE` sustained when correlated with scraper queue/boot timeouts (capacity)
-- Metric / Log: `error_code:GATEWAY_TIMEOUT` rate (slow targets / ladder mismatch; monitored via structured logs, not Sentry Issues)
-- P0: `request.error` spike with `kind:server`
-
-### Dashboard baselines
-
-**Scraper (B)**: outcomes by `error_category`, top `host`, `render_ms`, `scrape.challenge_block` trend
-
-**Web (A)**: `feed.render` failures by `error_code`/`strategy`, release comparison
-
-Tune alert thresholds from sustained `request.error` or `feed.render` failure spikes.
+Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, raw URLs, tokens, bodies, SQL, raw feed-token paths, queue depth, and botasaurus traces.
 
 ---
 

@@ -24,8 +24,11 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     described_class.clear!
   end
 
-  it 'returns the cached result on repeated reads for the same key' do
-    expect(read_same_key_twice).to all(eq(result))
+  it 'returns the cached result on repeated reads for the same key', :aggregate_failures do
+    miss, hit = read_same_key_twice
+
+    expect(miss).to eq(result)
+    expect(hit).to eq(result.with(cache_hit: true))
   end
 
   it 'rebuilds after the cache is cleared' do

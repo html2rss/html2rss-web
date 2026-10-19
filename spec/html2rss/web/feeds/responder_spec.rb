@@ -26,7 +26,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
     allow(Html2rss::Web::Observability).to receive(:emit)
-    allow(Html2rss::Web::SentryOps).to receive(:emit_failure_telemetry)
   end
 
   context 'with a cacheable success result' do
@@ -66,7 +65,22 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'success',
-        details: include(strategy: :default, url: 'https://example.com', feed_name: 'example'),
+        details: include(
+          strategy: :default, url: 'https://example.com', feed_name: 'example', cache: 'miss'
+        ),
+        level: :info
+      )
+    end
+
+    it 'emits cache hit when the RenderResult is marked' do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result.with(cache_hit: true))
+
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'success',
+        details: include(cache: 'hit'),
         level: :info
       )
     end
@@ -147,20 +161,18 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       write_response
 
-      expect(Html2rss::Web::SentryOps).to have_received(:emit_failure_telemetry).with(
-        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
-        diagnostics: have_attributes(strategy_attempts: attempts),
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
-        details: include(
-          strategy: :default,
-          url: 'https://example.com',
-          feed_name: 'example',
-          error_code: 'INTERNAL_SERVER_ERROR',
-          error_message: 'timeout',
-          strategy_attempts: attempts
-        ),
-        level: :warn,
-        context: { url: 'https://example.com', strategy: :default }
+        outcome: 'failure',
+        details: satisfy { |details|
+          details[:error_message] == 'timeout' &&
+            details[:strategy] == :default &&
+            details[:url] == 'https://example.com' &&
+            details[:feed_name] == 'example' &&
+            details[:error_code] == 'INTERNAL_SERVER_ERROR' &&
+            details[:strategy_attempts] == attempts
+        },
+        level: :warn
       )
     end
   end
@@ -278,19 +290,18 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       allow(Html2rss::Web::Feeds::Renderer).to receive(:render).and_raise(StandardError, 'render failed')
     end
 
-    it 'emits only the failure event' do # rubocop:disable RSpec/ExampleLength
+    it 'emits only the failure event' do
       expect { write_response }.to raise_error(StandardError, 'render failed')
 
-      expect(Html2rss::Web::SentryOps).to have_received(:emit_failure_telemetry).once.with(
-        decision: Html2rss::Web::ErrorClassifier::INTERNAL_SERVER_ERROR,
-        diagnostics: Html2rss::Web::ErrorClassifier::Diagnostics.empty,
+      expect(Html2rss::Web::Observability).to have_received(:emit).once.with(
         event_name: 'feed.render',
-        details: include(
-          error_class: 'StandardError',
-          error_message: 'render failed',
-          error_code: 'INTERNAL_SERVER_ERROR',
-          feed_name: 'example'
-        ),
+        outcome: 'failure',
+        details: satisfy { |details|
+          details[:error_message] == 'render failed' &&
+            details[:error_class] == 'StandardError' &&
+            details[:error_code] == 'INTERNAL_SERVER_ERROR' &&
+            details[:feed_name] == 'example'
+        },
         level: :warn
       )
     end

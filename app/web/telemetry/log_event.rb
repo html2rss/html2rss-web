@@ -25,7 +25,9 @@ module Html2rss
         # @param payload [Hash{Symbol=>Object}]
         # @return [Hash{Symbol=>Object}]
         def build_payload(payload)
-          RequestContext.current_h.merge(LogSanitizer.sanitize_details(payload))
+          RequestContext.current_h
+                        .merge(LogSanitizer.sanitize_details(payload))
+                        .merge({ duration_ms: RequestContext.elapsed_ms }.compact)
         end
 
         # @param error [StandardError]

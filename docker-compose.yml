@@ -24,9 +24,8 @@ services:
       HTML2RSS_ACCESS_TOKEN: ${HTML2RSS_ACCESS_TOKEN:?set HTML2RSS_ACCESS_TOKEN in .env (generate with `openssl rand -hex 32`)}
       AUTO_SOURCE_ENABLED: ${AUTO_SOURCE_ENABLED:-true}
       HEALTH_CHECK_TOKEN: ${HEALTH_CHECK_TOKEN:-}
-      # Web Sentry (Project A): SENTRY_DSN; logs opt-in via SENTRY_ENABLE_LOGS=true
+      # Web Sentry (Project A): unexpected exceptions only
       SENTRY_DSN: ${SENTRY_DSN:-}
-      SENTRY_ENABLE_LOGS: ${SENTRY_ENABLE_LOGS:-false}
       HTML2RSS_TOTAL_TIMEOUT_SECONDS: 50
       REQUEST_TIMEOUT_SECONDS: 55
       BOTASAURUS_SCRAPE_TIMEOUT_SECONDS: 45

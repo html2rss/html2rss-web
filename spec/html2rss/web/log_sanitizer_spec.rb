@@ -21,7 +21,8 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       route_group: 'api_v1',
       actor: nil,
       strategy: 'default',
-      started_at: '2026-03-21T00:00:00Z'
+      started_at: '2026-03-21T00:00:00Z',
+      monotonic_start: Process.clock_gettime(Process::CLOCK_MONOTONIC)
     )
   end
 
@@ -52,6 +53,18 @@ RSpec.describe Html2rss::Web::LogSanitizer do
 
   it 'replaces logged urls with hashed host metadata' do
     expect(described_class.sanitize_details(url: 'https://news.ycombinator.com')).to eq(url: expected_news_url)
+  end
+
+  it 'redacts urls inside error_message text and truncates to 200 chars', :aggregate_failures do
+    long_suffix = 'x' * 180
+    raw_url = 'https://news.ycombinator.com/item?token=secret'
+    message = "failed fetching #{raw_url} #{long_suffix}"
+    sanitized = described_class.sanitize_details(error_message: message)[:error_message]
+    redacted = "https://news.ycombinator.com/[#{url_hash(raw_url)}]"
+
+    expect(sanitized).to include(redacted)
+    expect(sanitized).not_to include('token=secret')
+    expect(sanitized.length).to eq(200)
   end
 
   it 'falls back to a hash for malformed urls' do
@@ -116,6 +129,21 @@ RSpec.describe Html2rss::Web::LogSanitizer do
       timeout: '15000ms',
       state: 'completed'
     )
+  end
+
+  it 'includes non-negative duration_ms for events inside a request' do
+    Html2rss::Web::Observability.emit(event_name: 'boot.test', outcome: 'success', details: {})
+
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+    expect(payload[:duration_ms]).to be_a(Integer).and be >= 0
+  end
+
+  it 'omits duration_ms outside a request' do
+    Html2rss::Web::RequestContext.clear!
+    Html2rss::Web::Observability.emit(event_name: 'boot.test', outcome: 'success', details: {})
+
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+    expect(payload).not_to have_key(:duration_ms)
   end
 
   private

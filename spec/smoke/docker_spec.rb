@@ -6,7 +6,7 @@ require 'uri'
 
 RSpec.describe 'Dockerized API smoke test', :docker do
   let(:base_url) { ENV.fetch('SMOKE_BASE_URL', 'http://127.0.0.1:4000') }
-  let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN', 'CHANGE_ME_HEALTH_CHECK_TOKEN') }
+  let(:health_token) { ENV.fetch('SMOKE_HEALTH_TOKEN') }
   let(:feed_token) { ENV.fetch('SMOKE_API_TOKEN', 'CHANGE_ME_ADMIN_TOKEN') }
   let(:auto_source_enabled) { ENV.fetch('SMOKE_AUTO_SOURCE_ENABLED', 'false') == 'true' }
   let(:feed_url) { 'https://www.ruby-lang.org/en/' }

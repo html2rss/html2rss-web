@@ -5,8 +5,11 @@ require 'spec_helper'
 RSpec.describe Html2rss::Web::Boot::Sentry do
   let(:sentry_dsn) { 'https://example@sentry.invalid/1' }
   let(:captured_config) do
-    Struct.new(:dsn, :environment, :before_send_log, :enabled_patches, :send_default_pii, :release)
-          .new(nil, nil, nil, [])
+    Class.new do
+      attr_accessor :dsn, :environment, :send_default_pii, :release,
+                    :traces_sample_rate, :profiles_sample_rate,
+                    :before_send_log, :before_send_metric
+    end.new
   end
   let(:captured_scope) do
     Class.new do
@@ -47,12 +50,14 @@ RSpec.describe Html2rss::Web::Boot::Sentry do
     expect_sentry_configuration
   end
 
-  it 'patches stdlib Logger when SENTRY_ENABLE_LOGS is true', :aggregate_failures do
-    stub_runtime_env_for_sentry('production', sentry_logs_enabled: true)
+  it 'drops SDK logs and metrics so intake stays exception-only', :aggregate_failures do
+    stub_runtime_env_for_sentry('production')
     described_class.send(:initialize_sentry!)
 
-    expect(captured_config.before_send_log).to be_nil
-    expect(captured_config.enabled_patches).to include(:logger)
+    expect(captured_config.before_send_log).to respond_to(:call)
+    expect(captured_config.before_send_log.call(Object.new)).to be_nil
+    expect(captured_config.before_send_metric).to respond_to(:call)
+    expect(captured_config.before_send_metric.call(Object.new)).to be_nil
   end
 
   it 'does nothing when a dsn is not present' do
@@ -61,14 +66,13 @@ RSpec.describe Html2rss::Web::Boot::Sentry do
     expect(described_class.send(:configure?)).to be(false)
   end
 
-  def stub_runtime_env_for_sentry(rack_env, sentry_logs_enabled: false)
+  def stub_runtime_env_for_sentry(rack_env)
     allow(Html2rss::Web::RuntimeEnv).to receive_messages(
       sentry_enabled?: true,
       sentry_dsn: sentry_dsn,
       rack_env: rack_env,
       build_tag: '2026-03-27',
-      git_sha: 'abc1234',
-      sentry_logs_enabled?: sentry_logs_enabled
+      git_sha: 'abc1234'
     )
   end
 
@@ -77,16 +81,11 @@ RSpec.describe Html2rss::Web::Boot::Sentry do
       dsn: sentry_dsn,
       environment: 'production',
       send_default_pii: false,
-      release: '2026-03-27+abc1234'
+      release: '2026-03-27+abc1234',
+      traces_sample_rate: 0,
+      profiles_sample_rate: 0
     )
-    expect_log_intake_disabled(captured_config)
     expect_sentry_scope_tags
-  end
-
-  def expect_log_intake_disabled(config)
-    expect(config.before_send_log).to be_a(Proc)
-    expect(config.before_send_log.call(Object.new)).to be_nil
-    expect(config.enabled_patches).not_to include(:logger)
   end
 
   def expect_sentry_scope_tags

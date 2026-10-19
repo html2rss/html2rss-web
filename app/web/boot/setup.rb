@@ -32,6 +32,7 @@ module Html2rss
             Html2rss.configure do |config|
               config.headers = global_config[:headers] if global_config[:headers]
               config.stylesheets = global_config[:stylesheets] if global_config[:stylesheets]
+              config.logger_formatter = AppLogger.gem_formatter
             end
           end
 

@@ -8,39 +8,18 @@ RSpec.describe Html2rss::Web::AppLogger do
   let(:test_logger) { Logger.new(io).tap { |log| log.formatter = described_class.send(:method, :format_entry) } }
 
   describe '.logger' do
-    it 'forwards structured logs to the Sentry log bridge', :aggregate_failures do
+    it 'writes one JSON line', :aggregate_failures do
       allow(Logger).to receive(:new).and_return(test_logger)
-      allow(Html2rss::Web::SentryLogs).to receive(:emit)
-
       described_class.reset_logger!
       described_class.logger.info({ event_name: 'boot.test', component: 'boot' }.to_json)
 
-      expect(Html2rss::Web::SentryLogs).to have_received(:emit).with(
-        include(component: 'boot', event_name: 'boot.test', service: 'html2rss-web')
+      payload = JSON.parse(io.string)
+      expect(payload).to include(
+        'event_name' => 'boot.test',
+        'component' => 'boot',
+        'service' => 'html2rss-web'
       )
-      expect(io.string).to include('"event_name":"boot.test"')
-    end
-
-    it 'still writes structured logs when the Sentry bridge raises' do
-      allow(Logger).to receive(:new).and_return(test_logger)
-      allow(Html2rss::Web::SentryLogs).to receive(:emit).and_raise(StandardError, 'boom')
-
-      described_class.reset_logger!
-      expect do
-        described_class.logger.info({ event_name: 'boot.test', component: 'boot' }.to_json)
-      end.not_to raise_error
-      expect(io.string).to include('"event_name":"boot.test"')
-    end
-
-    it 'does not forward plain string logs to the Sentry bridge' do
-      allow(Logger).to receive(:new).and_return(test_logger)
-      allow(Html2rss::Web::SentryLogs).to receive(:emit)
-
-      described_class.reset_logger!
-      described_class.logger.info('plain-text log line with request details')
-
-      expect(Html2rss::Web::SentryLogs).not_to have_received(:emit)
-      expect(io.string).to include('"message":"plain-text log line with request details"')
+      expect(io.string.lines.size).to eq(1)
     end
 
     it 'shares the logger instance across different fibers' do
@@ -50,5 +29,30 @@ RSpec.describe Html2rss::Web::AppLogger do
 
       expect(logger_a).to be(logger_b)
     end
+
+    it 'formats gem log lines as JSON with sanitized message text', :aggregate_failures do
+      set_gem_request_context
+      Logger.new(io).tap { it.formatter = described_class.gem_formatter }
+            .warn('no scraper matched https://x.test/a?token=1 (tried faraday)')
+      payload = JSON.parse(io.string)
+
+      expect(payload).to include('level' => 'WARN', 'request_id' => 'req-gem', 'component' => 'html2rss')
+      expect(payload['message']).to include('x.test')
+      expect(payload['message']).not_to include('token=1')
+      expect(payload).not_to have_key('tried')
+    ensure
+      Html2rss::Web::RequestContext.clear!
+    end
+  end
+
+  def set_gem_request_context
+    Html2rss::Web::RequestContext.set!(
+      Html2rss::Web::RequestContext::Context.new(
+        request_id: 'req-gem', path: '/api/v1/feeds/[REDACTED]', http_method: 'GET',
+        route_group: 'feed_render', actor: nil, strategy: nil,
+        started_at: '2026-03-21T00:00:00Z',
+        monotonic_start: Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      )
+    )
   end
 end
