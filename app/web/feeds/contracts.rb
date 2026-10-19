@@ -71,21 +71,20 @@ module Html2rss
             alias_method :__new, :new
             private :__new
 
-            DEFAULTS = {
-              payload: nil,
-              decision: nil,
-              error_message: nil,
-              empty_reason: nil,
-              diagnostics: ErrorClassifier::Diagnostics.empty,
-              cache_hit: false
-            }.freeze
-
             # Defaults keep existing keyword call sites stable when optional fields are absent.
             # Non-ok status requires +decision+ or raises ArgumentError.
             #
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-            def new(**)
-              result = __new(**DEFAULTS, **)
+            def new(**) # rubocop:disable Metrics/MethodLength
+              result = __new(
+                payload: nil,
+                decision: nil,
+                error_message: nil,
+                empty_reason: nil,
+                diagnostics: ErrorClassifier::Diagnostics.empty,
+                cache_hit: false,
+                **
+              )
               return result if result.status == :ok || result.decision
 
               raise ArgumentError, 'non-ok RenderResult requires decision'

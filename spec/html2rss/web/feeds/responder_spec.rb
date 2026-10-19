@@ -65,7 +65,22 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'success',
-        details: include(strategy: :default, url: 'https://example.com', feed_name: 'example'),
+        details: include(
+          strategy: :default, url: 'https://example.com', feed_name: 'example', cache: 'miss'
+        ),
+        level: :info
+      )
+    end
+
+    it 'emits cache hit when the RenderResult is marked' do
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result.with(cache_hit: true))
+
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'success',
+        details: include(cache: 'hit'),
         level: :info
       )
     end

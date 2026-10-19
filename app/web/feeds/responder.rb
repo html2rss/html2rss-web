@@ -42,7 +42,11 @@ module Html2rss
             Observability.emit(
               event_name: 'feed.render',
               outcome: result.status == :ok ? 'success' : 'failure',
-              details: render_details(resolved_source, identifier, target_kind, **status_details(result)),
+              details: render_details(
+                resolved_source, identifier, target_kind,
+                cache: result.cache_hit ? 'hit' : 'miss',
+                **status_details(result)
+              ),
               level: result.status == :ok ? :info : :warn
             )
           end

@@ -5,36 +5,23 @@ module Html2rss
     module Feeds
       ##
       # Shared synchronous feed service around the html2rss gem.
-      module Service # rubocop:disable Metrics/ModuleLength
-        class << self # rubocop:disable Metrics/ClassLength
+      module Service
+        class << self
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def call(resolved_source)
-            yielded = false
-            result = read_cache(resolved_source) do
-              yielded = true
-            end
-            return result if yielded
-
-            result.with(cache_hit: true)
-          end
-
-          private
-
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def read_cache(resolved_source)
             cache_key = "feed_result:#{resolved_source.cache_identity}"
-            Cache.fetch(cache_key, ttl_seconds: resolved_source.ttl_seconds, cacheable: cacheable_result) do
-              yield
+
+            Cache.fetch(
+              cache_key,
+              ttl_seconds: resolved_source.ttl_seconds,
+              cacheable: ->(result) { result.status != :error }
+            ) do
               build_result(resolved_source, cache_key)
             end
           end
 
-          # @return [Proc]
-          def cacheable_result
-            ->(cached) { cached.status != :error }
-          end
+          private
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
