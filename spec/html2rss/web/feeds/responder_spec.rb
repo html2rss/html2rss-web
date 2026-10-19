@@ -26,7 +26,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
   before do
     allow(Html2rss::Web::LocalConfig).to receive(:find).with('example').and_return(static_config)
     allow(Html2rss::Web::Observability).to receive(:emit)
-    allow(Html2rss::Web::Telemetry::Tracing).to receive(:route_group!)
   end
 
   context 'with a cacheable success result' do
@@ -58,12 +57,6 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
 
       expect_resolved_static_source
       expect_cache_headers
-    end
-
-    it 'marks the current span as a feed render' do
-      write_response
-
-      expect(Html2rss::Web::Telemetry::Tracing).to have_received(:route_group!).with('feed_render')
     end
 
     it 'emits success after writing the response' do

@@ -11,7 +11,6 @@ module Html2rss
           # @param identifier [String]
           # @return [String] serialized feed body.
           def call(request:, target_kind:, identifier:)
-            Telemetry::Tracing.route_group!('feed_render')
             feed_request, resolved_source, result = resolve_request(request:, target_kind:, identifier:)
             body = Renderer.render(result, response: request.response, request: request)
             emit_result(target_kind:, identifier: feed_request.feed_name || identifier, resolved_source:, result:)

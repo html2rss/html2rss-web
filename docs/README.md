@@ -196,11 +196,6 @@ Managed flags and environment keys:
 | `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
 | `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |
 | `sentry_dsn`                      | `SENTRY_DSN`                      | string         | `nil`                                    |
-| `otel_exporter_otlp_endpoint`     | `OTEL_EXPORTER_OTLP_ENDPOINT`     | string         | blank (traces off)                       |
-| `otel_exporter_otlp_protocol`     | `OTEL_EXPORTER_OTLP_PROTOCOL`     | string         | `http/protobuf` when unset               |
-| `otel_service_name`               | `OTEL_SERVICE_NAME`               | string         | `html2rss-web`                           |
-| `otel_traces_sampler`             | `OTEL_TRACES_SAMPLER`             | string         | `parentbased_traceidratio` when blank    |
-| `otel_traces_sampler_arg`         | `OTEL_TRACES_SAMPLER_ARG`         | string         | `0.1` when blank                         |
 
 Rules:
 
@@ -209,7 +204,6 @@ Rules:
 - Unknown managed feature-style env keys must fail fast at boot.
 - `BUILD_TAG` and `GIT_SHA` are required in production so startup logs can identify the deployed build.
 - `HEALTH_CHECK_TOKEN` is the credential for private `/api/v1/health`. A blank value and `CHANGE_ME_HEALTH_CHECK_TOKEN` are rejected.
-- `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_SERVICE_NAME`, `OTEL_TRACES_SAMPLER`, and `OTEL_TRACES_SAMPLER_ARG` are telemetry pass-throughs read by boot. They are not `RuntimeEnv` feature flags.
 - Add or change flags in code, tests, and this table together.
 
 ---
@@ -248,24 +242,24 @@ When triaging `gateway_timeout`, capacity-shaped `service_unavailable` (queue/bo
 
 ## Operator product view
 
-Self-hosted operators read this product view. With `OTEL_EXPORTER_OTLP_ENDPOINT` unset, operators use stdout JSON. With it set, traces carry `html2rss.operation`, `html2rss.result`, and `html2rss.reason`. A null `trace_id` is an unsampled line or a line outside a span.
+Self-hosted operators read stdout JSON for feed and request outcomes.
 
 ### Journeys
 
 1. **Render subscribed feed.** `feed.render` emits `success` or `failure` on stdout JSON. Empty uses `feed_empty` or `extraction_empty` in details.
 2. **Create hosted feed.** `feed.create` emits `success` or `failure`. Empty extraction is `failure` with the extraction-empty decision.
-3. **Read catalog.** Server spans for route group `catalog` show status and duration.
+3. **Read catalog.** Route group `catalog` appears on request context for catalog GETs.
 4. **Instance health.** `/api/v1/health/live` is the restart signal (`bin/docker-healthcheck`) and does not load config. `/api/v1/health/ready` is `LocalConfig.load_snapshot`. Private `/api/v1/health` needs a real `HEALTH_CHECK_TOKEN`. Unexpected non-HTTP 500s go to Sentry when configured.
 
 ### Not collected
 
-Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, URLs, tokens, bodies, SQL, raw paths, queue depth, botasaurus traces, OTEL metrics, and OTEL logs while those SDKs are Development.
+Not collected: host CPU, memory, disk, network, visitor analytics, per-user streams, URLs, tokens, bodies, SQL, raw paths, queue depth, and botasaurus traces.
 
 ### Collector
 
-Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse or `trace_id` stays inside the body. The app does not send `stream-name`. Phase 04 adds the OpenObserve stream names the collector should send.
+Production logs are one JSON object per line. Docker json-file wraps that line and leaves a trailing newline. Strip it before the second JSON parse. The app does not send `stream-name`. Phase 04 adds the OpenObserve stream names the collector should send.
 
-Send header `stream-name: html2rss-web` on logs and traces so OpenObserve stores stream `html2rss_web`. The app still does not send that header.
+Send header `stream-name: html2rss-web` on logs so OpenObserve stores stream `html2rss_web`. The app still does not send that header.
 
 With `SENTRY_DSN` set, the web process reports unexpected non-HTTP exceptions. Feed outcomes stay on stdout JSON. Botasaurus keeps `BOTASAURUS_SENTRY_DSN`.
 

@@ -18,7 +18,7 @@ module Html2rss
 
       # @param app [#call]
       def initialize(app)
-        @app = Telemetry::Tracing.wrap(app)
+        @app = app
       end
 
       # @param env [Hash]

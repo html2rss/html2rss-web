@@ -34,9 +34,7 @@ module Html2rss
         # @param message [String]
         # @return [String]
         def format_entry(severity, datetime, _progname, message)
-          payload = base_payload(severity, datetime)
-                    .merge(normalize_message(message))
-                    .merge(trace_fields)
+          payload = base_payload(severity, datetime).merge(normalize_message(message))
           return "#{human_line(payload)}\n" if development?
 
           "#{payload.to_json}\n"
@@ -78,11 +76,6 @@ module Html2rss
 
           text = value.to_s.gsub(/[\r\n]+/, ' ')
           text.match?(/[\s=]/) ? text.inspect : text
-        end
-
-        # @return [Hash{Symbol=>String, nil}]
-        def trace_fields
-          Telemetry::Tracing.correlation_ids
         end
 
         # @param message [Object]
