@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
 import type { JSX, RefObject } from 'preact';
 import { Bookmarklet } from './Bookmarklet';
+import { IosShortcut } from './IosShortcut';
 import { DominantField } from './DominantField';
 import { Notice } from './Notice';
 import type { CatalogEntry } from '../catalog';
@@ -529,7 +530,10 @@ interface UtilityStripProperties {
   catalogCount: number;
   openapiUrl?: string;
   onClearToken: () => void;
+  bookmarkletHelpExpanded: boolean;
+  iosShortcutHelpExpanded: boolean;
   onShowBookmarkletHelp: () => void;
+  onShowIosShortcutHelp: () => void;
 }
 
 export function UtilityStrip({
@@ -537,7 +541,10 @@ export function UtilityStrip({
   catalogCount,
   openapiUrl,
   onClearToken,
+  bookmarkletHelpExpanded,
+  iosShortcutHelpExpanded,
   onShowBookmarkletHelp,
+  onShowIosShortcutHelp,
 }: UtilityStripProperties) {
   const normalizedOpenapiUrl = normalizeLocalOriginUrl(openapiUrl);
 
@@ -545,7 +552,8 @@ export function UtilityStrip({
     <section class="utility-strip" aria-label={COPY.utilities}>
       <div class="utility-strip__items">
         <FeedDirectoryEscape catalogCount={catalogCount} />
-        <Bookmarklet onClick={onShowBookmarkletHelp} />
+        <Bookmarklet expanded={bookmarkletHelpExpanded} onClick={onShowBookmarkletHelp} />
+        <IosShortcut expanded={iosShortcutHelpExpanded} onClick={onShowIosShortcutHelp} />
         {hasAccessToken && (
           <button type="button" class="utility-button" onClick={onClearToken}>
             {COPY.logout}

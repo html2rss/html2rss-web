@@ -288,29 +288,48 @@
   max-width: var(--layout-rail-reading);
 }
 
+.notice__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.notice__title-spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.notice__dismiss {
+  flex-shrink: 0;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-1)) 0 0;
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--font-size-2);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.notice__dismiss:hover,
+.notice__dismiss:focus-visible {
+  color: var(--text-strong);
+}
+
 .notice__content {
   flex: 1;
   min-width: 0;
 }
 
-.notice__code {
-  display: inline-block;
+.notice__content:not(:first-child) {
   margin-top: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  background: rgb(var(--color-rgb-white) / 6%);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  font-family: var(--font-family-mono);
-  font-size: var(--font-size-00);
-  user-select: all;
-  cursor: pointer;
-  color: var(--text-strong);
-  width: fit-content;
 }
 
 .notice__title {
   color: var(--text-strong);
   font-weight: var(--font-weight-semibold);
+  min-width: 0;
 }
 
 .notice__intro,
@@ -318,13 +337,60 @@
   color: var(--text-muted);
 }
 
+.notice__meta {
+  margin-top: var(--space-1);
+}
+
 /* Global `a` uses --accent; muted meta must set color on the link itself. */
-.notice__meta a {
+.notice__meta a,
+.notice__secondary-link {
   color: var(--text-muted);
 }
 
-.notice__meta a:hover {
+.notice__meta a:hover,
+.notice__secondary-link:hover,
+.notice__secondary-link:focus-visible {
   color: var(--text-strong);
+}
+
+/* Supporting create-prefill chrome — smaller than create/result DominantField. */
+.notice .notice__prefix-field {
+  --control-input-lg-min-height: 2.5rem;
+  --control-input-lg-padding-inline: 0.75rem 4rem;
+  --control-input-lg-font-size: var(--font-size-00);
+  --control-input-lg-letter-spacing: var(--letter-spacing-meta);
+  --dominant-field-action-right: var(--space-1);
+  --dominant-field-action-size: 2rem;
+  --dominant-field-action-text-min-width: 3.25rem;
+  --dominant-field-action-text-padding-inline: var(--space-2);
+  --dominant-field-action-bg: transparent;
+  --dominant-field-action-soft-bg: transparent;
+  --dominant-field-action-soft-hover-bg: rgb(var(--color-rgb-white) / 8%);
+
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.notice .notice__prefix-field .field-block--centered {
+  justify-items: stretch;
+}
+
+/*
+ * Ghost eyebrow is ~0 height here, so the field box ≈ the input box.
+ * Center with 50% of that box — do not use --dominant-field-action-top
+ * (lg create/result offset) or min-height math that ignores input padding.
+ */
+.notice .notice__prefix-field .dominant-field__action {
+  top: 50%;
+  bottom: auto;
+  width: var(--dominant-field-action-size);
+  height: var(--dominant-field-action-size);
+  font-size: var(--font-size-00);
+  transform: translateY(-50%);
+}
+
+.notice .notice__prefix-field .dominant-field__action:hover:not(:disabled) {
+  transform: translateY(-50%) translateX(var(--motion-nudge));
 }
 
 .notice[data-tone="error"] {

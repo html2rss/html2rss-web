@@ -10,6 +10,9 @@ import type { MayCreateResult } from '../session';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 
+/** Which supporting utility Notice is open; at most one at a time. */
+export type UtilityHelpKind = 'bookmarklet' | 'iosShortcut';
+
 interface RouteNavigationOptions {
   replace?: boolean;
 }
@@ -54,7 +57,7 @@ export function useFeedFlow({
   const [feedFieldErrors, setFeedFieldErrors] = useState(EMPTY_FEED_ERRORS);
   const [tokenDraft, setTokenDraft] = useState('');
   const [tokenError, setTokenError] = useState('');
-  const [bookmarkletNotice, setBookmarkletNotice] = useState('');
+  const [utilityHelp, setUtilityHelp] = useState<UtilityHelpKind | undefined>(undefined);
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
 
   const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
@@ -240,6 +243,13 @@ export function useFeedFlow({
     result,
   });
 
+  // Supporting Notices yield to the token dialog / non-create frames.
+  useEffect(() => {
+    if (!utilityHelp) return;
+    if (route.kind === 'create' && viewModel.kind === 'create') return;
+    setUtilityHelp(undefined);
+  }, [route.kind, utilityHelp, viewModel.kind]);
+
   return {
     viewModel,
     isCreating,
@@ -252,7 +262,7 @@ export function useFeedFlow({
     feedFieldErrors,
     tokenDraft,
     tokenError,
-    bookmarkletNotice,
+    utilityHelp,
     focusCreateComposerKey,
     submitDisabled,
     feedCreationEnabled,
@@ -276,7 +286,7 @@ export function useFeedFlow({
       navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
     },
     onRetryPreview: retryPreviewFetch,
-    setBookmarkletNotice,
+    setUtilityHelp,
     setTokenDraft,
     setTokenError,
   };
