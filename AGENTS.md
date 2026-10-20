@@ -1,104 +1,46 @@
-# Agent Workflow Constraints
+# AGENTS.md
 
-This document defines execution constraints for AI agents. For general contributor rules, setup commands, architectural constraints, and security policies, see [docs/README.md](docs/README.md).
+Canonical references:
+- Contributor guide, setup, architecture, security, observability: [docs/README.md](docs/README.md)
+- Domain glossary and seam ownership: [CONTEXT.md](CONTEXT.md)
+- Visual, CSS primitive, and journey grammar contracts: [docs/design-system.md](docs/design-system.md)
 
-## Collaboration Agreement (Agent ↔ User)
+## Execution & Coding Contracts
 
-- **DoD:** `make ready` in Dev Container; if applicable, user completes manual smoke test with agent-provided steps.
-- **Verification:** Always smoke Dev Container + `make ready`.
-- **PR open gate:** Do not push or open a PR until the quality gate passes **inside the Dev Container**. Host-only shortcuts (e.g. frontend `vitest` + `eslint` alone) are not a substitute. Never mark Validation as done or open a PR with “gate skipped / unavailable” — start the Dev Container and run the gate, or stop and report the blocker without opening the PR.
-- **Commits:** Group by logical unit after smoke-tested (feature / improvement / refactor).
-- **Responses:** Changes → Commands → Results → Next steps, ending with a concise one-line summary.
-- **KISS vs Refactor:** KISS by default; boy-scout refactors allowed if low-risk and simplifying.
-- **Ambiguity:** Proceed with safest assumption, then confirm.
-- **Version bump:** After a task lands on `main`, ask whether to bump the app version. Do not run Bump Version until the user names the bump. See [Ship follow-through](#ship-follow-through).
-- **Non-negotiables:** Dev Container only; security first.
-
-## Agent-Specific Verification Rules
-
-- Always run Dev Container smoke + `make ready` for changes.
-- For frontend changes or API contract/spec changes, run `make ci-ready` before push/PR open to mirror CI parity checks (`ready` + OpenAPI verify + frontend e2e smoke).
-- For frontend-only changes when `make ci-ready` is too heavy mid-task, still run at minimum inside Dev Container: `make ready` (includes `pnpm run format:check` via `lint-js`). Prettier failures are a common CI break — never skip format check.
-- For frontend changes, also verify in `chrome-devtools` MCP at `http://127.0.0.1:4001/` while the Dev Container is running.
-- Capture a quick state check for all affected UI states (e.g., guest/member/result) to enforce state parity and avoid duplicate actions.
-
-### Frontend Smoke Checklist
-
-- Start the Dev Container and app (`make dev`).
-- Open `http://127.0.0.1:4001/` with `chrome-devtools` MCP.
-- Validate the primary user path touched by the change.
-- Verify all affected states (e.g., guest/member/result) keep the same layout grammar.
-- Confirm action uniqueness: one canonical control per outcome in each state.
-
-## UI Execution Principles
-
-See [docs/design-system.md](docs/design-system.md) for visual rules.
-
-- **Task Dominance:** Each UI state should make one user objective obvious and primary. Supporting surfaces and links must yield priority.
-- **Copy Minimalism:** Remove text that repeats what the interface already communicates. Prefer action-oriented wording.
-- **State Skeleton:** Adjacent UI states should read as the same frame with content changes, not as separate pages.
-- **Focus Contract:** Verify browser autofocus and return-focus behavior on initial load and after transitions.
-- **Support Compression:** When a user has advanced past setup, reduce the visual weight of support content.
-
-## Response Format
-
-1. **Changes:** Briefly list files/symbols modified.
-2. **Commands:** Show the verification commands run.
-3. **Results:** Summarize the outcome.
-4. **Next steps:** Propose the immediate follow-up.
-5. **One-line Summary:** End with a concise summary.
-
-## Non-Negotiables
-
-- **Security first:** No leaking secrets or insecure patterns. See [Security & Safety Rules](docs/README.md#security--safety-rules).
-- **YARD docs:** Strict for public Ruby methods in `app/`. Every public method must have a YARD docstring with typed `@param` and `@return`. See [Architectural Constraints](docs/README.md#architectural-constraints).
-- **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
-- **No skipped quality gate:** Opening a PR without a green Dev Container gate is forbidden. If the gate cannot run, do not open the PR; fix the environment or hand off with explicit blocker + next command for the user.
+- **Posture:** Time matters. Reduce LOC when possible. No legacy code, no backward compatibility, no shims.
+- **Dev Container only:** Run all commands inside the Dev Container via `make` or `bundle exec`. Never execute on the host.
+- **Quality gate:** Never push or open a PR without a green Dev Container gate (`make ready` minimum, which includes `pnpm run format:check` via `lint-js`; `make ci-ready` before push/PR for frontend or API/OpenAPI contract changes). Never mark validation done or open a PR with "gate skipped / unavailable" — start the Dev Container and run the gate, or stop and report the blocker plus next command.
+- **Frontend verification:** With `make dev` running, verify touched paths in `chrome-devtools` MCP at `http://127.0.0.1:4001/`. Confirm affected states (guest/member/result) share the same frame, keep one primary task and one canonical control per outcome, and preserve autofocus/return-focus on load and transitions ([docs/design-system.md](docs/design-system.md)).
+- **Security & YARD:** No leaking secrets or insecure patterns ([docs/README.md#security--safety-rules](docs/README.md#security--safety-rules)). Every public Ruby method in `app/` requires a YARD docstring with typed `@param` and `@return` ([docs/README.md#architectural-constraints](docs/README.md#architectural-constraints)).
+- **Response format:** `Changes → Commands → Results → Next steps`, ending with a one-line summary.
 
 ## Ship follow-through
 
-When a task that should ship has merged to `main`, ask whether to bump the app version before any further release step. Do not dispatch [`.github/workflows/bump-version.yml`](.github/workflows/bump-version.yml) until the user answers with `auto`, `patch`, `minor`, `major`, or `custom` plus a semver (`X.Y.Z`).
+When a task that should ship merges to `main`, ask whether to bump the app version before any further release step. Do not dispatch [`.github/workflows/bump-version.yml`](.github/workflows/bump-version.yml) until the user answers with `auto`, `patch`, `minor`, `major`, or `custom` plus a semver (`X.Y.Z`).
 
 ### html2rss gem pickup
 
-When a published html2rss release should land here:
-
-1. Wait until the gem repo's `release gem` workflow for that tag is `success`. A merged version PR in `html2rss/html2rss` is not on RubyGems yet; `bundle update html2rss` keeps the old pin.
-2. `git fetch origin main` and branch from `origin/main`. Do not continue a feature branch, and do not commit the lockfile onto `main`.
-3. In the Dev Container, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless the user asked. Leave the Gemfile constraint `~> 0.30` unless resolution fails.
-4. Open a lockfile PR. Required checks: `frontend`, `ruby`, `docker-test (false)`, `docker-test (true)`. Watch with `gh pr checks <n> --watch`.
-5. Mergify queues only Dependabot. When the user asked to merge and those checks are green, squash-merge: `gh pr merge <n> --squash --delete-branch`. Merge commits are disabled.
-6. Stop and ask whether to bump the app version. The gem pin and the app version are separate PRs. Dispatch the version workflow only after the gem PR is on `main`, so the version bump includes the new pin.
+1. Wait until `html2rss/html2rss`'s `release gem` workflow for the tag is `success` (a merged version PR is not on RubyGems yet; `bundle update html2rss` keeps the old pin).
+2. `git fetch origin main` and branch from `origin/main`. Never continue a feature branch or commit the lockfile onto `main`.
+3. In the Dev Container, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless asked. Keep the Gemfile constraint `~> 0.30` unless resolution fails.
+4. Open a lockfile PR and watch required checks (`frontend`, `ruby`, `docker-test (false)`, `docker-test (true)`) with `gh pr checks <n> --watch`.
+5. Mergify queues only Dependabot. When asked to merge and checks are green, run `gh pr merge <n> --squash --delete-branch` (merge commits disabled).
+6. Stop and ask whether to bump the app version. Dispatch the version workflow only after the gem PR is on `main`.
 
 ### App version bump
 
-Dispatch only after the user names the bump:
+Dispatch only after the user names the bump (`--ref main` is required; pass `custom_version` only when `bump_type=custom`):
 
 ```sh
 gh workflow run bump-version.yml --ref main -f bump_type=<auto|patch|minor|major|custom> -f custom_version=<X.Y.Z>
 ```
 
-`--ref main` is required. The workflow exits unless `github.ref` is `refs/heads/main`. Pass `custom_version` only when `bump_type` is `custom`.
-
-Watch that run to `success`. It opens `bump-version/v<version>`. Wait for the same required checks, then squash-merge when the user asked to merge. Do not publish the draft GitHub release unless the user asks.
+Watch the run to `success` (`bump-version/v<version>`), wait for the same required checks, and squash-merge when asked. Do not publish the draft GitHub release unless asked.
 
 ## Config catalog API
 
-Public feed-directory metadata for embedded and local configs.
-
-| Item | Detail |
-| --- | --- |
-| Endpoint | `GET /api/v1/configs` |
-| Flag | `CONFIG_CATALOG_ENABLED` (default `true`; set `false` to disable) |
-| Disabled response | `404` with `{ "error": "catalog_disabled" }` |
-| Embedded entries | `Html2rss::Configs::Catalog.entries` — do not re-walk YAML in the handler |
-| Local entries | `Catalog::Merge` includes `feeds.yml` feeds only when `directory.title` is set |
-| Starter feeds (UI) | Server `meta.starters` via `Catalog::Starters.pick`; frontend `selectStarterFeeds(entries, starters)` |
-| Catalog find | `findCatalogEntries` → multi-hit list under create URL; demotes `empty`/`error`; links via `catalogFeedHref` |
-| last_result | Required on every catalog entry (`ok`/`empty`/`error`/`unknown`); process-local `Feeds::LastResults` |
-| catalog_version | `2` (clients fail-closed on other versions) |
-| CORS | Route-scoped on `/api/v1/configs` only (`GET`, `OPTIONS`) |
-| Root metadata | `GET /api/v1/` exposes `instance.catalog: { enabled, url }` |
-| Contract SSOT | Request specs under `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml` |
-
-After handler or envelope changes: `make openapi` and `make ci-ready`.
+- **Endpoint & flag:** `GET /api/v1/configs` (`CONFIG_CATALOG_ENABLED`, default `true`; `false` returns `404` with `{ "error": "catalog_disabled" }`). Route-scoped CORS on `/api/v1/configs` only (`GET`, `OPTIONS`). Root metadata `GET /api/v1/` exposes `instance.catalog: { enabled, url }`.
+- **Sources & merge:** Embedded entries come from `Html2rss::Configs::Catalog.entries` (never re-walk YAML in the handler). `Catalog::Merge` includes local `feeds.yml` feeds only when `directory.title` is set.
+- **Envelope & health:** `catalog_version` is `2` (clients fail closed on other versions). Every entry requires `last_result` (`ok`/`empty`/`error`/`unknown`) from process-local `Feeds::LastResults`.
+- **UI wiring:** Starters use server `meta.starters` (`Catalog::Starters.pick`) and frontend `selectStarterFeeds(entries, starters)`. `findCatalogEntries` renders a multi-hit list under the create URL, demotes `empty`/`error`, and links via `catalogFeedHref`.
+- **Contract SSOT:** `spec/html2rss/web/api/v1_spec.rb` and generated `public/openapi.yaml`. After handler or envelope changes, run `make openapi` and `make ci-ready`.
