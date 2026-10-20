@@ -19,8 +19,9 @@ module Html2rss
         end
         # rubocop:enable ThreadSafety/ClassInstanceVariable
 
-        # Formatter for the html2rss gem logger: JSON line with request_id and
-        # a sanitized free-form message (logfmt parsing is skipped).
+        # Formatter for the html2rss gem logger: JSON line with request_id.
+        # Structured gem payloads (JSON with +event_name+) keep columnar fields;
+        # free-form strings stay under +message+ (logfmt parsing is skipped).
         #
         # @return [Proc]
         def gem_formatter
@@ -34,10 +35,46 @@ module Html2rss
         # @param msg [Object]
         # @return [Hash{Symbol=>Object}]
         def gem_message_payload(msg)
-          RequestContext.current_h.merge(
-            component: 'html2rss',
-            message: LogSanitizer.sanitize_text(msg.to_s)
-          )
+          RequestContext.current_h.merge(component: 'html2rss').merge(gem_body(msg))
+        end
+
+        # @param msg [Object]
+        # @return [Hash{Symbol=>Object}]
+        def gem_body(msg)
+          structured = gem_structured_payload(msg)
+          return sanitize_gem_structured(structured) if structured
+
+          { message: LogSanitizer.sanitize_text(msg.to_s) }
+        end
+
+        # @param msg [Object]
+        # @return [Hash{Symbol=>Object}, nil]
+        def gem_structured_payload(msg)
+          return msg.transform_keys(&:to_sym) if msg.is_a?(Hash) && msg_event_name?(msg)
+
+          message_string = msg.to_s
+          return nil unless json_like?(message_string)
+
+          parsed = parsed_json(message_string)
+          return nil unless parsed.is_a?(Hash) && msg_event_name?(parsed)
+
+          parsed
+        end
+
+        # @param payload [Hash]
+        # @return [Boolean]
+        def msg_event_name?(payload)
+          payload.key?(:event_name) || payload.key?('event_name')
+        end
+
+        # @param structured [Hash{Symbol=>Object}]
+        # @return [Hash{Symbol=>Object}]
+        def sanitize_gem_structured(structured)
+          LogSanitizer.sanitize_details(structured).tap do |details|
+            next unless details[:message].is_a?(String)
+
+            details[:message] = LogSanitizer.sanitize_text(details[:message])
+          end
         end
 
         # @return [Logger]
