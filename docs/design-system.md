@@ -44,6 +44,7 @@ If a page looks like it came from a different product, the change is wrong even 
 - **Unmatched result:** `#/result/:token` is valid only with a matching in-memory result. Missing or mismatched tokens recover onto remounted `#/create` (no API rehydrate, no failure chrome, no durable shareable result page).
 - **Status eyebrow:** one vocabulary (`Feed ready`) on the result header; preview progress lives in the preview section.
 - **Focus:** create autofocuses the URL field; token autofocuses the token field; result focuses the Copy control.
+- **Utility-help Notice:** Bookmarklet and iOS Shortcut share one Notice skeleton — title plus top-right Close (×), not a footer Dismiss text button. iOS Shortcut help uses a compact `.notice__prefix-field` DominantField Copy for the create-prefill prefix (supporting chrome, not a second primary task), ordered setup steps with emphasized Shortcuts action names (not per-step deep links), and one demoted Open Shortcuts link.
 
 ### Vocabulary
 

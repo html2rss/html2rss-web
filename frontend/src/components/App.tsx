@@ -1,11 +1,13 @@
 import type { JSX } from 'preact';
+import { useEffect, useRef } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
+import { IosShortcutHelp } from './IosShortcutHelp';
 import { Notice } from './Notice';
 import { COPY } from '../journey/copy';
 import { useSession } from '../session';
-import { useFeedFlow } from '../feed';
-import { buildAppRouteHref, useAppRoute } from '../routes/appRoute';
+import { useFeedFlow, type UtilityHelpKind } from '../feed';
+import { buildAppRouteHref, buildCreatePrefillPrefix, useAppRoute } from '../routes/appRoute';
 
 function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   return (
@@ -28,8 +30,15 @@ function BrandLockup({ onNavigateHome }: { onNavigateHome: () => void }) {
   );
 }
 
+function utilityHelpControlId(kind: UtilityHelpKind): string {
+  return kind === 'bookmarklet' ? 'bookmarklet' : 'ios-shortcut';
+}
+
 export function App() {
   const { route, navigate, createEntryKey } = useAppRoute();
+  const dismissHelpButtonReference = useRef<HTMLButtonElement>(null);
+  const lastUtilityHelpReference = useRef<UtilityHelpKind | undefined>(undefined);
+  const createPrefillPrefix = buildCreatePrefillPrefix();
 
   const {
     token,
@@ -53,7 +62,7 @@ export function App() {
     feedFormData,
     feedFieldErrors,
     tokenDraft,
-    bookmarkletNotice,
+    utilityHelp,
     focusCreateComposerKey,
     submitDisabled: flowSubmitDisabled,
     onFeedFieldChange,
@@ -63,7 +72,7 @@ export function App() {
     onRetryCreate,
     onCreateAnother,
     onRetryPreview,
-    setBookmarkletNotice,
+    setUtilityHelp,
     setTokenDraft,
     setTokenError,
   } = useFeedFlow({
@@ -78,6 +87,16 @@ export function App() {
     createEntryKey,
   });
 
+  useEffect(() => {
+    if (!utilityHelp) return;
+
+    lastUtilityHelpReference.current = utilityHelp;
+    const focusHandle = requestAnimationFrame(() => {
+      dismissHelpButtonReference.current?.focus();
+    });
+    return () => cancelAnimationFrame(focusHandle);
+  }, [utilityHelp]);
+
   const submitDisabled = flowSubmitDisabled || viewModel.kind === 'token_prompt';
   const onTokenDraftChange = (value: string) => {
     setTokenDraft(value);
@@ -91,7 +110,17 @@ export function App() {
     clearError();
     navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
   };
-  const onShowBookmarkletHelp = () => setBookmarkletNotice('show');
+  const onShowBookmarkletHelp = () => setUtilityHelp('bookmarklet');
+  const onShowIosShortcutHelp = () => setUtilityHelp('iosShortcut');
+  const onDismissUtilityHelp = () => {
+    const invoker = lastUtilityHelpReference.current;
+    setUtilityHelp(undefined);
+    requestAnimationFrame(() => {
+      if (!invoker) return;
+      const control = document.querySelector<HTMLElement>(`#${utilityHelpControlId(invoker)}`);
+      control?.focus();
+    });
+  };
 
   let bodyContent: JSX.Element;
   if (sessionLoading) {
@@ -131,6 +160,31 @@ export function App() {
     );
   }
 
+  let utilityHelpNotice: JSX.Element | undefined;
+  if (utilityHelp === 'bookmarklet') {
+    utilityHelpNotice = (
+      <Notice
+        title={COPY.bookmarkletTitle}
+        ariaLive="polite"
+        onDismiss={onDismissUtilityHelp}
+        dismissRef={dismissHelpButtonReference}
+      >
+        <p>{COPY.bookmarkletHelp}</p>
+      </Notice>
+    );
+  } else if (utilityHelp === 'iosShortcut') {
+    utilityHelpNotice = (
+      <Notice
+        title={COPY.iosShortcutTitle}
+        ariaLive="polite"
+        onDismiss={onDismissUtilityHelp}
+        dismissRef={dismissHelpButtonReference}
+      >
+        <IosShortcutHelp createPrefillPrefix={createPrefillPrefix} />
+      </Notice>
+    );
+  }
+
   return (
     <div class="page-shell">
       <main class="page-main layout-shell-padding">
@@ -140,22 +194,7 @@ export function App() {
           </header>
 
           <div class="workspace-content">
-            {bookmarkletNotice && (
-              <Notice
-                title={COPY.bookmarkletTitle}
-                actions={
-                  <button
-                    type="button"
-                    class="btn btn--quiet btn--linkish"
-                    onClick={() => setBookmarkletNotice('')}
-                  >
-                    {COPY.dismiss}
-                  </button>
-                }
-              >
-                <p>{COPY.bookmarkletHelp}</p>
-              </Notice>
-            )}
+            {utilityHelpNotice}
 
             {(metadataError || tokenStateError) && (
               <Notice
@@ -178,7 +217,10 @@ export function App() {
             catalogCount={catalogEntries.length}
             openapiUrl={metadata?.api.openapi_url}
             onClearToken={onClearToken}
+            bookmarkletHelpExpanded={utilityHelp === 'bookmarklet'}
+            iosShortcutHelpExpanded={utilityHelp === 'iosShortcut'}
             onShowBookmarkletHelp={onShowBookmarkletHelp}
+            onShowIosShortcutHelp={onShowIosShortcutHelp}
           />
         </div>
       </footer>

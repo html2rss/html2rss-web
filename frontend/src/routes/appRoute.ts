@@ -51,6 +51,11 @@ export function readAppRoute(locationLike: RouteLocationLike = getCurrentLocatio
   return prefillUrl ? { kind: 'create', prefillUrl } : { kind: 'create' };
 }
 
+/** Create-route prefix for bookmarklet / Shortcuts handoff: `<origin>/#/create?url=`. */
+export function buildCreatePrefillPrefix(baseHref = getCurrentHref()): string {
+  return `${buildAppRouteHref({ kind: 'create' }, baseHref)}?url=`;
+}
+
 export function buildAppRouteHref(route: AppRoute, baseHref = getCurrentHref()): string {
   const url = new URL('/', baseHref);
   url.pathname = '/';

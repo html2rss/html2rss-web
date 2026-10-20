@@ -182,6 +182,7 @@ describe('App', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
     expect(screen.getByLabelText(COPY.utilities)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.iosShortcutTitle })).toBeInTheDocument();
     expect(document.querySelector('.form-shell')).toHaveAttribute('data-state', 'create');
   });
 
@@ -732,6 +733,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: COPY.createAnother })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: COPY.openFeed })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: COPY.bookmarkletTitle })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.iosShortcutTitle })).toBeInTheDocument();
     expect(screen.getByText('Example Feed')).toBeInTheDocument();
     expect(screen.getByText(COPY.feedReady)).toBeInTheDocument();
     expect(screen.getByText(COPY.previewUnavailable)).toBeInTheDocument();
@@ -902,6 +904,7 @@ describe('App', () => {
     expect(utilityItems).toEqual([
       COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
+      COPY.iosShortcutTitle,
       COPY.logout,
       COPY.dockerInstall,
       COPY.openapiSpec,
@@ -1016,6 +1019,135 @@ describe('App', () => {
     const bookmarklet = screen.getByRole('link', { name: COPY.bookmarkletTitle });
     expect(bookmarklet.getAttribute('href')).toContain('/#/create?url=');
     expect(bookmarklet.getAttribute('href')).not.toContain('%27+encodeURIComponent');
+  });
+
+  it('shows the iOS Shortcut utility on a generic desktop environment', () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    const shortcut = screen.getByRole('link', { name: COPY.iosShortcutTitle });
+    expect(shortcut).toHaveClass('utility-link');
+    expect(shortcut).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('opens iOS Shortcut help with the create-prefill prefix and three setup steps', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.iosShortcutTitle }));
+
+    expect(await screen.findByText(COPY.iosShortcutActionShareSheet)).toBeInTheDocument();
+    expect(screen.getByText(COPY.iosShortcutActionUrlEncode)).toBeInTheDocument();
+    expect(screen.getByText(COPY.iosShortcutActionOpen)).toBeInTheDocument();
+    expect(screen.getByText(COPY.iosShortcutOpenDetail)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.iosShortcutActionShareSheet })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.iosShortcutActionUrlEncode })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: COPY.iosShortcutActionOpen })).not.toBeInTheDocument();
+    const prefixField = screen.getByLabelText(COPY.prefix);
+    expect(prefixField).toHaveValue('http://localhost:3000/#/create?url=');
+    expect(prefixField.closest('.notice__prefix-field')).toBeTruthy();
+    expect(screen.getByRole('button', { name: COPY.copyCreatePrefillPrefix })).toHaveTextContent(COPY.copy);
+    expect(screen.getByRole('link', { name: COPY.iosShortcutOpenEditor })).toHaveAttribute(
+      'href',
+      'shortcuts://create-shortcut'
+    );
+    expect(screen.getByRole('button', { name: COPY.close })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.iosShortcutTitle })).toHaveAttribute(
+      'aria-expanded',
+      'true'
+    );
+  });
+
+  it('copies the create-prefill prefix from iOS Shortcut help', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.iosShortcutTitle }));
+    fireEvent.click(await screen.findByRole('button', { name: COPY.copyCreatePrefillPrefix }));
+
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('http://localhost:3000/#/create?url=');
+    });
+    expect(screen.getByText(COPY.copied)).toBeInTheDocument();
+  });
+
+  it('keeps bookmarklet help and target when iOS Shortcut help is available', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    const bookmarklet = screen.getByRole('link', { name: COPY.bookmarkletTitle });
+    expect(bookmarklet.getAttribute('href')).toContain('javascript:window.location.assign');
+    expect(bookmarklet.getAttribute('href')).toContain('/#/create?url=');
+
+    fireEvent.click(bookmarklet);
+    expect(await screen.findByText(COPY.bookmarkletHelp)).toBeInTheDocument();
+    expect(screen.queryByLabelText(COPY.prefix)).not.toBeInTheDocument();
+    expect(bookmarklet).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('link', { name: COPY.iosShortcutTitle })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+  });
+
+  it('opens only one utility help Notice at a time', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.iosShortcutTitle }));
+    expect(await screen.findByLabelText(COPY.prefix)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.bookmarkletTitle }));
+    expect(await screen.findByText(COPY.bookmarkletHelp)).toBeInTheDocument();
+    expect(screen.queryByLabelText(COPY.prefix)).not.toBeInTheDocument();
+  });
+
+  it('returns focus to the iOS Shortcut control after dismissing help', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    const shortcut = screen.getByRole('link', { name: COPY.iosShortcutTitle });
+    fireEvent.click(shortcut);
+
+    const close = await screen.findByRole('button', { name: COPY.close });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(close);
+    });
+
+    fireEvent.click(close);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(shortcut);
+    });
+    expect(screen.queryByLabelText(COPY.prefix)).not.toBeInTheDocument();
+  });
+
+  it('closes Bookmarklet help with the same Close control', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.bookmarkletTitle }));
+    expect(await screen.findByText(COPY.bookmarkletHelp)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: COPY.close }));
+    expect(screen.queryByText(COPY.bookmarkletHelp)).not.toBeInTheDocument();
+  });
+
+  it('closes utility help when the token prompt opens', async () => {
+    history.replaceState({}, '', 'http://localhost:3000/#/create');
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('link', { name: COPY.iosShortcutTitle }));
+    expect(await screen.findByLabelText(COPY.prefix)).toBeInTheDocument();
+
+    fireEvent.input(screen.getByLabelText(COPY.urlLabel), {
+      target: { value: 'https://example.com/articles' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+
+    await screen.findByRole('heading', { name: COPY.tokenTitle });
+    expect(screen.queryByLabelText(COPY.prefix)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: COPY.iosShortcutTitle })).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
   });
 
   it('opens token entry immediately for bookmarklet urls when no token is saved', async () => {
@@ -1287,6 +1419,7 @@ describe('App', () => {
     expect(utilityLinks).toEqual([
       COPY.browseFeedDirectory(),
       COPY.bookmarkletTitle,
+      COPY.iosShortcutTitle,
       COPY.dockerInstall,
       COPY.openapiSpec,
       COPY.sourceCode,

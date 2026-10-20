@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/preact';
-import { buildAppRouteHref, readAppRoute, useAppRoute } from '../routes/appRoute';
+import { buildAppRouteHref, buildCreatePrefillPrefix, readAppRoute, useAppRoute } from '../routes/appRoute';
 
 describe('appRoute', () => {
   it('reads result routes without attaching a prefillUrl husk', () => {
@@ -17,6 +17,13 @@ describe('appRoute', () => {
     expect(buildAppRouteHref({ kind: 'result', feedToken: 'example-token' }, 'http://localhost/')).toBe(
       'http://localhost/#/result/example-token'
     );
+  });
+
+  it('builds the shared create-prefill prefix from the route builder', () => {
+    expect(buildCreatePrefillPrefix('http://localhost:3000/#/create')).toBe(
+      'http://localhost:3000/#/create?url='
+    );
+    expect(buildCreatePrefillPrefix('http://127.0.0.1:4001/')).toBe('http://127.0.0.1:4001/#/create?url=');
   });
 
   it('keeps create and token prefill on their own variants only', () => {
