@@ -11,6 +11,7 @@ This document defines execution constraints for AI agents. For general contribut
 - **Responses:** Changes → Commands → Results → Next steps, ending with a concise one-line summary.
 - **KISS vs Refactor:** KISS by default; boy-scout refactors allowed if low-risk and simplifying.
 - **Ambiguity:** Proceed with safest assumption, then confirm.
+- **Version bump:** After a task lands on `main`, ask whether to bump the app version. Do not run Bump Version until the user names the bump. See [Ship follow-through](#ship-follow-through).
 - **Non-negotiables:** Dev Container only; security first.
 
 ## Agent-Specific Verification Rules
@@ -53,6 +54,33 @@ See [docs/design-system.md](docs/design-system.md) for visual rules.
 - **YARD docs:** Strict for public Ruby methods in `app/`. Every public method must have a YARD docstring with typed `@param` and `@return`. See [Architectural Constraints](docs/README.md#architectural-constraints).
 - **No host execution:** All commands MUST run inside the Dev Container via `make` or `bundle exec`.
 - **No skipped quality gate:** Opening a PR without a green Dev Container gate is forbidden. If the gate cannot run, do not open the PR; fix the environment or hand off with explicit blocker + next command for the user.
+
+## Ship follow-through
+
+When a task that should ship has merged to `main`, ask whether to bump the app version before any further release step. Do not dispatch [`.github/workflows/bump-version.yml`](.github/workflows/bump-version.yml) until the user answers with `auto`, `patch`, `minor`, `major`, or `custom` plus a semver (`X.Y.Z`).
+
+### html2rss gem pickup
+
+When a published html2rss release should land here:
+
+1. Wait until the gem repo's `release gem` workflow for that tag is `success`. A merged version PR in `html2rss/html2rss` is not on RubyGems yet; `bundle update html2rss` keeps the old pin.
+2. `git fetch origin main` and branch from `origin/main`. Do not continue a feature branch, and do not commit the lockfile onto `main`.
+3. In the Dev Container, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless the user asked. Leave the Gemfile constraint `~> 0.30` unless resolution fails.
+4. Open a lockfile PR. Required checks: `frontend`, `ruby`, `docker-test (false)`, `docker-test (true)`. Watch with `gh pr checks <n> --watch`.
+5. Mergify queues only Dependabot. When the user asked to merge and those checks are green, squash-merge: `gh pr merge <n> --squash --delete-branch`. Merge commits are disabled.
+6. Stop and ask whether to bump the app version. The gem pin and the app version are separate PRs. Dispatch the version workflow only after the gem PR is on `main`, so the version bump includes the new pin.
+
+### App version bump
+
+Dispatch only after the user names the bump:
+
+```sh
+gh workflow run bump-version.yml --ref main -f bump_type=<auto|patch|minor|major|custom> -f custom_version=<X.Y.Z>
+```
+
+`--ref main` is required. The workflow exits unless `github.ref` is `refs/heads/main`. Pass `custom_version` only when `bump_type` is `custom`.
+
+Watch that run to `success`. It opens `bump-version/v<version>`. Wait for the same required checks, then squash-merge when the user asked to merge. Do not publish the draft GitHub release unless the user asks.
 
 ## Config catalog API
 
