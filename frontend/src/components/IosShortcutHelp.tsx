@@ -30,7 +30,7 @@ export function IosShortcutHelp({ createPrefillPrefix }: { createPrefillPrefix: 
         <li>
           Add <strong>{COPY.iosShortcutActionOpen}</strong>
           {' — '}
-          {COPY.iosShortcutOpenDetail}
+          <span>{COPY.iosShortcutOpenDetail}</span>
         </li>
       </ol>
       <DominantField
