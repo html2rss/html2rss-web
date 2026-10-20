@@ -40,6 +40,27 @@ RSpec.describe Html2rss::Web::AppLogger do
       expect(payload['message']).to include('x.test')
       expect(payload['message']).not_to include('token=1')
       expect(payload).not_to have_key('tried')
+      expect(payload).not_to have_key('event_name')
+    ensure
+      Html2rss::Web::RequestContext.clear!
+    end
+
+    # rubocop:disable-next RSpec/ExampleLength -- event_name promotion + message sanitize assert
+    it 'promotes gem JSON event_name and structured fields', :aggregate_failures do
+      set_gem_request_context
+      gem_body = {
+        event_name: 'auto_source.no_scraper', host: 'x.test', category: 'app_shell',
+        message: 'no scraper matched https://x.test/a?token=1 (app-shell)'
+      }.to_json
+      Logger.new(io).tap { it.formatter = described_class.gem_formatter }.warn(gem_body)
+      payload = JSON.parse(io.string)
+
+      expect(payload).to include(
+        'event_name' => 'auto_source.no_scraper', 'host' => 'x.test', 'category' => 'app_shell',
+        'component' => 'html2rss', 'request_id' => 'req-gem'
+      )
+      expect(payload['message']).to include('x.test')
+      expect(payload['message']).not_to include('token=1')
     ensure
       Html2rss::Web::RequestContext.clear!
     end
