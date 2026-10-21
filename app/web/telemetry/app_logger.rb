@@ -79,6 +79,9 @@ module Html2rss
 
         # @return [Logger]
         def build_logger
+          # Falcon workers inherit a block-buffered $stdout when attached to a Docker
+          # pipe; sync forces each JSON line to flush immediately for OpenObserve.
+          $stdout.sync = true
           Logger.new($stdout).tap do |log|
             log.formatter = method(:format_entry)
           end

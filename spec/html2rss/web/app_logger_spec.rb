@@ -22,6 +22,17 @@ RSpec.describe Html2rss::Web::AppLogger do
       expect(io.string.lines.size).to eq(1)
     end
 
+    it 'enables $stdout.sync so Falcon workers flush JSON lines immediately' do
+      $stdout.sync = false
+      described_class.reset_logger!
+
+      described_class.logger
+
+      expect($stdout.sync).to be(true)
+    ensure
+      described_class.reset_logger!
+    end
+
     it 'shares the logger instance across different fibers' do
       described_class.reset_logger!
       logger_a = Fiber.new { described_class.logger }.resume
