@@ -5,8 +5,12 @@ module Html2rss
     module Feeds
       ##
       # Shared synchronous feed service around the html2rss gem.
-      module Service
-        class << self
+      module Service # rubocop:disable Metrics/ModuleLength
+        class << self # rubocop:disable Metrics/ClassLength
+          EMPTY_REASON_BY_CODE = {
+            ErrorClassifier::BLOCKED_SURFACE_CODE => 'blocked_surface',
+            'FORBIDDEN' => 'forbidden'
+          }.freeze
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def call(resolved_source)
@@ -110,7 +114,7 @@ module Html2rss
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
               error_message: error.message,
-              empty_reason: 'content_extraction_empty'
+              empty_reason: EMPTY_REASON_BY_CODE.fetch(decision.code, 'content_extraction_empty')
             )
           end
 

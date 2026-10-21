@@ -36,6 +36,16 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(decided)).to eq(described_class::BLOCKED_SURFACE)
     end
 
+    it 'carries diagnostics on DecidedError', :aggregate_failures do
+      diagnostics = described_class::Diagnostics.from_attempts(
+        [{ strategy: :default, items_count: 0, error_class: nil }]
+      )
+      decided = described_class::DecidedError.new(described_class::BLOCKED_SURFACE, diagnostics:)
+
+      expect(decided.diagnostics).to eq(diagnostics)
+      expect(described_class::Diagnostics.from_error(decided)).to eq(diagnostics)
+    end
+
     it 'returns the extraction-empty decision for NoFeedItemsExtracted' do
       klass = stub_no_feed_items_extracted
 
@@ -297,6 +307,15 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class::Diagnostics.from_error(StandardError.new('boom'))).to eq(
         described_class::Diagnostics.empty
       )
+    end
+
+    it 'prefers non-empty DecidedError diagnostics over chain digging' do
+      carried = described_class::Diagnostics.from_attempts(
+        [{ strategy: :botasaurus, items_count: 0, error_class: 'Timeout::Error' }]
+      )
+      decided = described_class::DecidedError.new(described_class::EXTRACTION_EMPTY, diagnostics: carried)
+
+      expect(described_class::Diagnostics.from_error(decided)).to eq(carried)
     end
   end
 

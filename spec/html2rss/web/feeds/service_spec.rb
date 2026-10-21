@@ -293,4 +293,32 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.diagnostics).to eq(Html2rss::Web::ErrorClassifier::Diagnostics.empty)
     end
   end
+
+  context 'when a blocked surface is classified as cacheable empty' do
+    before do
+      stub_const('Html2rss::RequestService::BlockedSurfaceDetected', Class.new(Html2rss::Error))
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
+                                              .and_raise(Html2rss::RequestService::BlockedSurfaceDetected, 'blocked')
+    end
+
+    it 'maps empty_reason to blocked_surface', :aggregate_failures do
+      expect(result.status).to eq(:empty)
+      expect(result.empty_reason).to eq('blocked_surface')
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE)
+    end
+  end
+
+  context 'when private network access is forbidden' do
+    before do
+      stub_const('Html2rss::RequestService::PrivateNetworkDenied', Class.new(Html2rss::Error))
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
+                                              .and_raise(Html2rss::RequestService::PrivateNetworkDenied, 'private')
+    end
+
+    it 'maps empty_reason to forbidden', :aggregate_failures do
+      expect(result.status).to eq(:empty)
+      expect(result.empty_reason).to eq('forbidden')
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::PRIVATE_NETWORK_DENIED)
+    end
+  end
 end

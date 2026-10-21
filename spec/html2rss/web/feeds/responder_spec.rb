@@ -218,7 +218,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
-    it 'emits empty extraction as a failure outcome' do
+    it 'emits empty extraction as a failure outcome' do # rubocop:disable RSpec/ExampleLength
       write_response
 
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
@@ -227,6 +227,7 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
         details: include(
           strategy: :default,
           url: 'https://example.com',
+          error_code: 'EXTRACTION_EMPTY',
           reason: 'content_extraction_empty',
           strategy_attempts: result.diagnostics.strategy_attempts
         ),
@@ -270,7 +271,12 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'feed.render',
         outcome: 'failure',
-        details: include(strategy: :default, url: 'https://example.com', reason: 'feed_empty'),
+        details: include(
+          strategy: :default,
+          url: 'https://example.com',
+          error_code: 'EXTRACTION_EMPTY',
+          reason: 'feed_empty'
+        ),
         level: :warn
       )
     end
