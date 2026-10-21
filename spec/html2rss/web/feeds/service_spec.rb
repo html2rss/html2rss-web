@@ -286,11 +286,51 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       )
     end
 
-    it 'marks the result as an error instead of empty', :aggregate_failures do
-      expect(result.status).to eq(:error)
+    it 'keeps body status empty while skipping the cache write', :aggregate_failures do
+      expect(result.status).to eq(:empty)
       expect(result.decision.code).to eq('NON_CACHEABLE')
-      expect(result.empty_reason).to be_nil
+      expect(result.decision.cacheable).to be(false)
+      expect(result.empty_reason).to eq('content_extraction_empty')
       expect(result.diagnostics).to eq(Html2rss::Web::ErrorClassifier::Diagnostics.empty)
+
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss).to have_received(:feed_result).exactly(3).times
+    end
+  end
+
+  context 'when NoFeedItemsExtracted reports an app_shell surface' do
+    let(:no_feed_items_extracted_class) do
+      stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
+        def initialize(attempts:, surface_category: nil)
+          @attempts = attempts
+          @surface_category = surface_category
+          super('No feed items extracted after auto fallback')
+        end
+
+        attr_reader :attempts, :surface_category
+      end)
+    end
+
+    before do
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(
+        no_feed_items_extracted_class.new(
+          attempts: [{ strategy: :default, items_count: 0, error_class: nil }],
+          surface_category: :app_shell
+        )
+      )
+    end
+
+    it 'returns empty EXTRACTION_EMPTY that is not cache-written', :aggregate_failures do
+      expect(result.status).to eq(:empty)
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_UNCACHEABLE)
+      expect(result.diagnostics.surface_category).to eq(:app_shell)
+
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss).to have_received(:feed_result).exactly(3).times
     end
   end
 

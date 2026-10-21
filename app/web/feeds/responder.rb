@@ -57,11 +57,7 @@ module Html2rss
             case result.status
             in :ok then feed_status_details(result)
             in :empty then empty_status_details(result)
-            in :error then {
-              error_code: result.decision.code,
-              error_message: result.error_message || result.client_message,
-              **result.diagnostics.to_h
-            }
+            in :error then failure_status_details(result)
             end
           end
 
@@ -69,10 +65,23 @@ module Html2rss
           # @return [Hash{Symbol=>Object}]
           def empty_status_details(result)
             {
-              error_code: result.decision.code,
               reason: empty_reason_for(result),
-              **result.diagnostics.to_h
+              **failure_status_details(result)
             }
+          end
+
+          # Projects Decision + Diagnostics fields already on the result (no new inventory).
+          #
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [Hash{Symbol=>Object}]
+          def failure_status_details(result)
+            {
+              error_code: result.decision.code,
+              error_class: result.error_class,
+              error_message: result.error_message || result.client_message,
+              cacheable: result.decision.cacheable,
+              **result.diagnostics.to_h
+            }.compact
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -130,6 +139,7 @@ module Html2rss
               error_class: error.class.name,
               error_message: error.message,
               error_code: decision.code,
+              cacheable: decision.cacheable,
               **diagnostics.to_h
             }.tap do |details|
               details[:feed_name] = identifier if target_kind == :static

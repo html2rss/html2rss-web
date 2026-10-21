@@ -64,7 +64,7 @@ module Html2rss
         # +diagnostics+ owns strategy attempts / transport telemetry.
         # +error_message+ is internal observability only.
         RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
-                                   :empty_reason, :diagnostics, :cache_hit) do
+                                   :error_class, :empty_reason, :diagnostics, :cache_hit) do
           class << self
             ##
             # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
@@ -80,6 +80,7 @@ module Html2rss
                 payload: nil,
                 decision: nil,
                 error_message: nil,
+                error_class: nil,
                 empty_reason: nil,
                 diagnostics: ErrorClassifier::Diagnostics.empty,
                 cache_hit: false,

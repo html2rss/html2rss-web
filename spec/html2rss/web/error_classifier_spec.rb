@@ -4,17 +4,25 @@ require 'spec_helper'
 
 RSpec.describe Html2rss::Web::ErrorClassifier do
   def stub_no_feed_items_extracted
-    stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
+    stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
+      def initialize(message = 'empty', surface_category: nil)
+        @surface_category = surface_category
+        super(message)
+      end
+
+      attr_reader :surface_category
+    end)
   end
 
   def stub_no_feed_items_extracted_with_attempts
     stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-      def initialize(attempts:)
+      def initialize(attempts:, surface_category: nil)
         @attempts = attempts
+        @surface_category = surface_category
         super('No feed items extracted after auto fallback')
       end
 
-      attr_reader :attempts
+      attr_reader :attempts, :surface_category
     end)
   end
 
@@ -50,6 +58,38 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       klass = stub_no_feed_items_extracted
 
       expect(described_class.classify(klass.new('empty'))).to eq(described_class::EXTRACTION_EMPTY)
+    end
+
+    it 'keeps listing NoFeedItemsExtracted cacheable EXTRACTION_EMPTY' do
+      klass = stub_no_feed_items_extracted
+
+      expect(described_class.classify(klass.new(surface_category: :listing))).to eq(
+        described_class::EXTRACTION_EMPTY
+      )
+    end
+
+    it 'maps blocked_surface NoFeedItemsExtracted to BLOCKED_SURFACE' do
+      klass = stub_no_feed_items_extracted
+
+      expect(described_class.classify(klass.new(surface_category: :blocked_surface))).to eq(
+        described_class::BLOCKED_SURFACE
+      )
+    end
+
+    it 'maps app_shell NoFeedItemsExtracted to uncacheable EXTRACTION_EMPTY' do
+      klass = stub_no_feed_items_extracted
+
+      expect(described_class.classify(klass.new(surface_category: :app_shell))).to eq(
+        described_class::EXTRACTION_EMPTY_UNCACHEABLE
+      )
+    end
+
+    it 'maps high_entropy_surface NoFeedItemsExtracted to uncacheable EXTRACTION_EMPTY' do
+      klass = stub_no_feed_items_extracted
+
+      expect(described_class.classify(klass.new(surface_category: :high_entropy_surface))).to eq(
+        described_class::EXTRACTION_EMPTY_UNCACHEABLE
+      )
     end
 
     it 'detects NoFeedItemsExtracted through Exception#cause' do
@@ -269,6 +309,19 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(diagnostics.to_h).to include(
         strategy_attempts: diagnostics.strategy_attempts,
         request_id: 'req-123', render_ms: 45, strategy_used: 'default', timeout_phase: 'work'
+      )
+    end
+
+    it 'copies surface_category from NoFeedItemsExtracted on the chain' do
+      klass = stub_no_feed_items_extracted_with_attempts
+      error = klass.new(
+        attempts: [{ strategy: :default, items_count: 0 }],
+        surface_category: :app_shell
+      )
+
+      expect(described_class::Diagnostics.from_error(error).to_h).to include(
+        surface_category: :app_shell,
+        strategy_attempts: [{ strategy: :default, items_count: 0 }]
       )
     end
 

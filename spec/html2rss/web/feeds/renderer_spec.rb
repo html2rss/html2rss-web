@@ -112,6 +112,23 @@ RSpec.describe Html2rss::Web::Feeds::Renderer do
       expect(real_response['Expires']).to be_a(String)
     end
 
+    it 'publishes Cache-Control for cacheable empty results', :aggregate_failures do
+      real_response = Rack::Response.new
+      described_class.render(empty_result, response: real_response, request: request)
+
+      expect(real_response.status).to eq(422)
+      expect(real_response['Cache-Control']).to eq('max-age=300,public')
+    end
+
+    it 'sets no-store when the Decision is not cacheable', :aggregate_failures do
+      real_response = Rack::Response.new
+      uncacheable = empty_result.with(decision: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_UNCACHEABLE)
+      described_class.render(uncacheable, response: real_response, request: request)
+
+      expect(real_response.status).to eq(422)
+      expect(real_response['Cache-Control']).to include('no-store')
+    end
+
     it 'omits reverse-proxy Docker DNS Hosts from Link targets' do
       env = Rack::MockRequest.env_for('/api/v1/feeds/token.xml', 'HTTP_HOST' => 'html2rss-web-app-1:4000')
       proxied_response = Rack::Response.new
