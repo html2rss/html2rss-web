@@ -32,10 +32,14 @@ module Html2rss
 
           # Digs strategy attempts from the exception cause chain.
           # Prefer +timeout_phase+ from transport_meta; else from +RequestTimedOut+ in the chain.
+          # Carried {DecidedError} diagnostics win when non-empty.
           #
           # @param error [Exception, nil]
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
           def from_error(error)
+            carried = decided_diagnostics(error)
+            return carried if carried
+
             chain = ErrorClassifier.error_chain(error)
             with_attempts = chain.find { it.respond_to?(:attempts) }
             list = with_attempts ? Array(with_attempts.attempts) : []
@@ -59,6 +63,15 @@ module Html2rss
           end
 
           private
+
+          # @param error [Exception, nil]
+          # @return [Html2rss::Web::ErrorClassifier::Diagnostics, nil]
+          def decided_diagnostics(error)
+            return unless error.is_a?(DecidedError)
+            return if error.diagnostics == EMPTY_DIAGNOSTICS
+
+            error.diagnostics
+          end
 
           # @param attempts [Array<Hash>]
           # @return [Hash{Symbol=>Object}]
@@ -121,10 +134,14 @@ module Html2rss
       class DecidedError < StandardError
         # @return [Html2rss::Web::ErrorClassifier::Decision]
         attr_reader :decision
+        # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
+        attr_reader :diagnostics
 
         # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-        def initialize(decision)
+        # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+        def initialize(decision, diagnostics: Diagnostics.empty)
           @decision = decision
+          @diagnostics = diagnostics
           super(decision.message)
         end
       end

@@ -18,12 +18,13 @@ module Html2rss
             (?:[/?#].*)?\z
           }ix
 
-          class << self
+          class << self # rubocop:disable Metrics/ClassLength
             # Creates a feed and returns a normalized API success payload.
             #
             # @param request [Rack::Request] HTTP request with auth context.
             # @return [Hash{Symbol=>Object}] API response payload.
             def call(request)
+              params = nil
               account = require_account(request)
               params = build_create_params(request, account)
               feed_data = create_feed(params, account)
@@ -32,7 +33,7 @@ module Html2rss
               Response.success(response: request.response, status: 201,
                                data: { feed: feed_attributes(feed_data) }, meta: { created: true })
             rescue StandardError => error
-              emit_create(status: :failure, details: { error_class: error.class.name, error_message: error.message })
+              emit_create(status: :failure, details: create_failure_details(error, params))
               raise
             end
 
@@ -160,7 +161,7 @@ module Html2rss
             def ensure_extractable!(result)
               return if result.status == :ok
 
-              raise ErrorClassifier::DecidedError, result.decision
+              raise ErrorClassifier::DecidedError.new(result.decision, diagnostics: result.diagnostics)
             end
 
             # @param feed_data [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
@@ -168,6 +169,18 @@ module Html2rss
             def feed_attributes(feed_data)
               timestamp = Time.now.iso8601
               feed_data.to_h.merge(created_at: timestamp, updated_at: timestamp).slice(*FEED_ATTRIBUTE_KEYS)
+            end
+
+            # @param error [StandardError]
+            # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams, nil]
+            # @return [Hash{Symbol=>Object}]
+            def create_failure_details(error, params)
+              {
+                error_class: error.class.name,
+                error_message: error.message,
+                error_code: ErrorClassifier.classify(error).code,
+                **ErrorClassifier::Diagnostics.from_error(error).to_h
+              }.tap { |details| details[:url] = params.url if params }
             end
 
             # @param status [Symbol]

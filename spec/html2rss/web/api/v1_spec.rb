@@ -777,7 +777,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       expect(last_response.headers['Content-Type']).to include('application/json')
     end
 
-    it 'emits error_message on create failure', openapi: false do
+    it 'emits error_code, url, and diagnostics on create failure', openapi: false do # rubocop:disable RSpec/ExampleLength
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
       allow(Html2rss::Web::Observability).to receive(:emit).and_call_original
 
@@ -787,7 +787,11 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         hash_including(
           event_name: 'feed.create',
           outcome: 'failure',
-          details: hash_including(:error_message)
+          details: hash_including(
+            :error_message,
+            error_code: Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_CODE,
+            url: feed_url
+          )
         )
       )
     end

@@ -56,13 +56,23 @@ module Html2rss
           def status_details(result)
             case result.status
             in :ok then feed_status_details(result)
-            in :empty then { reason: empty_reason_for(result), **result.diagnostics.to_h }
+            in :empty then empty_status_details(result)
             in :error then {
               error_code: result.decision.code,
               error_message: result.error_message || result.client_message,
               **result.diagnostics.to_h
             }
             end
+          end
+
+          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @return [Hash{Symbol=>Object}]
+          def empty_status_details(result)
+            {
+              error_code: result.decision.code,
+              reason: empty_reason_for(result),
+              **result.diagnostics.to_h
+            }
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
