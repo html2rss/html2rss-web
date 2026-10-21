@@ -141,7 +141,7 @@ GEM
     fiber-storage (1.0.1)
     hana (1.3.7)
     hashdiff (1.2.1)
-    html2rss (0.32.1)
+    html2rss (0.32.2)
       addressable (~> 2.7)
       brotli
       dry-validation
@@ -191,7 +191,7 @@ GEM
     loofah (2.25.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    mcp (1.8.0)
+    mcp (1.8.1)
       json_schemer (>= 2.4)
     mime-types (3.7.0)
       logger
@@ -434,7 +434,7 @@ CHECKSUMS
   fiber-storage (1.0.1) sha256=f48e5b6d8b0be96dac486332b55cee82240057065dc761c1ea692b2e719240e1
   hana (1.3.7) sha256=5425db42d651fea08859811c29d20446f16af196308162894db208cac5ce9b0d
   hashdiff (1.2.1) sha256=9c079dbc513dfc8833ab59c0c2d8f230fa28499cc5efb4b8dd276cf931457cd1
-  html2rss (0.32.1) sha256=cf2a8ef48a97f278ee3070e6ec215002b1ecc6427e666e785a8c01919a41cdaf
+  html2rss (0.32.2) sha256=0ce4a1bb0688e018a476f0cc1dbc00e53f1dc4b8c6d811d37bac8967df44f068
   html2rss-configs (0.2.0)
   http-2 (1.3.0) sha256=58fc8636c2b937b651853e9f6d9ada9fdaa8bf80b5a7d0333ce15653e5ca6ac1
   httpx (1.9.0) sha256=ce6fb4bee1d23d311fb41414094f3423a0ad7b6ae68ea6d9619d1b6e411f18a9
@@ -452,7 +452,7 @@ CHECKSUMS
   localhost (1.8.0) sha256=df7ea825b4f64949c588c17efac86bc47ddc4460d723778abe933b71759b2701
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   loofah (2.25.2) sha256=2007f746959ac65552456e04b433e83deb22759ab38c838b4445c70e43425918
-  mcp (1.8.0) sha256=297d449e4e7da6acb0924b323dac5a50475cdce1791fc6fba844e7d13ad90ec3
+  mcp (1.8.1) sha256=1b81902c1edf01775a4bc080af68e84909e2dfe91fffe381f86e5075847ca284
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.1020) sha256=6b3bcc776c1e3591267727700467e02fb9c12b503fcce4e0e964516d7c1e0d06
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
