@@ -19,7 +19,7 @@ module Html2rss
             Cache.fetch(
               cache_key,
               ttl_seconds: resolved_source.ttl_seconds,
-              cacheable: ->(result) { result.status != :error }
+              cacheable: ->(result) { result.decision.nil? || result.decision.cacheable }
             ) do
               build_result(resolved_source, cache_key)
             end
@@ -45,7 +45,8 @@ module Html2rss
           rescue StandardError => error
             decision = ErrorClassifier.classify(error)
             diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-            if decision.cacheable
+            # decision.status owns the body; decision.cacheable owns Cache.fetch write.
+            if decision.status < 500
               return classified_empty_result(error, decision, diagnostics, resolved_source, cache_key)
             end
 
@@ -105,7 +106,7 @@ module Html2rss
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def classified_empty_result(error, decision, diagnostics, resolved_source, cache_key)
+          def classified_empty_result(error, decision, diagnostics, resolved_source, cache_key) # rubocop:disable Metrics/MethodLength -- empty render + reason map
             render_result(
               status: :empty,
               decision:,
@@ -114,6 +115,7 @@ module Html2rss
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
               error_message: error.message,
+              error_class: error.class.name,
               empty_reason: EMPTY_REASON_BY_CODE.fetch(decision.code, 'content_extraction_empty')
             )
           end
@@ -131,7 +133,8 @@ module Html2rss
               diagnostics:,
               ttl_seconds: resolved_source.ttl_seconds,
               cache_key:,
-              error_message: error.message
+              error_message: error.message,
+              error_class: error.class.name
             )
           end
 
@@ -165,6 +168,7 @@ module Html2rss
             Contracts::RenderResult.new(
               payload: nil,
               error_message: nil,
+              error_class: nil,
               empty_reason: nil,
               **attrs
             )

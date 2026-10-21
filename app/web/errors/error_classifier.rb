@@ -22,7 +22,8 @@ module Html2rss
       ##
       # Gem strategy attempts plus expanded transport telemetry for feed Observability / headers.
       Diagnostics = Data.define(
-        :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category, :timeout_phase
+        :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category, :timeout_phase,
+        :surface_category
       ) do
         class << self
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
@@ -30,13 +31,13 @@ module Html2rss
             EMPTY_DIAGNOSTICS
           end
 
-          # Digs strategy attempts from the exception cause chain.
+          # Digs strategy attempts and surface_category from the exception cause chain.
           # Prefer +timeout_phase+ from transport_meta; else from +RequestTimedOut+ in the chain.
           # Carried {DecidedError} diagnostics win when non-empty.
           #
           # @param error [Exception, nil]
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
-          def from_error(error)
+          def from_error(error) # rubocop:disable Metrics/AbcSize -- chain dig + surface_category
             carried = decided_diagnostics(error)
             return carried if carried
 
@@ -45,6 +46,7 @@ module Html2rss
             list = with_attempts ? Array(with_attempts.attempts) : []
             fields = transport_fields(list)
             fields[:timeout_phase] ||= timeout_phase_from_chain(chain)
+            fields[:surface_category] = surface_category_from_chain(chain)
 
             return EMPTY_DIAGNOSTICS if list.empty? && fields.values.all?(&:nil?)
 
@@ -59,7 +61,7 @@ module Html2rss
             list = Array(attempts)
             return EMPTY_DIAGNOSTICS if list.empty?
 
-            new(strategy_attempts: list, **transport_fields(list))
+            new(strategy_attempts: list, surface_category: nil, **transport_fields(list))
           end
 
           private
@@ -98,6 +100,15 @@ module Html2rss
             timed_out.timeout_phase
           end
 
+          # @param chain [Array<Exception>]
+          # @return [Symbol, nil]
+          def surface_category_from_chain(chain)
+            with_surface = chain.find { it.respond_to?(:surface_category) }
+            return unless with_surface
+
+            with_surface.surface_category
+          end
+
           # @param meta [Hash, nil]
           # @param key [Symbol]
           # @return [Object, nil]
@@ -113,7 +124,7 @@ module Html2rss
         # @return [Hash{Symbol=>Object}]
         def to_h
           details = strategy_attempts.empty? ? {} : { strategy_attempts: strategy_attempts }
-          %i[request_id strategy_used render_ms error_category timeout_phase].each do |key|
+          %i[request_id strategy_used render_ms error_category timeout_phase surface_category].each do |key|
             val = public_send(key)
             details[key] = val if val
           end
@@ -126,7 +137,8 @@ module Html2rss
         strategy_used: nil,
         render_ms: nil,
         error_category: nil,
-        timeout_phase: nil
+        timeout_phase: nil,
+        surface_category: nil
       ).freeze
 
       ##
@@ -170,6 +182,12 @@ module Html2rss
         next_action: 'correct_input',
         retry_action: 'none'
       ).freeze
+
+      # Shell / high-entropy empties stay a plain 422 but must not be stored.
+      EXTRACTION_EMPTY_UNCACHEABLE = EXTRACTION_EMPTY.with(cacheable: false).freeze
+
+      # NoFeedItemsExtracted surfaces that stay EXTRACTION_EMPTY but must not be cached.
+      SHELL_EMPTY_CATEGORIES = Set[:app_shell, :high_entropy_surface].freeze
 
       BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
       BLOCKED_SURFACE_MESSAGE = 'This site blocked automated access. Try another URL or site.'
@@ -256,6 +274,18 @@ module Html2rss
 
       SPECIAL_DECISIONS = [
         [lambda { |c, _|
+           no_items = ErrorClassifier.no_feed_items_extracted(c)
+           !no_items.nil? &&
+             no_items.respond_to?(:surface_category) &&
+             no_items.surface_category == :blocked_surface
+         }, BLOCKED_SURFACE],
+        [lambda { |c, _|
+           no_items = ErrorClassifier.no_feed_items_extracted(c)
+           !no_items.nil? &&
+             no_items.respond_to?(:surface_category) &&
+             SHELL_EMPTY_CATEGORIES.include?(no_items.surface_category)
+         }, EXTRACTION_EMPTY_UNCACHEABLE],
+        [lambda { |c, _|
            defined?(::Html2rss::NoFeedItemsExtracted) && c.any?(::Html2rss::NoFeedItemsExtracted)
          }, EXTRACTION_EMPTY],
         [lambda { |c, _|
@@ -320,6 +350,16 @@ module Html2rss
           end
 
           chain
+        end
+
+        # First {Html2rss::NoFeedItemsExtracted} in +chain+, or +nil+.
+        #
+        # @param chain [Array<Exception>]
+        # @return [Exception, nil]
+        def no_feed_items_extracted(chain)
+          return unless defined?(::Html2rss::NoFeedItemsExtracted)
+
+          chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }
         end
 
         private

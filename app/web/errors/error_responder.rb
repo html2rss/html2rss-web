@@ -103,6 +103,7 @@ module Html2rss
           {
             error_class: error.class.name,
             error_code: decision.code,
+            error_message: error.message,
             status: decision.status,
             **diagnostics.to_h
           }
