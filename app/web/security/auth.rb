@@ -33,7 +33,7 @@ module Html2rss
             url: url,
             strategy: strategy,
             expires_in: expires_in,
-            secret_key: secret_key
+            secret_key: RuntimeEnv.secret_key
           )
           token && FeedToken::Codec.encode(token)
         end
@@ -44,7 +44,10 @@ module Html2rss
           decoded = FeedToken::Codec.decode(token)
           return unless decoded
 
-          with_validated_token(token, decoded.url, decoded: decoded) { |validated| validated }
+          validated = FeedToken::Signer.validate_decoded(decoded, decoded.url, RuntimeEnv.secret_key)
+          assign_request_context_strategy(validated&.strategy)
+          SecurityLogger.log_token_usage(token, decoded.url, !validated.nil?)
+          validated
         end
 
         # @param request [Rack::Request]
@@ -61,23 +64,6 @@ module Html2rss
 
         private
 
-        # @param request [Rack::Request]
-        # @param reason [String]
-        # @return [nil] always nil to preserve authenticate return contract.
-        def log_auth_failure(request, reason)
-          SecurityLogger.log_auth_failure(request.ip, request.user_agent, reason)
-          nil
-        end
-
-        # @param account [Hash{Symbol=>Object}]
-        # @param request [Rack::Request]
-        # @return [Hash{Symbol=>Object}] unchanged account payload.
-        def log_auth_success(account, request)
-          assign_request_context_actor(account[:username])
-          SecurityLogger.log_auth_success(account[:username], request.ip)
-          account
-        end
-
         # Keeps success/failure logging in one branch so authenticate remains
         # easy to scan.
         #
@@ -86,43 +72,29 @@ module Html2rss
         # @param failure_reason [String]
         # @return [Hash{Symbol=>Object}, nil]
         def audit_auth(request, account, failure_reason)
-          if account
-            Observability.emit(event_name: 'auth.authenticate', outcome: 'success',
-                               details: { username: account[:username] }, level: :info)
-            return log_auth_success(account, request)
-          end
+          return complete_auth_success(account, request) if account
 
-          Observability.emit(event_name: 'auth.authenticate', outcome: 'failure',
-                             details: { reason: failure_reason }, level: :warn)
-          log_auth_failure(request, failure_reason)
+          emit_auth_outcome('failure', { reason: failure_reason }, :warn)
+          SecurityLogger.log_auth_failure(request.ip, request.user_agent, failure_reason)
+          nil
         end
 
-        # Validates token integrity, records token-usage telemetry, and yields
-        # only when token checks pass.
-        #
-        # @param feed_token [String, nil]
-        # @param url [String, nil]
-        # @param decoded [Html2rss::Web::FeedToken, nil] optional pre-decoded token
-        # @yieldparam token [Html2rss::Web::FeedToken]
-        # @return [Object, nil] block result when valid, otherwise nil.
-        def with_validated_token(feed_token, url, decoded: nil)
-          return nil unless feed_token && url
-
-          token = if decoded
-                    FeedToken::Signer.validate_decoded(decoded, url, secret_key)
-                  else
-                    FeedToken::Signer.validate(feed_token, url, secret_key)
-                  end
-          assign_request_context_strategy(token&.strategy)
-          SecurityLogger.log_token_usage(feed_token, url, !token.nil?)
-          return nil unless token
-
-          yield token
+        # @param account [Hash{Symbol=>Object}]
+        # @param request [Rack::Request]
+        # @return [Hash{Symbol=>Object}]
+        def complete_auth_success(account, request)
+          emit_auth_outcome('success', { username: account[:username] }, :info)
+          assign_request_context_actor(account[:username])
+          SecurityLogger.log_auth_success(account[:username], request.ip)
+          account
         end
 
-        # @return [String]
-        def secret_key
-          RuntimeEnv.secret_key
+        # @param outcome [String]
+        # @param details [Hash{Symbol=>Object}]
+        # @param level [Symbol]
+        # @return [void]
+        def emit_auth_outcome(outcome, details, level)
+          Observability.emit(event_name: 'auth.authenticate', outcome:, details:, level:)
         end
 
         # @param username [String, nil]

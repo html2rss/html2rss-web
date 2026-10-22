@@ -15,5 +15,5 @@
 - **Diagnostics:** `ErrorClassifier::Diagnostics` owns gem strategy-attempt dig and transport-meta expansion on empty/hard-error `RenderResult` outcomes; read by Renderer and Observability without re-digging.
 - **Create-Time Extraction:** Feed creation runs `Feeds::Service` before minting a feed token, failing closed on empty and reusing the warmed `Feeds::Cache` entry on `:ok`.
 - **Observability:** Product telemetry (`event_name` + `outcome`: `auth.*`, `feed.*`, `request.error`, `cache.lifecycle`, `config.validation`). No IP or user-agent.
-- **Security Logging:** Audit channel (`security_event` with IP, user-agent, token hash for auth, rate-limit, token usage, blocked requests). Auth requires dual-emit with Observability.
+- **Security Logging:** Audit channel (`event_name` with IP, user-agent, token hash for auth, rate-limit, token usage). Auth requires dual-emit with Observability.
 - **LogEvent:** Shared emit plumbing (`RequestContext`, `LogSanitizer`, `AppLogger` / Sentry) for Observability and Security Logging; not a public facade.

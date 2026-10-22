@@ -5,16 +5,10 @@ require 'digest'
 module Html2rss
   module Web
     ##
-    # Audit-channel security logging (auth, rate-limit, token, blocked).
+    # Audit-channel security logging (auth, rate-limit, token).
     # Operational cache/config events use {Observability} instead.
     module SecurityLogger
       class << self
-        # Reset shared logger state for tests.
-        # @return [void]
-        def reset_logger!
-          AppLogger.reset_logger!
-        end
-
         # @param ip [String]
         # @param user_agent [String]
         # @param reason [String]
@@ -58,14 +52,6 @@ module Html2rss
           log_event('suspicious_activity', { ip:, activity:, **details }, severity: :warn)
         end
 
-        # @param ip [String]
-        # @param reason [String]
-        # @param endpoint [String]
-        # @return [void]
-        def log_blocked_request(ip, reason, endpoint)
-          log_event('blocked_request', { ip:, reason:, endpoint: }, severity: :warn)
-        end
-
         private
 
         # @param event_type [String]
@@ -75,7 +61,7 @@ module Html2rss
         def log_event(event_type, data, severity: :warn)
           LogEvent.emit(
             level: severity,
-            payload: { security_event: event_type, event_name: event_type, details: data }
+            payload: { event_name: event_type, details: data }
           )
         end
       end

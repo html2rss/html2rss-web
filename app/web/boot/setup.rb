@@ -18,8 +18,8 @@ module Html2rss
           def call!
             Boot.eager_load! unless EnvironmentValidator.development?
             validate_environment!
-            capture_runtime_env!
-            configure_sentry!
+            RuntimeEnv.capture!
+            Sentry.configure!
             configure_gem_defaults!
             log_startup!
           end
@@ -41,16 +41,6 @@ module Html2rss
             EnvironmentValidator.validate_environment!
             EnvironmentValidator.validate_production_security!
             Flags.validate!
-          end
-
-          # @return [void]
-          def capture_runtime_env!
-            RuntimeEnv.capture!
-          end
-
-          # @return [void]
-          def configure_sentry!
-            Sentry.configure!
           end
 
           # @return [void]

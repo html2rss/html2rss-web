@@ -57,7 +57,7 @@ module Html2rss
             case result.status
             in :ok then feed_status_details(result)
             in :empty then empty_status_details(result)
-            in :error then failure_status_details(result)
+            in :error then failure_details_for(result)
             end
           end
 
@@ -66,7 +66,7 @@ module Html2rss
           def empty_status_details(result)
             {
               reason: empty_reason_for(result),
-              **failure_status_details(result)
+              **failure_details_for(result)
             }
           end
 
@@ -74,14 +74,26 @@ module Html2rss
           #
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [Hash{Symbol=>Object}]
-          def failure_status_details(result)
-            {
+          def failure_details_for(result)
+            failure_details(
               error_code: result.decision.code,
               error_class: result.error_class,
               error_message: result.error_message || result.client_message,
               cacheable: result.decision.cacheable,
-              **result.diagnostics.to_h
-            }.compact
+              diagnostics: result.diagnostics
+            )
+          end
+
+          # Shared failure detail shape for RenderResult and exception emit paths.
+          #
+          # @param error_code [String]
+          # @param error_class [String, nil]
+          # @param error_message [String, nil]
+          # @param cacheable [Boolean]
+          # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+          # @return [Hash{Symbol=>Object}]
+          def failure_details(error_code:, error_class:, error_message:, cacheable:, diagnostics:)
+            { error_code:, error_class:, error_message:, cacheable:, **diagnostics.to_h }.compact
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -121,29 +133,15 @@ module Html2rss
           # @return [void]
           def emit_failure(target_kind:, identifier:, error:)
             decision = ErrorClassifier.classify(error)
-            diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-            Observability.emit(
-              event_name: 'feed.render', outcome: 'failure', level: :warn,
-              details: exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
-            )
-          end
-
-          # @param target_kind [Symbol]
-          # @param identifier [String]
-          # @param error [StandardError]
-          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-          # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
-          # @return [Hash{Symbol=>Object}]
-          def exception_failure_details(target_kind:, identifier:, error:, decision:, diagnostics:)
-            {
+            details = failure_details(
+              error_code: decision.code,
               error_class: error.class.name,
               error_message: error.message,
-              error_code: decision.code,
               cacheable: decision.cacheable,
-              **diagnostics.to_h
-            }.tap do |details|
-              details[:feed_name] = identifier if target_kind == :static
-            end
+              diagnostics: ErrorClassifier::Diagnostics.from_error(error)
+            )
+            details[:feed_name] = identifier if target_kind == :static
+            Observability.emit(event_name: 'feed.render', outcome: 'failure', level: :warn, details:)
           end
         end
       end

@@ -123,14 +123,6 @@ module Html2rss
             FeedToken.new(username:, url:, expires_at:, signature:, strategy:)
           end
 
-          # @param encoded_token [String, nil]
-          # @param expected_url [String, nil]
-          # @param secret_key [String]
-          # @return [Html2rss::Web::FeedToken, nil]
-          def validate(encoded_token, expected_url, secret_key)
-            validate_decoded(Codec.decode(encoded_token), expected_url, secret_key)
-          end
-
           # Validates signature, URL binding, and expiry for an already-decoded token.
           #
           # @param token [Html2rss::Web::FeedToken, nil]

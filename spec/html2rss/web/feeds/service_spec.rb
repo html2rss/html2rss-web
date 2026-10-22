@@ -180,10 +180,8 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     end
 
     it 'classifies a scraper outage as SCRAPER_UNAVAILABLE' do
-      unavailable = Class.new(StandardError)
-      stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', unavailable)
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
-                                              .and_raise(unavailable, 'down')
+                                              .and_raise(Html2rss::RequestService::BotasaurusConnectionFailed, 'down')
 
       result = described_class.call(resolved_source)
 
@@ -208,39 +206,25 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   end
 
   context 'when auto fallback exhausts without feed items' do
-    let(:no_feed_items_extracted_class) do
-      stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-        def initialize(attempts:)
-          @attempts = attempts
-          super('No feed items extracted after auto fallback')
-        end
-
-        attr_reader :attempts
-      end)
+    let(:exhausted_attempts) do
+      [
+        { strategy: :default, items_count: 0, error_class: nil },
+        { strategy: :botasaurus, items_count: 0, error_class: nil }
+      ]
     end
 
     before do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(
-        no_feed_items_extracted_class.new(
-          attempts: [
-            { strategy: :default, items_count: 0, error_class: nil },
-            { strategy: :botasaurus, items_count: 0, error_class: nil }
-          ]
-        )
+        Html2rss::NoFeedItemsExtracted.new(attempts: exhausted_attempts)
       )
     end
 
-    it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+    it 'maps the result to empty extraction instead of a server failure', :aggregate_failures do
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('content_extraction_empty')
       expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY)
       expect(result.error_message).to include('No feed items extracted after auto fallback')
-      expect(result.diagnostics.strategy_attempts).to eq(
-        [
-          { strategy: :default, items_count: 0, error_class: nil },
-          { strategy: :botasaurus, items_count: 0, error_class: nil }
-        ]
-      )
+      expect(result.diagnostics.strategy_attempts).to eq(exhausted_attempts)
       expect(result.payload).to have_attributes(
         url: 'https://example.com/articles',
         site_title: 'Example Feed'
@@ -255,7 +239,7 @@ RSpec.describe Html2rss::Web::Feeds::Service do
     end
 
     it 'maps NoFeedItemsExtracted nested in Exception#cause to empty extraction', :aggregate_failures do
-      root = no_feed_items_extracted_class.new(
+      root = Html2rss::NoFeedItemsExtracted.new(
         attempts: [{ strategy: :default, items_count: 0, error_class: nil }]
       )
       wrapper = StandardError.new('strategy failed')
@@ -301,21 +285,9 @@ RSpec.describe Html2rss::Web::Feeds::Service do
   end
 
   context 'when NoFeedItemsExtracted reports an app_shell surface' do
-    let(:no_feed_items_extracted_class) do
-      stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-        def initialize(attempts:, surface_category: nil)
-          @attempts = attempts
-          @surface_category = surface_category
-          super('No feed items extracted after auto fallback')
-        end
-
-        attr_reader :attempts, :surface_category
-      end)
-    end
-
     before do
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(
-        no_feed_items_extracted_class.new(
+        Html2rss::NoFeedItemsExtracted.new(
           attempts: [{ strategy: :default, items_count: 0, error_class: nil }],
           surface_category: :app_shell
         )
@@ -336,7 +308,6 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
   context 'when a blocked surface is classified as cacheable empty' do
     before do
-      stub_const('Html2rss::RequestService::BlockedSurfaceDetected', Class.new(Html2rss::Error))
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
                                               .and_raise(Html2rss::RequestService::BlockedSurfaceDetected, 'blocked')
     end
@@ -350,7 +321,6 @@ RSpec.describe Html2rss::Web::Feeds::Service do
 
   context 'when private network access is forbidden' do
     before do
-      stub_const('Html2rss::RequestService::PrivateNetworkDenied', Class.new(Html2rss::Error))
       allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
                                               .and_raise(Html2rss::RequestService::PrivateNetworkDenied, 'private')
     end

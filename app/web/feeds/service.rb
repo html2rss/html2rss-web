@@ -5,8 +5,8 @@ module Html2rss
     module Feeds
       ##
       # Shared synchronous feed service around the html2rss gem.
-      module Service # rubocop:disable Metrics/ModuleLength
-        class << self # rubocop:disable Metrics/ClassLength
+      module Service
+        class << self
           EMPTY_REASON_BY_CODE = {
             ErrorClassifier::BLOCKED_SURFACE_CODE => 'blocked_surface',
             'FORBIDDEN' => 'forbidden'
@@ -77,7 +77,7 @@ module Html2rss
           def success_result(feed_result, resolved_source, cache_key)
             return empty_feed_result(feed_result, resolved_source, cache_key) if feed_result.empty?
 
-            render_result(
+            Contracts::RenderResult.new(
               status: :ok,
               payload: payload_for(resolved_source, feed_result:),
               ttl_seconds: resolved_source.ttl_seconds,
@@ -90,7 +90,7 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def empty_feed_result(feed_result, resolved_source, cache_key)
-            render_result(
+            Contracts::RenderResult.new(
               status: :empty,
               decision: ErrorClassifier::EXTRACTION_EMPTY,
               payload: payload_for(resolved_source, feed_result:),
@@ -107,7 +107,7 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def classified_empty_result(error, decision, diagnostics, resolved_source, cache_key) # rubocop:disable Metrics/MethodLength -- empty render + reason map
-            render_result(
+            Contracts::RenderResult.new(
               status: :empty,
               decision:,
               diagnostics:,
@@ -127,7 +127,7 @@ module Html2rss
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def error_result(error, decision, diagnostics, resolved_source, cache_key)
-            render_result(
+            Contracts::RenderResult.new(
               status: :error,
               decision:,
               diagnostics:,
@@ -160,18 +160,6 @@ module Html2rss
 
             url = resolved_source.url
             ChannelTitle.for(url) || url.to_s
-          end
-
-          # @param attrs [Hash{Symbol=>Object}]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def render_result(**attrs)
-            Contracts::RenderResult.new(
-              payload: nil,
-              error_message: nil,
-              error_class: nil,
-              empty_reason: nil,
-              **attrs
-            )
           end
         end
       end

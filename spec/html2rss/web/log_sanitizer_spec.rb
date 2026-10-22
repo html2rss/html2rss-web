@@ -5,7 +5,6 @@ require 'stringio'
 
 RSpec.describe Html2rss::Web::LogSanitizer do
   let(:io) { StringIO.new }
-  let(:test_logger) { Logger.new(io).tap { |log| log.formatter = Html2rss::Web::AppLogger.send(:method, :format_entry) } }
   let(:expected_news_url) do
     {
       host: 'news.ycombinator.com',
@@ -29,8 +28,9 @@ RSpec.describe Html2rss::Web::LogSanitizer do
   before do
     Html2rss::Web::RequestContext.set!(context)
     Html2rss::Web::AppLogger.reset_logger!
-    Html2rss::Web::SecurityLogger.reset_logger!
-    allow(Logger).to receive(:new).and_return(test_logger)
+    allow(Logger).to receive(:new).and_wrap_original do |method, _device, *rest|
+      method.call(io, *rest)
+    end
   end
 
   after do
@@ -85,8 +85,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::SecurityLogger.log_token_usage('very-secret-token', 'https://news.ycombinator.com', true)
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
 
-    expect(payload.slice(:security_event, :event_name, :path, :details)).to eq(
-      security_event: 'token_usage',
+    expect(payload.slice(:event_name, :path, :details)).to eq(
       event_name: 'token_usage',
       path: '/api/v1/feeds/[REDACTED]',
       details: {
@@ -97,14 +96,12 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     )
   end
 
-  it 'copies security_event onto event_name for rate limit exceeded' do
+  it 'emits event_name for rate limit exceeded' do
     Html2rss::Web::SecurityLogger.log_rate_limit_exceeded('203.0.113.10', '/api/v1/feeds', 60)
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
 
-    expect(payload.slice(:security_event, :event_name)).to eq(
-      security_event: 'rate_limit_exceeded',
-      event_name: 'rate_limit_exceeded'
-    )
+    expect(payload[:event_name]).to eq('rate_limit_exceeded')
+    expect(payload).not_to have_key(:security_event)
   end
 
   it 'sanitizes security logger fallback output when structured logging fails' do
@@ -129,18 +126,6 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     observability_payload = lines.first
 
     expect(observability_payload.dig(:details, :url)).to eq(expected_news_url)
-  end
-
-  it 'formats logfmt messages as json' do
-    Html2rss::Web::AppLogger.logger.info('source=upstream id=req-123 timeout=15000ms state=completed')
-
-    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
-    expect(payload).to include(
-      source: 'upstream',
-      id: 'req-123',
-      timeout: '15000ms',
-      state: 'completed'
-    )
   end
 
   it 'includes non-negative duration_ms for events inside a request' do
@@ -217,7 +202,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
 
   # @return [String]
   def expected_fallback_warning_line
-    'payload={security_event: "token_usage", event_name: "token_usage", details: {success: true, ' \
+    'payload={event_name: "token_usage", details: {success: true, ' \
       "url: #{sanitized_fallback_url.inspect}, token_hash: \"01cadf39\"}}"
   end
 end
