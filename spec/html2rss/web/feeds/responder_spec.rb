@@ -218,6 +218,35 @@ RSpec.describe Html2rss::Web::Feeds::Responder do
       expect(body).to eq(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY_MESSAGE)
     end
 
+    it 'emits blocked surface empty with cacheable telemetry', :aggregate_failures do # rubocop:disable RSpec/ExampleLength
+      blocked = Html2rss::Web::Feeds::Contracts::RenderResult.new(
+        status: :empty,
+        payload: Html2rss::Web::Feeds::Contracts::RenderPayload.new(
+          feed: nil,
+          site_title: 'https://example.com',
+          url: 'https://example.com'
+        ),
+        ttl_seconds: 600,
+        cache_key: 'feed_result:blocked',
+        decision: Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE,
+        empty_reason: 'blocked_surface'
+      )
+      allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(blocked)
+
+      write_response
+
+      expect(Html2rss::Web::Observability).to have_received(:emit).with(
+        event_name: 'feed.render',
+        outcome: 'failure',
+        details: include(
+          error_code: 'BLOCKED_SURFACE',
+          reason: 'blocked_surface',
+          cacheable: true
+        ),
+        level: :warn
+      )
+    end
+
     it 'emits empty extraction as a failure outcome' do # rubocop:disable RSpec/ExampleLength
       write_response
 

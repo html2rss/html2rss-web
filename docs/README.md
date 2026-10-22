@@ -265,7 +265,7 @@ Start from the newest `feed.create`, `feed.render`, and `request.error` lines. F
 3. **Decision tree**
    - `SCRAPER_UNAVAILABLE` → scraper down or unreachable
    - `SERVICE_UNAVAILABLE` with queue/boot timeout wording in `details.error_message` → our capacity or Chromium boot, not the target site
-   - `BLOCKED_SURFACE` → site blocked automation (product signal)
+   - `BLOCKED_SURFACE` → site blocked automation (product signal; cached for feed TTL with `details.cacheable=true` to avoid hammering challenge pages)
    - `EXTRACTION_EMPTY` → selectors/config (product signal)
    - `GATEWAY_TIMEOUT` → slow or hostile target, or timeout ladder mismatch (see **Compose timeout ladder**)
 

@@ -316,6 +316,30 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.status).to eq(:empty)
       expect(result.empty_reason).to eq('blocked_surface')
       expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE)
+      expect(result.cacheable?).to be(true)
+
+      described_class.call(resolved_source)
+      described_class.call(resolved_source)
+
+      expect(Html2rss).to have_received(:feed_result).once
+    end
+  end
+
+  context 'when RequestTimedOut carries attempt diagnostics' do
+    let(:attempts) do
+      [{ strategy: :default, error_class: 'Html2rss::RequestService::RequestTimedOut', elapsed_ms: 500 }]
+    end
+
+    before do
+      error = Html2rss::RequestService::RequestTimedOut.new('timed out', timeout_phase: 'work')
+      error.attempts = attempts
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input).and_raise(error)
+    end
+
+    it 'preserves strategy_attempts on the error RenderResult', :aggregate_failures do
+      expect(result.status).to eq(:error)
+      expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::GATEWAY_TIMEOUT)
+      expect(result.diagnostics.strategy_attempts).to eq(attempts)
     end
   end
 

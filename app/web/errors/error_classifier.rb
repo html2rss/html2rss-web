@@ -19,10 +19,23 @@ module Html2rss
       # Immutable HTTP decision for a classified error.
       Decision = Data.define(
         :status, :code, :message, :kind, :cacheable, :retryable, :next_action, :retry_action
-      )
+      ) do
+        # Maps <500 classified decisions to their empty RenderResult reason.
+        #
+        # @return [String]
+        def empty_reason
+          case code
+          when BLOCKED_SURFACE_CODE then 'blocked_surface'
+          when 'FORBIDDEN' then 'forbidden'
+          else 'content_extraction_empty'
+          end
+        end
+      end
 
       ##
       # Gem strategy attempts plus expanded transport telemetry for feed Observability / headers.
+      TRANSPORT_KEYS = %i[request_id strategy_used render_ms error_category timeout_phase].freeze
+
       Diagnostics = Data.define(
         :strategy_attempts, :request_id, :strategy_used, :render_ms, :error_category, :timeout_phase,
         :surface_category
@@ -39,14 +52,15 @@ module Html2rss
           #
           # @param error [Exception, nil]
           # @return [Html2rss::Web::ErrorClassifier::Diagnostics]
-          def from_error(error) # rubocop:disable Metrics/AbcSize -- chain dig + surface_category
+          def from_error(error) # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity -- chain dig
             carried = decided_diagnostics(error)
             return carried if carried
 
             chain = ErrorClassifier.error_chain(error)
-            with_attempts = chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }
+            with_attempts = chain.find { it.is_a?(::Html2rss::Error) && Array(it.attempts).any? }
+            meta_error = chain.find { it.is_a?(::Html2rss::Error) && it.transport_meta&.any? }
             list = with_attempts ? Array(with_attempts.attempts) : []
-            fields = transport_fields(list)
+            fields = transport_fields(list, fallback_meta: meta_error&.transport_meta)
             fields[:timeout_phase] ||= timeout_phase_from_chain(chain)
             fields[:surface_category] = surface_category_from_chain(chain)
 
@@ -78,16 +92,11 @@ module Html2rss
           end
 
           # @param attempts [Array<Hash>]
+          # @param fallback_meta [Hash, nil]
           # @return [Hash{Symbol=>Object}]
-          def transport_fields(attempts)
-            meta = attempts.filter_map { it[:transport_meta] || it['transport_meta'] }.last
-            {
-              request_id: dig_meta(meta, :request_id),
-              strategy_used: dig_meta(meta, :strategy_used),
-              render_ms: dig_meta(meta, :render_ms),
-              error_category: dig_meta(meta, :error_category),
-              timeout_phase: dig_meta(meta, :timeout_phase)
-            }
+          def transport_fields(attempts, fallback_meta: nil)
+            meta = attempts.filter_map { it[:transport_meta] || it['transport_meta'] }.last || fallback_meta
+            TRANSPORT_KEYS.to_h { [it, dig_meta(meta, it)] }
           end
 
           # @param chain [Array<Exception>]
@@ -116,12 +125,7 @@ module Html2rss
         #
         # @return [Hash{Symbol=>Object}]
         def to_h
-          details = strategy_attempts.empty? ? {} : { strategy_attempts: strategy_attempts }
-          %i[request_id strategy_used render_ms error_category timeout_phase surface_category].each do |key|
-            val = public_send(key)
-            details[key] = val if val
-          end
-          details
+          super.reject { |_, val| val.nil? || val == [] }
         end
       end
       EMPTY_DIAGNOSTICS = Diagnostics.new(
@@ -159,7 +163,12 @@ module Html2rss
       # Non-timeout transport failures → internal network decision when unclassified.
       NETWORK_ERRORS = [
         SocketError, EOFError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH,
-        HTTPX::ConnectionError, HTTPX::TLSError
+        HTTPX::ConnectionError, HTTPX::TLSError,
+        *(if ::Html2rss::RequestService.const_defined?(:ConnectionFailed, false)
+            [::Html2rss::RequestService::ConnectionFailed]
+          else
+            []
+          end)
       ].freeze
 
       AUTH_META = { kind: 'auth', retryable: false, next_action: 'enter_token', retry_action: 'none' }.freeze
@@ -175,11 +184,8 @@ module Html2rss
         status: 422,
         code: EXTRACTION_EMPTY_CODE,
         message: EXTRACTION_EMPTY_MESSAGE,
-        kind: 'input',
         cacheable: true,
-        retryable: false,
-        next_action: 'correct_input',
-        retry_action: 'none'
+        **INPUT_META
       ).freeze
 
       # Shell / high-entropy empties stay a plain 422 but must not be stored.
@@ -191,15 +197,11 @@ module Html2rss
       BLOCKED_SURFACE_CODE = 'BLOCKED_SURFACE'
       BLOCKED_SURFACE_MESSAGE = 'This site blocked automated access. Try another URL or site.'
 
+      # Anti-bot challenge surfaces deterministically block automated fetches for this IP;
+      # cacheable: true avoids hammering challenge endpoints during the feed TTL.
       BLOCKED_SURFACE = Decision.new(
-        status: 422,
-        code: BLOCKED_SURFACE_CODE,
-        message: BLOCKED_SURFACE_MESSAGE,
-        kind: 'input',
-        cacheable: true,
-        retryable: false,
-        next_action: 'correct_input',
-        retry_action: 'none'
+        status: 422, code: BLOCKED_SURFACE_CODE, message: BLOCKED_SURFACE_MESSAGE,
+        cacheable: true, **INPUT_META
       ).freeze
 
       SCRAPER_UNAVAILABLE_CODE = 'SCRAPER_UNAVAILABLE'
@@ -211,9 +213,7 @@ module Html2rss
         message: SCRAPER_UNAVAILABLE_MESSAGE,
         kind: 'server',
         cacheable: false,
-        retryable: true,
-        next_action: 'retry',
-        retry_action: 'primary'
+        **RETRY_META
       ).freeze
 
       SERVICE_UNAVAILABLE = Decision.new(
@@ -222,9 +222,7 @@ module Html2rss
         message: 'The server is too busy or the request timed out.',
         kind: 'server',
         cacheable: false,
-        retryable: true,
-        next_action: 'retry',
-        retry_action: 'primary'
+        **RETRY_META
       ).freeze
 
       GATEWAY_TIMEOUT = Decision.new(
@@ -233,9 +231,7 @@ module Html2rss
         message: 'The target website took too long to respond.',
         kind: 'network',
         cacheable: false,
-        retryable: true,
-        next_action: 'retry',
-        retry_action: 'primary'
+        **RETRY_META
       ).freeze
 
       INTERNAL_SERVER_ERROR = Decision.new(
@@ -244,20 +240,15 @@ module Html2rss
         message: 'Internal Server Error',
         kind: 'server',
         cacheable: false,
-        retryable: true,
-        next_action: 'retry',
-        retry_action: 'primary'
+        **RETRY_META
       ).freeze
 
       PRIVATE_NETWORK_DENIED = Decision.new(
         status: 403,
         code: 'FORBIDDEN',
         message: 'Requests to private or loopback networks are forbidden.',
-        kind: 'input',
         cacheable: true,
-        retryable: false,
-        next_action: 'correct_input',
-        retry_action: 'none'
+        **INPUT_META
       ).freeze
 
       INTERNAL_NETWORK_ERROR = Decision.new(
@@ -266,9 +257,7 @@ module Html2rss
         message: 'Internal Server Error',
         kind: 'network',
         cacheable: false,
-        retryable: true,
-        next_action: 'retry',
-        retry_action: 'primary'
+        **RETRY_META
       ).freeze
 
       class << self
