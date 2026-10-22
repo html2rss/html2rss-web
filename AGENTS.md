@@ -16,7 +16,7 @@ Canonical references:
 
 ## Ship follow-through
 
-When a task that should ship merges to `main`, ask whether to bump the app version before any further release step. Do not dispatch [`.github/workflows/bump-version.yml`](.github/workflows/bump-version.yml) until the user answers with `auto`, `patch`, `minor`, `major`, or `custom` plus a semver (`X.Y.Z`).
+When a task that should ship merges to `main`, ask whether to bump the app version before any further release step. Do not dispatch [`.github/workflows/bump-version.yml`](.github/workflows/bump-version.yml) until the user names an explicit semver (`X.Y.Z`).
 
 ### html2rss gem pickup
 
@@ -29,10 +29,10 @@ When a task that should ship merges to `main`, ask whether to bump the app versi
 
 ### App version bump
 
-Dispatch only after the user names the bump (`--ref main` is required; pass `custom_version` only when `bump_type=custom`):
+Dispatch only after the user names the version (`--ref main` is required). The workflow accepts only that explicit semver:
 
 ```sh
-gh workflow run bump-version.yml --ref main -f bump_type=<auto|patch|minor|major|custom> -f custom_version=<X.Y.Z>
+gh workflow run bump-version.yml --ref main -f version=X.Y.Z
 ```
 
 Watch the run to `success` (`bump-version/v<version>`), wait for the same required checks, and squash-merge when asked. Do not publish the draft GitHub release unless asked.

@@ -3,20 +3,9 @@ name: Bump Version
 on:
   workflow_dispatch:
     inputs:
-      bump_type:
-        description: "Bump Type (auto uses Release Drafter resolved version)"
+      version:
+        description: "Explicit version to set (X.Y.Z, for example 1.4.0). Relative bumps are not accepted."
         required: true
-        default: "auto"
-        type: choice
-        options:
-          - "auto"
-          - "patch"
-          - "minor"
-          - "major"
-          - "custom"
-      custom_version:
-        description: "Custom Version (only used if Bump Type is 'custom', e.g. 1.4.0)"
-        required: false
         type: string
 
 permissions:
@@ -40,41 +29,18 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve Version from Release Drafter
-        id: release_drafter
-        if: github.event.inputs.bump_type == 'auto'
-        uses: release-drafter/release-drafter@v7
-        with:
-          config-name: release-drafter.yml
-          disable-releaser: true
+      - name: Require explicit version
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Determine Target Version
-        id: determine_version
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
-          BUMP_TYPE="${{ github.event.inputs.bump_type }}"
-          CUSTOM_VERSION="${{ github.event.inputs.custom_version }}"
-          RESOLVED_VERSION="${{ steps.release_drafter.outputs.resolved_version }}"
-
-          if [ "$BUMP_TYPE" = "auto" ]; then
-            if [ -z "$RESOLVED_VERSION" ]; then
-              echo "Error: Release Drafter did not return a resolved version." >&2
-              exit 1
-            fi
-            echo "target_version=$RESOLVED_VERSION" >> "$GITHUB_OUTPUT"
-            echo "Determined version: $RESOLVED_VERSION (via Release Drafter auto-resolve)"
-          elif [ "$BUMP_TYPE" = "custom" ]; then
-            if [ -z "$CUSTOM_VERSION" ]; then
-              echo "Error: Custom version must be provided if bump_type is 'custom'." >&2
-              exit 1
-            fi
-            echo "target_version=$CUSTOM_VERSION" >> "$GITHUB_OUTPUT"
-            echo "Determined version: $CUSTOM_VERSION (via manual input)"
-          else
-            echo "target_version=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
-            echo "Determined version: $BUMP_TYPE (via manual bump type)"
+          version="${REQUESTED_VERSION#v}"
+          version="${version#"${version%%[![:space:]]*}"}"
+          version="${version%"${version##*[![:space:]]}"}"
+          if [[ ! $version =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+            echo "Error: version must be an explicit semver X.Y.Z." >&2
+            exit 1
           fi
+          echo "TARGET_VERSION=${version}" >> "$GITHUB_ENV"
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -100,7 +66,7 @@ jobs:
       - name: Perform Version Bump
         id: perform_bump
         run: |
-          bundle exec ruby bin/bump-version "${{ steps.determine_version.outputs.target_version }}"
+          bundle exec ruby bin/bump-version "$TARGET_VERSION"
           NEW_VERSION=$(ruby -I. -e "require 'config/version'; puts Html2rss::Web::VERSION")
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
