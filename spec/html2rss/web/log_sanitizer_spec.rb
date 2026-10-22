@@ -85,13 +85,25 @@ RSpec.describe Html2rss::Web::LogSanitizer do
     Html2rss::Web::SecurityLogger.log_token_usage('very-secret-token', 'https://news.ycombinator.com', true)
     payload = JSON.parse(io.string.lines.last, symbolize_names: true)
 
-    expect(payload.slice(:path, :details)).to eq(
+    expect(payload.slice(:security_event, :event_name, :path, :details)).to eq(
+      security_event: 'token_usage',
+      event_name: 'token_usage',
       path: '/api/v1/feeds/[REDACTED]',
       details: {
         url: expected_news_url,
         token_hash: Digest::SHA256.hexdigest('very-secret-token')[0..7],
         success: true
       }
+    )
+  end
+
+  it 'copies security_event onto event_name for rate limit exceeded' do
+    Html2rss::Web::SecurityLogger.log_rate_limit_exceeded('203.0.113.10', '/api/v1/feeds', 60)
+    payload = JSON.parse(io.string.lines.last, symbolize_names: true)
+
+    expect(payload.slice(:security_event, :event_name)).to eq(
+      security_event: 'rate_limit_exceeded',
+      event_name: 'rate_limit_exceeded'
     )
   end
 
@@ -205,7 +217,7 @@ RSpec.describe Html2rss::Web::LogSanitizer do
 
   # @return [String]
   def expected_fallback_warning_line
-    'payload={security_event: "token_usage", details: {success: true, ' \
+    'payload={security_event: "token_usage", event_name: "token_usage", details: {success: true, ' \
       "url: #{sanitized_fallback_url.inspect}, token_hash: \"01cadf39\"}}"
   end
 end
