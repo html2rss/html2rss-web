@@ -49,8 +49,11 @@ version-resolver:
 template: |
   $CHANGES
 
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
   ---
-  ### 💡 How to Release:
-  1. Trigger the **Bump Version** workflow manually. Set the bump type to `auto` to use the version resolved above (`$RESOLVED_VERSION`), or set a specific override. This will create a version bump PR.
-  2. Merge the version bump PR into `main`.
-  3. Publish this draft release on GitHub. This will tag the commit and automatically build and publish the Docker images.
+  <!-- How to release:
+  1. Dispatch the Bump Version workflow on `main` with `version` set to an explicit semver (`X.Y.Z`).
+  2. Merge the version bump pull request into `main`.
+  3. Publish this draft release on GitHub. This tags the commit and builds and publishes the Docker images.
+  -->
