@@ -73,7 +73,10 @@ module Html2rss
         # @param severity [Symbol]
         # @return [void]
         def log_event(event_type, data, severity: :warn)
-          LogEvent.emit(level: severity, payload: { security_event: event_type, details: data })
+          LogEvent.emit(
+            level: severity,
+            payload: { security_event: event_type, event_name: event_type, details: data }
+          )
         end
       end
     end
