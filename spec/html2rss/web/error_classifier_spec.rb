@@ -3,40 +3,6 @@
 require 'spec_helper'
 
 RSpec.describe Html2rss::Web::ErrorClassifier do
-  def stub_no_feed_items_extracted
-    stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-      def initialize(message = 'empty', surface_category: nil)
-        @surface_category = surface_category
-        super(message)
-      end
-
-      attr_reader :surface_category
-    end)
-  end
-
-  def stub_no_feed_items_extracted_with_attempts
-    stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error) do
-      def initialize(attempts:, surface_category: nil)
-        @attempts = attempts
-        @surface_category = surface_category
-        super('No feed items extracted after auto fallback')
-      end
-
-      attr_reader :attempts, :surface_category
-    end)
-  end
-
-  def stub_request_timed_out
-    stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error) do
-      def initialize(message = nil, timeout_phase: nil)
-        @timeout_phase = timeout_phase
-        super(message)
-      end
-
-      attr_reader :timeout_phase
-    end)
-  end
-
   describe '.classify' do
     it 'returns a carried Decision without remapping' do
       decided = described_class::DecidedError.new(described_class::BLOCKED_SURFACE)
@@ -55,46 +21,37 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns the extraction-empty decision for NoFeedItemsExtracted' do
-      klass = stub_no_feed_items_extracted
-
-      expect(described_class.classify(klass.new('empty'))).to eq(described_class::EXTRACTION_EMPTY)
-    end
-
-    it 'keeps listing NoFeedItemsExtracted cacheable EXTRACTION_EMPTY' do
-      klass = stub_no_feed_items_extracted
-
-      expect(described_class.classify(klass.new(surface_category: :listing))).to eq(
+      expect(described_class.classify(Html2rss::NoFeedItemsExtracted.new(attempts: []))).to eq(
         described_class::EXTRACTION_EMPTY
       )
     end
 
-    it 'maps blocked_surface NoFeedItemsExtracted to BLOCKED_SURFACE' do
-      klass = stub_no_feed_items_extracted
+    it 'keeps listing NoFeedItemsExtracted cacheable EXTRACTION_EMPTY' do
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [], surface_category: :listing)
 
-      expect(described_class.classify(klass.new(surface_category: :blocked_surface))).to eq(
-        described_class::BLOCKED_SURFACE
-      )
+      expect(described_class.classify(error)).to eq(described_class::EXTRACTION_EMPTY)
+    end
+
+    it 'maps blocked_surface NoFeedItemsExtracted to BLOCKED_SURFACE' do
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [], surface_category: :blocked_surface)
+
+      expect(described_class.classify(error)).to eq(described_class::BLOCKED_SURFACE)
     end
 
     it 'maps app_shell NoFeedItemsExtracted to uncacheable EXTRACTION_EMPTY' do
-      klass = stub_no_feed_items_extracted
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [], surface_category: :app_shell)
 
-      expect(described_class.classify(klass.new(surface_category: :app_shell))).to eq(
-        described_class::EXTRACTION_EMPTY_UNCACHEABLE
-      )
+      expect(described_class.classify(error)).to eq(described_class::EXTRACTION_EMPTY_UNCACHEABLE)
     end
 
     it 'maps high_entropy_surface NoFeedItemsExtracted to uncacheable EXTRACTION_EMPTY' do
-      klass = stub_no_feed_items_extracted
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [], surface_category: :high_entropy_surface)
 
-      expect(described_class.classify(klass.new(surface_category: :high_entropy_surface))).to eq(
-        described_class::EXTRACTION_EMPTY_UNCACHEABLE
-      )
+      expect(described_class.classify(error)).to eq(described_class::EXTRACTION_EMPTY_UNCACHEABLE)
     end
 
     it 'detects NoFeedItemsExtracted through Exception#cause' do
-      klass = stub_no_feed_items_extracted
-      root = klass.new('empty')
+      root = Html2rss::NoFeedItemsExtracted.new(attempts: [])
       wrapped = StandardError.new('wrapped')
       outer = StandardError.new('outer')
       allow(outer).to receive(:cause).and_return(wrapped)
@@ -104,8 +61,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'ignores attempts payload when mapping HTTP semantics' do
-      klass = stub_no_feed_items_extracted_with_attempts
-      error = klass.new(attempts: [{ strategy: :default, items_count: 0 }])
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [{ strategy: :default, items_count: 0 }])
 
       expect(described_class.classify(error)).to have_attributes(
         status: 422,
@@ -120,7 +76,6 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns the blocked-surface decision for BlockedSurfaceDetected' do
-      stub_const('Html2rss::RequestService::BlockedSurfaceDetected', Class.new(Html2rss::Error))
       error = Html2rss::RequestService::BlockedSurfaceDetected.new('challenge')
 
       expect(described_class.classify(error)).to eq(described_class::BLOCKED_SURFACE)
@@ -138,42 +93,36 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns the scraper-unavailable decision for BotasaurusConnectionFailed' do
-      stub_const('Html2rss::RequestService::BotasaurusConnectionFailed', Class.new(Html2rss::Error))
       error = Html2rss::RequestService::BotasaurusConnectionFailed.new('connection refused')
 
       expect(described_class.classify(error)).to eq(described_class::SCRAPER_UNAVAILABLE)
     end
 
     it 'returns gateway timeout for RequestTimedOut (Botasaurus/HTTPX wall-clock)' do
-      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('Botasaurus scrape timed out')
 
       expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
     it 'returns gateway timeout for RequestTimedOut with timeout_phase work' do
-      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('work timed out', timeout_phase: 'work')
 
       expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
     it 'returns service unavailable for RequestTimedOut with timeout_phase queue' do
-      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('queued too long', timeout_phase: 'queue')
 
       expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
     end
 
     it 'returns service unavailable for RequestTimedOut with timeout_phase boot' do
-      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('browser boot timed out', timeout_phase: 'boot')
 
       expect(described_class.classify(error)).to eq(described_class::SERVICE_UNAVAILABLE)
     end
 
     it 'detects RequestTimedOut through Exception#cause' do
-      stub_request_timed_out
       root = Html2rss::RequestService::RequestTimedOut.new('timed out')
       wrapped = StandardError.new('wrapped')
       allow(wrapped).to receive(:cause).and_return(root)
@@ -182,19 +131,11 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'maps queue timeout_phase through Exception#cause to service unavailable' do
-      stub_request_timed_out
       root = Html2rss::RequestService::RequestTimedOut.new('capacity', timeout_phase: 'queue')
       wrapped = StandardError.new('wrapped')
       allow(wrapped).to receive(:cause).and_return(root)
 
       expect(described_class.classify(wrapped)).to eq(described_class::SERVICE_UNAVAILABLE)
-    end
-
-    it 'keeps gateway timeout when RequestTimedOut omits timeout_phase reader' do
-      stub_const('Html2rss::RequestService::RequestTimedOut', Class.new(Html2rss::Error))
-      error = Html2rss::RequestService::RequestTimedOut.new('legacy timed out')
-
-      expect(described_class.classify(error)).to eq(described_class::GATEWAY_TIMEOUT)
     end
 
     it 'returns internal server error decision for unrelated errors' do
@@ -250,7 +191,6 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'returns the forbidden decision for PrivateNetworkDenied' do
-      stub_const('Html2rss::RequestService::PrivateNetworkDenied', Class.new(Html2rss::Error))
       error = Html2rss::RequestService::PrivateNetworkDenied.new('private network blocked')
 
       expect(described_class.classify(error)).to eq(described_class::PRIVATE_NETWORK_DENIED)
@@ -283,8 +223,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
 
   describe 'Diagnostics' do
     let(:diagnostic_error) do
-      klass = stub_no_feed_items_extracted_with_attempts
-      klass.new(
+      Html2rss::NoFeedItemsExtracted.new(
         attempts: [
           {
             strategy: :default,
@@ -313,8 +252,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'copies surface_category from NoFeedItemsExtracted on the chain' do
-      klass = stub_no_feed_items_extracted_with_attempts
-      error = klass.new(
+      error = Html2rss::NoFeedItemsExtracted.new(
         attempts: [{ strategy: :default, items_count: 0 }],
         surface_category: :app_shell
       )
@@ -326,7 +264,6 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'prefers transport_meta timeout_phase over RequestTimedOut on the chain' do
-      stub_request_timed_out
       timed_out = Html2rss::RequestService::RequestTimedOut.new('queued', timeout_phase: 'queue')
       allow(diagnostic_error).to receive(:cause).and_return(timed_out)
 
@@ -334,9 +271,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'falls back to RequestTimedOut#timeout_phase when transport_meta omits it' do
-      stub_request_timed_out
-      klass = stub_no_feed_items_extracted_with_attempts
-      error = klass.new(
+      error = Html2rss::NoFeedItemsExtracted.new(
         attempts: [{ strategy: :botasaurus, items_count: 0,
                      transport_meta: { 'request_id' => 'req-9', 'error_category' => 'timeout' } }]
       )
@@ -350,7 +285,6 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
 
     it 'emits timeout_phase from RequestTimedOut when attempts are absent' do
-      stub_request_timed_out
       error = Html2rss::RequestService::RequestTimedOut.new('queued too long', timeout_phase: 'queue')
 
       expect(described_class::Diagnostics.from_error(error).to_h).to eq(timeout_phase: 'queue')

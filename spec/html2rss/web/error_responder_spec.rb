@@ -35,9 +35,8 @@ RSpec.describe Html2rss::Web::ErrorResponder do
   end
 
   def extraction_empty_api_error_response
-    no_feed_items_extracted = stub_const('Html2rss::NoFeedItemsExtracted', Class.new(Html2rss::Error))
     response, body = respond_with(
-      error: no_feed_items_extracted.new('No feed items extracted after auto fallback'),
+      error: Html2rss::NoFeedItemsExtracted.new(attempts: []),
       path: '/api/v1/feeds',
       target: Html2rss::Web::RequestTarget::API
     )

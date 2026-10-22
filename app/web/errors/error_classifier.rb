@@ -2,6 +2,8 @@
 
 require 'timeout'
 require 'net/http'
+require 'async'
+require 'httpx'
 
 module Html2rss
   module Web
@@ -10,7 +12,7 @@ module Html2rss
     #
     # Acts as the single source of truth for error-to-HTTP mapping across both
     # XML feed and JSON API endpoints.
-    module ErrorClassifier # rubocop:disable Metrics/ModuleLength
+    module ErrorClassifier # rubocop:disable Metrics/ModuleLength -- Decision catalog + chain classify
       QUEUE_OR_BOOT_PHASES = Set['queue', 'boot'].freeze
 
       ##
@@ -42,7 +44,7 @@ module Html2rss
             return carried if carried
 
             chain = ErrorClassifier.error_chain(error)
-            with_attempts = chain.find { it.respond_to?(:attempts) }
+            with_attempts = chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }
             list = with_attempts ? Array(with_attempts.attempts) : []
             fields = transport_fields(list)
             fields[:timeout_phase] ||= timeout_phase_from_chain(chain)
@@ -91,22 +93,13 @@ module Html2rss
           # @param chain [Array<Exception>]
           # @return [Object, nil]
           def timeout_phase_from_chain(chain)
-            return unless defined?(::Html2rss::RequestService::RequestTimedOut)
-
-            timed_out = chain.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }
-            return unless timed_out
-            return unless timed_out.respond_to?(:timeout_phase)
-
-            timed_out.timeout_phase
+            chain.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }&.timeout_phase
           end
 
           # @param chain [Array<Exception>]
           # @return [Symbol, nil]
           def surface_category_from_chain(chain)
-            with_surface = chain.find { it.respond_to?(:surface_category) }
-            return unless with_surface
-
-            with_surface.surface_category
+            chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }&.surface_category
           end
 
           # @param meta [Hash, nil]
@@ -158,9 +151,15 @@ module Html2rss
         end
       end
 
-      NETWORK_ERRORS = Set[
-        Timeout::Error, Net::OpenTimeout, Net::ReadTimeout, SocketError,
-        EOFError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH, Errno::ETIMEDOUT
+      # Wall-clock / transport timeouts → {GATEWAY_TIMEOUT} (or capacity → {SERVICE_UNAVAILABLE}).
+      TIMEOUT_ERRORS = [
+        Timeout::Error, Errno::ETIMEDOUT, Async::TimeoutError, HTTPX::TimeoutError
+      ].freeze
+
+      # Non-timeout transport failures → internal network decision when unclassified.
+      NETWORK_ERRORS = [
+        SocketError, EOFError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH,
+        HTTPX::ConnectionError, HTTPX::TLSError
       ].freeze
 
       AUTH_META = { kind: 'auth', retryable: false, next_action: 'enter_token', retry_action: 'none' }.freeze
@@ -272,57 +271,6 @@ module Html2rss
         retry_action: 'primary'
       ).freeze
 
-      SPECIAL_DECISIONS = [
-        [lambda { |c, _|
-           no_items = ErrorClassifier.no_feed_items_extracted(c)
-           !no_items.nil? &&
-             no_items.respond_to?(:surface_category) &&
-             no_items.surface_category == :blocked_surface
-         }, BLOCKED_SURFACE],
-        [lambda { |c, _|
-           no_items = ErrorClassifier.no_feed_items_extracted(c)
-           !no_items.nil? &&
-             no_items.respond_to?(:surface_category) &&
-             SHELL_EMPTY_CATEGORIES.include?(no_items.surface_category)
-         }, EXTRACTION_EMPTY_UNCACHEABLE],
-        [lambda { |c, _|
-           defined?(::Html2rss::NoFeedItemsExtracted) && c.any?(::Html2rss::NoFeedItemsExtracted)
-         }, EXTRACTION_EMPTY],
-        [lambda { |c, _|
-           defined?(::Html2rss::RequestService::BlockedSurfaceDetected) &&
-             c.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
-         }, BLOCKED_SURFACE],
-        [lambda { |c, _|
-           defined?(::Html2rss::RequestService::BotasaurusConnectionFailed) &&
-             c.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
-         }, SCRAPER_UNAVAILABLE],
-        [lambda { |c, _|
-           defined?(::Html2rss::RequestService::PrivateNetworkDenied) &&
-             c.any?(::Html2rss::RequestService::PrivateNetworkDenied)
-         }, PRIVATE_NETWORK_DENIED],
-        [lambda { |c, _|
-           # queue/boot = our capacity or Chromium — not the target site.
-           return false unless defined?(::Html2rss::RequestService::RequestTimedOut)
-
-           timed_out = c.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }
-           return false unless timed_out
-
-           phase = timed_out.respond_to?(:timeout_phase) ? timed_out.timeout_phase : nil
-           QUEUE_OR_BOOT_PHASES.include?(phase)
-         }, SERVICE_UNAVAILABLE],
-        [lambda { |c, _|
-           # Gem wall-clock timeout (Botasaurus 504 / HTTPX timeout) — not Timeout::Error.
-           # work / nil (transport hop) → site-shaped 504.
-           defined?(::Html2rss::RequestService::RequestTimedOut) &&
-             c.any?(::Html2rss::RequestService::RequestTimedOut)
-         }, GATEWAY_TIMEOUT],
-        [lambda { |c, err|
-           err.is_a?(Timeout::Error) || err.is_a?(Errno::ETIMEDOUT) ||
-             (defined?(::Async::TimeoutError) && (err.is_a?(::Async::TimeoutError) || c.any?(::Async::TimeoutError))) ||
-             (defined?(::HTTPX::TimeoutError) && (err.is_a?(::HTTPX::TimeoutError) || c.any?(::HTTPX::TimeoutError)))
-         }, GATEWAY_TIMEOUT]
-      ].freeze
-
       class << self
         # Returns an immutable HTTP decision for any error.
         #
@@ -346,20 +294,10 @@ module Html2rss
           while current && !seen[current]
             chain << current
             seen[current] = true
-            current = current.respond_to?(:cause) ? current.cause : nil
+            current = current.cause
           end
 
           chain
-        end
-
-        # First {Html2rss::NoFeedItemsExtracted} in +chain+, or +nil+.
-        #
-        # @param chain [Array<Exception>]
-        # @return [Exception, nil]
-        def no_feed_items_extracted(chain)
-          return unless defined?(::Html2rss::NoFeedItemsExtracted)
-
-          chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }
         end
 
         private
@@ -376,9 +314,37 @@ module Html2rss
           end
         end
 
+        # @param error [Exception]
+        # @return [Html2rss::Web::ErrorClassifier::Decision, nil]
         def classify_special_error(error)
           chain = error_chain(error)
-          SPECIAL_DECISIONS.find { |match, _| match.call(chain, error) }&.last
+          no_items = chain.find { it.is_a?(::Html2rss::NoFeedItemsExtracted) }
+          return empty_items_decision(no_items) if no_items
+          return BLOCKED_SURFACE if chain.any?(::Html2rss::RequestService::BlockedSurfaceDetected)
+          return SCRAPER_UNAVAILABLE if chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
+          return PRIVATE_NETWORK_DENIED if chain.any?(::Html2rss::RequestService::PrivateNetworkDenied)
+
+          timeout_decision(chain)
+        end
+
+        # @param no_items [Html2rss::NoFeedItemsExtracted]
+        # @return [Html2rss::Web::ErrorClassifier::Decision]
+        def empty_items_decision(no_items)
+          case no_items.surface_category
+          when :blocked_surface then BLOCKED_SURFACE
+          when *SHELL_EMPTY_CATEGORIES then EXTRACTION_EMPTY_UNCACHEABLE
+          else EXTRACTION_EMPTY
+          end
+        end
+
+        # @param chain [Array<Exception>]
+        # @return [Html2rss::Web::ErrorClassifier::Decision, nil]
+        def timeout_decision(chain)
+          timed_out = chain.find { it.is_a?(::Html2rss::RequestService::RequestTimedOut) }
+          return SERVICE_UNAVAILABLE if timed_out && QUEUE_OR_BOOT_PHASES.include?(timed_out.timeout_phase)
+          return GATEWAY_TIMEOUT if timed_out || chain.any? { timeout_error?(it) }
+
+          nil
         end
 
         def error_kind_for(error)
@@ -402,15 +368,15 @@ module Html2rss
         end
 
         def network_error?(error)
-          error_chain(error).any? { |err| network_error_class?(err) }
+          error_chain(error).any? { network_error_class?(it) }
         end
 
         def network_error_class?(err)
-          return true if NETWORK_ERRORS.include?(err.class)
-          return true if defined?(::Async::TimeoutError) && err.is_a?(::Async::TimeoutError)
-          return false unless defined?(::HTTPX::Error)
+          timeout_error?(err) || NETWORK_ERRORS.any? { err.is_a?(it) }
+        end
 
-          err.is_a?(::HTTPX::ConnectionError) || err.is_a?(::HTTPX::TLSError) || err.is_a?(::HTTPX::TimeoutError)
+        def timeout_error?(err)
+          TIMEOUT_ERRORS.any? { err.is_a?(it) }
         end
       end
     end
