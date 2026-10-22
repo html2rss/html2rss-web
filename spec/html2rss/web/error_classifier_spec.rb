@@ -81,6 +81,21 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.classify(error)).to eq(described_class::BLOCKED_SURFACE)
     end
 
+    it 'exposes blocked-surface cache policy and empty reason', :aggregate_failures do
+      expect(described_class::BLOCKED_SURFACE.cacheable).to be(true)
+      expect(described_class::BLOCKED_SURFACE.empty_reason).to eq('blocked_surface')
+    end
+
+    it 'classifies ConnectionFailed as internal network error', :aggregate_failures,
+       if: Html2rss::RequestService.const_defined?(:ConnectionFailed, false) do
+      expect(described_class.classify(Html2rss::RequestService::ConnectionFailed.new('refused'))).to eq(
+        described_class::INTERNAL_NETWORK_ERROR
+      )
+      expect(described_class.classify(Html2rss::RequestService::ConnectionFailed.new('refused'))).to have_attributes(
+        status: 500, kind: 'network', cacheable: false
+      )
+    end
+
     it 'uses one human sentence for classified user decisions', :aggregate_failures do
       expect(described_class::BLOCKED_SURFACE.message).to eq(
         'This site blocked automated access. Try another URL or site.'
@@ -303,6 +318,43 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       decided = described_class::DecidedError.new(described_class::EXTRACTION_EMPTY, diagnostics: carried)
 
       expect(described_class::Diagnostics.from_error(decided)).to eq(carried)
+    end
+
+    it 'extracts attempts from RequestTimedOut on the chain', :aggregate_failures do
+      attempts = [{ strategy: :default, error_class: 'Html2rss::RequestService::RequestTimedOut', elapsed_ms: 12 }]
+      error = Html2rss::RequestService::RequestTimedOut.new('timed out', timeout_phase: 'work')
+      error.attempts = attempts
+
+      diagnostics = described_class::Diagnostics.from_error(error)
+      expect(diagnostics.strategy_attempts).to eq(attempts)
+      expect(diagnostics.timeout_phase).to eq('work')
+    end
+
+    it 'extracts attempts from BlockedSurfaceDetected on the chain', :aggregate_failures do
+      attempts = [{ strategy: :botasaurus, error_class: 'Html2rss::RequestService::BlockedSurfaceDetected' }]
+      error = Html2rss::RequestService::BlockedSurfaceDetected.new('challenge')
+      error.attempts = attempts
+
+      expect(described_class::Diagnostics.from_error(error).strategy_attempts).to eq(attempts)
+    end
+
+    it 'extracts attempts from ConnectionFailed on the chain', :aggregate_failures,
+       if: Html2rss::RequestService.const_defined?(:ConnectionFailed, false) do
+      attempts = [{ strategy: :default, error_class: 'Html2rss::RequestService::ConnectionFailed' }]
+      error = Html2rss::RequestService::ConnectionFailed.new('refused')
+      error.attempts = attempts
+
+      expect(described_class::Diagnostics.from_error(error).strategy_attempts).to eq(attempts)
+    end
+
+    it 'extracts transport_meta without attempts from Html2rss::Error on the chain', :aggregate_failures do
+      error = Html2rss::RequestService::RequestTimedOut.new('queued', timeout_phase: 'queue')
+      error.transport_meta = { request_id: 'req-direct', render_ms: 99, strategy_used: 'botasaurus' }
+
+      expect(described_class::Diagnostics.from_error(error)).to have_attributes(
+        request_id: 'req-direct', render_ms: 99, strategy_used: 'botasaurus', timeout_phase: 'queue'
+      )
+      expect(described_class::Diagnostics.from_error(error).strategy_attempts).to eq([])
     end
   end
 

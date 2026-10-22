@@ -103,6 +103,11 @@ module Html2rss
           def client_message
             decision.message
           end
+
+          # @return [Boolean]
+          def cacheable?
+            decision.nil? || decision.cacheable
+          end
         end
       end
     end

@@ -143,7 +143,7 @@ module Html2rss
           # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
           # @return [void]
           def apply_cache_headers(response, result)
-            return expires_now(response) unless result.decision.nil? || result.decision.cacheable
+            return expires_now(response) unless result.cacheable?
 
             expires(response, result.ttl_seconds, cache_control: 'public')
           end
