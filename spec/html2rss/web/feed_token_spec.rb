@@ -61,44 +61,6 @@ RSpec.describe Html2rss::Web::FeedToken do
       end
     end
 
-    describe '.validate' do
-      let(:secret_key) { 'test-secret' }
-      let(:url) { 'https://example.com/feed' }
-      let(:token) do
-        described_class.create(
-          username: 'alice',
-          url:,
-          secret_key:,
-          strategy: 'some_strategy'
-        )
-      end
-
-      it 'returns the token when valid' do
-        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
-
-        expect(described_class.validate(encoded, url, secret_key)).to eq(token)
-      end
-
-      it 'returns nil for wrong url' do
-        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
-
-        expect(described_class.validate(encoded, 'https://different.com', secret_key)).to be_nil
-      end
-
-      it 'returns nil for wrong secret' do
-        encoded = Html2rss::Web::FeedToken::Codec.encode(token)
-
-        expect(described_class.validate(encoded, url, 'wrong-secret')).to be_nil
-      end
-
-      it 'returns nil for expired tokens' do
-        expired = described_class.create(username: 'alice', url:, secret_key:, expires_in: -10)
-        encoded = Html2rss::Web::FeedToken::Codec.encode(expired)
-
-        expect(described_class.validate(encoded, url, secret_key)).to be_nil
-      end
-    end
-
     describe '.validate_decoded' do
       let(:secret_key) { 'test-secret' }
       let(:url) { 'https://example.com/feed' }

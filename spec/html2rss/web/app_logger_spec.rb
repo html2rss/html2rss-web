@@ -5,11 +5,12 @@ require 'stringio'
 
 RSpec.describe Html2rss::Web::AppLogger do
   let(:io) { StringIO.new }
-  let(:test_logger) { Logger.new(io).tap { |log| log.formatter = described_class.send(:method, :format_entry) } }
 
   describe '.logger' do
     it 'writes one JSON line', :aggregate_failures do
-      allow(Logger).to receive(:new).and_return(test_logger)
+      allow(Logger).to receive(:new).and_wrap_original do |method, _device, *rest|
+        method.call(io, *rest)
+      end
       described_class.reset_logger!
       described_class.logger.info({ event_name: 'boot.test', component: 'boot' }.to_json)
 

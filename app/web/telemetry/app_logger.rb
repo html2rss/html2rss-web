@@ -21,7 +21,7 @@ module Html2rss
 
         # Formatter for the html2rss gem logger: JSON line with request_id.
         # Structured gem payloads (JSON with +event_name+) keep columnar fields;
-        # free-form strings stay under +message+ (logfmt parsing is skipped).
+        # free-form strings stay under +message+.
         #
         # @return [Proc]
         def gem_formatter
@@ -50,21 +50,15 @@ module Html2rss
         # @param msg [Object]
         # @return [Hash{Symbol=>Object}, nil]
         def gem_structured_payload(msg)
-          return msg.transform_keys(&:to_sym) if msg.is_a?(Hash) && msg_event_name?(msg)
+          candidate = if msg.is_a?(Hash)
+                        msg.transform_keys(&:to_sym)
+                      elsif json_like?(msg.to_s)
+                        parsed = parsed_json(msg.to_s)
+                        parsed.is_a?(Hash) ? parsed : nil
+                      end
+          return unless candidate&.key?(:event_name)
 
-          message_string = msg.to_s
-          return nil unless json_like?(message_string)
-
-          parsed = parsed_json(message_string)
-          return nil unless parsed.is_a?(Hash) && msg_event_name?(parsed)
-
-          parsed
-        end
-
-        # @param payload [Hash]
-        # @return [Boolean]
-        def msg_event_name?(payload)
-          payload.key?(:event_name) || payload.key?('event_name')
+          candidate
         end
 
         # @param structured [Hash{Symbol=>Object}]
@@ -116,7 +110,7 @@ module Html2rss
           message_string = message.to_s
           return parsed_json(message_string) if json_like?(message_string)
 
-          parse_logfmt(message_string) || { message: message_string }
+          { message: message_string }
         end
 
         # @param message [String]
@@ -132,29 +126,6 @@ module Html2rss
         def json_like?(message)
           stripped = message.lstrip
           stripped.start_with?('{', '[')
-        end
-
-        # @param message [String]
-        # @return [Hash{Symbol=>Object}, nil]
-        def parse_logfmt(message)
-          pairs = message.scan(/([a-zA-Z0-9_.-]+)=("[^"]*"|\S+)/)
-          return nil if pairs.empty?
-
-          pairs.to_h do |key, raw_value|
-            [key.to_sym, normalize_logfmt_value(raw_value)]
-          end
-        end
-
-        # @param raw_value [String]
-        # @return [String, Integer, Float, TrueClass, FalseClass]
-        def normalize_logfmt_value(raw_value)
-          value = raw_value.delete_prefix('"').delete_suffix('"')
-          return true if value == 'true'
-          return false if value == 'false'
-          return value.to_i if value.match?(/\A-?\d+\z/)
-          return value.to_f if value.match?(/\A-?\d+\.\d+\z/)
-
-          value
         end
       end
     end
