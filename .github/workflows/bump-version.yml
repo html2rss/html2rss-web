@@ -42,9 +42,19 @@ jobs:
           fi
           echo "TARGET_VERSION=${version}" >> "$GITHUB_ENV"
 
+      - name: Read toolchain versions from Dockerfile
+        id: toolchain
+        run: |
+          ruby_version=$(sed -nE 's/^FROM( --platform=[^ ]+)? ruby:([0-9.]+)-alpine.*/\2/p' Dockerfile | head -n 1)
+          node_version=$(sed -nE 's/^FROM( --platform=[^ ]+)? node:([0-9.]+)-alpine.*/\2/p' Dockerfile | head -n 1)
+          test -n "$ruby_version" && test -n "$node_version"
+          echo "ruby=$ruby_version" >> "$GITHUB_OUTPUT"
+          echo "node=$node_version" >> "$GITHUB_OUTPUT"
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
+          ruby-version: ${{ steps.toolchain.outputs.ruby }}
           bundler-cache: true
 
       - name: Setup pnpm
@@ -57,7 +67,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version-file: ".tool-versions"
+          node-version: ${{ steps.toolchain.outputs.node }}
 
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile

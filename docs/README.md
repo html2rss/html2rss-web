@@ -20,7 +20,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 - **Backend**: Ruby + Falcon + Roda under the `Html2rss::Web` namespace.
 - **Frontend**: Preact + Vite, built into `frontend/dist` and served at `/` in production.
 - **Feed extraction**: Delegated to the `html2rss` gem (HTTPX non-blocking transport layer).
-- **Distribution**: Docker Compose / Dev Container first.
+- **Distribution**: Docker Compose first (`dev` target for local work).
 
 ### Source Of Truth
 
@@ -31,12 +31,18 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 ---
 
-## Development Setup (Dev Container)
+## Development Setup (Docker)
 
-Use the repository's [Dev Container](../.devcontainer/README.md) for all local development and tests.
+Use `Dockerfile.dev` via `docker-compose.dev.yml` for all local development and tests.
 Running the app directly on the host is not supported.
 
-### Common Commands (Inside Dev Container)
+```bash
+docker compose -f docker-compose.dev.yml build
+docker compose -f docker-compose.dev.yml run --rm dev make setup
+docker compose -f docker-compose.dev.yml run --rm --service-ports dev make dev
+```
+
+### Common Commands (Inside `dev` image)
 
 | Command                        | Purpose                                                    |
 | ------------------------------ | ---------------------------------------------------------- |
@@ -74,7 +80,7 @@ Development routing defaults:
 To change or add API endpoints, follow this sequence:
 
 1. **Ruby Request Spec**: Define the new behavior or endpoint in `spec/html2rss/web/app_integration_spec.rb` or a dedicated request spec.
-2. **OpenAPI Generation**: Run `make openapi` inside the Dev Container to regenerate `public/openapi.yaml` from the spec metadata.
+2. **OpenAPI Generation**: Run `make openapi` inside the `dev` image to regenerate `public/openapi.yaml` from the spec metadata.
 3. **Verify Contract**: Run `make openapi-verify` and `make openapi-lint` to ensure the generated file matches the specs and is valid.
 4. **Frontend Client**: Keep generated client artifacts in `frontend/src/api/generated` aligned with `public/openapi.yaml`.
 
@@ -89,13 +95,13 @@ Always verify the contract before committing API changes.
 Always run this before pushing or committing:
 
 ```bash
-make ready
+docker compose -f docker-compose.dev.yml run --rm dev make ready
 ```
 
 For frontend changes and API contract/OpenAPI changes, run the CI-parity gate:
 
 ```bash
-make ci-ready
+docker compose -f docker-compose.dev.yml run --rm dev make ci-ready
 ```
 
 ### Testing Layers
