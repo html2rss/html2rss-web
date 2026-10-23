@@ -1,4 +1,4 @@
-ARG RUBY_BASE_IMAGE=ruby:4.0.1-alpine3.23@sha256:7d1c4a23da9b3539fdeb5f970950a8fe044a707219e546f12152b84bbd5755d1
+ARG RUBY_BASE_IMAGE=ruby:4.0.8-alpine3.24@sha256:e10c6cbfa9c0adf740c3c1d4d142d5b833b7901536f9968ce5925a6f3f6d0c14
 ARG NODE_BASE_IMAGE=node:22-alpine@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
 
 # Stage 1: Frontend Build (arch-independent assets; native builder, not QEMU)
