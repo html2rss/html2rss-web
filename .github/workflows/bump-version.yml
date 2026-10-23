@@ -12,9 +12,6 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  DEV_IMAGE: html2rss/web:dev
-
 jobs:
   bump_version:
     runs-on: ubuntu-latest
@@ -45,33 +42,48 @@ jobs:
           fi
           echo "TARGET_VERSION=${version}" >> "$GITHUB_ENV"
 
-      - uses: docker/setup-buildx-action@v4
+      - name: Read toolchain versions from Dockerfile
+        id: toolchain
+        run: |
+          ruby_version=$(sed -n 's/^FROM ruby:\([0-9.]*\)-alpine.*/\1/p' Dockerfile | head -n 1)
+          node_version=$(sed -n 's/^FROM node:\([0-9.]*\)-alpine.*/\1/p' Dockerfile | head -n 1)
+          test -n "$ruby_version" && test -n "$node_version"
+          echo "ruby=$ruby_version" >> "$GITHUB_OUTPUT"
+          echo "node=$node_version" >> "$GITHUB_OUTPUT"
 
-      - name: Build and load dev image
-        uses: docker/build-push-action@v7
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
         with:
-          context: .
-          target: dev
-          load: true
-          tags: ${{ env.DEV_IMAGE }}
-          cache-from: type=gha,scope=dev
-          cache-to: type=gha,mode=max,scope=dev
+          ruby-version: ${{ steps.toolchain.outputs.ruby }}
+          bundler-cache: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.1.0
+        with:
+          cache: true
+          cache_dependency_path: frontend/pnpm-lock.yaml
+          package_json_file: frontend/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.toolchain.outputs.node }}
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
 
       - name: Perform Version Bump
         id: perform_bump
         run: |
-          docker run --rm \
-            -v "$GITHUB_WORKSPACE:/workspace" \
-            -w /workspace \
-            -e TARGET_VERSION \
-            "$DEV_IMAGE" \
-            bash -lc 'make setup && bundle exec ruby bin/bump-version "$TARGET_VERSION" && make openapi && make openapi-client'
-          NEW_VERSION=$(docker run --rm \
-            -v "$GITHUB_WORKSPACE:/workspace" \
-            -w /workspace \
-            "$DEV_IMAGE" \
-            bash -lc "ruby -I. -e \"require 'config/version'; puts Html2rss::Web::VERSION\"")
+          bundle exec ruby bin/bump-version "$TARGET_VERSION"
+          NEW_VERSION=$(ruby -I. -e "require 'config/version'; puts Html2rss::Web::VERSION")
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Regenerate OpenAPI spec and client
+        run: |
+          make openapi
+          make openapi-client
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8

@@ -33,7 +33,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 ## Development Setup (Docker)
 
-Use the `dev` stage from the root `Dockerfile` via `docker-compose.dev.yml` for all local development and tests.
+Use `Dockerfile.dev` via `docker-compose.dev.yml` for all local development and tests.
 Running the app directly on the host is not supported.
 
 ```bash
@@ -95,13 +95,13 @@ Always verify the contract before committing API changes.
 Always run this before pushing or committing:
 
 ```bash
-make ready
+docker compose -f docker-compose.dev.yml run --rm dev make ready
 ```
 
 For frontend changes and API contract/OpenAPI changes, run the CI-parity gate:
 
 ```bash
-make ci-ready
+docker compose -f docker-compose.dev.yml run --rm dev make ci-ready
 ```
 
 ### Testing Layers

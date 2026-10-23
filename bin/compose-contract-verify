@@ -176,30 +176,36 @@ def assert_dev_build!(dev)
   fail!('dev build must not set target') if build.key?('target')
 end
 
+FROM_BASE_RE = /^\s*FROM(?:\s+--platform=\S+)?\s+((?:node|ruby):\S+)/
+
+def parse_from_base_ref(label, line)
+  match = line.match(FROM_BASE_RE)
+  return unless match
+
+  ref = match[1]
+  family = ref.split(':', 2).first
+  fail!("#{label} #{family} FROM must include @sha256: digest, got #{ref}") unless ref.include?('@sha256:')
+
+  [family, ref]
+end
+
+def unique_base_ref!(label, family, refs)
+  unique = refs.uniq
+  fail!("#{label} has divergent #{family} FROM refs: #{unique.inspect}") if unique.size > 1
+
+  unique.first
+end
+
 def extract_pinned_base_images!(path)
+  label = File.basename(path)
   refs_by_family = Hash.new { |hash, key| hash[key] = [] }
 
   File.readlines(path).each do |line|
-    match = line.match(/^\s*FROM(?:\s+--platform=\S+)?\s+((?:node|ruby):\S+)/)
-    next unless match
-
-    ref = match[1]
-    family = ref.split(':', 2).first
-    unless ref.include?('@sha256:')
-      fail!("#{File.basename(path)} #{family} FROM must include @sha256: digest, got #{ref}")
-    end
-
-    refs_by_family[family] << ref
+    family, ref = parse_from_base_ref(label, line)
+    refs_by_family[family] << ref if family
   end
 
-  refs_by_family.transform_values do |refs|
-    unique = refs.uniq
-    if unique.size > 1
-      fail!("#{File.basename(path)} has divergent #{unique.first.split(':', 2).first} FROM refs: #{unique.inspect}")
-    end
-
-    unique.first
-  end
+  refs_by_family.to_h { |family, refs| [family, unique_base_ref!(label, family, refs)] }
 end
 
 def verify_dockerfile_parity!

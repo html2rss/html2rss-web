@@ -87,7 +87,7 @@ See [Creating Custom Feeds](https://html2rss.github.io/creating-custom-feeds/).
 
 ## Development (Docker)
 
-Run setup, lint, and tests inside the `dev` compose service:
+Run setup, lint, and tests inside the `dev` compose service built from `Dockerfile.dev`:
 
 ```bash
 docker compose -f docker-compose.dev.yml build
