@@ -1,4 +1,4 @@
-FROM ruby:4.0.1-alpine3.23
+FROM ruby:4.0.9-alpine3.24
 
 SHELL ["/bin/sh", "-o", "pipefail", "-c"]
 
