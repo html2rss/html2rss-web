@@ -45,8 +45,8 @@ jobs:
       - name: Read toolchain versions from Dockerfile
         id: toolchain
         run: |
-          ruby_version=$(sed -n 's/^FROM ruby:\([0-9.]*\)-alpine.*/\1/p' Dockerfile | head -n 1)
-          node_version=$(sed -n 's/^FROM node:\([0-9.]*\)-alpine.*/\1/p' Dockerfile | head -n 1)
+          ruby_version=$(sed -nE 's/^FROM( --platform=[^ ]+)? ruby:([0-9.]+)-alpine.*/\2/p' Dockerfile | head -n 1)
+          node_version=$(sed -nE 's/^FROM( --platform=[^ ]+)? node:([0-9.]+)-alpine.*/\2/p' Dockerfile | head -n 1)
           test -n "$ruby_version" && test -n "$node_version"
           echo "ruby=$ruby_version" >> "$GITHUB_OUTPUT"
           echo "node=$node_version" >> "$GITHUB_OUTPUT"

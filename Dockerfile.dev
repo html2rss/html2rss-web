@@ -56,7 +56,7 @@ RUN gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
   && rm -rf /usr/local/bundle/cache \
   && chown -R "$USER":"$USER" /workspace /usr/local/bundle /usr/local/share/corepack
 
-USER 1000
+USER $UID
 
 EXPOSE 4000 4001
 
