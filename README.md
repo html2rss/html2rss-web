@@ -85,14 +85,15 @@ volumes:
 
 See [Creating Custom Feeds](https://html2rss.github.io/creating-custom-feeds/).
 
-## Development (Dev Container)
+## Development (Docker)
 
-Run setup, lint, and tests inside the Dev Container:
+Run setup, lint, and tests inside the `dev` compose service:
 
 ```bash
-make setup
-make dev
-make ready
+docker compose -f docker-compose.dev.yml build
+docker compose -f docker-compose.dev.yml run --rm dev make setup
+docker compose -f docker-compose.dev.yml run --rm --service-ports dev make dev
+docker compose -f docker-compose.dev.yml run --rm dev make ready
 ```
 
 Feature branches that depend on an unreleased `html2rss` API may pin the gem from GitHub in `Gemfile`. Revert to the released RubyGems version before merging to `main`.

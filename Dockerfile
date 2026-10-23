@@ -1,8 +1,6 @@
-ARG RUBY_BASE_IMAGE=ruby:4.0.8-alpine3.24@sha256:e10c6cbfa9c0adf740c3c1d4d142d5b833b7901536f9968ce5925a6f3f6d0c14
-ARG NODE_BASE_IMAGE=node:22-alpine@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS node
 
-# Stage 1: Frontend Build (arch-independent assets; native builder, not QEMU)
-FROM --platform=$BUILDPLATFORM ${NODE_BASE_IMAGE} AS frontend-builder
+FROM node AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
@@ -10,8 +8,62 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
-# Stage 2: Ruby Build
-FROM ${RUBY_BASE_IMAGE} AS builder
+FROM ruby:4.0.8-alpine3.24@sha256:e10c6cbfa9c0adf740c3c1d4d142d5b833b7901536f9968ce5925a6f3f6d0c14 AS ruby
+
+FROM ruby AS dev
+
+LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+  bash \
+  build-base \
+  chromium \
+  curl \
+  git \
+  harfbuzz \
+  libxml2-dev \
+  libxslt-dev \
+  nss \
+  openssl-dev \
+  python3 \
+  ttf-freefont \
+  yaml-dev \
+  tzdata
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/corepack /usr/local/bin/
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+# COPY materializes corepack as a file; restore the upstream symlink so dist/lib resolves.
+RUN ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+  COREPACK_HOME=/usr/local/share/corepack
+
+COPY frontend/package.json /tmp/package.json
+RUN corepack enable \
+  && corepack prepare "$(node -p "require('/tmp/package.json').packageManager")" --activate \
+  && rm /tmp/package.json
+
+ARG USER=dev
+ARG UID=1000
+ARG GID=1000
+
+RUN addgroup -g "$GID" "$USER" \
+  && adduser -D -G "$USER" -u "$UID" "$USER" \
+  && mkdir -p /workspace /usr/local/bundle /usr/local/share/corepack \
+  && chown -R "$USER":"$USER" /workspace /usr/local/bundle /usr/local/share/corepack
+
+WORKDIR /workspace
+
+USER 1000
+
+EXPOSE 4000 4001
+
+CMD ["sleep", "infinity"]
+
+FROM ruby AS builder
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
@@ -39,8 +91,7 @@ RUN apk add --no-cache \
     /usr/local/bundle/bundler/gems/*/.git \
     /usr/local/bundle/cache/bundler/git
 
-# Stage 3: Runtime
-FROM ${RUBY_BASE_IMAGE}
+FROM ruby AS runtime
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 

@@ -5,11 +5,7 @@ const chromiumExecutablePath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || resolveChromiumExecutablePath();
 
 function resolveChromiumExecutablePath(): string | undefined {
-  const candidates = [
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/home/vscode/.cache/ms-playwright/chromium-1217/chrome-linux/chrome',
-  ];
+  const candidates = ['/usr/bin/chromium-browser', '/usr/bin/chromium'];
 
   return candidates.find((candidate) => existsSync(candidate));
 }

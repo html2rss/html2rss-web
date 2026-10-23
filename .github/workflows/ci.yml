@@ -11,6 +11,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DEV_IMAGE: html2rss/web:dev
+
 jobs:
   hadolint:
     runs-on: ubuntu-latest
@@ -30,24 +33,45 @@ jobs:
       - name: Verify compose contracts
         run: bin/compose-contract-verify
 
-  ruby:
+  build-dev:
+    needs:
+      - hadolint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - uses: ruby/setup-ruby@v1
+      - uses: docker/setup-buildx-action@v4
+      - name: Build and load dev image
+        uses: docker/build-push-action@v7
         with:
-          bundler-cache: true
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
+          cache-to: type=gha,mode=max,scope=dev
 
-      - name: Run RuboCop
-        run: bundle exec rubocop -F
-
-      - name: Verify Yard documentation
-        run: bundle exec yard doc --fail-on-warning --no-output
-
-      - name: Run RSpec
-        run: bundle exec rspec
-
+  ruby:
+    needs:
+      - build-dev
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Load dev image from cache
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
+      - name: Run RuboCop, YARD, and RSpec
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            "$DEV_IMAGE" \
+            bash -lc 'make setup && bundle exec rubocop -F && bundle exec yard doc --fail-on-warning --no-output && bundle exec rspec'
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
         if: always()
@@ -57,102 +81,74 @@ jobs:
           retention-days: 30
 
   openapi:
+    needs:
+      - build-dev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - uses: ruby/setup-ruby@v1
+      - uses: docker/setup-buildx-action@v4
+      - name: Load dev image from cache
+        uses: docker/build-push-action@v7
         with:
-          bundler-cache: true
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js for OpenAPI lint tooling
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
-
-      - name: Install frontend dependencies for OpenAPI client verification
-        run: pnpm install --frozen-lockfile
-        working-directory: frontend
-
-      - name: Verify generated OpenAPI spec and client are up to date
-        run: make openapi-verify
-
-      - name: Lint OpenAPI contract
-        run: make openapi-lint
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
+      - name: Verify and lint OpenAPI
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            "$DEV_IMAGE" \
+            bash -lc 'make setup && make openapi-verify && make openapi-lint'
 
   frontend-audit:
+    needs:
+      - build-dev
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+      - uses: docker/setup-buildx-action@v4
+      - name: Load dev image from cache
+        uses: docker/build-push-action@v7
         with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
+      - name: Audit frontend dependencies
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            "$DEV_IMAGE" \
+            bash -lc 'make setup && pnpm --dir frontend audit --audit-level=moderate'
 
   frontend:
+    needs:
+      - build-dev
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
+      - uses: docker/setup-buildx-action@v4
+      - name: Load dev image from cache
+        uses: docker/build-push-action@v7
         with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Typecheck frontend
-        run: pnpm run typecheck
-
-      - name: Lint CSS with Stylelint
-        run: pnpm exec stylelint "**/*.css"
-
-      - name: Check formatting
-        run: pnpm run format:check
-
-      - name: Run frontend tests
-        run: pnpm run test:ci
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Run frontend smoke test
-        run: pnpm run test:e2e
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
+      - name: Typecheck, lint, format, unit/contract, and e2e
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e CI=true \
+            "$DEV_IMAGE" \
+            bash -lc 'make setup && cd frontend && pnpm run typecheck && pnpm exec stylelint "**/*.css" && pnpm run format:check && pnpm run test:ci && pnpm run test:e2e'
 
   docker-build-smoke-image:
     needs:
@@ -170,12 +166,13 @@ jobs:
           context: .
           load: true
           tags: html2rss/web
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=runtime
+          cache-to: type=gha,mode=max,scope=runtime
 
   docker-test:
     needs:
       - docker-build-smoke-image
+      - build-dev
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -183,23 +180,35 @@ jobs:
         smoke_auto_source_enabled: ["false", "true"]
     steps:
       - uses: actions/checkout@v7
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
       - uses: docker/setup-buildx-action@v4
-
       - name: Load Docker smoke image from cache
         uses: docker/build-push-action@v7
         with:
           context: .
           load: true
           tags: html2rss/web
-          cache-from: type=gha
-
+          cache-from: type=gha,scope=runtime
+      - name: Load dev image from cache
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: dev
+          load: true
+          tags: ${{ env.DEV_IMAGE }}
+          cache-from: type=gha,scope=dev
       - name: Run Docker smoke test
         env:
           DOCKER_SMOKE_SKIP_BUILD: "true"
           SMOKE_AUTO_SOURCE_ENABLED: ${{ matrix.smoke_auto_source_enabled }}
-        run: bundle exec rake
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            --network host \
+            -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
+            -w "$GITHUB_WORKSPACE" \
+            -e GITHUB_WORKSPACE \
+            -e DOCKER_SMOKE_SKIP_BUILD \
+            -e SMOKE_AUTO_SOURCE_ENABLED \
+            -e GITHUB_SHA \
+            "$DEV_IMAGE" \
+            bash -lc 'make setup && bundle exec rake'

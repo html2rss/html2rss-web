@@ -141,6 +141,52 @@ def verify_production!
   assert_botasaurus_loopback_only!(bot['ports'])
 end
 
+def volume_target?(volumes, target)
+  Array(volumes).any? do |volume|
+    volume.is_a?(Hash) && volume['target'].to_s == target
+  end
+end
+
+def assert_dev_ports!(ports)
+  published = Array(ports)
+  [4000, 4001].each do |port_number|
+    match = published.find { |port| published_port?(port, published: port_number, target: port_number) }
+    fail!("dev must publish #{port_number}:#{port_number}") unless match
+  end
+end
+
+def assert_dev_volumes!(volumes)
+  fail!('dev must bind-mount /workspace') unless volume_target?(volumes, '/workspace')
+  fail!('dev must mount /usr/local/bundle volume') unless volume_target?(volumes, '/usr/local/bundle')
+end
+
+def assert_dev_command!(command)
+  joined = Array(command).join(' ')
+  return if joined.include?('sleep') && joined.include?('infinity')
+
+  fail!("dev command must be sleep infinity, got #{command.inspect}")
+end
+
+def assert_dev_build!(dev)
+  fail!('dev compose must not set image') if dev.key?('image')
+
+  build = dev.fetch('build') { fail!('dev missing build') }
+  assert_equal!(build['target'], 'dev', 'dev build.target')
+end
+
+def verify_dev!
+  config = compose_config(File.join(REPO_ROOT, 'docker-compose.dev.yml'))
+  services = config.fetch('services') { fail!('dev compose missing top-level services map') }
+  assert_equal!(services.keys.sort, ['dev'], 'dev compose services')
+
+  dev = fetch_service!(services, 'dev')
+  assert_dev_build!(dev)
+  assert_dev_volumes!(dev['volumes'])
+  assert_dev_ports!(dev['ports'])
+  assert_dev_command!(dev['command'])
+end
+
 verify_quickstart!
 verify_production!
+verify_dev!
 puts 'compose contract verify passed'
