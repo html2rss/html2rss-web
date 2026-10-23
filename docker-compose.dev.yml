@@ -2,8 +2,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: dev
+      dockerfile: Dockerfile.dev
     volumes:
       - .:/workspace:cached
       - bundle-cache:/usr/local/bundle

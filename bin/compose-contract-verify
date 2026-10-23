@@ -171,7 +171,46 @@ def assert_dev_build!(dev)
   fail!('dev compose must not set image') if dev.key?('image')
 
   build = dev.fetch('build') { fail!('dev missing build') }
-  assert_equal!(build['target'], 'dev', 'dev build.target')
+  dockerfile = File.basename(build.fetch('dockerfile') { fail!('dev build missing dockerfile') }.to_s)
+  assert_equal!(dockerfile, 'Dockerfile.dev', 'dev build.dockerfile')
+  fail!('dev build must not set target') if build.key?('target')
+end
+
+def extract_pinned_base_images!(path)
+  refs_by_family = Hash.new { |hash, key| hash[key] = [] }
+
+  File.readlines(path).each do |line|
+    match = line.match(/^\s*FROM(?:\s+--platform=\S+)?\s+((?:node|ruby):\S+)/)
+    next unless match
+
+    ref = match[1]
+    family = ref.split(':', 2).first
+    unless ref.include?('@sha256:')
+      fail!("#{File.basename(path)} #{family} FROM must include @sha256: digest, got #{ref}")
+    end
+
+    refs_by_family[family] << ref
+  end
+
+  refs_by_family.transform_values do |refs|
+    unique = refs.uniq
+    if unique.size > 1
+      fail!("#{File.basename(path)} has divergent #{unique.first.split(':', 2).first} FROM refs: #{unique.inspect}")
+    end
+
+    unique.first
+  end
+end
+
+def verify_dockerfile_parity!
+  production = extract_pinned_base_images!(File.join(REPO_ROOT, 'Dockerfile'))
+  development = extract_pinned_base_images!(File.join(REPO_ROOT, 'Dockerfile.dev'))
+
+  %w[node ruby].each do |family|
+    fail!("Dockerfile missing #{family} FROM with digest") if production[family].nil?
+    fail!("Dockerfile.dev missing #{family} FROM with digest") if development[family].nil?
+    assert_equal!(development[family], production[family], "#{family} base image parity")
+  end
 end
 
 def verify_dev!
@@ -189,4 +228,5 @@ end
 verify_quickstart!
 verify_production!
 verify_dev!
+verify_dockerfile_parity!
 puts 'compose contract verify passed'

@@ -1,0 +1,63 @@
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS node
+
+FROM ruby:4.0.8-alpine3.24@sha256:e10c6cbfa9c0adf740c3c1d4d142d5b833b7901536f9968ce5925a6f3f6d0c14
+
+LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+  bash \
+  build-base \
+  chromium \
+  curl \
+  git \
+  harfbuzz \
+  libxml2-dev \
+  libxslt-dev \
+  nss \
+  openssl-dev \
+  python3 \
+  ttf-freefont \
+  yaml-dev \
+  tzdata
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+# COPY materializes binaries as files; restore upstream symlinks so dist/lib resolves.
+RUN ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack \
+  && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+  COREPACK_HOME=/usr/local/share/corepack
+
+COPY frontend/package.json /tmp/package.json
+RUN corepack enable \
+  && corepack prepare "$(node -p "require('/tmp/package.json').packageManager")" --activate \
+  && rm /tmp/package.json
+
+ARG USER=dev
+ARG UID=1000
+ARG GID=1000
+
+RUN addgroup -g "$GID" "$USER" \
+  && adduser -D -G "$USER" -u "$UID" "$USER" \
+  && mkdir -p /workspace /usr/local/bundle /usr/local/share/corepack
+
+WORKDIR /workspace
+
+COPY Gemfile Gemfile.lock ./
+
+# hadolint ignore=SC2046
+RUN gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
+  && bundle install --retry=5 --jobs=$(nproc) \
+  && rm -rf /usr/local/bundle/cache \
+  && chown -R "$USER":"$USER" /workspace /usr/local/bundle /usr/local/share/corepack
+
+USER 1000
+
+EXPOSE 4000 4001
+
+CMD ["sleep", "infinity"]
