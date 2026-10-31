@@ -191,9 +191,13 @@ module Html2rss
           raise ArgumentError, "Unknown feature flags: #{unknown.sort.join(', ')}"
         end
 
+        # An unset RACK_ENV is not development: {EnvironmentValidator} already treats it as
+        # production, so defaulting it here would open live-fetch surfaces on a deployment
+        # that merely forgot the variable.
+        #
         # @return [Boolean]
         def development_or_test?
-          DEV_OR_TEST_ENVS.include?(ENV.fetch('RACK_ENV', 'development'))
+          DEV_OR_TEST_ENVS.include?(ENV.fetch('RACK_ENV', nil))
         end
       end
     end

@@ -11,6 +11,12 @@ RSpec.describe Html2rss::Web::Flags do
       end
     end
 
+    it 'defaults to false when RACK_ENV itself is unset' do
+      ClimateControl.modify('RACK_ENV' => nil, 'AUTO_SOURCE_ENABLED' => nil) do
+        expect(described_class.auto_source_enabled?).to be(false)
+      end
+    end
+
     it 'defaults to false in production when unset' do
       ClimateControl.modify('RACK_ENV' => 'production', 'AUTO_SOURCE_ENABLED' => nil) do
         expect(described_class.auto_source_enabled?).to be(false)
