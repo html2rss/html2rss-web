@@ -19,6 +19,16 @@ RSpec.describe Html2rss::Web::Feeds::FormatNegotiation do
     end
   end
 
+  describe '.format_for_request with whitespace before Accept parameters' do
+    it 'ignores optional whitespace around the semicolon (RFC 7231)', :aggregate_failures do
+      json = rack_request(path: '/feed', accept: 'application/json ; q=0.5')
+      rss = rack_request(path: '/feed', accept: 'application/json;q=0.2 , application/xml ; q=0.9')
+
+      expect(described_class.format_for_request(json)).to eq(described_class::JSON_FEED)
+      expect(described_class.format_for_request(rss)).to eq(described_class::RSS)
+    end
+  end
+
   describe '.strip_known_extension' do
     it 'removes known extensions', :aggregate_failures do
       expect(described_class.strip_known_extension('/feed.json')).to eq('/feed')
