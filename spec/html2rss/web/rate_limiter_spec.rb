@@ -298,6 +298,7 @@ RSpec.describe Html2rss::Web::RateLimiter do
       expect(history).to have_key('live')
     end
 
+    # rubocop:disable RSpec/ExampleLength
     it 'logs overflow only when the post-prune size exceeds the cap', :aggregate_failures do
       allow(Html2rss::Web::SecurityLogger).to receive(:log_suspicious_activity)
       fill = lambda do |count, expired: 0|
@@ -330,5 +331,6 @@ RSpec.describe Html2rss::Web::RateLimiter do
       expect(Html2rss::Web::SecurityLogger).not_to have_received(:log_suspicious_activity)
       expect(history.size).to eq(20_001)
     end
+    # rubocop:enable RSpec/ExampleLength
   end
 end
