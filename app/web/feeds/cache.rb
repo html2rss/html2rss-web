@@ -113,14 +113,14 @@ module Html2rss
           # @param entry [Entry, nil]
           # @return [Boolean]
           def fresh?(entry)
-            entry && Time.now.utc < entry.expires_at
+            entry && Time.now < entry.expires_at
           end
 
           def write_entry(key, ttl_seconds, result)
             prune_if_needed
             entries[key] = Entry.new(
               result: result.with(cache_hit: true),
-              expires_at: Time.now.utc + normalize_ttl(ttl_seconds)
+              expires_at: Time.now + normalize_ttl(ttl_seconds)
             )
             Observability.emit(
               event_name: 'cache.lifecycle',
@@ -141,8 +141,8 @@ module Html2rss
           end
 
           def prune_expired
-            now = Time.now.utc
-            entries.delete_if { |_k, v| v && now >= v.expires_at }
+            now = Time.now
+            entries.delete_if { |_k, v| now >= v.expires_at }
           end
 
           def execute_fetch(key, ttl_seconds, cacheable) # rubocop:disable Metrics/MethodLength
@@ -168,8 +168,7 @@ module Html2rss
           end
 
           def entries_by_expiration
-            entries.select { |_k, v| v&.expires_at }
-                   .sort_by { |_k, v| v.expires_at }
+            entries.sort_by { |_k, v| v.expires_at }
           end
 
           # @param cacheable [Boolean, Proc]
