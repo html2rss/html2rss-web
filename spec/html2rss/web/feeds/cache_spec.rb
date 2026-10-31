@@ -176,7 +176,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       expect(described_class.send(:in_flight)).to be_empty
     end
 
-    # rubocop:disable-next-line RSpec/ExampleLength
+    # rubocop:disable-next RSpec/ExampleLength
     it 'shares the leader error with coalesced waiters', :aggregate_failures do
       errors = []
       Async do |task|
