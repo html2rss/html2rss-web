@@ -871,24 +871,9 @@ paths:
             schema:
               properties:
                 selectors:
-                  properties:
-                    items:
-                      properties:
-                        selector:
-                          type: string
-                      required:
-                      - selector
-                      type: object
-                    title:
-                      properties:
-                        selector:
-                          type: string
-                      required:
-                      - selector
-                      type: object
-                  required:
-                  - items
-                  - title
+                  additionalProperties: true
+                  description: Selectors document, validated against the html2rss
+                    config schema.
                   type: object
                 url:
                   type: string
@@ -905,28 +890,46 @@ paths:
                   data:
                     properties:
                       failure_kind:
-                        type: 'null'
+                        anyOf:
+                        - enum:
+                          - schema
+                          - execution
+                          - min_items
+                          - quality
+                        - type: 'null'
                       item_count:
                         type: integer
                       quality_report:
-                        type: 'null'
+                        anyOf:
+                        - additionalProperties: true
+                          type: object
+                        - type: 'null'
                       sample_items:
                         items:
-                          properties:
-                            published_at:
-                              type: 'null'
-                            title:
-                              type: string
-                            url:
-                              type: string
-                          required:
-                          - title
-                          - url
-                          - published_at
+                          additionalProperties: true
                           type: object
                         type: array
                       validation_issues:
-                        type: 'null'
+                        anyOf:
+                        - items:
+                            properties:
+                              actual: {}
+                              code:
+                                type: string
+                              expected: {}
+                              message:
+                                type: string
+                              path:
+                                items:
+                                  type: string
+                                type: array
+                            required:
+                            - path
+                            - code
+                            - message
+                            type: object
+                          type: array
+                        - type: 'null'
                     required:
                     - item_count
                     - sample_items
@@ -968,7 +971,6 @@ paths:
                   type: string
               required:
               - url
-              - items_selector
               type: object
       responses:
         '200':
@@ -979,11 +981,8 @@ paths:
                   data:
                     properties:
                       admission_drops:
-                        properties:
-                          short:
-                            type: integer
-                        required:
-                        - short
+                        additionalProperties:
+                          type: integer
                         type: object
                       candidates:
                         properties:
@@ -998,26 +997,45 @@ paths:
                                   type: string
                               required:
                               - selector
-                              - sample
-                              - enhance
                               type: object
                             type: array
                           link:
-                            items: {}
-                            type: array
-                          published:
-                            items: {}
-                            type: array
-                          title:
                             items:
                               properties:
+                                enhance:
+                                  type: boolean
                                 sample:
                                   type: string
                                 selector:
                                   type: string
                               required:
                               - selector
-                              - sample
+                              type: object
+                            type: array
+                          published:
+                            items:
+                              properties:
+                                enhance:
+                                  type: boolean
+                                sample:
+                                  type: string
+                                selector:
+                                  type: string
+                              required:
+                              - selector
+                              type: object
+                            type: array
+                          title:
+                            items:
+                              properties:
+                                enhance:
+                                  type: boolean
+                                sample:
+                                  type: string
+                                selector:
+                                  type: string
+                              required:
+                              - selector
                               type: object
                             type: array
                         required:
@@ -1027,7 +1045,9 @@ paths:
                         - published
                         type: object
                       segment_strategy:
-                        type: string
+                        anyOf:
+                        - type: string
+                        - type: 'null'
                     required:
                     - candidates
                     - segment_strategy
@@ -1061,29 +1081,13 @@ paths:
             schema:
               properties:
                 selectors:
-                  properties:
-                    items:
-                      properties:
-                        selector:
-                          type: string
-                      required:
-                      - selector
-                      type: object
-                    title:
-                      properties:
-                        selector:
-                          type: string
-                      required:
-                      - selector
-                      type: object
-                  required:
-                  - items
-                  - title
+                  additionalProperties: true
+                  description: Selectors document, validated against the html2rss
+                    config schema.
                   type: object
                 url:
                   type: string
               required:
-              - url
               - selectors
               type: object
       responses:
@@ -1097,7 +1101,23 @@ paths:
                       report:
                         properties:
                           issues:
-                            items: {}
+                            items:
+                              properties:
+                                actual: {}
+                                code:
+                                  type: string
+                                expected: {}
+                                message:
+                                  type: string
+                                path:
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - path
+                              - code
+                              - message
+                              type: object
                             type: array
                           success:
                             type: boolean
@@ -1106,27 +1126,16 @@ paths:
                         - issues
                         type: object
                       selectors:
-                        properties:
-                          items:
-                            properties:
-                              selector:
-                                type: string
-                            required:
-                            - selector
-                            type: object
-                          title:
-                            properties:
-                              selector:
-                                type: string
-                            required:
-                            - selector
-                            type: object
-                        required:
-                        - items
-                        - title
-                        type: object
+                        anyOf:
+                        - additionalProperties: true
+                          description: Selectors document, validated against the html2rss
+                            config schema.
+                          type: object
+                        - type: 'null'
                       yaml:
-                        type: string
+                        anyOf:
+                        - type: string
+                        - type: 'null'
                     required:
                     - report
                     - selectors

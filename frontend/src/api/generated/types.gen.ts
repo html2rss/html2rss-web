@@ -427,13 +427,11 @@ export type GetReadinessProbeResponse = GetReadinessProbeResponses[keyof GetRead
 
 export type PreviewRefineFeedData = {
   body?: {
+    /**
+     * Selectors document, validated against the html2rss config schema.
+     */
     selectors: {
-      items: {
-        selector: string;
-      };
-      title: {
-        selector: string;
-      };
+      [key: string]: unknown;
     };
     url: string;
   };
@@ -451,15 +449,21 @@ export type PreviewRefineFeedResponses = {
    */
   200: {
     data: {
-      failure_kind: null;
+      failure_kind: 'schema' | 'execution' | 'min_items' | 'quality' | null;
       item_count: number;
-      quality_report: null;
+      quality_report: {
+        [key: string]: unknown;
+      } | null;
       sample_items: Array<{
-        published_at: null;
-        title: string;
-        url: string;
+        [key: string]: unknown;
       }>;
-      validation_issues: null;
+      validation_issues: Array<{
+        actual?: unknown;
+        code: string;
+        expected?: unknown;
+        message: string;
+        path: Array<string>;
+      }> | null;
     };
     success: boolean;
   };
@@ -469,7 +473,7 @@ export type PreviewRefineFeedResponse = PreviewRefineFeedResponses[keyof Preview
 
 export type SuggestRefineSelectorsData = {
   body?: {
-    items_selector: string;
+    items_selector?: string;
     url: string;
   };
   headers: {
@@ -487,22 +491,31 @@ export type SuggestRefineSelectorsResponses = {
   200: {
     data: {
       admission_drops: {
-        short: number;
+        [key: string]: number;
       };
       candidates: {
         items: Array<{
-          enhance: boolean;
-          sample: string;
+          enhance?: boolean;
+          sample?: string;
           selector: string;
         }>;
-        link: Array<unknown>;
-        published: Array<unknown>;
+        link: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
+        published: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
         title: Array<{
-          sample: string;
+          enhance?: boolean;
+          sample?: string;
           selector: string;
         }>;
       };
-      segment_strategy: string;
+      segment_strategy: string | null;
     };
     success: boolean;
   };
@@ -512,15 +525,13 @@ export type SuggestRefineSelectorsResponse = SuggestRefineSelectorsResponses[key
 
 export type ValidateRefineSelectorsData = {
   body?: {
+    /**
+     * Selectors document, validated against the html2rss config schema.
+     */
     selectors: {
-      items: {
-        selector: string;
-      };
-      title: {
-        selector: string;
-      };
+      [key: string]: unknown;
     };
-    url: string;
+    url?: string;
   };
   headers: {
     Authorization: string;
@@ -537,18 +548,19 @@ export type ValidateRefineSelectorsResponses = {
   200: {
     data: {
       report: {
-        issues: Array<unknown>;
+        issues: Array<{
+          actual?: unknown;
+          code: string;
+          expected?: unknown;
+          message: string;
+          path: Array<string>;
+        }>;
         success: boolean;
       };
       selectors: {
-        items: {
-          selector: string;
-        };
-        title: {
-          selector: string;
-        };
-      };
-      yaml: string;
+        [key: string]: unknown;
+      } | null;
+      yaml: string | null;
     };
     success: boolean;
   };
