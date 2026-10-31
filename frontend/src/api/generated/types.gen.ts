@@ -31,6 +31,9 @@ export type GetApiMetadataResponses = {
           access_token_required: boolean;
           enabled: boolean;
         };
+        refine: {
+          enabled: boolean;
+        };
       };
     };
     success: boolean;
@@ -421,6 +424,137 @@ export type GetReadinessProbeResponses = {
 };
 
 export type GetReadinessProbeResponse = GetReadinessProbeResponses[keyof GetReadinessProbeResponses];
+
+export type PreviewRefineFeedData = {
+  body?: {
+    selectors: {
+      items: {
+        selector: string;
+      };
+      title: {
+        selector: string;
+      };
+    };
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/preview';
+};
+
+export type PreviewRefineFeedResponses = {
+  /**
+   * previews with the expansion serving uses, without leaking the RSS
+   */
+  200: {
+    data: {
+      failure_kind: null;
+      item_count: number;
+      quality_report: null;
+      sample_items: Array<{
+        published_at: null;
+        title: string;
+        url: string;
+      }>;
+      validation_issues: null;
+    };
+    success: boolean;
+  };
+};
+
+export type PreviewRefineFeedResponse = PreviewRefineFeedResponses[keyof PreviewRefineFeedResponses];
+
+export type SuggestRefineSelectorsData = {
+  body?: {
+    items_selector: string;
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/suggest_selectors';
+};
+
+export type SuggestRefineSelectorsResponses = {
+  /**
+   * returns ranked buckets, empty when the gem found none
+   */
+  200: {
+    data: {
+      admission_drops: {
+        short: number;
+      };
+      candidates: {
+        items: Array<{
+          enhance: boolean;
+          sample: string;
+          selector: string;
+        }>;
+        link: Array<unknown>;
+        published: Array<unknown>;
+        title: Array<{
+          sample: string;
+          selector: string;
+        }>;
+      };
+      segment_strategy: string;
+    };
+    success: boolean;
+  };
+};
+
+export type SuggestRefineSelectorsResponse = SuggestRefineSelectorsResponses[keyof SuggestRefineSelectorsResponses];
+
+export type ValidateRefineSelectorsData = {
+  body?: {
+    selectors: {
+      items: {
+        selector: string;
+      };
+      title: {
+        selector: string;
+      };
+    };
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/validate';
+};
+
+export type ValidateRefineSelectorsResponses = {
+  /**
+   * returns a successful report and exportable YAML
+   */
+  200: {
+    data: {
+      report: {
+        issues: Array<unknown>;
+        success: boolean;
+      };
+      selectors: {
+        items: {
+          selector: string;
+        };
+        title: {
+          selector: string;
+        };
+      };
+      yaml: string;
+    };
+    success: boolean;
+  };
+};
+
+export type ValidateRefineSelectorsResponse = ValidateRefineSelectorsResponses[keyof ValidateRefineSelectorsResponses];
 
 export type ListStrategiesData = {
   body?: never;

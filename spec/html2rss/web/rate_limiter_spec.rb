@@ -151,6 +151,16 @@ RSpec.describe Html2rss::Web::RateLimiter do
       expect(track.record_and_check_limit(102, 10, 2)).to eq([true, 8])
     end
 
+    it 'consumes cost slots per request', :aggregate_failures do
+      expect(track.record_and_check_limit(100, 10, 5, cost: 5)).to eq([false, 0])
+      expect(track.record_and_check_limit(101, 10, 5)).to eq([true, 9])
+    end
+
+    it 'blocks once a costed request overshoots the budget', :aggregate_failures do
+      expect(track.record_and_check_limit(100, 10, 3, cost: 5)).to eq([false, 0])
+      expect(track.record_and_check_limit(101, 10, 3)).to eq([true, 9])
+    end
+
     it 'keeps timestamps exactly at the window start and drops older ones', :aggregate_failures do
       track.record_and_check_limit(100, 10, 1)
 

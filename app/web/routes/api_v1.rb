@@ -27,6 +27,7 @@ module Html2rss
 
               HealthRoutes.call(router)
               FeedRoutes.call(router)
+              RefineRoutes.call(router)
               ConfigsRoutes.call(router)
               MetadataRoutes.call(router)
 

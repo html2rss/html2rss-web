@@ -1,5 +1,5 @@
 ---
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: html2rss-web API
   version: 1.15.0
@@ -64,8 +64,16 @@ paths:
                             - enabled
                             - access_token_required
                             type: object
+                          refine:
+                            properties:
+                              enabled:
+                                type: boolean
+                            required:
+                            - enabled
+                            type: object
                         required:
                         - feed_creation
+                        - refine
                         - catalog
                         type: object
                     required:
@@ -132,11 +140,13 @@ paths:
                             last_result:
                               properties:
                                 at:
-                                  nullable: true
-                                  type: string
+                                  type:
+                                  - string
+                                  - 'null'
                                 code:
-                                  nullable: true
-                                  type: string
+                                  type:
+                                  - string
+                                  - 'null'
                                 state:
                                   type: string
                               required:
@@ -149,85 +159,99 @@ paths:
                                 defaults:
                                   properties:
                                     blog:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     id:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     region:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     repository:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     section:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     user_id:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                     username:
-                                      nullable: true
-                                      type: string
+                                      type:
+                                      - string
+                                      - 'null'
                                   type: object
                                 schema:
                                   properties:
                                     blog:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     id:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     region:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     repository:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     section:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     user_id:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                     username:
-                                      nullable: true
                                       properties:
                                         type:
                                           type: string
                                       required:
                                       - type
-                                      type: object
+                                      type:
+                                      - object
+                                      - 'null'
                                   type: object
                               required:
                               - schema
@@ -831,6 +855,295 @@ paths:
       summary: Readiness probe
       tags:
       - Health
+  "/refine/preview":
+    post:
+      description: Preview an extraction
+      operationId: previewRefineFeed
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                selectors:
+                  properties:
+                    items:
+                      properties:
+                        selector:
+                          type: string
+                      required:
+                      - selector
+                      type: object
+                    title:
+                      properties:
+                        selector:
+                          type: string
+                      required:
+                      - selector
+                      type: object
+                  required:
+                  - items
+                  - title
+                  type: object
+                url:
+                  type: string
+              required:
+              - url
+              - selectors
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      failure_kind:
+                        type: 'null'
+                      item_count:
+                        type: integer
+                      quality_report:
+                        type: 'null'
+                      sample_items:
+                        items:
+                          properties:
+                            published_at:
+                              type: 'null'
+                            title:
+                              type: string
+                            url:
+                              type: string
+                          required:
+                          - title
+                          - url
+                          - published_at
+                          type: object
+                        type: array
+                      validation_issues:
+                        type: 'null'
+                    required:
+                    - item_count
+                    - sample_items
+                    - quality_report
+                    - failure_kind
+                    - validation_issues
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: previews with the expansion serving uses, without leaking the
+            RSS
+      security:
+      - BearerAuth: []
+      summary: Preview an extraction
+      tags:
+      - Refine
+  "/refine/suggest_selectors":
+    post:
+      description: Suggest selectors
+      operationId: suggestRefineSelectors
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                items_selector:
+                  type: string
+                url:
+                  type: string
+              required:
+              - url
+              - items_selector
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      admission_drops:
+                        properties:
+                          short:
+                            type: integer
+                        required:
+                        - short
+                        type: object
+                      candidates:
+                        properties:
+                          items:
+                            items:
+                              properties:
+                                enhance:
+                                  type: boolean
+                                sample:
+                                  type: string
+                                selector:
+                                  type: string
+                              required:
+                              - selector
+                              - sample
+                              - enhance
+                              type: object
+                            type: array
+                          link:
+                            items: {}
+                            type: array
+                          published:
+                            items: {}
+                            type: array
+                          title:
+                            items:
+                              properties:
+                                sample:
+                                  type: string
+                                selector:
+                                  type: string
+                              required:
+                              - selector
+                              - sample
+                              type: object
+                            type: array
+                        required:
+                        - items
+                        - title
+                        - link
+                        - published
+                        type: object
+                      segment_strategy:
+                        type: string
+                    required:
+                    - candidates
+                    - segment_strategy
+                    - admission_drops
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: returns ranked buckets, empty when the gem found none
+      security:
+      - BearerAuth: []
+      summary: Suggest selectors
+      tags:
+      - Refine
+  "/refine/validate":
+    post:
+      description: Validate refine selectors
+      operationId: validateRefineSelectors
+      parameters:
+      - in: header
+        name: Authorization
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                selectors:
+                  properties:
+                    items:
+                      properties:
+                        selector:
+                          type: string
+                      required:
+                      - selector
+                      type: object
+                    title:
+                      properties:
+                        selector:
+                          type: string
+                      required:
+                      - selector
+                      type: object
+                  required:
+                  - items
+                  - title
+                  type: object
+                url:
+                  type: string
+              required:
+              - url
+              - selectors
+              type: object
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      report:
+                        properties:
+                          issues:
+                            items: {}
+                            type: array
+                          success:
+                            type: boolean
+                        required:
+                        - success
+                        - issues
+                        type: object
+                      selectors:
+                        properties:
+                          items:
+                            properties:
+                              selector:
+                                type: string
+                            required:
+                            - selector
+                            type: object
+                          title:
+                            properties:
+                              selector:
+                                type: string
+                            required:
+                            - selector
+                            type: object
+                        required:
+                        - items
+                        - title
+                        type: object
+                      yaml:
+                        type: string
+                    required:
+                    - report
+                    - selectors
+                    - yaml
+                    type: object
+                  success:
+                    type: boolean
+                required:
+                - success
+                - data
+                type: object
+          description: returns a successful report and exportable YAML
+      security:
+      - BearerAuth: []
+      summary: Validate refine selectors
+      tags:
+      - Refine
   "/strategies":
     get:
       description: List extraction strategies
@@ -899,3 +1212,5 @@ tags:
   description: Feed extraction strategy discovery.
 - name: Feeds
   description: Feed creation and feed rendering operations.
+- name: Refine
+  description: Selector validation, preview and suggestions (REFINE_ENABLED).

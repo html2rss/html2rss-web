@@ -27,14 +27,9 @@ module Html2rss
             # @return [Hash{Symbol=>Object}]
             def instance_payload(router)
               {
-                feed_creation: {
-                  enabled: Flags.auto_source_enabled?,
-                  access_token_required: Flags.auto_source_enabled?
-                },
-                catalog: {
-                  enabled: Flags.config_catalog_enabled?,
-                  url: "#{router.base_url}/api/v1/configs"
-                }
+                feed_creation: { enabled: auto = Flags.auto_source_enabled?, access_token_required: auto },
+                refine: { enabled: Flags.refine_enabled? },
+                catalog: { enabled: Flags.config_catalog_enabled?, url: "#{router.base_url}/api/v1/configs" }
               }
             end
           end

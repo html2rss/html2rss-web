@@ -115,7 +115,8 @@ namespace :openapi do
   task :generate do
     FileUtils.mkdir_p('public')
     FileUtils.rm_f('public/openapi.yaml')
-    sh({ 'OPENAPI' => '1' }, 'bundle exec rspec spec/html2rss/web/api/v1_spec.rb --order defined')
+    specs = %w[spec/html2rss/web/api/v1_spec.rb spec/html2rss/web/api/v1/refine_spec.rb]
+    sh({ 'OPENAPI' => '1' }, "bundle exec rspec #{specs.join(' ')} --order defined")
   end
 
   desc 'Verify generated OpenAPI YAML is up to date'
