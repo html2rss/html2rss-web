@@ -379,4 +379,203 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       expect(described_class.error_chain(first)).to eq([first, second])
     end
   end
+
+  describe '.classify (HTTP errors)' do
+    def decision(error) = described_class.classify(error)
+
+    it 'maps 401 to an auth decision', :aggregate_failures do
+      expect(decision(Html2rss::Web::UnauthorizedError.new('nope'))).to have_attributes(
+        status: 401, code: 'UNAUTHORIZED', message: 'nope', kind: 'auth', cacheable: false,
+        retryable: false, next_action: 'enter_token', retry_action: 'none'
+      )
+    end
+
+    it 'maps 429 to a retryable client decision with a default message', :aggregate_failures do
+      expect(decision(Html2rss::Web::TooManyRequestsError.new)).to have_attributes(
+        status: 429, kind: 'client', retryable: true, next_action: 'retry', retry_action: 'primary',
+        message: Html2rss::Web::TooManyRequestsError::DEFAULT_MESSAGE
+      )
+      blank = Html2rss::Web::TooManyRequestsError.new(Html2rss::Web::TooManyRequestsError.name)
+      expect(decision(blank).message).to eq('Too many requests. Wait before retrying.')
+    end
+
+    it 'maps 400 and 403 to input decisions', :aggregate_failures do
+      [[Html2rss::Web::BadRequestError, 400], [Html2rss::Web::ForbiddenError, 403]].each do |klass, status|
+        expect(decision(klass.new('msg'))).to have_attributes(
+          status:, kind: 'input', retryable: false, next_action: 'correct_input', retry_action: 'none', message: 'msg'
+        )
+      end
+    end
+
+    it 'maps health check failures to a non-retryable server decision' do
+      expect(decision(Html2rss::Web::HealthCheckFailedError.new)).to have_attributes(
+        kind: 'server', retryable: false, next_action: 'none', retry_action: 'none'
+      )
+    end
+
+    it 'maps other HTTP errors to retryable server decisions', :aggregate_failures do
+      expect(decision(Html2rss::Web::InternalServerError.new('oops'))).to have_attributes(
+        status: 500, kind: 'server', retryable: true, next_action: 'retry', retry_action: 'primary', message: 'oops'
+      )
+    end
+
+    it 'falls back to the class default message when the message is blank or the class name', :aggregate_failures do
+      klass = Html2rss::Web::BadRequestError
+      expect(decision(klass.new).message).to eq(klass::DEFAULT_MESSAGE)
+      expect(decision(klass.new('')).message).to eq(klass::DEFAULT_MESSAGE)
+      expect(decision(klass.new(klass.name)).message).to eq(klass::DEFAULT_MESSAGE)
+    end
+
+    it 'never caches classified HTTP errors' do
+      expect(decision(Html2rss::Web::BadRequestError.new('x')).cacheable).to be(false)
+    end
+  end
+
+  describe '.classify (transport and validation)' do
+    def decision(error) = described_class.classify(error)
+
+    it 'maps invalid caller input from the gem to a 400 with the gem message', :aggregate_failures do
+      expect(decision(Html2rss::InvalidOption.new('bad option'))).to have_attributes(
+        status: 400, code: 'BAD_REQUEST', message: 'bad option', cacheable: false, kind: 'input'
+      )
+      expect(decision(Html2rss::Url::InvalidUrlError.new('bad url'))).to have_attributes(status: 400,
+                                                                                         message: 'bad url')
+    end
+
+    it 'maps private network denial to a cacheable 403', :aggregate_failures do
+      expect(decision(Html2rss::RequestService::PrivateNetworkDenied.new('x'))).to eq(
+        described_class::PRIVATE_NETWORK_DENIED
+      )
+      expect(described_class::PRIVATE_NETWORK_DENIED).to have_attributes(status: 403, cacheable: true)
+    end
+
+    it 'maps plain timeouts to GATEWAY_TIMEOUT', :aggregate_failures do
+      [Timeout::Error.new, Errno::ETIMEDOUT.new, Async::TimeoutError.new,
+       HTTPX::TimeoutError.new(1, 'x')].each do |error|
+        expect(decision(error)).to eq(described_class::GATEWAY_TIMEOUT)
+      end
+    end
+
+    it 'finds timeouts through the cause chain' do
+      outer = begin
+        begin
+          raise Timeout::Error, 'inner'
+        rescue Timeout::Error
+          raise StandardError, 'outer'
+        end
+      rescue StandardError => error
+        error
+      end
+
+      expect(decision(outer)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'maps queue and boot request timeouts to SERVICE_UNAVAILABLE and others to GATEWAY_TIMEOUT',
+       :aggregate_failures do
+      %w[queue boot].each do |phase|
+        error = Html2rss::RequestService::RequestTimedOut.new('t', timeout_phase: phase)
+        expect(decision(error)).to eq(described_class::SERVICE_UNAVAILABLE)
+      end
+      other = Html2rss::RequestService::RequestTimedOut.new('t', timeout_phase: 'read')
+      expect(decision(other)).to eq(described_class::GATEWAY_TIMEOUT)
+    end
+
+    it 'classifies network failures as internal network errors', :aggregate_failures do
+      [SocketError.new, EOFError.new, Errno::ECONNREFUSED.new, Errno::EHOSTUNREACH.new].each do |error|
+        expect(decision(error)).to eq(described_class::INTERNAL_NETWORK_ERROR)
+      end
+    end
+
+    it 'classifies unknown errors as internal server errors', :aggregate_failures do
+      expect(decision(StandardError.new('x'))).to eq(described_class::INTERNAL_SERVER_ERROR)
+      expect(described_class::INTERNAL_SERVER_ERROR).to have_attributes(status: 500, kind: 'server', cacheable: false)
+    end
+
+    it 'treats wrapped network errors as network failures' do
+      wrapped = begin
+        begin
+          raise SocketError, 'dns'
+        rescue SocketError
+          raise StandardError, 'wrapper'
+        end
+      rescue StandardError => error
+        error
+      end
+
+      expect(decision(wrapped)).to eq(described_class::INTERNAL_NETWORK_ERROR)
+    end
+  end
+
+  describe '.error_chain' do
+    it 'walks causes in order and stops on cycles', :aggregate_failures do
+      inner = StandardError.new('inner')
+      outer = StandardError.new('outer')
+      allow(outer).to receive(:cause).and_return(inner)
+      allow(inner).to receive(:cause).and_return(outer)
+
+      expect(described_class.error_chain(outer)).to eq([outer, inner])
+      expect(described_class.error_chain(nil)).to eq([])
+    end
+  end
+
+  describe described_class::Decision do
+    it 'maps decision codes to empty reasons', :aggregate_failures do
+      mapping = {
+        'BLOCKED_SURFACE' => 'blocked_surface', 'FORBIDDEN' => 'forbidden',
+        'BAD_REQUEST' => 'invalid_input', 'EXTRACTION_EMPTY' => 'content_extraction_empty'
+      }
+      mapping.each do |code, reason|
+        expect(Html2rss::Web::ErrorClassifier::EXTRACTION_EMPTY.with(code:).empty_reason).to eq(reason)
+      end
+    end
+  end
+
+  describe described_class::Diagnostics do
+    it 'is empty without attempts', :aggregate_failures do
+      expect(described_class.from_attempts(nil)).to equal(described_class.empty)
+      expect(described_class.from_attempts([])).to equal(described_class.empty)
+      expect(described_class.from_error(StandardError.new('x'))).to equal(described_class.empty)
+    end
+
+    it 'expands the last transport meta (symbol or string keys)', :aggregate_failures do
+      attempts = [{ transport_meta: { request_id: 'old' } },
+                  { 'transport_meta' => { 'request_id' => 'r1', 'strategy_used' => 'default', render_ms: 12,
+                                          error_category: 'dns', timeout_phase: 'read' } }]
+      diagnostics = described_class.from_attempts(attempts)
+
+      expect(diagnostics).to have_attributes(
+        strategy_attempts: attempts, request_id: 'r1', strategy_used: 'default', render_ms: 12,
+        error_category: 'dns', timeout_phase: 'read', surface_category: nil
+      )
+    end
+
+    it 'omits blank fields from the sparse hash', :aggregate_failures do
+      diagnostics = described_class.from_attempts([{ transport_meta: { request_id: 'r' } }])
+
+      expect(diagnostics.to_h).to eq(strategy_attempts: [{ transport_meta: { request_id: 'r' } }], request_id: 'r')
+      expect(described_class.empty.to_h).to eq({})
+    end
+
+    it 'digs the surface category from NoFeedItemsExtracted in the chain' do
+      error = Html2rss::NoFeedItemsExtracted.new(attempts: [], surface_category: :app_shell)
+
+      expect(described_class.from_error(error).surface_category).to eq(:app_shell)
+    end
+
+    it 'prefers carried DecidedError diagnostics when non-empty', :aggregate_failures do
+      carried = described_class.from_attempts([{ transport_meta: { request_id: 'carried' } }])
+      decided = Html2rss::Web::ErrorClassifier::DecidedError.new(Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE,
+                                                                 diagnostics: carried)
+
+      expect(described_class.from_error(decided)).to equal(carried)
+      empty = Html2rss::Web::ErrorClassifier::DecidedError.new(Html2rss::Web::ErrorClassifier::BLOCKED_SURFACE)
+      expect(described_class.from_error(empty)).to equal(described_class.empty)
+    end
+
+    it 'takes the timeout phase from a RequestTimedOut in the chain' do
+      error = Html2rss::RequestService::RequestTimedOut.new('t', timeout_phase: 'queue')
+
+      expect(described_class.from_error(error).timeout_phase).to eq('queue')
+    end
+  end
 end

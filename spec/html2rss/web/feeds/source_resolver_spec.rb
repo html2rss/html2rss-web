@@ -177,4 +177,138 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
     end
   end
+
+  describe '.call (boundaries)' do
+    def request_for(kind, name: 'legacy', token: nil, params: {})
+      Html2rss::Web::Feeds::Contracts::Request.new(target_kind: kind, feed_name: name, token:, params:)
+    end
+
+    def static_source(config: { channel: { url: 'https://example.com/feed' } }, **request)
+      allow(Html2rss::Web::LocalConfig).to receive(:find).with('legacy').and_return(config)
+      described_class.call(request_for(:static, **request))
+    end
+
+    it 'rejects unsupported target kinds with the kind in the message' do
+      expect { described_class.call(request_for(:weird)) }
+        .to raise_error(Html2rss::Web::BadRequestError, 'Unsupported feed target: weird')
+    end
+
+    it 'maps unknown static feeds to NotFoundError' do
+      allow(Html2rss::Web::LocalConfig).to receive(:find).and_raise(Html2rss::Web::LocalConfig::NotFound)
+
+      expect { described_class.call(request_for(:static)) }.to raise_error(Html2rss::Web::NotFoundError)
+    end
+
+    it 'exposes the channel url and configured strategy', :aggregate_failures do
+      resolved = static_source(config: { channel: { url: 'https://example.com/feed' }, strategy: :botasaurus })
+
+      expect(resolved).to have_attributes(url: 'https://example.com/feed', strategy: :botasaurus,
+                                          source_kind: :static, feed_name: 'legacy')
+    end
+
+    it 'defaults the static ttl to one hour and converts feed minutes to seconds', :aggregate_failures do
+      expect(static_source.ttl_seconds).to eq(3600)
+      expect(static_source(config: { channel: { url: 'https://e.com/', ttl: 2 } }).ttl_seconds).to eq(120)
+    end
+
+    it 'keys static cache identity on feed name and params', :aggregate_failures do
+      empty = static_source.cache_identity
+      with_params = static_source(params: { 'a' => '1', 'b' => '2' }).cache_identity
+      reordered = static_source(params: { 'b' => '2', 'a' => '1' }).cache_identity
+      other = static_source(params: { 'a' => '1' }).cache_identity
+
+      expect(empty).to eq('static:legacy:empty')
+      expect(with_params).to match(/\Astatic:legacy:\h{64}\z/)
+      expect(reordered).to eq(with_params)
+      expect(other).not_to eq(with_params)
+    end
+
+    it 'merges request params over configured params without mutating the config', :aggregate_failures do
+      config = { channel: { url: 'https://e.com/' }, params: { 'a' => '1', 'b' => '1' } }
+      resolved = static_source(config:, params: { 'b' => '2' })
+
+      expect(resolved.generator_input[:params]).to eq('a' => '1', 'b' => '2')
+      expect(config[:params]).to eq('a' => '1', 'b' => '1')
+    end
+
+    it 'handles configs without params' do
+      expect(static_source(params: { 'x' => '1' }).generator_input[:params]).to eq('x' => '1')
+    end
+
+    context 'with tokens' do
+      let(:token) { 'tok-abc' }
+      let(:feed_token) { Html2rss::Web::FeedToken.new('alice', 'https://example.com/feed', 1, 'sig', nil) }
+      let(:account) { { username: 'alice', token: 'x', allowed_urls: ['*'] } }
+
+      before do
+        allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
+        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token).and_return(feed_token)
+        allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
+        allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
+          stylesheets: [{ href: 's.css' }], headers: { 'X' => '1' }, auth: { accounts: [] }
+        )
+      end
+
+      def resolve = described_class.call(request_for(:token, name: nil, token:))
+
+      it 'builds a token source with a five minute default ttl and no static metadata', :aggregate_failures do
+        expect(resolve).to have_attributes(
+          source_kind: :token, ttl_seconds: 300, feed_name: nil, directory_defaults: {}, request_params: {},
+          url: 'https://example.com/feed'
+        )
+      end
+
+      it 'hashes the token into the cache identity' do
+        expect(resolve.cache_identity).to eq("token:#{Digest::SHA256.hexdigest(token)}")
+      end
+
+      it 'passes only stylesheets and headers from global config', :aggregate_failures do
+        input = resolve.generator_input
+
+        expect(input).to include(stylesheets: [{ href: 's.css' }], headers: { 'X' => '1' }, auto_source: {})
+        expect(input).not_to have_key(:auth)
+        expect(input[:channel]).to eq(url: 'https://example.com/feed')
+      end
+
+      it 'fails when auto source is disabled' do
+        allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(false)
+
+        expect { resolve }.to raise_error(Html2rss::Web::AutoSourceDisabledError)
+      end
+
+      it 'rejects undecodable or invalid tokens' do
+        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token).and_return(nil)
+
+        expect { resolve }.to raise_error(Html2rss::Web::UnauthorizedError, 'Invalid token')
+      end
+
+      it 'rejects tokens for unknown accounts' do
+        allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(nil)
+
+        expect { resolve }.to raise_error(Html2rss::Web::UnauthorizedError, 'Account not found')
+      end
+
+      it 'denies urls the account may no longer access' do
+        allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(false)
+
+        expect { resolve }.to raise_error(Html2rss::Web::ForbiddenError, 'Access Denied')
+      end
+
+      it 'validates the token url against the token account', :aggregate_failures do
+        allow(Html2rss::Web::UrlValidator).to receive(:url_allowed?).and_return(true)
+        resolve
+
+        expect(Html2rss::Web::UrlValidator).to have_received(:url_allowed?).with(account, 'https://example.com/feed')
+        expect(Html2rss::Web::AccountManager).to have_received(:get_account_by_username).with('alice')
+      end
+
+      it 'accepts the configured default strategy and trims token strategies', :aggregate_failures do
+        allow(Html2rss::Config).to receive(:default_strategy_name).and_return(:custom)
+        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token)
+          .and_return(feed_token.with(strategy: ' custom '))
+
+        expect(resolve.strategy).to eq(:custom)
+      end
+    end
+  end
 end

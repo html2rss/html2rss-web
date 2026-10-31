@@ -20,7 +20,7 @@ module Html2rss
             when :token
               resolve_token(feed_request)
             else
-              raise Html2rss::Web::BadRequestError, "Unsupported feed target: #{feed_request.target_kind}"
+              raise BadRequestError, "Unsupported feed target: #{feed_request.target_kind}"
             end
           end
 
@@ -31,8 +31,8 @@ module Html2rss
           def resolve_static(feed_request)
             config = LocalConfig.find(feed_request.feed_name)
             build_static_source(feed_request, config)
-          rescue Html2rss::Web::LocalConfig::NotFound
-            raise Html2rss::Web::NotFoundError
+          rescue LocalConfig::NotFound
+            raise NotFoundError
           end
 
           # @param feed_request [Html2rss::Web::Feeds::Contracts::Request]
@@ -112,20 +112,20 @@ module Html2rss
           def ensure_auto_source_enabled!
             return if Flags.auto_source_enabled?
 
-            raise Html2rss::Web::AutoSourceDisabledError
+            raise AutoSourceDisabledError
           end
 
           # @param token [String]
           # @return [Html2rss::Web::FeedToken]
           def authorize_feed_token!(token)
             feed_token = Auth.validate_and_decode_feed_token(token)
-            raise Html2rss::Web::UnauthorizedError, 'Invalid token' unless feed_token
+            raise UnauthorizedError, 'Invalid token' unless feed_token
 
             account = AccountManager.get_account_by_username(feed_token.username)
-            raise Html2rss::Web::UnauthorizedError, 'Account not found' unless account
+            raise UnauthorizedError, 'Account not found' unless account
             return feed_token if UrlValidator.url_allowed?(account, feed_token.url)
 
-            raise Html2rss::Web::ForbiddenError, 'Access Denied'
+            raise ForbiddenError, 'Access Denied'
           end
 
           # @param feed_token [Html2rss::Web::FeedToken]
@@ -134,7 +134,7 @@ module Html2rss
             strategy = feed_token.strategy.to_s.strip
             return default_strategy_name if strategy.empty?
             return strategy if strategy == default_strategy_name
-            raise Html2rss::Web::BadRequestError, 'Unsupported strategy' unless SUPPORTED_STRATEGIES.include?(strategy)
+            raise BadRequestError, 'Unsupported strategy' unless SUPPORTED_STRATEGIES.include?(strategy)
 
             strategy
           end
