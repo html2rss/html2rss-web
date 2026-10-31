@@ -118,7 +118,7 @@ module Html2rss
           # @param token [String]
           # @return [Html2rss::Web::FeedToken]
           def authorize_feed_token!(token)
-            feed_token = Auth.validate_and_decode_feed_token(token)
+            feed_token = FeedToken.validate(token)
             raise UnauthorizedError, 'Invalid token' unless feed_token
 
             account = AccountManager.get_account_by_username(feed_token.username)

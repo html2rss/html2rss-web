@@ -26,26 +26,18 @@ module Html2rss
 
             def build_entries
               started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-              entries = Html2rss::Web::Catalog::Merge.call
+              entries = Catalog::Merge.call
               duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
               [entries, duration_ms]
             end
 
             def emit_success(count, duration_ms)
-              Observability.emit(
-                event_name: 'catalog.build',
-                outcome: 'success',
-                details: { count:, duration_ms: }
-              )
+              Observability.success('catalog.build', count:, duration_ms:)
             end
 
             def emit_failure(error)
-              Observability.emit(
-                event_name: 'catalog.build',
-                outcome: 'failure',
-                level: :warn,
-                details: { reason: error.message }
-              )
+              Observability.emit(event_name: 'catalog.build', outcome: 'failure', level: :warn,
+                                 details: { reason: error.message })
             end
 
             def success_payload(entries)

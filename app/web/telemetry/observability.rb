@@ -25,6 +25,20 @@ module Html2rss
             }
           )
         end
+
+        # Emits an +info+ +success+ event; trailing keyword arguments become +details+.
+        #
+        # @param event_name [String]
+        # @param details [Hash{Symbol=>Object}]
+        # @return [void]
+        def success(event_name, details = {}) = emit(event_name:, outcome: 'success', details:, level: :info)
+
+        # Emits an +error+ +failure+ event; trailing keyword arguments become +details+.
+        #
+        # @param event_name [String]
+        # @param details [Hash{Symbol=>Object}]
+        # @return [void]
+        def failure(event_name, details = {}) = emit(event_name:, outcome: 'failure', details:, level: :error)
       end
     end
   end

@@ -14,7 +14,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
   let(:feed_url) { 'https://example.com/articles' }
   let(:feed_token) do
-    Html2rss::Web::Auth.generate_feed_token(account[:username], feed_url, strategy: 'default')
+    Html2rss::Web::FeedToken.generate(account[:username], feed_url, strategy: 'default')
   end
   let(:encoded_feed_token) { CGI.escape(feed_token) }
 
@@ -147,7 +147,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         'RACK_ENV' => 'production',
         'HTML2RSS_SECRET_KEY' => 'scrubbed-secret-key-for-request-specs'
       ) do
-        generated_token = Html2rss::Web::Auth.generate_feed_token(account[:username], feed_url, strategy: 'default')
+        generated_token = Html2rss::Web::FeedToken.generate(account[:username], feed_url, strategy: 'default')
         get "/api/v1/feeds/#{generated_token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
 
         expect(ENV.fetch('HTML2RSS_SECRET_KEY', nil)).to be_nil
@@ -215,7 +215,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
 
     it 'returns 422 when extraction yields an empty feed warning', :aggregate_failures do
       unique_empty_url = "#{feed_url}/empty-warning"
-      empty_token = Html2rss::Web::Auth.generate_feed_token(account[:username], unique_empty_url, strategy: 'default')
+      empty_token = Html2rss::Web::FeedToken.generate(account[:username], unique_empty_url, strategy: 'default')
       stub_empty_feed_warning_result
 
       get "/api/v1/feeds/#{empty_token}.json"
@@ -357,7 +357,7 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
       end
 
       it 'returns error when feed creation fails' do
-        allow(Html2rss::Web::Auth).to receive(:generate_feed_token).and_return(nil)
+        allow(Html2rss::Web::FeedToken).to receive(:generate).and_return(nil)
 
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 

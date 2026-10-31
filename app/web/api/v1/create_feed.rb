@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
 require 'time'
 
 module Html2rss
@@ -9,16 +8,10 @@ module Html2rss
       module V1
         ##
         # Creates stable feed records from authenticated API requests.
-        module CreateFeed # rubocop:disable Metrics/ModuleLength
+        module CreateFeed
           FEED_ATTRIBUTE_KEYS = %i[id name url feed_token public_url json_public_url created_at updated_at].freeze
-          MAX_BODY_BYTES = 64 * 1024
-          ABSOLUTE_URL_REGEXP = %r{\A[a-z][a-z0-9+\-.]*://}i
-          HOSTNAME_INPUT_REGEXP = %r{
-            \A(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
-            (?:[/?#].*)?\z
-          }ix
 
-          class << self # rubocop:disable Metrics/ClassLength
+          class << self
             # Creates a feed and returns a normalized API success payload.
             #
             # @param request [Rack::Request] HTTP request with auth context.
@@ -26,7 +19,7 @@ module Html2rss
             def call(request)
               params = nil
               account = require_account(request)
-              params = build_create_params(request, account)
+              params = Input.call(request, account)
               feed_data = create_feed(params, account)
 
               emit_create(status: :success, details: { url: params.url })
@@ -46,76 +39,6 @@ module Html2rss
               account
             end
 
-            def build_create_params(request, account)
-              enforce_body_limit!(request)
-              params = request_params(request)
-              url = validated_url(params['url'], account)
-              name = params['name'].to_s.strip
-              name = nil if name.empty?
-              FeedMetadata::CreateParams.new(url:, name:)
-            end
-
-            def enforce_body_limit!(request)
-              return unless request.content_length.to_i > MAX_BODY_BYTES
-
-              raise BadRequestError, 'Payload too large'
-            end
-
-            def request_params(request)
-              return request.params unless json_request?(request)
-
-              request.GET.merge(parsed_json_body(request))
-            end
-
-            def parsed_json_body(request)
-              raw_body = read_limited_body(request)
-              return {} if raw_body.strip.empty?
-
-              parsed = JSON.parse(raw_body)
-              raise BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
-
-              parsed
-            rescue JSON::ParserError
-              raise BadRequestError, 'Invalid JSON payload'
-            end
-
-            def read_limited_body(request)
-              request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
-                request.body.rewind
-                raise BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
-              end
-            end
-
-            def json_request?(request)
-              request.env['CONTENT_TYPE'].to_s.include?('application/json')
-            end
-
-            # @param raw_url [String, nil]
-            # @param account [Hash]
-            # @return [String]
-            def validated_url(raw_url, account)
-              url = normalized_input_url(raw_url)
-              raise BadRequestError, 'URL parameter is required' if url.empty?
-
-              url = UrlValidator.canonical_url(url)
-              raise BadRequestError, 'Invalid URL format' unless url
-              raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(
-                account, url
-              )
-
-              url
-            end
-
-            # @param raw_url [String, nil]
-            # @return [String]
-            def normalized_input_url(raw_url)
-              url = raw_url.to_s.strip
-              return url if url.empty? || ABSOLUTE_URL_REGEXP.match?(url)
-              return "https:#{url}" if url.start_with?('//')
-
-              HOSTNAME_INPUT_REGEXP.match?(url) ? "https://#{url}" : url
-            end
-
             # Extracts via {Feeds::Service} before minting so create and serve share one expansion path.
             #
             # @param params [Html2rss::Web::Api::V1::FeedMetadata::CreateParams]
@@ -124,7 +47,7 @@ module Html2rss
             def create_feed(params, account)
               raise AutoSourceDisabledError unless Flags.auto_source_enabled?
 
-              feed_token = Auth.generate_feed_token(account[:username], params.url)
+              feed_token = FeedToken.generate(account[:username], params.url)
               raise InternalServerError, 'Failed to create feed' unless feed_token
 
               result = Feeds::Service.call(resolved_source_for(feed_token))

@@ -67,7 +67,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     end
 
     expect(waiter_error).to be_a(Exception)
-    expect(described_class.send(:in_flight)).to be_empty
+    expect(described_class.const_get(:IN_FLIGHT)).to be_empty
   end
 
   describe '.seconds_from_minutes' do
@@ -130,7 +130,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       fetch_at(now, key: 'abc')
 
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
-        event_name: 'cache.lifecycle', outcome: 'success',
+        event_name: 'cache.lifecycle', outcome: 'success', level: :info,
         details: { component: 'feeds_cache', event: 'write', key_hash: Digest::SHA256.hexdigest('abc')[0..11] }
       )
     end
@@ -146,7 +146,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       end
 
       expect(fetch_calls).to eq(2)
-      expect(described_class.send(:entries)).to be_empty
+      expect(described_class.const_get(:ENTRIES)).to be_empty
     end
 
     it 'consults a cacheable proc with the result', :aggregate_failures do
@@ -158,13 +158,13 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       described_class.fetch('k', ttl_seconds: 60, cacheable: predicate) { result }
 
       expect(seen).to eq([result])
-      expect(described_class.send(:entries)).to be_empty
+      expect(described_class.const_get(:ENTRIES)).to be_empty
     end
 
     it 'caches when the proc returns true' do
       described_class.fetch('k', ttl_seconds: 60, cacheable: ->(_r) { true }) { result }
 
-      expect(described_class.send(:entries)).to have_key('k')
+      expect(described_class.const_get(:ENTRIES)).to have_key('k')
     end
   end
 
@@ -172,8 +172,8 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
     it 'propagates errors, caches nothing and clears the in-flight slot', :aggregate_failures do
       expect { described_class.fetch('k', ttl_seconds: 60) { raise ArgumentError, 'boom' } }
         .to raise_error(ArgumentError, 'boom')
-      expect(described_class.send(:entries)).to be_empty
-      expect(described_class.send(:in_flight)).to be_empty
+      expect(described_class.const_get(:ENTRIES)).to be_empty
+      expect(described_class.const_get(:IN_FLIGHT)).to be_empty
     end
 
     # rubocop:disable-next RSpec/ExampleLength
@@ -219,9 +219,9 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       fetch_with_counter
 
       expect(described_class.clear!(reason: 'spec')).to be_nil
-      expect(described_class.send(:entries)).to be_empty
+      expect(described_class.const_get(:ENTRIES)).to be_empty
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
-        event_name: 'cache.lifecycle', outcome: 'success',
+        event_name: 'cache.lifecycle', outcome: 'success', level: :info,
         details: { component: 'feeds_cache', event: 'clear', reason: 'spec' }
       )
     end
@@ -248,7 +248,7 @@ RSpec.describe Html2rss::Web::Feeds::Cache do
       count.times { |i| described_class.fetch("k#{i}", ttl_seconds: ttl + i) { result } }
     end
 
-    def keys = described_class.send(:entries).keys
+    def keys = described_class.const_get(:ENTRIES).keys
 
     it 'does not prune below the max size', :aggregate_failures do
       fill(9)

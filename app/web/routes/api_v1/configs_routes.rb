@@ -32,10 +32,10 @@ module Html2rss
             def handle_get(router)
               unless Flags.config_catalog_enabled?
                 router.response.status = 404
-                return JSON.generate(error: 'catalog_disabled')
+                return ApiV1.render_json(error: 'catalog_disabled')
               end
 
-              JSON.generate(Api::V1::Configs.index(router))
+              ApiV1.render_json(Api::V1::Configs.index(router))
             end
 
             # @param router [Roda::RodaRequest]

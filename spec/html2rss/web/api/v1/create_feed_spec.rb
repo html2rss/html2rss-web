@@ -20,7 +20,8 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
 
   before do
     allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
-    allow(Html2rss::Web::Auth).to receive_messages(authenticate: account, generate_feed_token: 'feed-token')
+    allow(Html2rss::Web::Auth).to receive(:authenticate).and_return(account)
+    allow(Html2rss::Web::FeedToken).to receive(:generate).and_return('feed-token')
     allow(Html2rss::Web::Feeds::SourceResolver).to receive(:call).and_return(:resolved)
     allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(result)
     allow(Html2rss::Web::Observability).to receive(:emit)
@@ -89,7 +90,7 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
     end
 
     it 'fails when the feed token cannot be minted' do
-      allow(Html2rss::Web::Auth).to receive(:generate_feed_token).and_return(nil)
+      allow(Html2rss::Web::FeedToken).to receive(:generate).and_return(nil)
 
       expect do
         described_class.call(request)
@@ -99,7 +100,7 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
     it 'mints the token for the account username and validated url, then resolves it', :aggregate_failures do
       described_class.call(request)
 
-      expect(Html2rss::Web::Auth).to have_received(:generate_feed_token).with('alice', 'https://example.com/news')
+      expect(Html2rss::Web::FeedToken).to have_received(:generate).with('alice', 'https://example.com/news')
       expect(Html2rss::Web::Feeds::SourceResolver).to have_received(:call).with(
         have_attributes(target_kind: :token, feed_name: nil, token: 'feed-token', params: {})
       )
@@ -252,7 +253,7 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
     end
 
     describe 'body limit' do
-      let(:limit) { described_class::MAX_BODY_BYTES }
+      let(:limit) { Html2rss::Web::Api::V1::CreateFeed::Input::MAX_BODY_BYTES }
 
       def body_of(size)
         prefix = '{"url":"https://example.com/","pad":"'

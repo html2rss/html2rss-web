@@ -65,49 +65,30 @@ module Html2rss
         # +error_message+ is internal observability only.
         RenderResult = Data.define(:status, :payload, :ttl_seconds, :cache_key, :decision, :error_message,
                                    :error_class, :empty_reason, :diagnostics, :cache_hit) do
-          class << self
-            ##
-            # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-            alias_method :__new, :new
-            private :__new
-
-            # Defaults keep existing keyword call sites stable when optional fields are absent.
-            # Non-ok status requires +decision+ or raises ArgumentError.
-            #
-            # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-            def new(**) # rubocop:disable Metrics/MethodLength
-              result = __new(
-                payload: nil,
-                decision: nil,
-                error_message: nil,
-                error_class: nil,
-                empty_reason: nil,
-                diagnostics: ErrorClassifier::Diagnostics.empty,
-                cache_hit: false,
-                **
-              )
-              return result if result.status == :ok || result.decision
-
-              raise ArgumentError, 'non-ok RenderResult requires decision'
-            end
+          # Optional fields default when absent; non-ok status requires +decision+.
+          #
+          # @param payload [RenderPayload, nil]
+          # @param decision [ErrorClassifier::Decision, nil]
+          # @param error_message [String, nil]
+          # @param error_class [String, nil]
+          # @param empty_reason [String, nil]
+          # @param diagnostics [ErrorClassifier::Diagnostics]
+          # @param cache_hit [Boolean]
+          # @raise [ArgumentError] when a non-ok result has no decision
+          def initialize(payload: nil, decision: nil, error_message: nil, error_class: nil, empty_reason: nil, # rubocop:disable Metrics/ParameterLists
+                         diagnostics: ErrorClassifier::Diagnostics.empty, cache_hit: false, **)
+            super
+            raise ArgumentError, 'non-ok RenderResult requires decision' unless status == :ok || decision
           end
 
           # @return [Integer]
-          def http_status
-            return 200 if status == :ok
-
-            decision.status
-          end
+          def http_status = status == :ok ? 200 : decision.status
 
           # @return [String]
-          def client_message
-            decision.message
-          end
+          def client_message = decision.message
 
           # @return [Boolean]
-          def cacheable?
-            decision.nil? || decision.cacheable
-          end
+          def cacheable? = decision.nil? || decision.cacheable
         end
       end
     end

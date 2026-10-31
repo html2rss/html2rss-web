@@ -90,12 +90,9 @@ module Html2rss
             env[RequestTarget::ENV_KEY] = RequestTarget::FEED
           end
 
-          error = TooManyRequestsError.new
           response = Rack::Response.new
           response['Retry-After'] = retry_after.to_s
-
-          body = ErrorResponder.respond(request: request, response: response, error: error)
-          response.write(body)
+          response.write(ErrorResponder.respond(request:, response:, error: TooManyRequestsError.new))
           return response.finish
         end
 

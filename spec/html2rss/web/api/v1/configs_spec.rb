@@ -27,7 +27,7 @@ RSpec.describe Html2rss::Web::Api::V1::Configs do
       described_class.index(nil)
 
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
-        event_name: 'catalog.build', outcome: 'success', details: { count: 2, duration_ms: 12 }
+        event_name: 'catalog.build', outcome: 'success', details: { count: 2, duration_ms: 12 }, level: :info
       )
     end
 

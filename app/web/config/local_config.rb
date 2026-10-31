@@ -57,7 +57,7 @@ module Html2rss
         end
 
         ##
-        # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
+        # @return [ConfigSnapshot::Snapshot]
         def snapshot
           @mutex.synchronize { @snapshot ||= load_snapshot }
         rescue KeyError, TypeError, ArgumentError => error
@@ -81,7 +81,7 @@ module Html2rss
         # Reparses and normalizes the current config file without mutating the
         # memoized runtime snapshot.
         #
-        # @return [Html2rss::Web::ConfigSnapshot::Snapshot]
+        # @return [ConfigSnapshot::Snapshot]
         def load_snapshot
           ConfigSnapshot.load(load_yaml)
         rescue KeyError, TypeError, ArgumentError => error
@@ -93,11 +93,7 @@ module Html2rss
         # @return [nil]
         def reload!(reason: 'manual')
           @mutex.synchronize { @snapshot = nil }
-          Observability.emit(
-            event_name: 'cache.lifecycle',
-            outcome: 'success',
-            details: { component: 'local_config', event: 'reload', reason: }
-          )
+          Observability.success('cache.lifecycle', component: 'local_config', event: 'reload', reason:)
           nil
         end
 

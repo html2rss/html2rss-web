@@ -16,7 +16,7 @@ module Html2rss
                 mount_liveness(router)
 
                 router.get do
-                  JSON.generate(Api::V1::Health.show(router))
+                  ApiV1.render_json(Api::V1::Health.show(router))
                 end
               end
             end
@@ -28,7 +28,7 @@ module Html2rss
             def mount_readiness(router)
               router.on 'ready' do
                 router.get do
-                  JSON.generate(Api::V1::Health.ready(router))
+                  ApiV1.render_json(Api::V1::Health.ready(router))
                 end
               end
             end
@@ -38,7 +38,7 @@ module Html2rss
             def mount_liveness(router)
               router.on 'live' do
                 router.get do
-                  JSON.generate(Api::V1::Health.live(router))
+                  ApiV1.render_json(Api::V1::Health.live(router))
                 end
               end
             end

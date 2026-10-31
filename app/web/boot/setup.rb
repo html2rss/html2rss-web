@@ -7,11 +7,6 @@ module Html2rss
       # Applies boot-time runtime configuration outside the Roda class body.
       module Setup
         class << self
-          # @return [Boolean]
-          def sentry_enabled?
-            RuntimeEnv.sentry_enabled?
-          end
-
           # Validates environment configuration and wires the request service.
           #
           # @return [void]

@@ -28,6 +28,33 @@ module Html2rss
     class FeedToken
       DEFAULT_EXPIRY = 315_360_000
 
+      class << self
+        # @param username [String]
+        # @param url [String]
+        # @param strategy [String, nil]
+        # @param expires_in [Integer] seconds (default: 10 years)
+        # @return [String, nil] encoded signed token when inputs are valid.
+        def generate(username, url, strategy: nil, expires_in: DEFAULT_EXPIRY)
+          token = Signer.create(username:, url:, strategy:, expires_in:, secret_key: RuntimeEnv.secret_key)
+          token && Codec.encode(token)
+        end
+
+        # Decodes and verifies an encoded token, recording usage and the request strategy.
+        #
+        # @param encoded [String, nil]
+        # @return [Html2rss::Web::FeedToken, nil]
+        def validate(encoded)
+          decoded = Codec.decode(encoded) or return
+
+          validated = Signer.validate_decoded(decoded, decoded.url, RuntimeEnv.secret_key)
+          if (strategy = validated&.strategy) && (context = RequestContext.current)
+            RequestContext.set!(context.with(strategy:))
+          end
+          SecurityLogger.log_token_usage(encoded, decoded.url, !validated.nil?)
+          validated
+        end
+      end
+
       ##
       # zlib + URL-safe Base64 codec for feed-token wire payloads.
       module Codec

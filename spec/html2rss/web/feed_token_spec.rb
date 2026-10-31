@@ -345,4 +345,75 @@ RSpec.describe Html2rss::Web::FeedToken do
       expect(token.expired?).to be(false)
     end
   end
+
+  describe '.generate and .validate' do
+    let(:context) do
+      Html2rss::Web::RequestContext::Context.new(
+        request_id: 'r', path: '/', http_method: 'GET', route_group: 'x', actor: nil, strategy: nil,
+        started_at: Time.now, monotonic_start: 0
+      )
+    end
+
+    before do
+      Html2rss::Web::RequestContext.clear!
+      allow(Html2rss::Web::RuntimeEnv).to receive(:secret_key).and_return('secret')
+    end
+
+    after { Html2rss::Web::RequestContext.clear! }
+
+    it 'round-trips a generated token with its url and strategy', :aggregate_failures do
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_token_usage)
+      encoded = described_class.generate('alice', 'https://example.com/f', strategy: 'faraday')
+      token = described_class.validate(encoded)
+
+      expect(token).to have_attributes(username: 'alice', url: 'https://example.com/f', strategy: 'faraday')
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_token_usage).with(encoded, 'https://example.com/f',
+                                                                                    true)
+    end
+
+    it 'honours expires_in', :aggregate_failures do
+      encoded = described_class.generate('alice', 'https://example.com/f', expires_in: 60)
+      decoded = described_class::Codec.decode(encoded)
+
+      expect(decoded.expires_at).to be_within(2).of(Time.now.to_i + 60)
+    end
+
+    it 'defaults to the long-lived expiry' do
+      decoded = described_class::Codec.decode(described_class.generate('alice', 'https://example.com/f'))
+
+      expect(decoded.expires_at).to be_within(2).of(Time.now.to_i + Html2rss::Web::FeedToken::DEFAULT_EXPIRY)
+    end
+
+    it 'returns nil for invalid generation input' do
+      expect(described_class.generate('', 'https://example.com/f')).to be_nil
+    end
+
+    it 'returns nil for undecodable tokens without logging usage' do
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_token_usage)
+
+      expect(described_class.validate('garbage')).to be_nil
+      expect(Html2rss::Web::SecurityLogger).not_to have_received(:log_token_usage)
+    end
+
+    it 'rejects tokens signed with another secret and logs the failure', :aggregate_failures do
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_token_usage)
+      encoded = described_class.generate('alice', 'https://example.com/f')
+      allow(Html2rss::Web::RuntimeEnv).to receive(:secret_key).and_return('other')
+
+      expect(described_class.validate(encoded)).to be_nil
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_token_usage).with(encoded, 'https://example.com/f',
+                                                                                    false)
+    end
+
+    it 'assigns the strategy to the request context only when present', :aggregate_failures do
+      Html2rss::Web::RequestContext.set!(context)
+      described_class.validate(described_class.generate('alice', 'https://example.com/f'))
+      expect(Html2rss::Web::RequestContext.current.strategy).to be_nil
+
+      described_class.validate(
+        described_class.generate('alice', 'https://example.com/f', strategy: 'faraday')
+      )
+      expect(Html2rss::Web::RequestContext.current.strategy).to eq('faraday')
+    end
+  end
 end
