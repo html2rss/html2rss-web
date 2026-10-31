@@ -34,7 +34,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 ## Development Setup (Docker)
 
 Use the `dev` stage of the root `Dockerfile` via `docker-compose.dev.yml` for all local development and tests.
-Running the app directly on the host is not supported.
+Running the app directly on the host is not supported. On Linux, export `DEV_UID=$(id -u) DEV_GID=$(id -g)` before `build` so bind-mounted files stay owned by you. CI runs the same image via `.github/actions/dev-image`.
 
 ```bash
 docker compose -f docker-compose.dev.yml build
@@ -111,7 +111,7 @@ docker compose -f docker-compose.dev.yml run --rm dev make ci-ready
 | Ruby API          | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
 | Frontend unit     | Vitest + Testing Library | Component rendering and hooks with mocked fetch.     |
 | Frontend contract | Vitest + MSW             | End-to-end fetch flows against mocked API responses. |
-| Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
+| Docker smoke      | `rake` (Rakefile)        | HTTP probes against the built runtime image.         |
 
 ---
 

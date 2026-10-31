@@ -105,9 +105,6 @@ jobs:
   docker-build-smoke-image:
     needs:
       - hadolint
-      - ruby
-      - openapi
-      - frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
