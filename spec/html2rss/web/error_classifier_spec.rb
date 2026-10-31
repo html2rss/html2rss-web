@@ -506,7 +506,7 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
     end
   end
 
-  describe '.error_chain' do
+  describe '.error_chain (ordering and cycles)' do
     it 'walks causes in order and stops on cycles', :aggregate_failures do
       inner = StandardError.new('inner')
       outer = StandardError.new('outer')
