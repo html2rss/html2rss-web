@@ -208,6 +208,15 @@ export function useFeedFlow({
     setRefineUrl(url);
   };
 
+  const onRefineAuthFailure = () => {
+    const returnUrl = refineUrl;
+    clearToken();
+    setTokenDraft('');
+    setTokenError(COPY.tokenRejected);
+    setRefineUrl(undefined);
+    if (returnUrl) navigate({ kind: 'token', prefillUrl: returnUrl });
+  };
+
   const onRefineSave = async (selectors: RefineSelectors) => {
     if (!refineUrl) return;
 
@@ -220,11 +229,7 @@ export function useFeedFlow({
       const failure = submitError as FeedCreationError;
       clearError();
       if (failure.kind === 'auth' || failure.nextAction === 'enter_token') {
-        clearToken();
-        setTokenDraft('');
-        setTokenError(COPY.tokenRejected);
-        setRefineUrl(undefined);
-        navigate({ kind: 'token', prefillUrl: refineUrl });
+        onRefineAuthFailure();
         return;
       }
       setRefineSaveError(failure.message);
@@ -329,6 +334,7 @@ export function useFeedFlow({
     onOpenRefine,
     onCloseRefine: () => setRefineUrl(undefined),
     onRefineSave,
+    onRefineAuthFailure,
     setUtilityHelp,
     setTokenDraft,
     setTokenError,

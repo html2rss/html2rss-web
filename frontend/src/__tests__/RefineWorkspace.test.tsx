@@ -49,6 +49,7 @@ function stub({ issues = [], preview, suggest = candidates }: Stubs = {}) {
 function renderWorkspace(overrides: Partial<Parameters<typeof RefineWorkspace>[0]> = {}) {
   const onSave = vi.fn();
   const onCancel = vi.fn();
+  const onAuthFailure = vi.fn();
   render(
     <RefineWorkspace
       url={URL_UNDER_REFINE}
@@ -56,10 +57,11 @@ function renderWorkspace(overrides: Partial<Parameters<typeof RefineWorkspace>[0
       isSaving={false}
       onSave={onSave}
       onCancel={onCancel}
+      onAuthFailure={onAuthFailure}
       {...overrides}
     />
   );
-  return { onSave, onCancel };
+  return { onSave, onCancel, onAuthFailure };
 }
 
 describe('RefineWorkspace', () => {
@@ -94,7 +96,7 @@ describe('RefineWorkspace', () => {
     stub({ preview: { item_count: 0, sample_items: [], failure_kind: 'min_items' } });
     renderWorkspace();
 
-    expect(await screen.findByText(COPY.refineNoResult, undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(COPY.refineFailureTitleMinItems, undefined, SLOW)).toBeInTheDocument();
     expect(screen.getByText(COPY.refineFailureMinItems)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
   });
@@ -139,7 +141,7 @@ describe('RefineWorkspace', () => {
     expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
   });
 
-  it('shows a preview error from the server', async () => {
+  it('shows plain copy for a server preview error', async () => {
     stub();
     server.use(
       http.post('/api/v1/refine/preview', () =>
@@ -151,7 +153,7 @@ describe('RefineWorkspace', () => {
     );
     renderWorkspace();
 
-    expect(await screen.findByText('Upstream exploded', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(COPY.refineUnavailable, undefined, SLOW)).toBeInTheDocument();
   });
 
   it('surfaces a save failure and disables actions while saving', async () => {
@@ -164,7 +166,7 @@ describe('RefineWorkspace', () => {
     stub();
     renderWorkspace({ isSaving: true });
 
-    expect(screen.getByRole('button', { name: COPY.creating })).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY.refineSaving })).toBeDisabled();
     expect(screen.getByRole('button', { name: COPY.back })).toBeDisabled();
   });
 
@@ -174,5 +176,70 @@ describe('RefineWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: COPY.back }));
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('hands a rejected token during preview to the caller instead of dead-ending', async () => {
+    stub();
+    server.use(
+      http.post('/api/v1/refine/preview', () =>
+        HttpResponse.json(
+          {
+            success: false,
+            error: { code: 'UNAUTHORIZED', message: 'nope', kind: 'auth', next_action: 'enter_token' },
+          },
+          { status: 401 }
+        )
+      )
+    );
+    const { onAuthFailure } = renderWorkspace();
+
+    await waitFor(() => expect(onAuthFailure).toHaveBeenCalled(), SLOW);
+  });
+
+  it('never shows raw network text and offers to check again', async () => {
+    stub();
+    server.use(http.post('/api/v1/refine/preview', () => HttpResponse.error()));
+    renderWorkspace();
+
+    expect(await screen.findByText(COPY.refineOffline, undefined, SLOW)).toBeInTheDocument();
+    expect(screen.queryByText(/failed to fetch/i)).not.toBeInTheDocument();
+
+    server.use(
+      http.post('/api/v1/refine/preview', () =>
+        HttpResponse.json({
+          success: true,
+          data: { item_count: 1, sample_items: [{ title: 'Back again', url: 'https://example.com/1' }] },
+        })
+      )
+    );
+    fireEvent.click(screen.getByRole('button', { name: COPY.refineRecheck }));
+
+    expect(await screen.findByText('Back again', undefined, SLOW)).toBeInTheDocument();
+  });
+
+  it('does not let a newer, unchecked draft be saved', async () => {
+    stub();
+    const { onSave } = renderWorkspace();
+    await screen.findByText('First post', undefined, SLOW);
+
+    fireEvent.input(screen.getByLabelText(COPY.refineItemsLabel, { exact: true }), {
+      target: { value: 'li.post' },
+    });
+
+    expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('button', { name: COPY.refineSave }).closest('form')!);
+    expect(onSave).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByRole('button', { name: COPY.refineSave })).toBeEnabled(), SLOW);
+  });
+
+  it('explains why Save is unavailable while the item selector is blank', async () => {
+    stub({ suggest: 'fail' });
+    renderWorkspace();
+
+    const hint = await screen.findByText(COPY.refineItemsHint, undefined, SLOW);
+    expect(screen.getByRole('button', { name: COPY.refineSave })).toHaveAttribute(
+      'aria-describedby',
+      hint.id
+    );
   });
 });

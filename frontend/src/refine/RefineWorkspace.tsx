@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'preact/hooks';
 import { Notice } from '../components/Notice';
 import { PreviewItem } from '../components/PreviewItem';
 import { COPY } from '../journey/copy';
-import { describeFailure, describeIssue, groupIssues } from './refineModel';
+import { describeFailure, describeIssue, failureTitle, groupIssues } from './refineModel';
 import type { RefineCandidate } from './refineService';
 import {
   REFINE_FIELDS,
+  isDraftComplete,
   selectorsFromDraft,
   withField,
   withItems,
@@ -27,6 +28,7 @@ interface RefineWorkspaceProperties {
   saveError?: string;
   onSave: (selectors: RefineSelectors) => void;
   onCancel: () => void;
+  onAuthFailure: () => void;
 }
 
 interface SelectorFieldProperties {
@@ -62,27 +64,32 @@ function SelectorField({
         autoComplete="off"
         autoCapitalize="off"
         aria-invalid={problems.length > 0 || undefined}
+        aria-describedby={problems.length > 0 ? `${id}-problems` : undefined}
         onInput={(event) => onInput(event.currentTarget.value)}
       />
-      {problems.map((problem) => (
-        <span key={problem} class="field-error">
-          {problem}
-        </span>
-      ))}
-      {candidates.length > 0 && (
+      {problems.length > 0 && (
+        <div id={`${id}-problems`} class="layout-stack layout-stack--tight">
+          {problems.map((problem) => (
+            <span key={problem} class="field-error">
+              {problem}
+            </span>
+          ))}
+        </div>
+      )}
+      {/* A lone suggestion already in the field adds nothing. */}
+      {(candidates.length > 1 || (candidates.length === 1 && candidates[0].selector !== value)) && (
         <ul class="refine-suggestions" role="list" aria-label={COPY.refineSuggestions(label)}>
           {candidates.slice(0, 4).map((candidate) => (
-            <li key={candidate.selector}>
+            <li key={candidate.selector} class="refine-suggestions__item">
               <button
                 type="button"
-                class="btn btn--quiet btn--linkish"
+                class="btn btn--ghost refine-suggestions__chip"
                 aria-pressed={candidate.selector === value}
-                title={candidate.sample}
                 onClick={() => onInput(candidate.selector, candidate)}
               >
                 <code>{candidate.selector}</code>
-                {candidate.sample && <span class="refine-suggestions__sample"> {candidate.sample}</span>}
               </button>
+              {candidate.sample && <span class="refine-suggestions__sample">{candidate.sample}</span>}
             </li>
           ))}
         </ul>
@@ -99,8 +106,13 @@ export function RefineWorkspace({
   saveError,
   onSave,
   onCancel,
+  onAuthFailure,
 }: RefineWorkspaceProperties) {
-  const { draft, setDraft, suggestion, issues, preview, canSave } = useRefine({ url, token });
+  const { draft, setDraft, suggestion, issues, preview, canSave, recheck } = useRefine({
+    url,
+    token,
+    onAuthFailure,
+  });
   const itemsReference = useRef<HTMLInputElement>(null);
   const grouped = groupIssues(issues);
   const candidates = suggestion.status === 'ready' ? suggestion.candidates : undefined;
@@ -112,23 +124,20 @@ export function RefineWorkspace({
   }, []);
 
   return (
-    <section class="refine-shell layout-stack layout-rail-reading" aria-labelledby="refine-heading">
+    <section class="layout-stack layout-rail-reading" aria-labelledby="refine-heading">
       <header class="layout-stack layout-stack--tight">
         <p class="ui-eyebrow">{COPY.refineEyebrow}</p>
-        <h1 id="refine-heading" class="result-title ui-display-title">
+        <h1 id="refine-heading" class="ui-display-title">
           {COPY.refineTitle}
         </h1>
-        <p class="field-help">{url}</p>
+        <p class="field-help refine-url">{url}</p>
       </header>
 
-      {suggestion.status === 'loading' && (
-        <Notice state="loading" title={COPY.refineSuggesting} ariaLive="polite" />
-      )}
-      {suggestion.status === 'failed' && (
-        <Notice tone="error" title={COPY.refineSuggestionsFailed}>
-          <p>{COPY.refineSuggestionsFailedBody}</p>
-        </Notice>
-      )}
+      {/* One fixed-height line so the form below does not move when suggestions arrive. */}
+      <p class="field-help refine-status" role="status">
+        {suggestion.status === 'loading' && COPY.refineSuggesting}
+        {suggestion.status === 'failed' && COPY.refineSuggestionsFailed}
+      </p>
 
       <form
         class="field-stack"
@@ -164,15 +173,36 @@ export function RefineWorkspace({
           </span>
         ))}
 
-        <div role="status" aria-live="polite" class="layout-stack layout-stack--tight">
+        <div role="status" aria-live="polite" class="refine-preview layout-stack layout-stack--tight">
+          {preview.status === 'idle' && !isDraftComplete(draft) && (
+            <p id="refine-hint" class="field-help refine-hint">
+              {COPY.refineItemsHint}
+            </p>
+          )}
           {preview.status === 'loading' && <Notice state="loading" title={COPY.previewChecking} />}
           {preview.status === 'failed' && (
-            <Notice tone="error" title={COPY.refinePreviewFailed}>
+            <Notice
+              tone="error"
+              title={COPY.refinePreviewFailed}
+              actions={
+                <button type="button" class="btn btn--ghost" onClick={recheck}>
+                  {COPY.refineRecheck}
+                </button>
+              }
+            >
               <p>{preview.message}</p>
             </Notice>
           )}
           {preview.status === 'ready' && preview.preview.failureKind && (
-            <Notice tone="error" title={COPY.refineNoResult}>
+            <Notice
+              tone="error"
+              title={failureTitle(preview.preview.failureKind)}
+              actions={
+                <button type="button" class="btn btn--ghost" onClick={recheck}>
+                  {COPY.refineRecheck}
+                </button>
+              }
+            >
               <p>{describeFailure(preview.preview.failureKind)}</p>
             </Notice>
           )}
@@ -182,7 +212,7 @@ export function RefineWorkspace({
               <ul class="ui-item-list" role="list">
                 {preview.preview.items.map((item) => (
                   <li key={`${item.title}-${item.url}`} class="ui-item">
-                    <PreviewItem title={item.title} excerpt="" url={item.url} publishedLabel="" />
+                    <PreviewItem title={item.title} excerpt={item.url} />
                   </li>
                 ))}
               </ul>
@@ -197,8 +227,13 @@ export function RefineWorkspace({
         )}
 
         <div class="ui-actions">
-          <button type="submit" class="btn btn--primary" disabled={!canSave || isSaving}>
-            {isSaving ? COPY.creating : COPY.refineSave}
+          <button
+            type="submit"
+            class="btn btn--primary"
+            disabled={!canSave || isSaving}
+            aria-describedby={isDraftComplete(draft) ? undefined : 'refine-hint'}
+          >
+            {isSaving ? COPY.refineSaving : COPY.refineSave}
           </button>
           <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancel} disabled={isSaving}>
             {COPY.back}

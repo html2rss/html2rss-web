@@ -33,11 +33,27 @@ export type PreviewState =
 interface UseRefineOptions {
   readonly url: string;
   readonly token: string;
+  /** Called when the server rejects the access token, so the caller can ask for a new one. */
+  readonly onAuthFailure: () => void;
 }
 
+interface ApiFailure {
+  kind?: string;
+  nextAction?: string;
+  message?: unknown;
+}
+
+function isAuthFailure(error: unknown): boolean {
+  const { kind, nextAction } = (error ?? {}) as ApiFailure;
+  return kind === 'auth' || nextAction === 'enter_token';
+}
+
+/** Plain-language text; raw network errors and generic server defaults never reach the screen. */
 function errorMessage(error: unknown): string {
-  const message = (error as { message?: unknown } | undefined)?.message;
-  return typeof message === 'string' && message ? message : COPY.refineUnavailable;
+  const { kind, message } = (error ?? {}) as ApiFailure;
+  if (kind === undefined || kind === 'network') return COPY.refineOffline;
+  if (kind === 'input' && typeof message === 'string' && message) return message;
+  return COPY.refineUnavailable;
 }
 
 /** Seeds an empty draft from the best capture candidates so the first view is almost right. */
@@ -51,11 +67,14 @@ function seedDraft(candidates: RefineCandidates): RefineDraft {
   };
 }
 
-export function useRefine({ url, token }: UseRefineOptions) {
+export function useRefine({ url, token, onAuthFailure }: UseRefineOptions) {
   const [draft, setDraft] = useState<RefineDraft>(emptyDraft);
   const [suggestion, setSuggestion] = useState<SuggestionState>({ status: 'loading' });
   const [issues, setIssues] = useState<readonly RefineIssue[]>([]);
   const [preview, setPreview] = useState<PreviewState>({ status: 'idle' });
+  // The draft the current preview belongs to; a newer draft is not saveable until it is previewed too.
+  const [previewedDraft, setPreviewedDraft] = useState<RefineDraft | undefined>(undefined);
+  const [recheckCount, setRecheckCount] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,7 +84,9 @@ export function useRefine({ url, token }: UseRefineOptions) {
         setSuggestion({ status: 'ready', candidates });
         setDraft((current) => (isDraftComplete(current) ? current : seedDraft(candidates)));
       } catch (error) {
-        if (!isAbortError(error)) setSuggestion({ status: 'failed' });
+        if (isAbortError(error)) return;
+        if (isAuthFailure(error)) onAuthFailure();
+        else setSuggestion({ status: 'failed' });
       }
     };
     void load();
@@ -90,12 +111,13 @@ export function useRefine({ url, token }: UseRefineOptions) {
           return;
         }
         setPreview({ status: 'loading' });
-        setPreview({
-          status: 'ready',
-          preview: await previewSelectors(url, selectors, token, controller.signal),
-        });
+        const result = await previewSelectors(url, selectors, token, controller.signal);
+        setPreview({ status: 'ready', preview: result });
+        setPreviewedDraft(draft);
       } catch (error) {
-        if (!isAbortError(error)) setPreview({ status: 'failed', message: errorMessage(error) });
+        if (isAbortError(error)) return;
+        if (isAuthFailure(error)) onAuthFailure();
+        else setPreview({ status: 'failed', message: errorMessage(error) });
       }
     }, CHECK_DELAY_MS);
 
@@ -103,13 +125,16 @@ export function useRefine({ url, token }: UseRefineOptions) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [draft, url, token]);
+  }, [draft, url, token, recheckCount]);
 
   const canSave =
     isDraftComplete(draft) &&
     issues.length === 0 &&
     preview.status === 'ready' &&
+    previewedDraft === draft &&
     preview.preview.failureKind === undefined;
 
-  return { draft, setDraft, suggestion, issues, preview, canSave };
+  const recheck = () => setRecheckCount((count) => count + 1);
+
+  return { draft, setDraft, suggestion, issues, preview, canSave, recheck };
 }

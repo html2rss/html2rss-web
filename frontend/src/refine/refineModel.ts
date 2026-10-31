@@ -27,6 +27,23 @@ export function describeFailure(kind: RefineFailureKind): string {
   }
 }
 
+export function failureTitle(kind: RefineFailureKind): string {
+  switch (kind) {
+    case 'schema': {
+      return COPY.refineFailureTitleSchema;
+    }
+    case 'execution': {
+      return COPY.refineFailureTitleExecution;
+    }
+    case 'min_items': {
+      return COPY.refineFailureTitleMinItems;
+    }
+    case 'quality': {
+      return COPY.refineFailureTitleQuality;
+    }
+  }
+}
+
 export function groupIssues(issues: readonly RefineIssue[]) {
   const groups: Partial<Record<'items' | RefineFieldId | 'other', RefineIssue[]>> = {};
   for (const issue of issues) {
@@ -38,5 +55,5 @@ export function groupIssues(issues: readonly RefineIssue[]) {
 
 export function describeIssue(issue: RefineIssue): string {
   const field = issueField(issue.path);
-  return field ? `${FIELD_LABELS[field]}: ${issue.message}` : issue.message;
+  return `${field ? FIELD_LABELS[field] : COPY.refineSelectorsLabel}: ${issue.message}`;
 }

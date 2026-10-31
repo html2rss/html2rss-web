@@ -85,6 +85,6 @@ describe('refineModel', () => {
     expect(describeIssue({ path: ['selectors', 'title', 'selector'], message: 'is blank' })).toBe(
       `${COPY.refineTitleLabel}: is blank`
     );
-    expect(describeIssue({ path: [], message: 'odd' })).toBe('odd');
+    expect(describeIssue({ path: [], message: 'odd' })).toBe(`${COPY.refineSelectorsLabel}: odd`);
   });
 });

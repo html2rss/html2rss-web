@@ -77,6 +77,7 @@ export function App() {
     onOpenRefine,
     onCloseRefine,
     onRefineSave,
+    onRefineAuthFailure,
     setUtilityHelp,
     setTokenDraft,
     setTokenError,
@@ -145,6 +146,7 @@ export function App() {
         saveError={refineSaveError}
         onSave={(selectors) => void onRefineSave(selectors)}
         onCancel={onCloseRefine}
+        onAuthFailure={onRefineAuthFailure}
       />
     );
   } else if (viewModel.kind === 'result') {

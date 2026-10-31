@@ -104,7 +104,7 @@ export function ResultDisplay({
           </a>
         )}
         {onRefine && (
-          <button type="button" class="btn btn--ghost" onClick={onRefine}>
+          <button type="button" class="btn btn--quiet btn--linkish" onClick={onRefine}>
             {COPY.refineEntry}
           </button>
         )}
