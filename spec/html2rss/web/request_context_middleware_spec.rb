@@ -33,6 +33,7 @@ RSpec.describe Html2rss::Web::RequestContextMiddleware do
       ['GET', '/api/v1/health/ready', 'health'],
       ['GET', '/api/v1/configs', 'catalog'],
       ['POST', '/api/v1/feeds', 'feed_create'],
+      ['POST', '/api/v1/refine/preview', 'refine'],
       ['GET', '/api/v1/feeds/sensitive-token-value.json', 'feed_render'],
       ['GET', '/apple.com/newsroom.rss', 'feed_render'],
       ['GET', '/feeds/example', 'feed_render'],

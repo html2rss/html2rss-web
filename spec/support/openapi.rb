@@ -6,9 +6,8 @@ if ENV['OPENAPI']
   RSpec::OpenAPI.path = 'public/openapi.yaml'
   RSpec::OpenAPI.title = 'html2rss-web API'
   RSpec::OpenAPI.application_version = Html2rss::Web::VERSION
-  # Spectral `oas3-schema` validates OAS 3.0; pin so nullables use `nullable: true`
-  # instead of OAS 3.1+ `type: [..., null]` unions.
-  RSpec::OpenAPI.openapi_version = '3.0.3'
+  # 3.1 aligns with JSON Schema 2020-12; nullables become `type: [..., null]` unions.
+  RSpec::OpenAPI.openapi_version = '3.1.0'
   RSpec::OpenAPI.enable_example = false
   RSpec::OpenAPI.enable_example_summary = false
   RSpec::OpenAPI.example_types = [:request]
@@ -238,7 +237,8 @@ if ENV['OPENAPI']
       { 'name' => 'Catalog', 'description' => 'Public feed-directory catalog metadata.' },
       { 'name' => 'Health', 'description' => 'Health and readiness endpoints.' },
       { 'name' => 'Strategies', 'description' => 'Feed extraction strategy discovery.' },
-      { 'name' => 'Feeds', 'description' => 'Feed creation and feed rendering operations.' }
+      { 'name' => 'Feeds', 'description' => 'Feed creation and feed rendering operations.' },
+      { 'name' => 'Refine', 'description' => 'Selector validation, preview and suggestions (REFINE_ENABLED).' }
     ]
 
     if spec.key?('tags')

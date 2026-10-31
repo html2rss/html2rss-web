@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
-
 module Html2rss
   module Web
     module Api
@@ -10,7 +8,6 @@ module Html2rss
           ##
           # Parses, normalizes and authorizes the client-supplied feed creation input.
           module Input
-            MAX_BODY_BYTES = 64 * 1024
             ABSOLUTE_URL_REGEXP = %r{\A[a-z][a-z0-9+\-.]*://}i
             HOSTNAME_INPUT_REGEXP = %r{
               \A(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?)
@@ -23,8 +20,7 @@ module Html2rss
               # @return [FeedMetadata::CreateParams]
               # @raise [BadRequestError, ForbiddenError] on malformed or disallowed input.
               def call(request, account)
-                raise BadRequestError, 'Payload too large' if request.content_length.to_i > MAX_BODY_BYTES
-
+                JsonBody.enforce_limit!(request)
                 params = request_params(request)
                 FeedMetadata::CreateParams.new(url: validated_url(params['url'], account),
                                                name: params['name'].to_s.strip.then { it unless it.empty? },
@@ -36,26 +32,7 @@ module Html2rss
               def request_params(request)
                 return request.params unless request.env['CONTENT_TYPE'].to_s.include?('application/json')
 
-                request.GET.merge(parsed_json_body(request))
-              end
-
-              def parsed_json_body(request)
-                raw_body = read_limited_body(request)
-                return {} if raw_body.strip.empty?
-
-                parsed = JSON.parse(raw_body)
-                raise BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
-
-                parsed
-              rescue JSON::ParserError
-                raise BadRequestError, 'Invalid JSON payload'
-              end
-
-              def read_limited_body(request)
-                request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
-                  request.body.rewind
-                  raise BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
-                end
+                request.GET.merge(JsonBody.object(request))
               end
 
               def validated_url(raw_url, account)
@@ -68,7 +45,7 @@ module Html2rss
                 url
               end
 
-              # Selectors are authored through Refine, so the refine kill switch applies to them.
+              # Selectors are authored through Refine, so the kill switch applies to them.
               def validated_selectors(raw)
                 selectors = SelectorsDocument.parse(raw)
                 raise ForbiddenError, 'Refine is disabled' if selectors && !Flags.refine_enabled?
