@@ -10,7 +10,7 @@ FROM --platform=$BUILDPLATFORM node AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN npm install -g corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
+RUN npm install -g --force corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
