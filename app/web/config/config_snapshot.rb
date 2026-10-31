@@ -104,7 +104,7 @@ module Html2rss
         # @return [Hash]
         def deep_dup_hash(value)
           value.each_with_object({}) do |(key, val), memo|
-            memo[key.is_a?(String) ? key.dup : key] = deep_dup(val)
+            memo[key] = deep_dup(val)
           end
         end
 
