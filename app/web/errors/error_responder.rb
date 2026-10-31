@@ -58,7 +58,7 @@ module Html2rss
           return if error.is_a?(HttpError)
 
           id = request.env['html2rss.request_context']&.request_id ||
-               (request.respond_to?(:get_header) && request.get_header('HTTP_X_REQUEST_ID'))
+               request.get_header('HTTP_X_REQUEST_ID')
           request.env['rack.errors']&.puts(id ? "[request_id=#{id}] #{error.message}" : error.message)
         end
 

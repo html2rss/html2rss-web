@@ -141,4 +141,196 @@ RSpec.describe Html2rss::Web::RateLimiter do
       )
     end
   end
+
+  describe described_class::RequestTrack do
+    subject(:track) { described_class.new }
+
+    it 'allows exactly max_requests within the window', :aggregate_failures do
+      expect(track.record_and_check_limit(100, 10, 2)).to eq([false, 0])
+      expect(track.record_and_check_limit(101, 10, 2)).to eq([false, 0])
+      expect(track.record_and_check_limit(102, 10, 2)).to eq([true, 8])
+    end
+
+    it 'keeps timestamps exactly at the window start and drops older ones', :aggregate_failures do
+      track.record_and_check_limit(100, 10, 1)
+
+      expect(track.record_and_check_limit(110, 10, 1)).to eq([true, 1])
+      expect(track.record_and_check_limit(111, 10, 1)).to eq([false, 0])
+    end
+
+    it 'reports at least one second of retry_after' do
+      track.record_and_check_limit(100, 10, 1)
+
+      expect(track.record_and_check_limit(110, 10, 1).last).to eq(1)
+    end
+
+    it 'does not record rejected requests', :aggregate_failures do
+      track.record_and_check_limit(100, 10, 1)
+      expect(track.record_and_check_limit(101, 10, 1)).to eq([true, 9])
+
+      expect(track.record_and_check_limit(111, 10, 1)).to eq([false, 0])
+    end
+
+    it 'prune drops expired entries and removes empty tracks from history', :aggregate_failures do
+      history = { 'a' => track, 'b' => described_class.new }
+      track.record_and_check_limit(100, 10, 5)
+      track.record_and_check_limit(105, 10, 5)
+
+      track.prune(100, history, 'a')
+      expect(history).to have_key('a')
+      track.prune(106, history, 'a')
+      expect(history).not_to have_key('a')
+      expect(history).to have_key('b')
+    end
+  end
+
+  describe 'request handling' do
+    let(:now) { Time.now.to_i }
+
+    it 'tracks clients independently by IP', :aggregate_failures do
+      3.times { request_builder.get('/api/v1/feeds', 'REMOTE_ADDR' => '10.0.0.1') }
+
+      expect(request_builder.get('/api/v1/feeds', 'REMOTE_ADDR' => '10.0.0.1').status).to eq(429)
+      expect(request_builder.get('/api/v1/feeds', 'REMOTE_ADDR' => '10.0.0.2').status).to eq(200)
+    end
+
+    it 'bypasses health sub-paths but not look-alike paths', :aggregate_failures do
+      4.times { expect(request_builder.get('/api/v1/health/ready').status).to eq(200) }
+      4.times { request_builder.get('/api/v1/healthy') }
+      expect(request_builder.get('/api/v1/healthy').status).to eq(429)
+    end
+
+    it 'does not bypass look-alike asset paths', :aggregate_failures do
+      4.times { request_builder.get('/assetsx/logo.png') }
+      expect(request_builder.get('/assetsx/logo.png').status).to eq(429)
+    end
+
+    it 'logs the client key, path and configured maximum' do
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_rate_limit_exceeded)
+      4.times { request_builder.get('/api/v1/feeds', 'REMOTE_ADDR' => '10.0.0.9') }
+
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_rate_limit_exceeded).with('10.0.0.9', anything, 3)
+    end
+
+    it 'marks feed and non-api paths as feed requests but not other api paths', :aggregate_failures do
+      env_for = lambda do |path|
+        env = Rack::MockRequest.env_for(path)
+        3.times { middleware.call(Rack::MockRequest.env_for(path)) }
+        middleware.call(env)
+        env[Html2rss::Web::RequestTarget::ENV_KEY]
+      end
+
+      expect(env_for.call('/api/v1/feeds/abc')).to eq(Html2rss::Web::RequestTarget::FEED)
+      expect(env_for.call('/somewhere')).to eq(Html2rss::Web::RequestTarget::FEED)
+      expect(env_for.call('/api/v1/other')).not_to eq(Html2rss::Web::RequestTarget::FEED)
+    end
+
+    it 'does not prune at exactly 1000 entries', :aggregate_failures do
+      history = middleware.instance_variable_get(:@history)
+      1000.times { |i| history["ip-#{i}"] = described_class::RequestTrack.new }
+      request_builder.get('/api/v1/feeds')
+
+      expect(history.size).to eq(1001)
+    end
+
+    it 'throttles pruning to once every 10 seconds', :aggregate_failures do
+      history = middleware.instance_variable_get(:@history)
+      allow(Time).to receive(:now).and_return(Time.at(now))
+      1005.times { |i| history["ip-#{i}"] = described_class::RequestTrack.new }
+      request_builder.get('/api/v1/feeds')
+      expect(history.size).to eq(1)
+
+      1005.times { |i| history["ip-#{i}"] = described_class::RequestTrack.new }
+      allow(Time).to receive(:now).and_return(Time.at(now + 10))
+      request_builder.get('/api/v1/feeds')
+      expect(history.size).to eq(1006)
+
+      allow(Time).to receive(:now).and_return(Time.at(now + 11))
+      request_builder.get('/api/v1/feeds')
+      expect(history.size).to eq(1)
+    end
+
+    it 'does not log overflow when expiry prunes history to the cap', :aggregate_failures do
+      history = middleware.instance_variable_get(:@history)
+      20_001.times { |i| history["ip-#{i}"] = described_class::RequestTrack.new }
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_suspicious_activity)
+      request_builder.get('/api/v1/feeds')
+
+      expect(Html2rss::Web::SecurityLogger).not_to have_received(:log_suspicious_activity)
+      expect(history.size).to eq(1)
+    end
+
+    it 'forwards the original env to the app when bypassing or disabled', :aggregate_failures do
+      seen = []
+      app = lambda do |env|
+        seen << env
+        [200, {}, ['ok']]
+      end
+      limiter = described_class.new(app)
+      env = Rack::MockRequest.env_for('/assets/x.png')
+      limiter.call(env)
+      allow(Html2rss::Web::Flags).to receive(:rate_limit_enabled?).and_return(false)
+      limiter.call(env)
+
+      expect(seen).to all(equal(env))
+    end
+
+    it 'reports the remaining window in Retry-After, not the full window', :aggregate_failures do
+      allow(Time).to receive(:now).and_return(Time.at(now))
+      3.times { request_builder.get('/api/v1/feeds') }
+      allow(Time).to receive(:now).and_return(Time.at(now + 4))
+      response = request_builder.get('/api/v1/feeds')
+
+      expect(response.status).to eq(429)
+      expect(response['Retry-After']).to eq('6')
+    end
+
+    it 'keeps live tracks when pruning expired ones', :aggregate_failures do
+      history = middleware.instance_variable_get(:@history)
+      allow(Time).to receive(:now).and_return(Time.at(now))
+      live = described_class::RequestTrack.new
+      live.record_and_check_limit(now - 5, 10, 3)
+      history['live'] = live
+      1004.times { |i| history["idle-#{i}"] = described_class::RequestTrack.new }
+      request_builder.get('/api/v1/feeds')
+
+      expect(history.size).to eq(2)
+      expect(history).to have_key('live')
+    end
+
+    # rubocop:disable RSpec/ExampleLength
+    it 'logs overflow only when the post-prune size exceeds the cap', :aggregate_failures do
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_suspicious_activity)
+      fill = lambda do |count, expired: 0|
+        h = described_class.new(inner_app)
+        hist = h.instance_variable_get(:@history)
+        count.times do |i|
+          t = described_class::RequestTrack.new
+          t.record_and_check_limit(Time.now.to_i, 10, 3) if i >= expired
+          hist["ip-#{i}"] = t
+        end
+        h
+      end
+
+      fill.call(20_001, expired: 1).send(:prune_history_if_needed)
+      expect(Html2rss::Web::SecurityLogger).not_to have_received(:log_suspicious_activity)
+      fill.call(20_001).send(:prune_history_if_needed)
+      expect(Html2rss::Web::SecurityLogger).to have_received(:log_suspicious_activity).once
+    end
+
+    it 'does not evict when overflow equals the cap after pruning', :aggregate_failures do
+      history = middleware.instance_variable_get(:@history)
+      20_000.times do |i|
+        t = described_class::RequestTrack.new
+        t.record_and_check_limit(Time.now.to_i, 10, 3)
+        history["ip-#{i}"] = t
+      end
+      allow(Html2rss::Web::SecurityLogger).to receive(:log_suspicious_activity)
+      request_builder.get('/api/v1/feeds')
+
+      expect(Html2rss::Web::SecurityLogger).not_to have_received(:log_suspicious_activity)
+      expect(history.size).to eq(20_001)
+    end
+    # rubocop:enable RSpec/ExampleLength
+  end
 end

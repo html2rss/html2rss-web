@@ -41,7 +41,7 @@ module Html2rss
 
             def require_account(request)
               account = Auth.authenticate(request)
-              raise Html2rss::Web::UnauthorizedError, 'Authentication required' unless account
+              raise UnauthorizedError, 'Authentication required' unless account
 
               account
             end
@@ -58,7 +58,7 @@ module Html2rss
             def enforce_body_limit!(request)
               return unless request.content_length.to_i > MAX_BODY_BYTES
 
-              raise Html2rss::Web::BadRequestError, 'Payload too large'
+              raise BadRequestError, 'Payload too large'
             end
 
             def request_params(request)
@@ -72,19 +72,17 @@ module Html2rss
               return {} if raw_body.strip.empty?
 
               parsed = JSON.parse(raw_body)
-              raise Html2rss::Web::BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
+              raise BadRequestError, 'Invalid JSON payload' unless parsed.is_a?(Hash)
 
               parsed
             rescue JSON::ParserError
-              raise Html2rss::Web::BadRequestError, 'Invalid JSON payload'
+              raise BadRequestError, 'Invalid JSON payload'
             end
 
             def read_limited_body(request)
-              enforce_body_limit!(request)
-
               request.body.read(MAX_BODY_BYTES + 1).to_s.tap do |raw_body|
                 request.body.rewind
-                raise Html2rss::Web::BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
+                raise BadRequestError, 'Payload too large' if raw_body.bytesize > MAX_BODY_BYTES
               end
             end
 
@@ -97,11 +95,11 @@ module Html2rss
             # @return [String]
             def validated_url(raw_url, account)
               url = normalized_input_url(raw_url)
-              raise Html2rss::Web::BadRequestError, 'URL parameter is required' if url.empty?
+              raise BadRequestError, 'URL parameter is required' if url.empty?
 
               url = UrlValidator.canonical_url(url)
-              raise Html2rss::Web::BadRequestError, 'Invalid URL format' unless url
-              raise Html2rss::Web::ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(
+              raise BadRequestError, 'Invalid URL format' unless url
+              raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(
                 account, url
               )
 
@@ -124,10 +122,10 @@ module Html2rss
             # @param account [Hash]
             # @return [Html2rss::Web::Api::V1::FeedMetadata::Metadata]
             def create_feed(params, account)
-              raise Html2rss::Web::AutoSourceDisabledError unless Flags.auto_source_enabled?
+              raise AutoSourceDisabledError unless Flags.auto_source_enabled?
 
               feed_token = Auth.generate_feed_token(account[:username], params.url)
-              raise Html2rss::Web::InternalServerError, 'Failed to create feed' unless feed_token
+              raise InternalServerError, 'Failed to create feed' unless feed_token
 
               result = Feeds::Service.call(resolved_source_for(feed_token))
               ensure_extractable!(result)

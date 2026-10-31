@@ -26,14 +26,10 @@ module Html2rss
         # @param url [String]
         # @return [Boolean]
         def url_allowed?(account, url)
-          return false unless account && url
-
-          allowed_urls = Array(account[:allowed_urls])
+          return false unless account
           return false unless (normalized_url = canonical_url(url))
 
-          return false if allowed_urls.empty?
-
-          allowed_urls.any? do |pattern|
+          Array(account[:allowed_urls]).any? do |pattern|
             wildcard?(pattern) ? match_wildcard?(pattern, normalized_url) : match_exact?(pattern, normalized_url)
           end
         end
@@ -41,15 +37,10 @@ module Html2rss
         private
 
         def match_exact?(pattern, normalized_url)
-          return true if pattern == normalized_url
-
-          normalized_pattern = canonical_url(pattern)
-          normalized_pattern ? normalized_pattern == normalized_url : false
+          canonical_url(pattern) == normalized_url
         end
 
         def match_wildcard?(pattern, normalized_url)
-          return true if pattern == '*'
-
           File.fnmatch?(pattern, normalized_url, File::FNM_CASEFOLD)
         end
 
@@ -57,6 +48,7 @@ module Html2rss
           pattern.include?('*')
         end
 
+        # mutant:disable - `Url` resolves to the same constant lexically; the mutation is equivalent.
         def normalize_url(url)
           return nil unless url.is_a?(String) && !url.empty? && url.length <= MAX_URL_LENGTH
 

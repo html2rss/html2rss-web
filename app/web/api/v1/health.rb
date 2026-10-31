@@ -75,7 +75,7 @@ module Html2rss
             def authorize_health_check!(request)
               return if authorized?(request)
 
-              raise Html2rss::Web::UnauthorizedError, 'Health check authentication required'
+              raise UnauthorizedError, 'Health check authentication required'
             end
 
             # @param account [Hash, nil]
@@ -86,17 +86,16 @@ module Html2rss
             # @return [Boolean]
             def accepted_probe_token?(provided_token)
               configured_token = RuntimeEnv.private_probe_token
-              return false if configured_token.nil? || provided_token.nil? ||
-                              configured_token.bytesize != provided_token.to_s.bytesize
+              return false if configured_token.nil? || provided_token.nil?
 
-              OpenSSL.secure_compare(provided_token.to_s, configured_token)
+              OpenSSL.secure_compare(provided_token, configured_token)
             end
 
             # @return [void]
             def verify_configuration!
               LocalConfig.load_snapshot
             rescue StandardError
-              raise Html2rss::Web::HealthCheckFailedError
+              raise HealthCheckFailedError
             end
           end
         end

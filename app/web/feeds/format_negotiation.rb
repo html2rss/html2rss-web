@@ -60,9 +60,6 @@ module Html2rss
           # @param request [Rack::Request]
           # @return [String]
           def request_path(request)
-            path = request.respond_to?(:env) ? request.env['PATH_INFO'] : nil
-            return path.to_s unless request_path_fallback?(request, path)
-
             request.path_info.to_s
           end
 
@@ -84,8 +81,6 @@ module Html2rss
           # @return [Symbol, nil] preferred format (:json_feed, or nil meaning fallback to rss)
           def from_accept(accept_header)
             media_ranges = parse_accept(accept_header)
-            return nil if media_ranges.empty?
-
             json_score = best_score(media_ranges, JSON_MEDIA_TYPES)
             rss_score = best_score(media_ranges, RSS_MEDIA_TYPES)
 
@@ -98,16 +93,7 @@ module Html2rss
           # @param request [Rack::Request]
           # @return [String, nil]
           def accept_header(request)
-            return request.get_header('HTTP_ACCEPT') unless request.respond_to?(:env)
-
-            request.env['HTTP_ACCEPT'] || request.get_header('HTTP_ACCEPT')
-          end
-
-          # @param request [Rack::Request]
-          # @param path [String, nil]
-          # @return [Boolean]
-          def request_path_fallback?(request, path)
-            path.to_s.empty? && request.respond_to?(:path_info)
+            request.get_header('HTTP_ACCEPT')
           end
 
           # @param accept_header [String, nil]

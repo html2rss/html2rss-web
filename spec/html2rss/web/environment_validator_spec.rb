@@ -135,6 +135,141 @@ RSpec.describe Html2rss::Web::EnvironmentValidator do
     end
   end
 
+  describe 'environment predicates' do
+    it 'derives development?, test? and non_production? from RACK_ENV', :aggregate_failures do
+      { 'development' => [true, false, true], 'test' => [false, true, true], 'production' => [false, false, false],
+        nil => [false, false, false] }.each do |env, (dev, test, non_prod)|
+        ClimateControl.modify('RACK_ENV' => env) do
+          expect([described_class.development?, described_class.test?, described_class.non_production?])
+            .to eq([dev, test, non_prod])
+        end
+      end
+    end
+
+    it 'delegates auto_source_enabled? to the flag', :aggregate_failures do
+      allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true, false)
+
+      expect(described_class.auto_source_enabled?).to be(true)
+      expect(described_class.auto_source_enabled?).to be(false)
+    end
+  end
+
+  describe '.validate_environment! (details)' do
+    it 'leaves an existing secret key untouched and silent', :aggregate_failures do
+      stub_validation_logging
+      ClimateControl.modify('RACK_ENV' => 'production', 'HTML2RSS_SECRET_KEY' => 'present') do
+        expect(described_class.validate_environment!).to be_nil
+        expect(ENV.fetch('HTML2RSS_SECRET_KEY')).to eq('present')
+      end
+      expect(Html2rss::Web::Observability).not_to have_received(:emit)
+    end
+
+    it 'warns on stderr about the development default', :aggregate_failures do
+      stub_validation_logging
+      ClimateControl.modify('RACK_ENV' => 'test', 'HTML2RSS_SECRET_KEY' => nil) do
+        described_class.validate_environment!
+      end
+
+      expect(Kernel).to have_received(:warn).with('WARNING: Using default secret key for development/testing only!')
+      expect(Kernel).to have_received(:warn).with('Set HTML2RSS_SECRET_KEY environment variable for production use.')
+    end
+
+    it 'prints setup instructions and exits with status 1 when the production key is missing', :aggregate_failures do
+      stub_validation_logging
+      status = nil
+      ClimateControl.modify('RACK_ENV' => 'production', 'HTML2RSS_SECRET_KEY' => nil) do
+        described_class.validate_environment!
+      rescue SystemExit => error
+        status = error.status
+      end
+
+      expect(status).to eq(1)
+      expect(Kernel).to have_received(:warn).with(/HTML2RSS_SECRET_KEY environment variable is not set/)
+      expect(Kernel).to have_received(:warn).with(/Generate a secret key: openssl rand -hex 32/)
+    end
+  end
+
+  describe '.validate_production_security! (boundaries)' do
+    def run_checked(accounts: [], auto_source: false, env: production_env)
+      stub_validation_logging
+      allow(Html2rss::Web::AccountManager).to receive(:accounts).and_return(accounts)
+      allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(auto_source)
+      status = nil
+      ClimateControl.modify(env) do
+        described_class.validate_production_security!
+      rescue SystemExit => error
+        status = error.status
+      end
+      status
+    end
+
+    it 'skips every check outside production', :aggregate_failures do
+      %w[development test].each do |rack_env|
+        status = run_checked(env: { 'RACK_ENV' => rack_env, 'HTML2RSS_SECRET_KEY' => 'x' })
+        expect(status).to be_nil
+      end
+      expect(Html2rss::Web::AccountManager).not_to have_received(:accounts)
+    end
+
+    it 'accepts a secret key of exactly 32 characters and rejects 31', :aggregate_failures do
+      expect(run_checked(env: production_env.merge('HTML2RSS_SECRET_KEY' => 'a' * 32))).to be_nil
+      expect(run_checked(env: production_env.merge('HTML2RSS_SECRET_KEY' => 'a' * 31))).to eq(1)
+    end
+
+    it 'rejects the placeholder secret key even when long enough' do
+      env = production_env.merge('HTML2RSS_SECRET_KEY' => 'your-generated-secret-key-here')
+
+      expect(run_checked(env:)).to eq(1)
+      expect(Kernel).to have_received(:warn).with('CRITICAL: Invalid secret key for production deployment!')
+    end
+
+    it 'accepts tokens of exactly 16 characters and rejects 15', :aggregate_failures do
+      expect(run_checked(accounts: [{ username: 'a', token: 't' * 16 }])).to be_nil
+      expect(run_checked(accounts: [{ username: 'a', token: 't' * 15 }])).to eq(1)
+    end
+
+    it 'lists every weak-token user', :aggregate_failures do
+      run_checked(accounts: [{ username: 'a', token: 'x' }, { username: 'b', token: 'y' },
+                             { username: 'c', token: 'z' * 16 }])
+
+      expect_config_validation('account_tokens', 'Weak tokens for users: a, b')
+      expect(Kernel).to have_received(:warn).with('Weak tokens found for users: a, b')
+      expect(Kernel).to have_received(:warn).with('All tokens must be at least 16 characters long.')
+    end
+
+    it 'reports malformed tokens, using (unknown) for nameless accounts', :aggregate_failures do
+      status = run_checked(accounts: [{ username: 'a', token: '' }, { token: 5 }, { username: 'ok', token: 't' * 16 }])
+
+      expect(status).to eq(1)
+      expect_config_validation('account_tokens', 'Invalid token configuration for users: a, (unknown)')
+      expect(Kernel).to have_received(:warn).with('Each account token must be a non-empty string.')
+    end
+
+    it 'allows the placeholder create-feed token when auto source is disabled' do
+      accounts = [{ username: 'admin', token: 'CHANGE_ME_ADMIN_TOKEN' }]
+
+      expect(run_checked(accounts:, auto_source: false)).to be_nil
+    end
+
+    it 'ignores the health-check placeholder for other usernames' do
+      accounts = [{ username: 'other', token: 'CHANGE_ME_HEALTH_CHECK_TOKEN' }]
+
+      expect(run_checked(accounts:)).to be_nil
+    end
+
+    it 'ignores a non-placeholder token on the health-check account' do
+      expect(run_checked(accounts: [{ username: 'health-check', token: 'real-token-0123456789' }])).to be_nil
+    end
+
+    it 'prints guidance for placeholder tokens', :aggregate_failures do
+      run_checked(accounts: [{ username: 'admin', token: 'CHANGE_ME_ADMIN_TOKEN' }], auto_source: true)
+      expect(Kernel).to have_received(:warn).with('CRITICAL: Placeholder create-feed token detected in production!')
+
+      run_checked(accounts: [{ username: 'health-check', token: 'CHANGE_ME_HEALTH_CHECK_TOKEN' }])
+      expect(Kernel).to have_received(:warn).with('CRITICAL: Placeholder health-check token detected in production!')
+    end
+  end
+
   # @return [Hash{String=>String}]
   def production_env
     {

@@ -14,7 +14,7 @@ module Html2rss
         # @param reason [String]
         # @return [void]
         def log_auth_failure(ip, user_agent, reason)
-          log_event('auth_failure', { ip:, user_agent:, reason: }, severity: :warn)
+          log_event('auth_failure', { ip:, user_agent:, reason: })
         end
 
         # @param username [String]
@@ -29,7 +29,7 @@ module Html2rss
         # @param limit [Integer]
         # @return [void]
         def log_rate_limit_exceeded(ip, endpoint, limit)
-          log_event('rate_limit_exceeded', { ip:, endpoint:, limit: }, severity: :warn)
+          log_event('rate_limit_exceeded', { ip:, endpoint:, limit: })
         end
 
         # @param feed_token [String]
@@ -49,7 +49,7 @@ module Html2rss
         # @param details [Hash]
         # @return [void]
         def log_suspicious_activity(ip, activity, details = {})
-          log_event('suspicious_activity', { ip:, activity:, **details }, severity: :warn)
+          log_event('suspicious_activity', { ip:, activity:, **details })
         end
 
         private
