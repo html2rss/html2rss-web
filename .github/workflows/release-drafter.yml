@@ -23,9 +23,16 @@ jobs:
       pull-requests: read
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Read app version
+        id: version
+        run: echo "version=$(sed -n "s/.*VERSION = '\(.*\)'.*/\1/p" config/version.rb)" >> "$GITHUB_OUTPUT"
       - name: Draft next release
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
+          version: ${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
