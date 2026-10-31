@@ -10,7 +10,7 @@ FROM --platform=$BUILDPLATFORM node AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN npm install -g corepack && corepack enable && pnpm install --frozen-lockfile
+RUN npm install -g corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
@@ -41,7 +41,7 @@ COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 # COPY materializes binaries as files; restore upstream symlinks so dist/lib resolves.
 RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
   && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
-  && npm install -g corepack
+  && npm install -g corepack@0.36.0
 
 ENV BUNDLE_PATH=/usr/local/bundle \
   COREPACK_HOME=/usr/local/share/corepack
