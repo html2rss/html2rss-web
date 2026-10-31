@@ -69,10 +69,10 @@ describe('RefineWorkspace', () => {
     const previews = stub();
     const { onSave } = renderWorkspace();
 
-    await waitFor(() => expect(screen.getByLabelText(COPY.refineItemsLabel)).toHaveValue('article'), SLOW);
-    expect(screen.getByLabelText(COPY.refineTitleLabel)).toHaveValue('h2');
-    expect(screen.getByLabelText(COPY.refineLinkLabel)).toHaveValue('a');
-    expect(screen.getByLabelText(COPY.refinePublishedLabel)).toHaveValue('');
+    expect(await screen.findByRole('radio', { name: /article/ }, SLOW)).toBeChecked();
+    expect(screen.getByRole('radio', { name: /h2/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^a\b/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: COPY.refineNone })).toBeChecked();
 
     expect(await screen.findByText('First post', undefined, SLOW)).toBeInTheDocument();
     expect(previews).toHaveLength(1);
@@ -85,11 +85,25 @@ describe('RefineWorkspace', () => {
     });
   });
 
-  it('focuses the items selector on open', async () => {
+  it('shows a clear loading panel instead of an empty form while reading the page', async () => {
     stub();
     renderWorkspace();
 
-    await waitFor(() => expect(screen.getByLabelText(COPY.refineItemsLabel)).toHaveFocus());
+    expect(screen.getByText(COPY.refineSuggesting)).toBeInTheDocument();
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.refineSave })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.back })).toBeInTheDocument();
+
+    expect(await screen.findByRole('radio', { name: /article/ }, SLOW)).toBeInTheDocument();
+    expect(screen.queryByText(COPY.refineSuggesting)).not.toBeInTheDocument();
+  });
+
+  it('moves focus to the chosen item once suggestions arrive', async () => {
+    stub();
+    renderWorkspace();
+
+    const choice = await screen.findByRole('radio', { name: /article/ }, SLOW);
+    await waitFor(() => expect(choice).toHaveFocus());
   });
 
   it('shows a plain-language next step instead of schema codes when nothing matches', async () => {
@@ -110,7 +124,7 @@ describe('RefineWorkspace', () => {
     expect(
       await screen.findByText(`${COPY.refineTitleLabel}: is blank`, undefined, SLOW)
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(COPY.refineTitleLabel)).toHaveAttribute('aria-invalid', 'true');
+    expect(document.querySelector('#refine-title-problems')).toHaveTextContent('is blank');
     expect(previews).toHaveLength(0);
     expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
   });
@@ -127,9 +141,10 @@ describe('RefineWorkspace', () => {
     });
     renderWorkspace();
 
-    fireEvent.click(await screen.findByRole('button', { name: /li\.post/ }, SLOW));
+    fireEvent.click(await screen.findByRole('radio', { name: /li\.post/ }, SLOW));
 
-    await waitFor(() => expect(screen.getByLabelText(COPY.refineItemsLabel)).toHaveValue('li.post'));
+    expect(screen.getByRole('radio', { name: /li\.post/ })).toBeChecked();
+    expect(screen.getByText(COPY.refineSuggested)).toBeInTheDocument();
   });
 
   it('keeps manual editing available when suggestions fail', async () => {
@@ -137,7 +152,7 @@ describe('RefineWorkspace', () => {
     renderWorkspace();
 
     expect(await screen.findByText(COPY.refineSuggestionsFailed, undefined, SLOW)).toBeInTheDocument();
-    expect(screen.getByLabelText(COPY.refineItemsLabel)).toBeEnabled();
+    expect(screen.getByLabelText(COPY.refineCustomSelector(COPY.refineItemsLabel))).toBeEnabled();
     expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
   });
 
@@ -166,7 +181,7 @@ describe('RefineWorkspace', () => {
     stub();
     renderWorkspace({ isSaving: true });
 
-    expect(screen.getByRole('button', { name: COPY.refineSaving })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: COPY.refineSaving }, SLOW)).toBeDisabled();
     expect(screen.getByRole('button', { name: COPY.back })).toBeDisabled();
   });
 
@@ -174,7 +189,7 @@ describe('RefineWorkspace', () => {
     stub();
     const { onCancel } = renderWorkspace();
 
-    fireEvent.click(screen.getByRole('button', { name: COPY.back }));
+    fireEvent.click(await screen.findByRole('button', { name: COPY.back }, SLOW));
     expect(onCancel).toHaveBeenCalled();
   });
 
@@ -218,13 +233,19 @@ describe('RefineWorkspace', () => {
   });
 
   it('does not let a newer, unchecked draft be saved', async () => {
-    stub();
+    stub({
+      suggest: {
+        ...candidates,
+        items: [
+          { selector: 'article', enhance: true, sample: 'First' },
+          { selector: 'li.post', enhance: false, sample: 'Other' },
+        ],
+      },
+    });
     const { onSave } = renderWorkspace();
     await screen.findByText('First post', undefined, SLOW);
 
-    fireEvent.input(screen.getByLabelText(COPY.refineItemsLabel, { exact: true }), {
-      target: { value: 'li.post' },
-    });
+    fireEvent.click(screen.getByRole('radio', { name: /li\.post/ }));
 
     expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
     fireEvent.submit(screen.getByRole('button', { name: COPY.refineSave }).closest('form')!);
@@ -241,5 +262,15 @@ describe('RefineWorkspace', () => {
       'aria-describedby',
       hint.id
     );
+  });
+
+  it('offers None for the optional date and keeps a custom selector available', async () => {
+    stub();
+    renderWorkspace();
+
+    expect(await screen.findByRole('radio', { name: COPY.refineNone }, SLOW)).toBeChecked();
+    fireEvent.click(screen.getAllByRole('radio', { name: COPY.refineCustom })[2]);
+
+    expect(screen.getByLabelText(COPY.refineCustomSelector(COPY.refinePublishedLabel))).toBeEnabled();
   });
 });
