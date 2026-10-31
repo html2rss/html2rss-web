@@ -6,5 +6,4 @@
 --exclude public/
 --exclude config/
 --exclude bin/
---exclude .devcontainer/
 --exclude .github/

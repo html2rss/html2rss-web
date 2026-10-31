@@ -1,8 +1,12 @@
-ARG RUBY_BASE_IMAGE=ruby:4.0.9-alpine3.24@sha256:50d04650231808a465271b4eedcb78634c2306afb0157b10e9d628373bd5d002
-ARG NODE_BASE_IMAGE=node:22-alpine@sha256:8094c002d08262dba12645a3b4a15cd6cd627d30bc782f53229a2ec13ee22a00
+# Single source of truth for toolchain versions: Dependabot bumps these two digest-pinned bases.
+FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS node
 
-# Stage 1: Frontend Build (arch-independent assets; native builder, not QEMU)
-FROM --platform=$BUILDPLATFORM ${NODE_BASE_IMAGE} AS frontend-builder
+FROM ruby:4.0.9-alpine3.24@sha256:50d04650231808a465271b4eedcb78634c2306afb0157b10e9d628373bd5d002 AS ruby
+
+LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+
+# Frontend Build (arch-independent assets; native builder, not QEMU)
+FROM --platform=$BUILDPLATFORM node AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
@@ -10,10 +14,69 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
-# Stage 2: Ruby Build
-FROM ${RUBY_BASE_IMAGE} AS builder
+# Local + CI toolchain (docker-compose.dev.yml)
+FROM ruby AS dev
 
-LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache \
+  bash \
+  build-base \
+  chromium \
+  curl \
+  git \
+  harfbuzz \
+  libxml2-dev \
+  libxslt-dev \
+  nss \
+  openssl-dev \
+  python3 \
+  ttf-freefont \
+  yaml-dev \
+  tzdata
+
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+# COPY materializes binaries as files; restore upstream symlinks so dist/lib resolves.
+RUN ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack \
+  && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+ENV BUNDLE_PATH=/usr/local/bundle \
+  COREPACK_HOME=/usr/local/share/corepack
+
+COPY frontend/package.json /tmp/package.json
+RUN corepack enable \
+  && corepack prepare "$(node -p "require('/tmp/package.json').packageManager")" --activate \
+  && rm /tmp/package.json
+
+ARG USER=dev
+ARG UID=1000
+ARG GID=1000
+
+RUN addgroup -g "$GID" "$USER" \
+  && adduser -D -G "$USER" -u "$UID" "$USER" \
+  && mkdir -p /workspace /usr/local/bundle /usr/local/share/corepack
+
+WORKDIR /workspace
+
+COPY Gemfile Gemfile.lock ./
+
+# hadolint ignore=SC2046
+RUN gem install bundler:$(tail -1 Gemfile.lock | tr -d ' ') \
+  && bundle install --retry=5 --jobs=$(nproc) \
+  && rm -rf /usr/local/bundle/cache \
+  && chown -R "$USER":"$USER" /workspace /usr/local/bundle /usr/local/share/corepack
+
+USER $UID
+
+EXPOSE 4000 4001
+
+CMD ["sleep", "infinity"]
+
+# Ruby Build
+FROM ruby AS builder
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
@@ -39,10 +102,8 @@ RUN apk add --no-cache \
     /usr/local/bundle/bundler/gems/*/.git \
     /usr/local/bundle/cache/bundler/git
 
-# Stage 3: Runtime
-FROM ${RUBY_BASE_IMAGE}
-
-LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
+# Runtime
+FROM ruby AS runtime
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 

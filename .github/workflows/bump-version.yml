@@ -12,6 +12,9 @@ permissions:
   contents: write
   pull-requests: write
 
+env:
+  CI: "true"
+
 jobs:
   bump_version:
     runs-on: ubuntu-latest
@@ -42,36 +45,18 @@ jobs:
           fi
           echo "TARGET_VERSION=${version}" >> "$GITHUB_ENV"
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
-
-      - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: frontend
+      - uses: ./.github/actions/dev-image
 
       - name: Perform Version Bump
         id: perform_bump
         run: |
-          bundle exec ruby bin/bump-version "$TARGET_VERSION"
-          NEW_VERSION=$(ruby -I. -e "require 'config/version'; puts Html2rss::Web::VERSION")
+          docker compose -f docker-compose.dev.yml run --rm -T dev bundle exec ruby bin/bump-version "$TARGET_VERSION"
+          NEW_VERSION=$(docker compose -f docker-compose.dev.yml run --rm -T dev ruby -I. -e "require 'config/version'; puts Html2rss::Web::VERSION")
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Regenerate OpenAPI spec and client
         run: |
+          make frontend-setup
           make openapi
           make openapi-client
 

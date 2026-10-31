@@ -8,8 +8,8 @@ Canonical references:
 ## Execution & Coding Contracts
 
 - **Posture:** Time matters. Reduce LOC when possible. No legacy code, no backward compatibility, no shims.
-- **Dev Container only:** Run all commands inside the Dev Container via `make` or `bundle exec`. Never execute on the host.
-- **Quality gate:** Never push or open a PR without a green Dev Container gate (`make ready` minimum, which includes `pnpm run format:check` via `lint-js`; `make ci-ready` before push/PR for frontend or API/OpenAPI contract changes). Never mark validation done or open a PR with "gate skipped / unavailable" — start the Dev Container and run the gate, or stop and report the blocker plus next command.
+- **Docker-only:** `make <target>` from the host re-runs the target in the `dev` compose service (the `dev` stage of the root `Dockerfile`); inside the container it runs directly. One-off commands: `docker compose -f docker-compose.dev.yml run --rm dev <cmd>`. Never run bare `bundle`/`pnpm`/`rspec` on the host.
+- **Quality gate:** Never push or open a PR without a green `dev`-image gate (`make ready` minimum, which includes `pnpm run format:check` via `lint-js`; `make ci-ready` before push/PR for frontend or API/OpenAPI contract changes). Never mark validation done or open a PR with "gate skipped / unavailable" — start the `dev` service and run the gate, or stop and report the blocker plus next command.
 - **Frontend verification:** With `make dev` running, verify touched paths in `chrome-devtools` MCP at `http://127.0.0.1:4001/`. Confirm affected states (guest/member/result) share the same frame, keep one primary task and one canonical control per outcome, and preserve autofocus/return-focus on load and transitions ([docs/design-system.md](docs/design-system.md)).
 - **Security & YARD:** No leaking secrets or insecure patterns ([docs/README.md#security--safety-rules](docs/README.md#security--safety-rules)). Every public Ruby method in `app/` requires a YARD docstring with typed `@param` and `@return` ([docs/README.md#architectural-constraints](docs/README.md#architectural-constraints)).
 - **Response format:** `Changes → Commands → Results → Next steps`, ending with a one-line summary.
@@ -22,7 +22,7 @@ When a task that should ship merges to `main`, ask whether to bump the app versi
 
 1. Wait until `html2rss/html2rss`'s `release gem` workflow for the tag is `success` (a merged version PR is not on RubyGems yet; `bundle update html2rss` keeps the old pin).
 2. `git fetch origin main` and branch from `origin/main`. Never continue a feature branch or commit the lockfile onto `main`.
-3. In the Dev Container, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless asked. Keep the Gemfile constraint `~> 0.30` unless resolution fails.
+3. In the `dev` image, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless asked. Keep the Gemfile constraint `~> 0.30` unless resolution fails.
 4. Open a lockfile PR and watch required checks (`frontend`, `ruby`, `docker-test (false)`, `docker-test (true)`) with `gh pr checks <n> --watch`.
 5. Mergify queues only Dependabot. When asked to merge and checks are green, run `gh pr merge <n> --squash --delete-branch` (merge commits disabled).
 6. Stop and ask whether to bump the app version. Dispatch the version workflow only after the gem PR is on `main`.

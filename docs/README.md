@@ -20,7 +20,7 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 - **Backend**: Ruby + Falcon + Roda under the `Html2rss::Web` namespace.
 - **Frontend**: Preact + Vite, built into `frontend/dist` and served at `/` in production.
 - **Feed extraction**: Delegated to the `html2rss` gem (HTTPX non-blocking transport layer).
-- **Distribution**: Docker Compose / Dev Container first.
+- **Distribution**: Docker Compose first (`dev` target for local work).
 
 ### Source Of Truth
 
@@ -31,12 +31,16 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 ---
 
-## Development Setup (Dev Container)
+## Development Setup (Docker)
 
-Use the repository's [Dev Container](../.devcontainer/README.md) for all local development and tests.
-Running the app directly on the host is not supported.
+Run `make <target>` on the host: it delegates to the `dev` stage of the root `Dockerfile` via `docker-compose.dev.yml` (built on first use). Running the app directly on the host is not supported. On Linux, export `DEV_UID=$(id -u) DEV_GID=$(id -g)` before the first `make` so bind-mounted files stay owned by you. CI runs the same image via `.github/actions/dev-image`.
 
-### Common Commands (Inside Dev Container)
+```bash
+make setup
+make dev
+```
+
+### Common Commands
 
 | Command                        | Purpose                                                    |
 | ------------------------------ | ---------------------------------------------------------- |
@@ -74,7 +78,7 @@ Development routing defaults:
 To change or add API endpoints, follow this sequence:
 
 1. **Ruby Request Spec**: Define the new behavior or endpoint in `spec/html2rss/web/app_integration_spec.rb` or a dedicated request spec.
-2. **OpenAPI Generation**: Run `make openapi` inside the Dev Container to regenerate `public/openapi.yaml` from the spec metadata.
+2. **OpenAPI Generation**: Run `make openapi` inside the `dev` image to regenerate `public/openapi.yaml` from the spec metadata.
 3. **Verify Contract**: Run `make openapi-verify` and `make openapi-lint` to ensure the generated file matches the specs and is valid.
 4. **Frontend Client**: Keep generated client artifacts in `frontend/src/api/generated` aligned with `public/openapi.yaml`.
 
@@ -105,7 +109,7 @@ make ci-ready
 | Ruby API          | RSpec + Rack::Test       | Feed creation, retrieval, auth paths.                |
 | Frontend unit     | Vitest + Testing Library | Component rendering and hooks with mocked fetch.     |
 | Frontend contract | Vitest + MSW             | End-to-end fetch flows against mocked API responses. |
-| Docker smoke      | RSpec (`:docker`)        | Net::HTTP probes against the containerised service.  |
+| Docker smoke      | `rake` (Rakefile)        | HTTP probes against the built runtime image.         |
 
 ---
 

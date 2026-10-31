@@ -1,0 +1,28 @@
+name: dev image
+description: Build the `dev` stage of the root Dockerfile (layer-cached) as html2rss/web:dev and restore the pnpm store; run gates afterwards with `make <target>`
+
+runs:
+  using: composite
+  steps:
+    - name: Match container user to runner user
+      shell: bash
+      run: |
+        echo "DEV_UID=$(id -u)" >> "$GITHUB_ENV"
+        echo "DEV_GID=$(id -g)" >> "$GITHUB_ENV"
+
+    - uses: actions/cache@v6
+      with:
+        path: .pnpm-store
+        key: pnpm-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+        restore-keys: pnpm-
+
+    - uses: docker/setup-buildx-action@v4
+
+    - uses: docker/bake-action@v7
+      with:
+        files: docker-compose.dev.yml
+        targets: dev
+        load: true
+        set: |
+          dev.cache-from=type=gha,scope=dev
+          dev.cache-to=type=gha,mode=max,scope=dev

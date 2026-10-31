@@ -1,0 +1,26 @@
+services:
+  dev:
+    image: html2rss/web:dev
+    build:
+      context: .
+      target: dev
+      args:
+        UID: ${DEV_UID:-1000}
+        GID: ${DEV_GID:-1000}
+    volumes:
+      - .:/workspace:cached
+      - bundle-cache:/usr/local/bundle
+    ports:
+      - "4000:4000"
+      - "4001:4001"
+    environment:
+      RACK_ENV: development
+      BUNDLE_PATH: /usr/local/bundle
+      npm_config_store_dir: /workspace/.pnpm-store # same filesystem as node_modules, so installs hardlink
+      PORT: "4000"
+      BOTASAURUS_SCRAPER_URL: ${BOTASAURUS_SCRAPER_URL:-http://host.docker.internal:4010}
+    working_dir: /workspace
+    command: sleep infinity
+
+volumes:
+  bundle-cache:

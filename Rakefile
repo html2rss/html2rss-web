@@ -89,7 +89,15 @@ task :test do
     'SMOKE_AUTO_SOURCE_ENABLED' => smoke_auto_source_enabled,
     'RUN_DOCKER_SPECS' => 'true'
   }
-  sh smoke_env, 'bundle exec rspec --tag docker'
+  # Run the suite in the dev image, inside the app container's network namespace (so 127.0.0.1:4000 is the app).
+  sh smoke_env,
+     ['docker run --rm',
+      '--network container:html2rss-web-test',
+      *smoke_env.keys.map { |key| "-e #{key}" },
+      "-v #{current_dir}:/workspace",
+      '-w /workspace',
+      'html2rss/web:dev',
+      'bundle exec rspec --tag docker'].join(' ')
 ensure
   if test_container_exists?('html2rss-web-test')
     Output.describe 'Cleaning up test container'
