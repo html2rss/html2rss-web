@@ -643,3 +643,16 @@
     transform: rotate(360deg);
   }
 }
+
+.refine-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.refine-suggestions__sample {
+  color: var(--text-muted);
+}

@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { ResultDisplay } from './ResultDisplay';
 import { CreateFeedPanel, UtilityStrip } from './AppPanels';
 import { IosShortcutHelp } from './IosShortcutHelp';
+import { RefineWorkspace } from '../refine';
 import { Notice } from './Notice';
 import { COPY } from '../journey/copy';
 import { useSession } from '../session';
@@ -72,6 +73,10 @@ export function App() {
     onRetryCreate,
     onCreateAnother,
     onRetryPreview,
+    refineSaveError,
+    onOpenRefine,
+    onCloseRefine,
+    onRefineSave,
     setUtilityHelp,
     setTokenDraft,
     setTokenError,
@@ -97,6 +102,8 @@ export function App() {
     return () => cancelAnimationFrame(focusHandle);
   }, [utilityHelp]);
 
+  // Refine needs an access token and an instance that enables it; guests never see selector controls.
+  const refineAvailable = hasToken && metadata?.instance.refine?.enabled === true;
   const submitDisabled = flowSubmitDisabled || viewModel.kind === 'token_prompt';
   const onTokenDraftChange = (value: string) => {
     setTokenDraft(value);
@@ -129,12 +136,24 @@ export function App() {
         <p>{COPY.loadingInstanceBody}</p>
       </Notice>
     );
+  } else if (viewModel.kind === 'refine') {
+    bodyContent = (
+      <RefineWorkspace
+        url={viewModel.url}
+        token={token ?? ''}
+        isSaving={isCreating}
+        saveError={refineSaveError}
+        onSave={(selectors) => void onRefineSave(selectors)}
+        onCancel={onCloseRefine}
+      />
+    );
   } else if (viewModel.kind === 'result') {
     bodyContent = (
       <ResultDisplay
         viewModel={viewModel}
         onCreateAnother={onCreateAnother}
         onRetryPreview={onRetryPreview}
+        onRefine={refineAvailable ? () => onOpenRefine(viewModel.feed.url) : undefined}
       />
     );
   } else {
@@ -156,6 +175,7 @@ export function App() {
         onSaveToken={onSaveToken}
         onCancelTokenPrompt={onCancelTokenPrompt}
         onRetryCreate={onRetryCreate}
+        onRefine={refineAvailable && feedFormData.url ? () => onOpenRefine(feedFormData.url) : undefined}
       />
     );
   }

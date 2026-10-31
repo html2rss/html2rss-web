@@ -7,6 +7,7 @@ import {
 } from './feedErrors';
 import { normalizeString } from './feedParsers';
 import { readJsonResponse } from './feedPreviewClient';
+import type { RefineSelectors } from '../refine';
 
 export * from './feedErrors';
 export * from './feedParsers';
@@ -31,11 +32,15 @@ interface RawFeedApiResponse extends RawApiResponse {
   data?: RawFeedPayload;
 }
 
-export async function requestFeedCreation(url: string, token: string): Promise<FeedRecord> {
+export async function requestFeedCreation(
+  url: string,
+  token: string,
+  selectors?: RefineSelectors
+): Promise<FeedRecord> {
   const response = await fetch(resolveApiUrl('feeds'), {
     method: 'POST',
     headers: buildCreateHeaders(token),
-    body: JSON.stringify({ url }),
+    body: JSON.stringify(selectors ? { url, selectors } : { url }),
   });
 
   const payload = await readJsonResponse<RawFeedApiResponse>(response);

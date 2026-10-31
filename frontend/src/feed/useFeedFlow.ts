@@ -7,6 +7,7 @@ import type { FeedCreationError } from '../api/contracts';
 import { COPY } from '../journey/copy';
 import type { AppRoute } from '../routes/appRoute';
 import type { MayCreateResult } from '../session';
+import type { RefineSelectors } from '../refine';
 
 const EMPTY_FEED_ERRORS = { url: '', form: '' };
 
@@ -59,6 +60,8 @@ export function useFeedFlow({
   const [tokenError, setTokenError] = useState('');
   const [utilityHelp, setUtilityHelp] = useState<UtilityHelpKind | undefined>(undefined);
   const [focusCreateComposerKey, setFocusCreateComposerKey] = useState(0);
+  const [refineUrl, setRefineUrl] = useState<string | undefined>(undefined);
+  const [refineSaveError, setRefineSaveError] = useState('');
 
   const routePrefillUrl = route.kind === 'result' ? undefined : route.prefillUrl;
   const autoSubmitUrlReference = useRef<string | undefined>(routePrefillUrl);
@@ -194,6 +197,40 @@ export function useFeedFlow({
     void attemptFeedCreation(token ?? '');
   }, [feedFormData.url, isLoading, mayCreate, navigate, route.kind, token]);
 
+  // Refine overlays the current frame; leaving that frame (back button, new result) closes it.
+  const routeKey = route.kind === 'result' ? `result:${route.feedToken}` : route.kind;
+  useEffect(() => {
+    setRefineUrl(undefined);
+  }, [routeKey]);
+
+  const onOpenRefine = (url: string) => {
+    setRefineSaveError('');
+    setRefineUrl(url);
+  };
+
+  const onRefineSave = async (selectors: RefineSelectors) => {
+    if (!refineUrl) return;
+
+    setRefineSaveError('');
+    try {
+      const created = await createFeed(refineUrl, token ?? '', selectors);
+      setRefineUrl(undefined);
+      navigate({ kind: 'result', feedToken: created.feed.feed_token });
+    } catch (submitError) {
+      const failure = submitError as FeedCreationError;
+      clearError();
+      if (failure.kind === 'auth' || failure.nextAction === 'enter_token') {
+        clearToken();
+        setTokenDraft('');
+        setTokenError(COPY.tokenRejected);
+        setRefineUrl(undefined);
+        navigate({ kind: 'token', prefillUrl: refineUrl });
+        return;
+      }
+      setRefineSaveError(failure.message);
+    }
+  };
+
   // Recover unmatched result routes onto a remounted create view.
   useEffect(() => {
     if (route.kind !== 'result') return;
@@ -203,7 +240,8 @@ export function useFeedFlow({
 
     // Do not carry a prefill URL — that would re-trigger auto-submit and bounce back to result.
     navigate({ kind: 'create' }, { replace: true });
-  }, [navigate, result, route]);
+    // Judge on route entry only: a new result may land one render before its route does (Refine save).
+  }, [navigate, route]);
 
   useEffect(() => {
     const previousKind = previousRouteKindReference.current;
@@ -238,6 +276,7 @@ export function useFeedFlow({
     creationError,
     feedFieldErrors,
     isCreating,
+    refineUrl,
     route,
     tokenError,
     result,
@@ -286,6 +325,10 @@ export function useFeedFlow({
       navigate({ kind: 'create', prefillUrl: feedFormData.url || undefined });
     },
     onRetryPreview: retryPreviewFetch,
+    refineSaveError,
+    onOpenRefine,
+    onCloseRefine: () => setRefineUrl(undefined),
+    onRefineSave,
     setUtilityHelp,
     setTokenDraft,
     setTokenError,

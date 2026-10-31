@@ -15,6 +15,18 @@ describe('decideJourney', () => {
     ).toEqual({ kind: 'create' });
   });
 
+  it('projects an open Refine workspace ahead of result and create', () => {
+    expect(
+      decideJourney({
+        feedFieldErrors: emptyErrors,
+        isCreating: true,
+        refineUrl: 'https://example.com/a',
+        route: { kind: 'create' },
+        tokenError: '',
+      })
+    ).toEqual({ kind: 'refine', url: 'https://example.com/a' });
+  });
+
   it('nests preview under the result variant when tokens match', () => {
     const viewModel = decideJourney({
       feedFieldErrors: emptyErrors,
