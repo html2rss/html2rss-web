@@ -1,12 +1,16 @@
 # frozen_string_literal: true
 
 # On the host, every target re-runs inside the `dev` compose service; below `else` is the in-container Makefile.
-ifeq ($(wildcard /.dockerenv),)
+ifeq ($(wildcard /.dockerenv /run/.containerenv),)
 .DEFAULT_GOAL := help
 DEV_RUN = docker compose -f docker-compose.dev.yml run --rm $(if $(CI),-T) $(if $(filter dev%,$(MAKECMDGOALS)),--service-ports) dev
 
 %:
+	@docker info >/dev/null 2>&1 || { echo "Docker is not running. Start Docker Desktop, OrbStack, Colima or Podman." >&2; exit 1; }
 	@$(DEV_RUN) make $@
+
+reset: ## Drop the dev containers and volumes (bundle cache); the image rebuilds on next use
+	docker compose -f docker-compose.dev.yml down -v
 else
 .PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives frontend-audit
 
