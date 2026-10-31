@@ -172,6 +172,16 @@ if ENV['OPENAPI']
 
         normalized_paths[normalized][verb]['description'] ||= normalized_paths[normalized][verb]['summary']
 
+        if normalized == '/feeds' && verb == 'post'
+          # Recorded examples would overfit selectors to one sample; the server validates the shape.
+          body_schema = normalized_paths[normalized][verb].dig('requestBody', 'content', 'application/json', 'schema')
+          body_schema&.dig('properties')&.store(
+            'selectors',
+            { 'type' => 'object', 'additionalProperties' => true,
+              'description' => 'Optional studio selectors, validated against the html2rss config schema.' }
+          )
+        end
+
         if normalized.start_with?('/feeds/{token}')
           normalized_paths[normalized][verb]['parameters'] ||= []
           has_token_param = normalized_paths[normalized][verb]['parameters'].any? do |parameter|

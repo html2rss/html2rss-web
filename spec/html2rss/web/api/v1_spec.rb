@@ -810,7 +810,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     describe 'with selectors' do
       let(:selectors) { { items: { selector: 'article' }, title: { selector: 'h2' } } }
 
-      it 'signs validated selectors into the minted token', :aggregate_failures do
+      it 'signs validated selectors into the minted token', :aggregate_failures, openapi: false do
         ClimateControl.modify(STUDIO_ENABLED: 'true') { post_feed_request(url: feed_url, selectors:) }
 
         expect(last_response.status).to eq(201)
@@ -818,13 +818,13 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         expect(Html2rss::Web::FeedToken.validate(token).selectors).to eq(selectors)
       end
 
-      it 'forbids selectors while the studio is disabled' do
+      it 'forbids selectors while the studio is disabled', openapi: false do
         ClimateControl.modify(STUDIO_ENABLED: 'false') { post_feed_request(url: feed_url, selectors:) }
 
         expect(last_response.status).to eq(403)
       end
 
-      it 'rejects schema-invalid selectors' do
+      it 'rejects schema-invalid selectors', openapi: false do
         ClimateControl.modify(STUDIO_ENABLED: 'true') do
           post_feed_request(url: feed_url, selectors: { items: { selector: '' } })
         end
