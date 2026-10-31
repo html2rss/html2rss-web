@@ -103,7 +103,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
   end
 
   def valid_feed_token
-    Html2rss::Web::Auth.generate_feed_token('admin', feed_url)
+    Html2rss::Web::FeedToken.generate('admin', feed_url)
   end
 
   def post_feed_request(payload)
@@ -514,7 +514,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'renders feed for a valid token', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', feed_url, strategy: 'default')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       stub_feed_renderer
@@ -526,7 +526,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'returns alternate Link headers for successful feeds', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/link-headers", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/link-headers", strategy: 'default')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(ok_feed_result_with_payload)
 
       get "/api/v1/feeds/#{token}.xml", {}, { 'HTTP_HOST' => 'example.test' }
@@ -537,7 +537,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'uses relative Link targets and varies JSON feed_url by Host', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/host-vary", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/host-vary", strategy: 'default')
       feed = link_header_feed_double
       allow(Html2rss::Web::Feeds::Service).to receive(:call)
         .and_return(ok_render_result(feed: feed, cache_key: 'feed_result:host-vary'))
@@ -561,7 +561,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'prefers xml when Accept quality outranks json', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', feed_url, strategy: 'default')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       stub_feed_renderer
@@ -573,7 +573,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'ignores query param strategy overrides', :aggregate_failures, openapi: false do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', feed_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', feed_url, strategy: 'default')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       stub_feed_renderer
@@ -610,7 +610,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns forbidden when auto source is disabled', :aggregate_failures do
       unique_url = "#{feed_url}/disabled"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', unique_url, strategy: 'default')
 
       ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
         get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/xml' }
@@ -623,7 +623,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns plain text forbidden errors when requested through Accept', :aggregate_failures do
       unique_url = "#{feed_url}/disabled-json"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', unique_url, strategy: 'default')
 
       ClimateControl.modify(AUTO_SOURCE_ENABLED: 'false') do
         get "/api/v1/feeds/#{token}", {}, { 'HTTP_ACCEPT' => 'application/feed+json' }
@@ -636,7 +636,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
 
     it 'returns non-cacheable feed errors when service generation fails', :aggregate_failures do
       unique_url = "#{feed_url}/service-error-xml"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', unique_url, strategy: 'default')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(service_error_result)
 
@@ -651,7 +651,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     it 'returns non-cacheable plain text errors when service generation fails for json', :aggregate_failures,
        openapi: false do
       unique_url = "#{feed_url}/service-error-json"
-      token = Html2rss::Web::Auth.generate_feed_token('admin', unique_url, strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', unique_url, strategy: 'default')
 
       status, content_type, cache_control, body = json_feed_service_error_tuple(token)
 
@@ -662,7 +662,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'returns 422 for empty extraction feeds in xml representation', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/empty-xml", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/empty-xml", strategy: 'default')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
 
       get "/api/v1/feeds/#{token}.xml"
@@ -674,7 +674,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'returns 422 for empty extraction feeds in json feed representation', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/empty-json", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/empty-json", strategy: 'default')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(extraction_empty_result)
 
       get "/api/v1/feeds/#{token}.json"
@@ -693,7 +693,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
         rate_limit_window_seconds: 60
       )
 
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/rate-limited-429", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/rate-limited-429", strategy: 'default')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_return(feed_result)
       stub_feed_renderer
 
@@ -706,7 +706,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'returns 503 when the scraper queue times out', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-503", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/timeout-503", strategy: 'default')
 
       error = Html2rss::RequestService::RequestTimedOut.new('queue timed out', timeout_phase: 'queue')
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_raise(error)
@@ -718,7 +718,7 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
     end
 
     it 'returns 504 when the gateway times out', :aggregate_failures do
-      token = Html2rss::Web::Auth.generate_feed_token('admin', "#{feed_url}/timeout-504", strategy: 'default')
+      token = Html2rss::Web::FeedToken.generate('admin', "#{feed_url}/timeout-504", strategy: 'default')
 
       allow(Html2rss::Web::Feeds::Service).to receive(:call).and_raise(Timeout::Error.new('gateway timeout'))
 

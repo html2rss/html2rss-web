@@ -5,7 +5,7 @@ module Html2rss
     ##
     # HTTP 429 error used when client hits rate limits.
     class TooManyRequestsError < HttpError
-      DEFAULT_MESSAGE = 'Too many requests'
+      DEFAULT_MESSAGE = 'Too many requests. Wait before retrying.'
       STATUS = 429
       CODE = 'TOO_MANY_REQUESTS'
     end

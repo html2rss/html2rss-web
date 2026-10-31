@@ -37,16 +37,14 @@ module Html2rss
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def scrape_result(resolved_source, cache_key)
             feed_result = Html2rss.feed_result(resolved_source.generator_input)
-            success_result(feed_result, resolved_source, cache_key)
-          rescue StandardError => error
-            decision = ErrorClassifier.classify(error)
-            diagnostics = ErrorClassifier::Diagnostics.from_error(error)
-            # decision.status owns the body; decision.cacheable owns Cache.fetch write.
-            if decision.status < 500
-              return classified_empty_result(error, decision, diagnostics, resolved_source, cache_key)
-            end
+            return empty_feed_result(feed_result, resolved_source, cache_key) if feed_result.empty?
 
-            error_result(error, decision, diagnostics, resolved_source, cache_key)
+            render_result(
+              :ok, resolved_source, cache_key,
+              payload: payload_for(resolved_source, feed_result:)
+            )
+          rescue StandardError => error
+            failure_result(error, resolved_source, cache_key)
           end
 
           # Records only static scrapes whose request params match directory defaults.
@@ -57,7 +55,6 @@ module Html2rss
           # @return [void]
           def record_directory_last_result(resolved_source, result)
             return unless resolved_source.source_kind == :static
-            return if resolved_source.feed_name.to_s.empty?
             return unless DirectoryParams.match?(
               resolved_source.directory_defaults,
               resolved_source.request_params
@@ -70,68 +67,42 @@ module Html2rss
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def success_result(feed_result, resolved_source, cache_key)
-            return empty_feed_result(feed_result, resolved_source, cache_key) if feed_result.empty?
-
-            Contracts::RenderResult.new(
-              status: :ok,
-              payload: payload_for(resolved_source, feed_result:),
-              ttl_seconds: resolved_source.ttl_seconds,
-              cache_key:
-            )
-          end
-
-          # @param feed_result [Html2rss::FeedResult]
-          # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
-          # @param cache_key [String]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
           def empty_feed_result(feed_result, resolved_source, cache_key)
-            Contracts::RenderResult.new(
-              status: :empty,
+            render_result(
+              :empty, resolved_source, cache_key,
               decision: ErrorClassifier::EXTRACTION_EMPTY,
               payload: payload_for(resolved_source, feed_result:),
-              ttl_seconds: resolved_source.ttl_seconds,
-              cache_key:,
               empty_reason: 'feed_empty'
             )
           end
 
+          # Client errors (status below 500) render as empty with the decision's reason; others as error.
+          # decision.status owns the body; decision.cacheable owns Cache.fetch write.
+          #
           # @param error [StandardError]
-          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-          # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def classified_empty_result(error, decision, diagnostics, resolved_source, cache_key) # rubocop:disable Metrics/MethodLength -- empty render + reason map
-            Contracts::RenderResult.new(
-              status: :empty,
+          def failure_result(error, resolved_source, cache_key)
+            decision = ErrorClassifier.classify(error)
+            empty = decision.status < 500
+            render_result(
+              empty ? :empty : :error, resolved_source, cache_key,
               decision:,
-              diagnostics:,
-              payload: payload_for(resolved_source),
-              ttl_seconds: resolved_source.ttl_seconds,
-              cache_key:,
+              diagnostics: ErrorClassifier::Diagnostics.from_error(error),
               error_message: error.message,
               error_class: error.class.name,
-              empty_reason: decision.empty_reason
+              **(empty ? { payload: payload_for(resolved_source), empty_reason: decision.empty_reason } : {})
             )
           end
 
-          # @param error [StandardError]
-          # @param decision [Html2rss::Web::ErrorClassifier::Decision]
-          # @param diagnostics [Html2rss::Web::ErrorClassifier::Diagnostics]
+          # @param status [Symbol]
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
           # @param cache_key [String]
+          # @param fields [Hash{Symbol=>Object}]
           # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
-          def error_result(error, decision, diagnostics, resolved_source, cache_key)
-            Contracts::RenderResult.new(
-              status: :error,
-              decision:,
-              diagnostics:,
-              ttl_seconds: resolved_source.ttl_seconds,
-              cache_key:,
-              error_message: error.message,
-              error_class: error.class.name
-            )
+          def render_result(status, resolved_source, cache_key, **fields)
+            Contracts::RenderResult.new(status:, ttl_seconds: resolved_source.ttl_seconds, cache_key:, **fields)
           end
 
           # @param resolved_source [Html2rss::Web::Feeds::Contracts::ResolvedSource]
@@ -154,8 +125,7 @@ module Html2rss
             channel_title = feed_result&.channel_title
             return channel_title unless channel_title.to_s.empty?
 
-            url = resolved_source.url
-            ChannelTitle.for(url) || url.to_s
+            ChannelTitle.for(resolved_source.url) || resolved_source.url.to_s
           end
         end
       end

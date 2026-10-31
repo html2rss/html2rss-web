@@ -11,17 +11,9 @@ module Html2rss
       ##
       # Fiber-native cache for canonical feed results.
       module Cache
-        # rubocop:disable ThreadSafety/ClassInstanceVariable
-        def self.entries
-          @entries ||= {}
-        end
-        private_class_method :entries
-
-        def self.in_flight
-          @in_flight ||= {}
-        end
-        private_class_method :in_flight
-        # rubocop:enable ThreadSafety/ClassInstanceVariable
+        ENTRIES = {} # rubocop:disable Style/MutableConstant
+        IN_FLIGHT = {} # rubocop:disable Style/MutableConstant
+        private_constant :ENTRIES, :IN_FLIGHT
 
         Entry = Data.define(:result, :expires_at)
         DEFAULT_TTL_SECONDS = 3600
@@ -81,12 +73,12 @@ module Html2rss
           # @param key [String]
           # @param ttl_seconds [Integer]
           # @param cacheable [Boolean, Proc]
-          # @yieldreturn [Html2rss::Web::Feeds::Contracts::RenderResult]
-          # @return [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @yieldreturn [Contracts::RenderResult]
+          # @return [Contracts::RenderResult]
           def fetch(key, ttl_seconds:, cacheable: true, &)
-            entry = read_entry(key)
+            entry = ENTRIES[key]
             return entry.result if fresh?(entry)
-            return in_flight[key].wait if in_flight.key?(key)
+            return IN_FLIGHT[key].wait if IN_FLIGHT.key?(key)
 
             execute_fetch(key, ttl_seconds, cacheable, &)
           end
@@ -94,21 +86,13 @@ module Html2rss
           # @param reason [String]
           # @return [nil]
           def clear!(reason: 'manual')
-            entries.clear
-            in_flight.clear
-            Observability.emit(
-              event_name: 'cache.lifecycle',
-              outcome: 'success',
-              details: { component: 'feeds_cache', event: 'clear', reason: }
-            )
+            ENTRIES.clear
+            IN_FLIGHT.clear
+            Observability.success('cache.lifecycle', component: 'feeds_cache', event: 'clear', reason:)
             nil
           end
 
           private
-
-          def read_entry(key)
-            entries[key]
-          end
 
           # @param entry [Entry, nil]
           # @return [Boolean]
@@ -118,15 +102,11 @@ module Html2rss
 
           def write_entry(key, ttl_seconds, result)
             prune_if_needed
-            entries[key] = Entry.new(
+            ENTRIES[key] = Entry.new(
               result: result.with(cache_hit: true),
               expires_at: Time.now + normalize_ttl(ttl_seconds)
             )
-            Observability.emit(
-              event_name: 'cache.lifecycle',
-              outcome: 'success',
-              details: { component: 'feeds_cache', event: 'write', key_hash: key_hash(key) }
-            )
+            Observability.success('cache.lifecycle', component: 'feeds_cache', event: 'write', key_hash: key_hash(key))
           end
 
           # Prunes expired entries first. If still over the max limit, prunes entries expiring soonest.
@@ -134,19 +114,19 @@ module Html2rss
           # @return [void]
           def prune_if_needed
             max = Flags.feeds_cache_max_size
-            return if entries.size < max
+            return if ENTRIES.size < max
 
             prune_expired
-            prune_excess(max) if entries.size >= max
+            prune_excess(max) if ENTRIES.size >= max
           end
 
           def prune_expired
             now = Time.now
-            entries.delete_if { |_k, v| now >= v.expires_at }
+            ENTRIES.delete_if { |_k, v| now >= v.expires_at }
           end
 
           def execute_fetch(key, ttl_seconds, cacheable) # rubocop:disable Metrics/MethodLength
-            job = in_flight[key] = InFlight.new
+            job = IN_FLIGHT[key] = InFlight.new
             begin
               result = yield
               write_entry(key, ttl_seconds, result) if cacheable_result?(cacheable, result)
@@ -156,23 +136,23 @@ module Html2rss
               job.failure!(error)
               raise
             ensure
-              in_flight.delete(key)
+              IN_FLIGHT.delete(key)
             end
           end
 
           def prune_excess(max)
-            excess = entries.size - (max * 0.9).to_i
+            excess = ENTRIES.size - (max * 0.9).to_i
             return if excess <= 0
 
-            entries_by_expiration.first(excess).each { |pair| entries.delete(pair.first) }
+            entries_by_expiration.first(excess).each { |pair| ENTRIES.delete(pair.first) }
           end
 
           def entries_by_expiration
-            entries.sort_by { |_k, v| v.expires_at }
+            ENTRIES.sort_by { |_k, v| v.expires_at }
           end
 
           # @param cacheable [Boolean, Proc]
-          # @param result [Html2rss::Web::Feeds::Contracts::RenderResult]
+          # @param result [Contracts::RenderResult]
           # @return [Boolean]
           def cacheable_result?(cacheable, result)
             return cacheable.call(result) if cacheable.respond_to?(:call)

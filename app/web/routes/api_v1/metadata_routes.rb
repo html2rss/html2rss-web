@@ -33,7 +33,7 @@ module Html2rss
             def mount_strategies(router)
               router.on 'strategies' do
                 router.get do
-                  JSON.generate(Api::V1::Strategies.index(router))
+                  ApiV1.render_json(Api::V1::Strategies.index(router))
                 end
               end
             end
@@ -57,7 +57,7 @@ module Html2rss
             # @param router [Roda::RodaRequest]
             # @return [String]
             def render_root_metadata(router)
-              JSON.generate(Api::V1::Response.success(data: Api::V1::RootMetadata.build(router)))
+              ApiV1.render_json(Api::V1::Response.success(data: Api::V1::RootMetadata.build(router)))
             end
           end
         end

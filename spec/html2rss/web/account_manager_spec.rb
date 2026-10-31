@@ -66,7 +66,7 @@ RSpec.describe Html2rss::Web::AccountManager do
       expect(Html2rss::Web::LocalConfig).to have_received(:global).once
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'cache.lifecycle', outcome: 'success',
-        details: { component: 'account_manager', event: 'build', accounts_count: 2 }
+        details: { component: 'account_manager', event: 'build', accounts_count: 2 }, level: :info
       ).once
     end
 
@@ -115,7 +115,7 @@ RSpec.describe Html2rss::Web::AccountManager do
       expect(described_class.reload!).to be_nil
       expect(Html2rss::Web::Observability).to have_received(:emit).with(
         event_name: 'cache.lifecycle', outcome: 'success',
-        details: { component: 'account_manager', event: 'reload', reason: 'manual' }
+        details: { component: 'account_manager', event: 'reload', reason: 'manual' }, level: :info
       )
     end
 

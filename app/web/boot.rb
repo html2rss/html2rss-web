@@ -7,53 +7,32 @@ module Html2rss
     ##
     # Boot helpers for code loading and runtime setup.
     module Boot
-      @mutex = Mutex.new
-      @setup = false
-      @loader = nil
-
       class << self
+        # Builds the Zeitwerk loader and sets it up (Zeitwerk ignores repeated setup). Runs once at boot.
+        #
         # @param reloadable [Boolean]
         # @return [Zeitwerk::Loader]
         def setup!(reloadable: false)
-          @mutex.synchronize do
-            return @loader if @setup
-
-            require_relative '../../config/version'
-            @loader ||= build_loader
-            @loader.enable_reloading if reloadable
-            @loader.setup
-            @setup = true
-            @loader
-          end
+          require_relative '../../config/version'
+          loader.enable_reloading if reloadable
+          loader.setup
+          loader
         end
 
         # @return [Zeitwerk::Loader]
-        def loader
-          @mutex.synchronize { @loader ||= build_loader }
-        end
-
-        # @return [Boolean]
-        def setup?
-          @mutex.synchronize { @setup == true }
-        end
+        def loader = @loader ||= build_loader # rubocop:disable ThreadSafety/ClassInstanceVariable -- set once at boot
 
         # @return [void]
-        def eager_load!
-          loader.eager_load
-        end
+        def eager_load! = loader.eager_load
 
         # @return [void]
-        def reload!
-          loader.reload
-        end
+        def reload! = loader.reload
 
         private
 
         # @return [Zeitwerk::Loader]
         def build_loader
-          Zeitwerk::Loader.new.tap do |new_loader|
-            configure_loader(new_loader)
-          end
+          Zeitwerk::Loader.new.tap { configure_loader(it) }
         end
 
         # @param new_loader [Zeitwerk::Loader]

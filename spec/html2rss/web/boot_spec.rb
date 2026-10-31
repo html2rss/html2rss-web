@@ -3,9 +3,8 @@
 require 'spec_helper'
 
 RSpec.describe Html2rss::Web::Boot do
-  describe '.setup? / .loader' do
+  describe '.loader' do
     it 'is set up with a memoized loader', :aggregate_failures do
-      expect(described_class.setup?).to be(true)
       expect(described_class.loader).to be_a(Zeitwerk::Loader)
       expect(described_class.loader).to equal(described_class.loader)
     end
@@ -20,18 +19,14 @@ RSpec.describe Html2rss::Web::Boot do
   describe '.setup! (first run)' do
     let(:loader) { instance_double(Zeitwerk::Loader, setup: nil, enable_reloading: nil) }
 
-    let!(:original) { %i[@setup @loader].to_h { [it, described_class.instance_variable_get(it)] } }
+    let!(:original) { described_class.instance_variable_get(:@loader) }
 
-    before do
-      described_class.instance_variable_set(:@setup, false)
-      described_class.instance_variable_set(:@loader, loader)
-    end
+    before { described_class.instance_variable_set(:@loader, loader) }
 
-    after { original.each { |name, value| described_class.instance_variable_set(name, value) } }
+    after { described_class.instance_variable_set(:@loader, original) }
 
     it 'sets up the loader once without reloading by default', :aggregate_failures do
       expect(described_class.setup!).to equal(loader)
-      expect(described_class.setup?).to be(true)
       expect(loader).to have_received(:setup)
       expect(loader).not_to have_received(:enable_reloading)
     end

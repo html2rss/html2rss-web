@@ -10,6 +10,12 @@ module Html2rss
       # reason about and avoids duplicated content-type/render logic.
       module ApiV1
         class << self
+          # Serializes a payload as the JSON response body.
+          #
+          # @param payload [Hash]
+          # @return [String]
+          def render_json(payload) = JSON.generate(payload)
+
           # Mounts `/api/v1` routes on the provided router.
           #
           # @param router [Roda::RodaRequest]

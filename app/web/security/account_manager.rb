@@ -19,11 +19,7 @@ module Html2rss
         def reload!(reason: 'manual')
           # rubocop:disable-next ThreadSafety/ClassInstanceVariable
           @snapshot = nil
-          Observability.emit(
-            event_name: 'cache.lifecycle',
-            outcome: 'success',
-            details: { component: 'account_manager', event: 'reload', reason: }
-          )
+          Observability.success('cache.lifecycle', component: 'account_manager', event: 'reload', reason:)
           nil
         end
 
@@ -61,11 +57,8 @@ module Html2rss
           token_index = index_accounts(accounts, :token)
           username_index = index_accounts(accounts, :username)
 
-          Observability.emit(
-            event_name: 'cache.lifecycle',
-            outcome: 'success',
-            details: { component: 'account_manager', event: 'build', accounts_count: accounts.length }
-          )
+          Observability.success('cache.lifecycle', component: 'account_manager', event: 'build',
+                                                   accounts_count: accounts.length)
           Snapshot.new(accounts:, token_index:, username_index:)
         end
 

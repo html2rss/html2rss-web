@@ -17,11 +17,7 @@ module Html2rss
         def extract(parameters_block)
           return {} unless parameters_block.is_a?(Hash)
 
-          parameters_block.each_with_object({}) do |(name, config), defaults|
-            next unless config.is_a?(Hash) && config.key?(:default)
-
-            defaults[name.to_s] = config[:default]
-          end
+          parameters_block.filter_map { |name, config| [name.to_s, config[:default]] if config in { default: _ } }.to_h
         end
       end
     end

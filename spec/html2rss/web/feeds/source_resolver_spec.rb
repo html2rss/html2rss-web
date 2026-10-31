@@ -94,7 +94,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       before do
-        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token)
+        allow(Html2rss::Web::FeedToken).to receive(:validate)
           .with('public-token').and_return(feed_token)
         allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username)
           .with('admin').and_return({ username: 'admin' })
@@ -242,7 +242,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
       before do
         allow(Html2rss::Web::Flags).to receive(:auto_source_enabled?).and_return(true)
-        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token).and_return(feed_token)
+        allow(Html2rss::Web::FeedToken).to receive(:validate).and_return(feed_token)
         allow(Html2rss::Web::AccountManager).to receive(:get_account_by_username).and_return(account)
         allow(Html2rss::Web::LocalConfig).to receive(:global).and_return(
           stylesheets: [{ href: 's.css' }], headers: { 'X' => '1' }, auth: { accounts: [] }
@@ -277,7 +277,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
       end
 
       it 'rejects undecodable or invalid tokens' do
-        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token).and_return(nil)
+        allow(Html2rss::Web::FeedToken).to receive(:validate).and_return(nil)
 
         expect { resolve }.to raise_error(Html2rss::Web::UnauthorizedError, 'Invalid token')
       end
@@ -304,7 +304,7 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
 
       it 'accepts the configured default strategy and trims token strategies', :aggregate_failures do
         allow(Html2rss::Config).to receive(:default_strategy_name).and_return(:custom)
-        allow(Html2rss::Web::Auth).to receive(:validate_and_decode_feed_token)
+        allow(Html2rss::Web::FeedToken).to receive(:validate)
           .and_return(feed_token.with(strategy: ' custom '))
 
         expect(resolve.strategy).to eq(:custom)
