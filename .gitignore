@@ -63,3 +63,6 @@ frontend/.astro
 
 # Local agent artifacts
 /.agents/
+
+# mutant session store
+/.mutant/
