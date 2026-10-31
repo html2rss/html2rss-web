@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
-.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives
+# On the host, every target re-runs inside the `dev` compose service; below `else` is the in-container Makefile.
+ifeq ($(wildcard /.dockerenv),)
+.DEFAULT_GOAL := help
+DEV_RUN = docker compose -f docker-compose.dev.yml run --rm $(if $(CI),-T) $(if $(filter dev%,$(MAKECMDGOALS)),--service-ports) dev
+
+%:
+	@$(DEV_RUN) make $@
+else
+.PHONY: help test lint lint-js lint-ruby lintfix lintfix-js lintfix-ruby setup dev clean frontend-setup check-frontend quick-check ready ci-ready yard-verify-public-docs openapi openapi-verify openapi-client openapi-client-verify openapi-lint openapi-lint-redocly openapi-lint-spectral openai-lint-spectral test-frontend-e2e lint-css-primitives frontend-audit
 
 RUBOCOP_FLAGS ?= --cache false
 
@@ -66,6 +74,7 @@ lint-ruby: ## Run Ruby linter (RuboCop) - errors when issues found
 	bundle exec rake zeitwerk:verify
 	@echo "Running YARD public-method docs check..."
 	bundle exec rake yard:verify_public_docs
+	bundle exec yard doc --fail-on-warning --no-output
 	@echo "Ruby linting complete!"
 
 lint-js: ## Run JavaScript/Frontend linting (TypeScript + ESLint + Stylelint + Prettier) - errors when issues found
@@ -149,7 +158,12 @@ clean: ## Clean temporary files
 	@cd frontend && rm -rf dist/ node_modules/
 	@echo "Clean complete!"
 
+frontend-audit: ## Fail on moderate+ advisories in the pnpm lockfile
+	@cd frontend && pnpm audit --audit-level=moderate
+
 frontend-setup: ## Setup frontend dependencies
 	@echo "Setting up frontend dependencies..."
 	@cd frontend && CI=1 pnpm install --frozen-lockfile
 	@echo "Frontend setup complete!"
+
+endif

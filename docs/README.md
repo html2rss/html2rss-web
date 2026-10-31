@@ -33,16 +33,14 @@ Welcome! This is the canonical source of truth for contributing to `html2rss-web
 
 ## Development Setup (Docker)
 
-Use the `dev` stage of the root `Dockerfile` via `docker-compose.dev.yml` for all local development and tests.
-Running the app directly on the host is not supported. On Linux, export `DEV_UID=$(id -u) DEV_GID=$(id -g)` before `build` so bind-mounted files stay owned by you. CI runs the same image via `.github/actions/dev-image`.
+Run `make <target>` on the host: it delegates to the `dev` stage of the root `Dockerfile` via `docker-compose.dev.yml` (built on first use). Running the app directly on the host is not supported. On Linux, export `DEV_UID=$(id -u) DEV_GID=$(id -g)` before the first `make` so bind-mounted files stay owned by you. CI runs the same image via `.github/actions/dev-image`.
 
 ```bash
-docker compose -f docker-compose.dev.yml build
-docker compose -f docker-compose.dev.yml run --rm dev make setup
-docker compose -f docker-compose.dev.yml run --rm --service-ports dev make dev
+make setup
+make dev
 ```
 
-### Common Commands (Inside `dev` image)
+### Common Commands
 
 | Command                        | Purpose                                                    |
 | ------------------------------ | ---------------------------------------------------------- |
@@ -95,13 +93,13 @@ Always verify the contract before committing API changes.
 Always run this before pushing or committing:
 
 ```bash
-docker compose -f docker-compose.dev.yml run --rm dev make ready
+make ready
 ```
 
 For frontend changes and API contract/OpenAPI changes, run the CI-parity gate:
 
 ```bash
-docker compose -f docker-compose.dev.yml run --rm dev make ci-ready
+make ci-ready
 ```
 
 ### Testing Layers

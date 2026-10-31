@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DEV: docker compose -f docker-compose.dev.yml run --rm -T dev
+  CI: "true" # makes `make` on the runner delegate to the dev container without a TTY
 
 jobs:
   hadolint:
@@ -37,14 +37,11 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/dev-image
 
-      - name: Run RuboCop
-        run: $DEV bundle exec rubocop -F
-
-      - name: Verify Yard documentation
-        run: $DEV bundle exec yard doc --fail-on-warning --no-output
+      - name: Lint (RuboCop, Zeitwerk, YARD)
+        run: make lint-ruby
 
       - name: Run RSpec
-        run: $DEV bundle exec rspec
+        run: make test-ruby
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
@@ -60,23 +57,27 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/dev-image
 
-      - name: Install frontend dependencies for OpenAPI client verification
-        run: $DEV make frontend-setup
-
+      - run: make frontend-setup
       - name: Verify generated OpenAPI spec and client are up to date
-        run: $DEV make openapi-verify
-
+        run: make openapi-verify
       - name: Lint OpenAPI contract
-        run: $DEV make openapi-lint
+        run: make openapi-lint
 
   frontend-audit:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
-      - uses: ./.github/actions/dev-image
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.1.0
+        with:
+          package_json_file: frontend/package.json
 
       - name: Audit dependencies
-        run: $DEV pnpm --dir frontend audit --audit-level=moderate
+        run: pnpm audit --audit-level=moderate
 
   frontend:
     runs-on: ubuntu-latest
@@ -84,23 +85,13 @@ jobs:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/dev-image
 
-      - name: Install dependencies
-        run: $DEV make frontend-setup
-
-      - name: Typecheck frontend
-        run: $DEV pnpm --dir frontend run typecheck
-
-      - name: Lint CSS with Stylelint
-        run: $DEV pnpm --dir frontend exec stylelint "**/*.css"
-
-      - name: Check formatting
-        run: $DEV pnpm --dir frontend run format:check
-
+      - run: make frontend-setup
+      - name: Typecheck, lint, format
+        run: make lint-js
       - name: Run frontend tests
-        run: $DEV pnpm --dir frontend run test:ci
-
+        run: make test-frontend
       - name: Run frontend smoke test
-        run: $DEV pnpm --dir frontend run test:e2e
+        run: make test-frontend-e2e
 
   docker-build-smoke-image:
     needs:
