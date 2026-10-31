@@ -1,0 +1,15 @@
+---
+usage: opensource
+integration:
+  name: rspec
+requires:
+  - ./spec/spec_helper
+includes:
+  - app
+matcher:
+  subjects:
+    - 'Html2rss::Web*'
+mutation:
+  timeout: 10.0
+coverage_criteria:
+  process_abort: true

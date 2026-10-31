@@ -19,6 +19,7 @@ gem 'zeitwerk'
 
 group :development do
   gem 'irb', require: false
+  gem 'mutant-rspec', require: false
   gem 'rake', require: false
   gem 'rubocop', require: false
   gem 'rubocop-performance', require: false
