@@ -11,6 +11,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  DEV: docker compose -f docker-compose.dev.yml run --rm -T dev
+
 jobs:
   hadolint:
     runs-on: ubuntu-latest
@@ -25,8 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - name: Make compose contract verifier executable
-        run: chmod +x bin/compose-contract-verify
       - name: Verify compose contracts
         run: bin/compose-contract-verify
 
@@ -34,19 +35,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
+      - uses: ./.github/actions/dev-image
 
       - name: Run RuboCop
-        run: bundle exec rubocop -F
+        run: $DEV bundle exec rubocop -F
 
       - name: Verify Yard documentation
-        run: bundle exec yard doc --fail-on-warning --no-output
+        run: $DEV bundle exec yard doc --fail-on-warning --no-output
 
       - name: Run RSpec
-        run: bundle exec rspec
+        run: $DEV bundle exec rspec
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
@@ -60,99 +58,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js for OpenAPI lint tooling
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
+      - uses: ./.github/actions/dev-image
 
       - name: Install frontend dependencies for OpenAPI client verification
-        run: pnpm install --frozen-lockfile
-        working-directory: frontend
+        run: $DEV make frontend-setup
 
       - name: Verify generated OpenAPI spec and client are up to date
-        run: make openapi-verify
+        run: $DEV make openapi-verify
 
       - name: Lint OpenAPI contract
-        run: make openapi-lint
+        run: $DEV make openapi-lint
 
   frontend-audit:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/dev-image
 
       - name: Audit dependencies
-        run: pnpm audit --audit-level=moderate
+        run: $DEV pnpm --dir frontend audit --audit-level=moderate
 
   frontend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v7
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v6.1.0
-        with:
-          cache: true
-          cache_dependency_path: frontend/pnpm-lock.yaml
-          package_json_file: frontend/package.json
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ".tool-versions"
+      - uses: ./.github/actions/dev-image
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: $DEV make frontend-setup
 
       - name: Typecheck frontend
-        run: pnpm run typecheck
+        run: $DEV pnpm --dir frontend run typecheck
 
       - name: Lint CSS with Stylelint
-        run: pnpm exec stylelint "**/*.css"
+        run: $DEV pnpm --dir frontend exec stylelint "**/*.css"
 
       - name: Check formatting
-        run: pnpm run format:check
+        run: $DEV pnpm --dir frontend run format:check
 
       - name: Run frontend tests
-        run: pnpm run test:ci
-
-      - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: $DEV pnpm --dir frontend run test:ci
 
       - name: Run frontend smoke test
-        run: pnpm run test:e2e
+        run: $DEV pnpm --dir frontend run test:e2e
 
   docker-build-smoke-image:
     needs:
@@ -170,8 +118,8 @@ jobs:
           context: .
           load: true
           tags: html2rss/web
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=runtime
+          cache-to: type=gha,mode=max,scope=runtime
 
   docker-test:
     needs:
@@ -184,10 +132,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
       - uses: docker/setup-buildx-action@v4
 
       - name: Load Docker smoke image from cache
@@ -196,10 +140,10 @@ jobs:
           context: .
           load: true
           tags: html2rss/web
-          cache-from: type=gha
+          cache-from: type=gha,scope=runtime
 
       - name: Run Docker smoke test
         env:
           DOCKER_SMOKE_SKIP_BUILD: "true"
           SMOKE_AUTO_SOURCE_ENABLED: ${{ matrix.smoke_auto_source_enabled }}
-        run: bundle exec rake
+        run: rake

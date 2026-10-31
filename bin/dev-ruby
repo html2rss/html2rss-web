@@ -10,8 +10,13 @@ fi
 
 export RACK_ENV=${RACK_ENV:-development}
 
+# BusyBox lsof in this image reports internal FDs and exits 0, so prefer netstat.
+port_in_use() {
+  netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1$"
+}
+
 # Prevent silent failures from port conflicts
-if lsof -Pi :${PORT:-4000} -sTCP:LISTEN -t >/dev/null 2>&1; then
+if port_in_use "${PORT:-4000}"; then
   echo "❌ Port ${PORT:-4000} is already in use. Run: pkill -f 'falcon.*html2rss-web'"
   exit 1
 fi
