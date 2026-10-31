@@ -1,5 +1,5 @@
 # Single source of truth for toolchain versions: Dependabot bumps these two digest-pinned bases.
-FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS node
+FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS node
 
 FROM ruby:4.0.9-alpine3.24@sha256:50d04650231808a465271b4eedcb78634c2306afb0157b10e9d628373bd5d002 AS ruby
 
@@ -10,7 +10,7 @@ FROM --platform=$BUILDPLATFORM node AS frontend-builder
 
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+RUN npm install -g --force corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
@@ -39,9 +39,9 @@ RUN apk add --no-cache \
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
 # COPY materializes binaries as files; restore upstream symlinks so dist/lib resolves.
-RUN ln -sf ../lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack \
-  && ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+RUN ln -sf ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+  && ln -sf ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+  && npm install -g corepack@0.36.0
 
 ENV BUNDLE_PATH=/usr/local/bundle \
   COREPACK_HOME=/usr/local/share/corepack
