@@ -20,12 +20,27 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: write
-      pull-requests: read
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Read unreleased app version
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Only an unreleased version overrides the label resolver, so the draft is never named after a published tag.
+          current=$(sed -n "s/.*VERSION = '\(.*\)'.*/\1/p" config/version.rb)
+          latest=$(gh release view --json tagName --jq '.tagName | ltrimstr("v")' 2>/dev/null || echo 0.0.0)
+          if [ "$current" != "$latest" ] && [ "$(printf '%s\n%s\n' "$latest" "$current" | sort -V | tail -n1)" = "$current" ]; then
+            echo "version=$current" >> "$GITHUB_OUTPUT"
+          fi
       - name: Draft next release
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
+          version: ${{ steps.version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
