@@ -94,6 +94,8 @@ export function useAppRoute() {
   useEffect(() => {
     if (globalThis.window === undefined) return;
 
+    const target = globalThis;
+
     const canonicalize = (source: 'mount' | 'navigation') => {
       const nextRoute = readAppRoute();
       const needsReplace = !location.hash || location.pathname !== '/' || location.hash.startsWith('#!');
@@ -105,12 +107,13 @@ export function useAppRoute() {
 
     canonicalize('mount');
     const onNavigation = () => canonicalize('navigation');
-    addEventListener('popstate', onNavigation);
-    addEventListener('hashchange', onNavigation);
+    target.addEventListener('popstate', onNavigation);
+    target.addEventListener('hashchange', onNavigation);
 
+    // Detach from the captured window: the bare global can already be gone when late cleanup runs at test teardown.
     return () => {
-      removeEventListener('popstate', onNavigation);
-      removeEventListener('hashchange', onNavigation);
+      target.removeEventListener('popstate', onNavigation);
+      target.removeEventListener('hashchange', onNavigation);
     };
   }, []);
 
