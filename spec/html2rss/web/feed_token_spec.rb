@@ -61,6 +61,75 @@ RSpec.describe Html2rss::Web::FeedToken do
       end
     end
 
+    describe '.create (input boundaries)' do
+      def create(**overrides)
+        described_class.create(
+          username: 'alice', url: 'https://example.com/feed', secret_key: 'test-secret', **overrides
+        )
+      end
+
+      it 'accepts usernames up to 100 characters of [A-Za-z0-9_-]', :aggregate_failures do
+        expect(create(username: 'a' * 100)).not_to be_nil
+        expect(create(username: "#{'a' * 99}!")).to be_nil
+        expect(create(username: 'a' * 101)).to be_nil
+        expect(create(username: 'Az09_-')).not_to be_nil
+      end
+
+      it 'rejects usernames with characters outside the allowed set or non-strings', :aggregate_failures do
+        expect(create(username: "alice\nbob")).to be_nil
+        expect(create(username: 'alice bob')).to be_nil
+        expect(create(username: nil)).to be_nil
+        expect(create(username: :alice)).to be_nil
+      end
+
+      it 'accepts strategies up to 50 characters of [a-z0-9_]', :aggregate_failures do
+        expect(create(strategy: 'a' * 50)).not_to be_nil
+        expect(create(strategy: 'a' * 51)).to be_nil
+        expect(create(strategy: 'a0_')).not_to be_nil
+        expect(create(strategy: 'A')).to be_nil
+        expect(create(strategy: 'a-b')).to be_nil
+        expect(create(strategy: "a\nb")).to be_nil
+        expect(create(strategy: '')).to be_nil
+        expect(create(strategy: :abc)).to be_nil
+        expect(create(strategy: nil)).not_to be_nil
+      end
+
+      it 'rejects missing or empty secret keys', :aggregate_failures do
+        expect(create(secret_key: '')).to be_nil
+        expect(create(secret_key: nil)).to be_nil
+        expect(create(secret_key: :secret)).to be_nil
+      end
+
+      it 'expires at now + expires_in (default DEFAULT_EXPIRY)', :aggregate_failures do
+        now = Time.now.to_i
+        allow(Time).to receive(:now).and_return(Time.at(now))
+
+        expect(create.expires_at).to eq(now + Html2rss::Web::FeedToken::DEFAULT_EXPIRY)
+        expect(create(expires_in: 60).expires_at).to eq(now + 60)
+        expect(create(expires_in: '60').expires_at).to eq(now + 60)
+      end
+
+      it 'signs with HMAC-SHA256 over the JSON payload, including strategy only when present', :aggregate_failures do
+        now = Time.now.to_i
+        allow(Time).to receive(:now).and_return(Time.at(now))
+        base = { username: 'alice', url: 'https://example.com/feed', expires_at: now + 10 }
+        sign = ->(payload) { OpenSSL::HMAC.hexdigest('SHA256', 'test-secret', JSON.generate(payload)) }
+
+        expect(create(expires_in: 10).signature).to eq(sign.call(base))
+        expect(create(expires_in: 10, strategy: 'faraday').signature).to eq(sign.call(base.merge(strategy: 'faraday')))
+      end
+
+      it 'keeps the strategy in the signed payload so it cannot be swapped', :aggregate_failures do
+        token = create(strategy: 'faraday')
+        tampered = token.with(strategy: 'browserless')
+        stripped = token.with(strategy: nil)
+
+        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(token, 'test-secret')).to be(true)
+        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(tampered, 'test-secret')).to be(false)
+        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(stripped, 'test-secret')).to be(false)
+      end
+    end
+
     describe '.validate_decoded' do
       let(:secret_key) { 'test-secret' }
       let(:url) { 'https://example.com/feed' }
@@ -107,6 +176,39 @@ RSpec.describe Html2rss::Web::FeedToken do
         expect(described_class.valid_signature?(token, 'test-secret')).to be(true)
         expect(described_class.valid_signature?(token, 'wrong-secret')).to be(false)
       end
+
+      it 'rejects blank or non-string secrets', :aggregate_failures do
+        token = described_class.create(username: 'alice', url: 'https://example.com/feed', secret_key: 'test-secret')
+
+        expect(described_class.valid_signature?(token, '')).to be(false)
+        expect(described_class.valid_signature?(token, nil)).to be(false)
+        expect(described_class.valid_signature?(token, 123)).to be(false)
+      end
+
+      it 'rejects missing or differently sized signatures', :aggregate_failures do
+        token = described_class.create(username: 'alice', url: 'https://example.com/feed', secret_key: 'test-secret')
+
+        expect(described_class.valid_signature?(token.with(signature: nil), 'test-secret')).to be(false)
+        expect(described_class.valid_signature?(token.with(signature: token.signature[0..-2]), 'test-secret'))
+          .to be(false)
+        expect(described_class.valid_signature?(token.with(signature: "#{token.signature}0"), 'test-secret'))
+          .to be(false)
+      end
+
+      it 'rejects tokens forged with an empty secret' do
+        forged = described_class.create(username: 'alice', url: 'https://example.com/feed', secret_key: 'x')
+        payload = { username: 'alice', url: forged.url, expires_at: forged.expires_at }
+        forged = forged.with(signature: OpenSSL::HMAC.hexdigest('SHA256', '', JSON.generate(payload)))
+
+        expect(described_class.valid_signature?(forged, '')).to be(false)
+      end
+
+      it 'rejects same-length signatures that differ' do
+        token = described_class.create(username: 'alice', url: 'https://example.com/feed', secret_key: 'test-secret')
+        flipped = token.signature.sub(/.\z/) { |c| c == '0' ? '1' : '0' }
+
+        expect(described_class.valid_signature?(token.with(signature: flipped), 'test-secret')).to be(false)
+      end
     end
   end
 
@@ -150,7 +252,56 @@ RSpec.describe Html2rss::Web::FeedToken do
       end
     end
 
+    describe '.decode (payload validation)' do
+      def encode_document(document)
+        Base64.urlsafe_encode64(Zlib::Deflate.deflate(document.to_json))
+      end
+
+      let(:payload) { { u: 'alice', l: 'https://example.com/feed', e: 123_456 } }
+
+      it 'accepts payloads without a strategy and with a string strategy', :aggregate_failures do
+        expect(described_class.decode(encode_document({ p: payload, s: 'sig' })))
+          .to have_attributes(username: 'alice', url: 'https://example.com/feed', expires_at: 123_456,
+                              signature: 'sig', strategy: nil)
+        expect(described_class.decode(encode_document({ p: payload.merge(t: 'faraday'), s: 'sig' })).strategy)
+          .to eq('faraday')
+      end
+
+      it 'rejects documents that are not objects', :aggregate_failures do
+        expect(described_class.decode(encode_document([1, 2]))).to be_nil
+        expect(described_class.decode(encode_document('str'))).to be_nil
+      end
+
+      it 'rejects missing, empty or non-string signatures', :aggregate_failures do
+        expect(described_class.decode(encode_document({ p: payload }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload, s: '' }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload, s: 1 }))).to be_nil
+      end
+
+      it 'rejects non-object or incomplete payloads', :aggregate_failures do
+        expect(described_class.decode(encode_document({ p: 'x', s: 'sig' }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload.except(:u), s: 'sig' }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload.except(:l), s: 'sig' }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload.except(:e), s: 'sig' }))).to be_nil
+        expect(described_class.decode(encode_document({ p: payload.merge(e: 1.5), s: 'sig' }))).to be_nil
+      end
+
+      it 'returns nil for corrupt zlib, base64 and JSON content', :aggregate_failures do
+        expect(described_class.decode(Base64.urlsafe_encode64('not zlib'))).to be_nil
+        expect(described_class.decode(Base64.urlsafe_encode64(Zlib::Deflate.deflate('{nope')))).to be_nil
+        expect(described_class.decode(Base64.urlsafe_encode64(Zlib::Deflate.deflate('{"p":')[0..-3]))).to be_nil
+        expect(described_class.decode('%%%')).to be_nil
+      end
+    end
+
     describe 'wire format compatibility' do
+      it 'omits the strategy key when the token has none' do
+        bare = token.with(strategy: nil)
+        document = JSON.parse(Zlib::Inflate.inflate(Base64.urlsafe_decode64(described_class.encode(bare))))
+
+        expect(document['p'].keys).to contain_exactly('u', 'l', 'e')
+      end
+
       it 'round-trips zlib+base64 JSON with p/s and u/l/e/t keys' do
         encoded = described_class.encode(token)
         inflated = Zlib::Inflate.inflate(Base64.urlsafe_decode64(encoded))
@@ -165,7 +316,23 @@ RSpec.describe Html2rss::Web::FeedToken do
     end
   end
 
+  describe '#valid_for_url?' do
+    it 'requires an exact url match', :aggregate_failures do
+      token = described_class.new('alice', 'https://example.com/feed', 1, 'sig', nil)
+
+      expect(token.valid_for_url?('https://example.com/feed')).to be(true)
+      expect(token.valid_for_url?('https://example.com/feed/')).to be(false)
+    end
+  end
+
   describe '#expired?' do
+    it 'is not expired at the exact expiry second' do
+      now = Time.now.to_i
+      allow(Time).to receive(:now).and_return(Time.at(now))
+
+      expect(described_class.new('alice', 'https://example.com/feed', now, 'sig', nil).expired?).to be(false)
+    end
+
     it 'returns true for past timestamps' do
       token = described_class.new('alice', 'https://example.com/feed', Time.now.to_i - 1, 'sig', nil)
 

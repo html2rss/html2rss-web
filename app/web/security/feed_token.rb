@@ -164,18 +164,17 @@ module Html2rss
           end
 
           # @param secret_key [String]
-          # @param payload [Hash, String]
+          # @param payload [Hash]
           # @return [String]
           def sign(secret_key, payload)
-            data = payload.is_a?(String) ? payload : JSON.generate(payload)
-            OpenSSL::HMAC.hexdigest(HMAC_ALGORITHM, secret_key, data)
+            OpenSSL::HMAC.hexdigest(HMAC_ALGORITHM, secret_key, JSON.generate(payload))
           end
 
           # @param first [String, nil]
-          # @param second [String, nil]
+          # @param second [String]
           # @return [Boolean]
           def signatures_match?(first, second)
-            return false unless first && second && first.bytesize == second.bytesize
+            return false unless first
 
             OpenSSL.secure_compare(first, second)
           end
@@ -193,8 +192,7 @@ module Html2rss
           # @param username [Object]
           # @return [Boolean]
           def valid_username?(username)
-            username.is_a?(String) && !username.empty? && username.length <= 100 &&
-              username.match?(/\A[a-zA-Z0-9_-]+\z/)
+            username.is_a?(String) && username.length <= 100 && username.match?(/\A[a-zA-Z0-9_-]+\z/)
           end
 
           # @param secret_key [Object]
@@ -208,7 +206,7 @@ module Html2rss
           def valid_strategy?(strategy)
             return true if strategy.nil?
 
-            strategy.is_a?(String) && !strategy.empty? && strategy.length <= 50 && strategy.match?(/\A[a-z0-9_]+\z/)
+            strategy.is_a?(String) && strategy.length <= 50 && strategy.match?(/\A[a-z0-9_]+\z/)
           end
         end
       end
