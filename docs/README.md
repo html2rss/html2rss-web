@@ -196,6 +196,7 @@ Managed flags and environment keys:
 | Name                              | Env key                           | Type           | Default                                  |
 | --------------------------------- | --------------------------------- | -------------- | ---------------------------------------- |
 | `auto_source_enabled`             | `AUTO_SOURCE_ENABLED`             | boolean        | `true` in development/test, else `false` |
+| `studio_enabled`                  | `STUDIO_ENABLED`                  | boolean        | `true` in development/test, else `false` |
 | `health_check_token`              | `HEALTH_CHECK_TOKEN`              | string         | `nil`                                    |
 | `build_tag`                       | `BUILD_TAG`                       | string         | `unknown` outside production             |
 | `git_sha`                         | `GIT_SHA`                         | string         | `unknown` outside production             |

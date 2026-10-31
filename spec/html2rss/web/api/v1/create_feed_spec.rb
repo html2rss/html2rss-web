@@ -100,7 +100,7 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
     it 'mints the token for the account username and validated url, then resolves it', :aggregate_failures do
       described_class.call(request)
 
-      expect(Html2rss::Web::FeedToken).to have_received(:generate).with('alice', 'https://example.com/news')
+      expect(Html2rss::Web::FeedToken).to have_received(:generate).with('alice', 'https://example.com/news', selectors: nil)
       expect(Html2rss::Web::Feeds::SourceResolver).to have_received(:call).with(
         have_attributes(target_kind: :token, feed_name: nil, token: 'feed-token', params: {})
       )
