@@ -325,7 +325,7 @@ paths:
                   type: string
                 selectors:
                   additionalProperties: true
-                  description: Optional studio selectors, validated against the html2rss
+                  description: Optional refine selectors, validated against the html2rss
                     config schema.
                   type: object
                 url:

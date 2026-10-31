@@ -151,7 +151,7 @@ export type CreateFeedData = {
   body?: {
     name?: string;
     /**
-     * Optional studio selectors, validated against the html2rss config schema.
+     * Optional refine selectors, validated against the html2rss config schema.
      */
     selectors?: {
       [key: string]: unknown;

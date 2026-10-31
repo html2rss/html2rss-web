@@ -68,10 +68,10 @@ module Html2rss
                 url
               end
 
-              # Selectors are authored in the studio, so the studio kill switch applies to them.
+              # Selectors are authored through Refine, so the refine kill switch applies to them.
               def validated_selectors(raw)
                 selectors = SelectorsDocument.parse(raw)
-                raise ForbiddenError, 'Studio is disabled' if selectors && !Flags.studio_enabled?
+                raise ForbiddenError, 'Refine is disabled' if selectors && !Flags.refine_enabled?
 
                 selectors
               end

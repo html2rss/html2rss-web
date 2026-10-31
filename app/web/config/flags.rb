@@ -24,9 +24,9 @@ module Html2rss
           default: -> { development_or_test? },
           validator: nil
         ),
-        studio_enabled: Definition.new(
-          name: :studio_enabled,
-          env_key: 'STUDIO_ENABLED',
+        refine_enabled: Definition.new(
+          name: :refine_enabled,
+          env_key: 'REFINE_ENABLED',
           type: :boolean,
           default: -> { development_or_test? },
           validator: nil
@@ -75,7 +75,7 @@ module Html2rss
         )
       }.freeze
       MANAGED_ENV_PREFIXES = %w[
-        AUTO_SOURCE_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_ STUDIO_
+        AUTO_SOURCE_ CONFIG_CATALOG_ FEEDS_CACHE_ RATE_LIMIT_ RETRY_AFTER_ REFINE_
       ].freeze
       KNOWN_ENV_KEYS = Set.new(DEFINITIONS.values.map(&:env_key)).freeze
       DEV_OR_TEST_ENVS = Set['development', 'test'].freeze
@@ -117,8 +117,8 @@ module Html2rss
         end
 
         # @return [Boolean]
-        def studio_enabled?
-          fetch(:studio_enabled)
+        def refine_enabled?
+          fetch(:refine_enabled)
         end
 
         # Validates all known flags and managed env key prefixes.

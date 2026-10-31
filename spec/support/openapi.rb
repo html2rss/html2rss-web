@@ -178,7 +178,7 @@ if ENV['OPENAPI']
           body_schema&.dig('properties')&.store(
             'selectors',
             { 'type' => 'object', 'additionalProperties' => true,
-              'description' => 'Optional studio selectors, validated against the html2rss config schema.' }
+              'description' => 'Optional refine selectors, validated against the html2rss config schema.' }
           )
         end
 

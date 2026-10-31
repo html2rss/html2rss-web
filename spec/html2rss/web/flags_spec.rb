@@ -4,19 +4,19 @@ require 'spec_helper'
 require 'climate_control'
 
 RSpec.describe Html2rss::Web::Flags do
-  describe '.studio_enabled?' do
+  describe '.refine_enabled?' do
     it 'defaults on in development and off in production', :aggregate_failures do
-      ClimateControl.modify('RACK_ENV' => 'development', 'STUDIO_ENABLED' => nil) do
-        expect(described_class.studio_enabled?).to be(true)
+      ClimateControl.modify('RACK_ENV' => 'development', 'REFINE_ENABLED' => nil) do
+        expect(described_class.refine_enabled?).to be(true)
       end
-      ClimateControl.modify('RACK_ENV' => 'production', 'STUDIO_ENABLED' => nil) do
-        expect(described_class.studio_enabled?).to be(false)
+      ClimateControl.modify('RACK_ENV' => 'production', 'REFINE_ENABLED' => nil) do
+        expect(described_class.refine_enabled?).to be(false)
       end
     end
 
-    it 'is overridden by STUDIO_ENABLED' do
-      ClimateControl.modify('RACK_ENV' => 'production', 'STUDIO_ENABLED' => 'true') do
-        expect(described_class.studio_enabled?).to be(true)
+    it 'is overridden by REFINE_ENABLED' do
+      ClimateControl.modify('RACK_ENV' => 'production', 'REFINE_ENABLED' => 'true') do
+        expect(described_class.refine_enabled?).to be(true)
       end
     end
   end
