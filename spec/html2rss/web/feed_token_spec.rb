@@ -316,6 +316,68 @@ RSpec.describe Html2rss::Web::FeedToken do
     end
   end
 
+  describe 'signed selectors' do
+    let(:selectors) { { items: { selector: 'article' } } }
+    let(:secret) { 'test-secret' }
+
+    def token_with(selectors)
+      Html2rss::Web::FeedToken::Signer.create(
+        username: 'alice', url: 'https://example.com/feed', secret_key: secret, selectors:
+      )
+    end
+
+    def decode(token) = Html2rss::Web::FeedToken::Codec.decode(Html2rss::Web::FeedToken::Codec.encode(token))
+
+    it 'round-trips selectors through the wire and keeps them verifiable', :aggregate_failures do
+      decoded = decode(token_with(selectors))
+
+      expect(decoded.selectors).to eq(selectors)
+      expect(Html2rss::Web::FeedToken::Signer.valid_signature?(decoded, secret)).to be(true)
+    end
+
+    it 'invalidates the signature when selectors are swapped or stripped', :aggregate_failures do
+      token = token_with(selectors)
+
+      expect(Html2rss::Web::FeedToken::Signer.valid_signature?(token.with(selectors: { items: { selector: 'p' } }),
+                                                               secret)).to be(false)
+      expect(Html2rss::Web::FeedToken::Signer.valid_signature?(token.with(selectors: nil), secret)).to be(false)
+    end
+
+    it 'omits the c key and signs nothing extra without selectors' do
+      wire = JSON.parse(Zlib::Inflate.inflate(Base64.urlsafe_decode64(
+                                                Html2rss::Web::FeedToken::Codec.encode(token_with(nil))
+                                              )))
+
+      expect(wire['p']).not_to have_key('c')
+    end
+
+    it 'refuses to sign non-hash selectors' do
+      expect(token_with('article')).to be_nil
+    end
+
+    it 'rejects a non-object c payload' do
+      payload = { p: { u: 'a', l: 'https://example.com', e: 1, c: 'x' }, s: 'sig' }
+
+      expect(Html2rss::Web::FeedToken::Codec.decode(Base64.urlsafe_encode64(Zlib::Deflate.deflate(payload.to_json))))
+        .to be_nil
+    end
+
+    it 'rejects encoded tokens over the size cap, but not at it', :aggregate_failures do
+      encoded = Html2rss::Web::FeedToken::Codec.encode(token_with(selectors))
+
+      stub_const('Html2rss::Web::FeedToken::MAX_ENCODED_BYTES', encoded.bytesize)
+      expect(Html2rss::Web::FeedToken::Codec.decode(encoded)).not_to be_nil
+      stub_const('Html2rss::Web::FeedToken::MAX_ENCODED_BYTES', encoded.bytesize - 1)
+      expect(Html2rss::Web::FeedToken::Codec.decode(encoded)).to be_nil
+    end
+
+    it 'rejects compression bombs' do
+      bomb = Base64.urlsafe_encode64(Zlib::Deflate.deflate('0' * (Html2rss::Web::FeedToken::MAX_INFLATED_BYTES + 1)))
+
+      expect(Html2rss::Web::FeedToken::Codec.decode(bomb)).to be_nil
+    end
+  end
+
   describe '#valid_for_url?' do
     it 'requires an exact url match', :aggregate_failures do
       token = described_class.new('alice', 'https://example.com/feed', 1, 'sig', nil)
