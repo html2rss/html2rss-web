@@ -415,6 +415,23 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         expect(last_response.body).not_to include('upstream secret details')
       end
 
+      %w[http://[::ffff:127.0.0.1]/ http://[::ffff:10.0.0.1]/].each do |mapped_url|
+        it "rejects IPv4-mapped IPv6 target #{mapped_url} as a private network", :aggregate_failures do
+          allow(Html2rss::Web::Feeds::Service).to receive(:call).and_call_original
+          admin_headers = json_headers.merge('HTTP_AUTHORIZATION' => 'Bearer admin-token-xyz789')
+
+          post '/api/v1/feeds', { url: mapped_url }.to_json, admin_headers
+
+          expect(last_response.status).to eq(403)
+          expect(json_body).to include(
+            'error' => include(
+              'code' => Html2rss::Web::ErrorClassifier::PRIVATE_NETWORK_DENIED.code,
+              'message' => Html2rss::Web::ErrorClassifier::PRIVATE_NETWORK_DENIED.message
+            )
+          )
+        end
+      end
+
       it 'returns created feed metadata' do
         post '/api/v1/feeds', request_payload.to_json, auth_headers
 

@@ -167,6 +167,17 @@ RSpec.describe Html2rss::Web::ErrorClassifier do
       )
     end
 
+    {
+      Html2rss::InvalidOption => 'limit must be an Integer in 1..100, got 0',
+      Html2rss::Url::InvalidUrlError => 'URL must be absolute'
+    }.each do |error_class, message|
+      it "passes the #{error_class} message through as a 400 client error", :aggregate_failures do
+        expect(described_class.classify(error_class.new(message))).to have_attributes(
+          status: 400, code: 'BAD_REQUEST', message:, kind: 'input', cacheable: false, retryable: false
+        )
+      end
+    end
+
     it 'classifies BadRequestError' do
       expect(described_class.classify(Html2rss::Web::BadRequestError.new('Bad format'))).to have_attributes(
         status: 400,

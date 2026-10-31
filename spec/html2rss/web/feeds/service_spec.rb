@@ -355,4 +355,17 @@ RSpec.describe Html2rss::Web::Feeds::Service do
       expect(result.decision).to eq(Html2rss::Web::ErrorClassifier::PRIVATE_NETWORK_DENIED)
     end
   end
+
+  context 'when the gem rejects an invalid option' do
+    before do
+      allow(Html2rss).to receive(:feed_result).with(resolved_source.generator_input)
+                                              .and_raise(Html2rss::InvalidOption, 'limit must be an Integer')
+    end
+
+    it 'maps empty_reason to invalid_input and keeps the gem message', :aggregate_failures do
+      expect(result.status).to eq(:empty)
+      expect(result.empty_reason).to eq('invalid_input')
+      expect(result.decision).to have_attributes(status: 400, message: 'limit must be an Integer')
+    end
+  end
 end

@@ -27,6 +27,7 @@ module Html2rss
           case code
           when BLOCKED_SURFACE_CODE then 'blocked_surface'
           when 'FORBIDDEN' then 'forbidden'
+          when 'BAD_REQUEST' then 'invalid_input'
           else 'content_extraction_empty'
           end
         end
@@ -171,6 +172,9 @@ module Html2rss
           end)
       ].freeze
 
+      # Gem errors raised for invalid user-supplied values (config options, URLs).
+      CLIENT_VALIDATION_ERRORS = [::Html2rss::InvalidOption, ::Html2rss::Url::InvalidUrlError].freeze
+
       AUTH_META = { kind: 'auth', retryable: false, next_action: 'enter_token', retry_action: 'none' }.freeze
       INPUT_META = { kind: 'input', retryable: false, next_action: 'correct_input', retry_action: 'none' }.freeze
       SERVER_META = { kind: 'server', retryable: false, next_action: 'none', retry_action: 'none' }.freeze
@@ -313,7 +317,18 @@ module Html2rss
           return SCRAPER_UNAVAILABLE if chain.any?(::Html2rss::RequestService::BotasaurusConnectionFailed)
           return PRIVATE_NETWORK_DENIED if chain.any?(::Html2rss::RequestService::PrivateNetworkDenied)
 
-          timeout_decision(chain)
+          client_validation_decision(chain) || timeout_decision(chain)
+        end
+
+        # Gem rejections of caller-supplied values pass the gem message through as a 400.
+        #
+        # @param chain [Array<Exception>]
+        # @return [Html2rss::Web::ErrorClassifier::Decision, nil]
+        def client_validation_decision(chain)
+          invalid = chain.find { |err| CLIENT_VALIDATION_ERRORS.any? { |klass| err.is_a?(klass) } }
+          return unless invalid
+
+          Decision.new(status: 400, code: 'BAD_REQUEST', message: invalid.message, cacheable: false, **INPUT_META)
         end
 
         # @param no_items [Html2rss::NoFeedItemsExtracted]
