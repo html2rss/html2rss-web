@@ -24,7 +24,7 @@ export interface RefineIssue {
 
 export type RefineFailureKind = 'schema' | 'execution' | 'min_items' | 'quality';
 
-export interface RefineSampleItem {
+interface RefineSampleItem {
   readonly title: string;
   readonly url: string;
 }

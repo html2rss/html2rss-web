@@ -647,92 +647,55 @@
   }
 }
 
-.refine-url,
-.refine-hint,
-.refine-status {
-  text-align: start;
+.refine-shell {
+  width: min(100%, var(--layout-rail-shell));
+  margin: 0 auto;
 }
 
 .refine-url {
+  text-align: start;
   overflow-wrap: anywhere;
 }
 
-.refine-status {
-  min-height: calc(var(--font-size-0) * var(--line-height-base));
+.refine-note {
+  text-align: start;
 }
 
-.refine-preview {
-  min-height: 8rem;
+.refine-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-areas:
+    "fields"
+    "result"
+    "actions";
 }
 
-.refine-fieldset {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.refine-fields {
+  grid-area: fields;
 }
 
-.refine-choices {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.refine-result {
+  grid-area: result;
+  align-content: start;
+  min-height: 14rem;
 }
 
-.refine-choice {
-  display: flex;
-  gap: var(--space-3);
-  align-items: flex-start;
-  padding: var(--space-3);
-  border: var(--border-default);
-  border-radius: var(--radius-md);
-  background: var(--surface-base);
-  cursor: pointer;
+.refine-actions {
+  grid-area: actions;
 }
 
-.refine-choice:has(input:checked) {
-  border-color: var(--border-strong);
-  background: var(--border-subtle);
-}
+@media (width >= 48rem) {
+  .refine-grid {
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    grid-template-areas:
+      "fields result"
+      "actions result";
+    align-items: start;
+    column-gap: var(--space-5);
+  }
 
-.refine-choice:has(input:focus-visible) {
-  box-shadow: var(--focus-ring);
-}
-
-.refine-choice input {
-  margin-top: 0.25rem;
-  accent-color: var(--accent);
-}
-
-.refine-choice__body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: var(--space-1);
-  min-width: 0;
-}
-
-.refine-choice__sample {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--text-strong);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.refine-choice__selector {
-  overflow: hidden;
-  color: var(--text-muted);
-  font-size: var(--font-size-00);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.refine-choice__badge {
-  color: var(--eyebrow-color);
-  font-size: var(--font-size-00);
-  letter-spacing: var(--letter-spacing-meta);
-  text-transform: uppercase;
+  .refine-result {
+    position: sticky;
+    top: var(--space-4);
+  }
 }

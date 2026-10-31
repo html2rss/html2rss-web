@@ -2,7 +2,7 @@ import { COPY } from '../journey/copy';
 import type { RefineFailureKind, RefineIssue } from './refineService';
 import { issueField, type RefineFieldId } from './selectorDraft';
 
-const FIELD_LABELS: Record<'items' | RefineFieldId, string> = {
+export const FIELD_LABELS: Record<'items' | RefineFieldId, string> = {
   items: COPY.refineItemsLabel,
   title: COPY.refineTitleLabel,
   link: COPY.refineLinkLabel,

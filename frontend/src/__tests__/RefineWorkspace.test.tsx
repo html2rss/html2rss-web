@@ -69,15 +69,15 @@ describe('RefineWorkspace', () => {
     const previews = stub();
     const { onSave } = renderWorkspace();
 
-    expect(await screen.findByRole('radio', { name: /article/ }, SLOW)).toBeChecked();
-    expect(screen.getByRole('radio', { name: /h2/ })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /^a\b/ })).toBeChecked();
-    expect(screen.getByRole('radio', { name: COPY.refineNone })).toBeChecked();
+    expect(await screen.findByLabelText(COPY.refineItemsLabel, undefined, SLOW)).toHaveValue('article');
+    expect(screen.getByLabelText(COPY.refineTitleLabel)).toHaveValue('h2');
+    expect(screen.getByLabelText(COPY.refineLinkLabel)).toHaveValue('a');
+    expect(screen.getByLabelText(COPY.refinePublishedLabel)).toHaveValue('');
 
     expect(await screen.findByText('First post', undefined, SLOW)).toBeInTheDocument();
     expect(previews).toHaveLength(1);
 
-    fireEvent.click(screen.getByRole('button', { name: COPY.refineSave }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     expect(onSave).toHaveBeenCalledWith({
       items: { selector: 'article', enhance: true },
       title: { selector: 'h2', extractor: 'text' },
@@ -90,11 +90,11 @@ describe('RefineWorkspace', () => {
     renderWorkspace();
 
     expect(screen.getByText(COPY.refineSuggesting)).toBeInTheDocument();
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: COPY.refineSave })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: COPY.createFeed })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.back })).toBeInTheDocument();
 
-    expect(await screen.findByRole('radio', { name: /article/ }, SLOW)).toBeInTheDocument();
+    expect(await screen.findByLabelText(COPY.refineItemsLabel, undefined, SLOW)).toBeInTheDocument();
     expect(screen.queryByText(COPY.refineSuggesting)).not.toBeInTheDocument();
   });
 
@@ -102,7 +102,7 @@ describe('RefineWorkspace', () => {
     stub();
     renderWorkspace();
 
-    const choice = await screen.findByRole('radio', { name: /article/ }, SLOW);
+    const choice = await screen.findByLabelText(COPY.refineItemsLabel, undefined, SLOW);
     await waitFor(() => expect(choice).toHaveFocus());
   });
 
@@ -112,7 +112,7 @@ describe('RefineWorkspace', () => {
 
     expect(await screen.findByText(COPY.refineFailureTitleMinItems, undefined, SLOW)).toBeInTheDocument();
     expect(screen.getByText(COPY.refineFailureMinItems)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
   });
 
   it('places validation issues under their field and does not preview', async () => {
@@ -126,7 +126,7 @@ describe('RefineWorkspace', () => {
     ).toBeInTheDocument();
     expect(document.querySelector('#refine-title-problems')).toHaveTextContent('is blank');
     expect(previews).toHaveLength(0);
-    expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
   });
 
   it('lets a person pick another suggestion', async () => {
@@ -141,10 +141,10 @@ describe('RefineWorkspace', () => {
     });
     renderWorkspace();
 
-    fireEvent.click(await screen.findByRole('radio', { name: /li\.post/ }, SLOW));
+    const select = await screen.findByLabelText(COPY.refineItemsLabel, undefined, SLOW);
+    fireEvent.change(select, { target: { value: 'li.post' } });
 
-    expect(screen.getByRole('radio', { name: /li\.post/ })).toBeChecked();
-    expect(screen.getByText(COPY.refineSuggested)).toBeInTheDocument();
+    expect(select).toHaveValue('li.post');
   });
 
   it('keeps manual editing available when suggestions fail', async () => {
@@ -152,8 +152,8 @@ describe('RefineWorkspace', () => {
     renderWorkspace();
 
     expect(await screen.findByText(COPY.refineSuggestionsFailed, undefined, SLOW)).toBeInTheDocument();
-    expect(screen.getByLabelText(COPY.refineCustomSelector(COPY.refineItemsLabel))).toBeEnabled();
-    expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
+    expect(screen.getByLabelText(COPY.refineItemsLabel)).toBeEnabled();
+    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
   });
 
   it('shows plain copy for a server preview error', async () => {
@@ -181,7 +181,7 @@ describe('RefineWorkspace', () => {
     stub();
     renderWorkspace({ isSaving: true });
 
-    expect(await screen.findByRole('button', { name: COPY.refineSaving }, SLOW)).toBeDisabled();
+    expect(await screen.findByRole('button', { name: COPY.creating }, SLOW)).toBeDisabled();
     expect(screen.getByRole('button', { name: COPY.back })).toBeDisabled();
   });
 
@@ -227,7 +227,7 @@ describe('RefineWorkspace', () => {
         })
       )
     );
-    fireEvent.click(screen.getByRole('button', { name: COPY.refineRecheck }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.tryAgain }));
 
     expect(await screen.findByText('Back again', undefined, SLOW)).toBeInTheDocument();
   });
@@ -245,31 +245,29 @@ describe('RefineWorkspace', () => {
     const { onSave } = renderWorkspace();
     await screen.findByText('First post', undefined, SLOW);
 
-    fireEvent.click(screen.getByRole('radio', { name: /li\.post/ }));
+    fireEvent.change(screen.getByLabelText(COPY.refineItemsLabel), { target: { value: 'li.post' } });
 
-    expect(screen.getByRole('button', { name: COPY.refineSave })).toBeDisabled();
-    fireEvent.submit(screen.getByRole('button', { name: COPY.refineSave }).closest('form')!);
+    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
+    fireEvent.submit(screen.getByRole('button', { name: COPY.createFeed }).closest('form')!);
     expect(onSave).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.getByRole('button', { name: COPY.refineSave })).toBeEnabled(), SLOW);
+    await waitFor(() => expect(screen.getByRole('button', { name: COPY.createFeed })).toBeEnabled(), SLOW);
   });
 
-  it('explains why Save is unavailable while the item selector is blank', async () => {
+  it('explains why there is no result yet when suggestions fail', async () => {
     stub({ suggest: 'fail' });
     renderWorkspace();
 
-    const hint = await screen.findByText(COPY.refineItemsHint, undefined, SLOW);
-    expect(screen.getByRole('button', { name: COPY.refineSave })).toHaveAttribute(
-      'aria-describedby',
-      hint.id
-    );
+    expect(await screen.findByText(COPY.refineResultIdle, undefined, SLOW)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
   });
 
   it('offers None for the optional date and keeps a custom selector available', async () => {
     stub();
     renderWorkspace();
 
-    expect(await screen.findByRole('radio', { name: COPY.refineNone }, SLOW)).toBeChecked();
-    fireEvent.click(screen.getAllByRole('radio', { name: COPY.refineCustom })[2]);
+    const date = await screen.findByLabelText(COPY.refinePublishedLabel, undefined, SLOW);
+    expect(date).toHaveValue('');
+    fireEvent.change(date, { target: { value: '__custom__' } });
 
     expect(screen.getByLabelText(COPY.refineCustomSelector(COPY.refinePublishedLabel))).toBeEnabled();
   });

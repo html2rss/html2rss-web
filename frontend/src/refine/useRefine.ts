@@ -19,12 +19,12 @@ import {
 
 const CHECK_DELAY_MS = 400;
 
-export type SuggestionState =
+type SuggestionState =
   | { readonly status: 'loading' }
   | { readonly status: 'ready'; readonly candidates: RefineCandidates }
   | { readonly status: 'failed' };
 
-export type PreviewState =
+type PreviewState =
   | { readonly status: 'idle' }
   | { readonly status: 'loading' }
   | { readonly status: 'ready'; readonly preview: RefinePreview }

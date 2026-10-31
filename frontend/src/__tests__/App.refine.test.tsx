@@ -212,7 +212,7 @@ describe('App Refine entry points', () => {
     fireEvent.click(screen.getByRole('button', { name: COPY.refineEntry }));
 
     await screen.findByText('First post', undefined, SLOW);
-    fireEvent.click(screen.getByRole('button', { name: COPY.refineSave }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     await waitFor(() =>
       expect(mockCreateFeed).toHaveBeenCalledWith(PAGE, 'tok', {
@@ -230,7 +230,7 @@ describe('App Refine entry points', () => {
     fireEvent.click(screen.getByRole('button', { name: COPY.refineEntry }));
 
     await screen.findByText('First post', undefined, SLOW);
-    fireEvent.click(screen.getByRole('button', { name: COPY.refineSave }));
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
 
     expect(await screen.findByText('Disk full')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: COPY.refineTitle })).toBeInTheDocument();

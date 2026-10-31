@@ -298,11 +298,11 @@ test.describe('frontend smoke', () => {
     await page.getByRole('button', { name: COPY.refineEntry }).click();
 
     await expect(page.getByRole('heading', { name: COPY.refineTitle })).toBeVisible();
-    await expect(page.getByRole('radio', { name: /article/ })).toBeFocused();
-    await expect(page.getByRole('radio', { name: /article/ })).toBeChecked();
+    await expect(page.getByLabel(COPY.refineItemsLabel, { exact: true })).toBeFocused();
+    await expect(page.getByLabel(COPY.refineItemsLabel, { exact: true })).toHaveValue('article');
     await expect(page.getByText('Refined item')).toBeVisible();
 
-    await page.getByRole('button', { name: COPY.refineSave }).click();
+    await page.getByRole('button', { name: COPY.createFeed }).click();
 
     await expect(page).toHaveURL(/#\/result\/refined-token/);
     await expect(page.getByText(COPY.feedReady)).toBeVisible();
