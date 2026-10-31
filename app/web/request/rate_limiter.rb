@@ -50,7 +50,6 @@ module Html2rss
         def prune(window_start, history, key)
           @timestamps.reject! { |t| t < window_start }
           history.delete(key) if @timestamps.empty?
-          nil
         end
       end
 
@@ -68,7 +67,7 @@ module Html2rss
         return @app.call(env) unless Flags.rate_limit_enabled?
 
         request = Rack::Request.new(env)
-        path = Rack::Utils.clean_path_info(request.path_info.to_s)
+        path = Rack::Utils.clean_path_info(request.path_info)
         return @app.call(env) if bypass?(path)
 
         prune_history_if_needed
@@ -93,7 +92,6 @@ module Html2rss
 
           error = TooManyRequestsError.new
           response = Rack::Response.new
-          response.status = 429
           response['Retry-After'] = retry_after.to_s
 
           body = ErrorResponder.respond(request: request, response: response, error: error)
@@ -132,16 +130,13 @@ module Html2rss
           @last_pruned = now
           prune_all_expired(now)
         end
-        nil
       end
 
       # Handles history map overflow by logging a security event and evicting entries.
       #
       # @param now [Integer]
       # @return [void]
-      # rubocop:disable-next Metrics/MethodLength
       def handle_overflow(now)
-        @last_pruned = now
         prune_all_expired(now)
 
         post_prune_size = @history.size
@@ -153,13 +148,7 @@ module Html2rss
           { size: post_prune_size, action: 'prune_to_limit' }
         )
 
-        needed = post_prune_size - 10_000
-        evicted = 0
-        @history.keys.shuffle.each do |key|
-          break if evicted >= needed
-
-          evicted += 1 if @history.delete(key)
-        end
+        @history.keys.sample(post_prune_size - 10_000).each { |key| @history.delete(key) }
       end
 
       # Iterates over history and prunes inactive tracks.
@@ -169,10 +158,7 @@ module Html2rss
       def prune_all_expired(now)
         window_start = now - Flags.rate_limit_window_seconds
 
-        @history.each_key do |key|
-          track = @history[key]
-          track&.prune(window_start, @history, key)
-        end
+        @history.each { |key, track| track.prune(window_start, @history, key) }
       end
     end
   end
