@@ -123,7 +123,7 @@ module Html2rss
           # @return [Html2rss::Web::Feeds::FormatNegotiation::MediaRange, nil]
           def build_media_range(raw_range, position)
             media_type, *parameter_parts = raw_range.strip.downcase.split(';')
-            type, subtype = media_type.to_s.split('/', 2)
+            type, subtype = media_type.to_s.strip.split('/', 2)
             return if type.to_s.empty? || subtype.to_s.empty?
 
             MediaRange.new(
