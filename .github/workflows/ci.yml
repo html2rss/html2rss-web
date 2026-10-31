@@ -119,8 +119,7 @@ jobs:
         smoke_auto_source_enabled: ["false", "true"]
     steps:
       - uses: actions/checkout@v7
-
-      - uses: docker/setup-buildx-action@v4
+      - uses: ./.github/actions/dev-image
 
       - name: Load Docker smoke image from cache
         uses: docker/build-push-action@v7
