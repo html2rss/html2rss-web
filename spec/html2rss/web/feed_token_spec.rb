@@ -124,9 +124,9 @@ RSpec.describe Html2rss::Web::FeedToken do
         tampered = token.with(strategy: 'browserless')
         stripped = token.with(strategy: nil)
 
-        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(token, 'test-secret')).to be(true)
-        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(tampered, 'test-secret')).to be(false)
-        expect(Html2rss::Web::FeedToken::Signer.valid_signature?(stripped, 'test-secret')).to be(false)
+        expect(described_class.valid_signature?(token, 'test-secret')).to be(true)
+        expect(described_class.valid_signature?(tampered, 'test-secret')).to be(false)
+        expect(described_class.valid_signature?(stripped, 'test-secret')).to be(false)
       end
     end
 
