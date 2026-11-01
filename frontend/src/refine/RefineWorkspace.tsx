@@ -130,6 +130,7 @@ export function RefineWorkspace({
     token,
     onAuthFailure,
   });
+  const isLoading = suggestion.status === 'loading';
   const sectionReference = useRef<HTMLElement>(null);
   const grouped = groupIssues(issues);
   const candidates = suggestion.status === 'ready' ? suggestion.candidates : undefined;
@@ -153,7 +154,7 @@ export function RefineWorkspace({
       ref={sectionReference}
       class="refine-shell layout-stack"
       aria-labelledby="refine-heading"
-      aria-busy={suggestion.status === 'loading'}
+      aria-busy={isLoading}
     >
       <header class="layout-stack layout-stack--tight">
         <h1 id="refine-heading" class="ui-display-title">
@@ -162,31 +163,23 @@ export function RefineWorkspace({
         <p class="field-help refine-note">{COPY.refineHint}</p>
       </header>
 
-      {suggestion.status === 'loading' && (
-        <div class="layout-rail-reading layout-stack">
-          <Notice state="loading" title={COPY.refineSuggesting} ariaLive="polite">
-            <p>{COPY.refineSuggestingBody}</p>
-          </Notice>
-          <div class="ui-actions">
-            <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancel}>
-              {COPY.back}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {suggestion.status !== 'loading' && (
-        <form
-          class="refine-grid"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (canSave) onSave(selectorsFromDraft(draft));
-          }}
-        >
-          <div class="refine-fields field-stack">
-            {suggestion.status === 'failed' && (
-              <p class="field-help refine-note">{COPY.refineSuggestionsFailed}</p>
-            )}
+      <form
+        class="refine-grid"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSave) onSave(selectorsFromDraft(draft));
+        }}
+      >
+        <div class="refine-fields field-stack">
+          {isLoading && (
+            <Notice state="loading" title={COPY.refineSuggesting} ariaLive="polite">
+              <p>{COPY.refineSuggestingBody}</p>
+            </Notice>
+          )}
+          {suggestion.status === 'failed' && (
+            <p class="field-help refine-note">{COPY.refineSuggestionsFailed}</p>
+          )}
+          {!isLoading && (
             <SelectField
               id="refine-items"
               label={COPY.refineItemsLabel}
@@ -195,7 +188,9 @@ export function RefineWorkspace({
               problems={problems('items')}
               onChange={(value, candidate) => setDraft(withItems(draft, value, candidate?.enhance))}
             />
-            {REFINE_FIELDS.map((field) => (
+          )}
+          {!isLoading &&
+            REFINE_FIELDS.map((field) => (
               <SelectField
                 key={field}
                 id={`refine-${field}`}
@@ -207,64 +202,66 @@ export function RefineWorkspace({
                 onChange={(value) => setDraft(withField(draft, field, value))}
               />
             ))}
-            {problems('other').map((problem) => (
+          {!isLoading &&
+            problems('other').map((problem) => (
               <span key={problem} class="field-error">
                 {problem}
               </span>
             ))}
-          </div>
+        </div>
 
-          <div role="status" aria-live="polite" class="refine-result layout-stack layout-stack--tight">
-            {preview.status === 'idle' && <p class="field-help refine-note">{COPY.refineResultIdle}</p>}
-            {preview.status === 'loading' && <Notice state="loading" title={COPY.previewChecking} />}
-            {preview.status === 'failed' && (
-              <Notice tone="error" title={COPY.refinePreviewFailed} actions={retry}>
-                <p>{preview.message}</p>
-              </Notice>
-            )}
-            {preview.status === 'ready' && preview.preview.failureKind && (
-              <Notice
-                tone="error"
-                title={describeFailure(preview.preview.failureKind)}
-                actions={preview.preview.failureKind === 'execution' ? undefined : retry}
-              />
-            )}
-            {preview.status === 'ready' && !preview.preview.failureKind && (
-              <>
-                <p class="ui-eyebrow">{COPY.previewItemCount(preview.preview.itemCount)}</p>
-                <ul class="ui-item-list" role="list">
-                  {preview.preview.items.map((item, index) => (
-                    <li key={index} class="ui-item">
-                      <PreviewItem title={item.title || COPY.refineUntitled} excerpt={item.url} />
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
+        <div
+          role="status"
+          aria-live="polite"
+          hidden={isLoading}
+          class="refine-result layout-stack layout-stack--tight"
+        >
+          {preview.status === 'idle' && <p class="field-help refine-note">{COPY.refineResultIdle}</p>}
+          {preview.status === 'loading' && <Notice state="loading" title={COPY.previewChecking} />}
+          {preview.status === 'failed' && (
+            <Notice tone="error" title={COPY.refinePreviewFailed} actions={retry}>
+              <p>{preview.message}</p>
+            </Notice>
+          )}
+          {preview.status === 'ready' && preview.preview.failureKind && (
+            <Notice
+              tone="error"
+              title={describeFailure(preview.preview.failureKind)}
+              actions={preview.preview.failureKind === 'execution' ? undefined : retry}
+            />
+          )}
+          {preview.status === 'ready' && !preview.preview.failureKind && (
+            <>
+              <p class="ui-eyebrow">{COPY.previewItemCount(preview.preview.itemCount)}</p>
+              <ul class="ui-item-list" role="list">
+                {preview.preview.items.map((item, index) => (
+                  <li key={index} class="ui-item">
+                    <PreviewItem title={item.title || COPY.refineUntitled} excerpt={item.url} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
 
-          <div class="refine-actions layout-stack layout-stack--tight">
-            {saveError && (
-              <Notice tone="error" title={COPY.refineSaveFailed}>
-                <p>{saveError}</p>
-              </Notice>
-            )}
-            <div class="ui-actions">
+        <div class="refine-actions layout-stack layout-stack--tight">
+          {saveError && (
+            <Notice tone="error" title={COPY.refineSaveFailed}>
+              <p>{saveError}</p>
+            </Notice>
+          )}
+          <div class="ui-actions">
+            {!isLoading && (
               <button type="submit" class="btn btn--primary" disabled={!canSave || isSaving}>
                 {isSaving ? COPY.creating : COPY.createFeed}
               </button>
-              <button
-                type="button"
-                class="btn btn--quiet btn--linkish"
-                onClick={onCancel}
-                disabled={isSaving}
-              >
-                {COPY.back}
-              </button>
-            </div>
+            )}
+            <button type="button" class="btn btn--quiet btn--linkish" onClick={onCancel} disabled={isSaving}>
+              {COPY.back}
+            </button>
           </div>
-        </form>
-      )}
+        </div>
+      </form>
     </section>
   );
 }

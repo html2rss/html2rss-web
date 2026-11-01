@@ -669,6 +669,10 @@
   grid-area: fields;
 }
 
+.refine-result[hidden] {
+  display: none;
+}
+
 .refine-result {
   grid-area: result;
   align-content: start;
@@ -681,6 +685,8 @@
 
 @media (width >= 48rem) {
   .refine-grid {
+    min-height: 28rem;
+    align-content: start;
     grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
     grid-template-areas:
       "fields result"
