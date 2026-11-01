@@ -51,10 +51,11 @@ const emptyExtraction: FeedCreationError = {
   message: 'No items found',
 };
 
-function stubRefineApi() {
+function stubRefineApi(suggestedUrls: unknown[] = []) {
   server.use(
-    http.post('/api/v1/refine/suggest_selectors', () =>
-      HttpResponse.json({
+    http.post('/api/v1/refine/suggest_selectors', async ({ request }) => {
+      suggestedUrls.push(((await request.json()) as { url?: unknown }).url);
+      return HttpResponse.json({
         success: true,
         data: {
           candidates: {
@@ -64,8 +65,8 @@ function stubRefineApi() {
             published: [],
           },
         },
-      })
-    ),
+      });
+    }),
     http.post('/api/v1/refine/validate', () =>
       HttpResponse.json({ success: true, data: { report: { success: true, issues: [] } } })
     ),
@@ -177,13 +178,15 @@ describe('App Refine entry points', () => {
   });
 
   it('offers Refine after an empty extraction and opens it for the typed URL', async () => {
+    const suggestedUrls: unknown[] = [];
     setup();
+    stubRefineApi(suggestedUrls);
     await renderEmptyExtraction();
 
     fireEvent.click(screen.getByRole('button', { name: COPY.refineEntryEmpty }));
 
     expect(await screen.findByRole('heading', { name: COPY.refineTitle })).toBeInTheDocument();
-    expect(screen.getByText(PAGE)).toBeInTheDocument();
+    await waitFor(() => expect(suggestedUrls).toEqual([PAGE]));
   });
 
   it('does not offer Refine after an empty extraction to guests', async () => {
