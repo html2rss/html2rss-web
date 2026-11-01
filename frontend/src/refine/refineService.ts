@@ -13,6 +13,8 @@ export interface RefineCandidate {
 }
 
 export interface RefineCandidates {
+  /** The request strategy that fetched the page; replayed on previews so they do not re-run the fallback chain. */
+  readonly strategy?: string;
   readonly items: readonly RefineCandidate[];
   readonly fields: Readonly<Record<RefineFieldId, readonly RefineCandidate[]>>;
 }
@@ -49,9 +51,10 @@ export async function previewSelectors(
   url: string,
   selectors: RefineSelectors,
   token: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  strategy?: string
 ) {
-  return parsePreview(await post('preview', { url, selectors }, token, signal));
+  return parsePreview(await post('preview', { url, selectors, strategy }, token, signal));
 }
 
 async function post(path: string, body: object, token: string, signal?: AbortSignal): Promise<unknown> {
@@ -85,9 +88,10 @@ function parseCandidateList(value: unknown): RefineCandidate[] {
 }
 
 function parseCandidates(data: unknown): RefineCandidates {
-  const { candidates } = asRecord(data);
+  const { candidates, strategy } = asRecord(data);
   const buckets = asRecord(candidates);
   return {
+    strategy: typeof strategy === 'string' ? strategy : undefined,
     items: parseCandidateList(buckets.items),
     fields: {
       title: parseCandidateList(buckets.title),

@@ -27,7 +27,7 @@ function stub({ issues = [], preview, suggest = candidates }: Stubs = {}) {
     http.post('/api/v1/refine/suggest_selectors', () =>
       suggest === 'fail'
         ? HttpResponse.json({ success: false, error: { message: 'x' } }, { status: 500 })
-        : HttpResponse.json({ success: true, data: { candidates: suggest } })
+        : HttpResponse.json({ success: true, data: { candidates: suggest, strategy: 'botasaurus' } })
     ),
     http.post('/api/v1/refine/validate', () =>
       HttpResponse.json({ success: true, data: { report: { success: issues.length === 0, issues } } })
@@ -76,6 +76,7 @@ describe('RefineWorkspace', () => {
 
     expect(await screen.findByText('First post', undefined, SLOW)).toBeInTheDocument();
     expect(previews).toHaveLength(1);
+    expect(previews[0]).toMatchObject({ strategy: 'botasaurus' });
 
     fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
     expect(onSave).toHaveBeenCalledWith({

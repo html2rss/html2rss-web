@@ -93,6 +93,8 @@ export function useRefine({ url, token, onAuthFailure }: UseRefineOptions) {
     return () => controller.abort();
   }, [url, token]);
 
+  const strategy = suggestion.status === 'ready' ? suggestion.candidates.strategy : undefined;
+
   useEffect(() => {
     if (!isDraftComplete(draft)) {
       setIssues([]);
@@ -111,7 +113,7 @@ export function useRefine({ url, token, onAuthFailure }: UseRefineOptions) {
           return;
         }
         setPreview({ status: 'loading' });
-        const result = await previewSelectors(url, selectors, token, controller.signal);
+        const result = await previewSelectors(url, selectors, token, controller.signal, strategy);
         setPreview({ status: 'ready', preview: result });
         setPreviewedDraft(draft);
       } catch (error) {
@@ -125,7 +127,7 @@ export function useRefine({ url, token, onAuthFailure }: UseRefineOptions) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [draft, url, token, recheckCount]);
+  }, [draft, url, token, strategy, recheckCount]);
 
   const canSave =
     isDraftComplete(draft) &&
