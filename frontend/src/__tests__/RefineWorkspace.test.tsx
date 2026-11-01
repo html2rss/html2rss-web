@@ -290,8 +290,8 @@ describe('RefineWorkspace', () => {
     stub({ suggest: 'fail' });
     renderWorkspace();
 
-    expect(await screen.findByText(COPY.refineResultIdle, undefined, SLOW)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: COPY.createFeed }, SLOW)).toBeDisabled();
+    expect(screen.getByText(COPY.refineResultIdle)).toBeVisible();
   });
 
   it('offers None for the optional date and keeps a custom selector available', async () => {

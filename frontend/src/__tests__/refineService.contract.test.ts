@@ -73,7 +73,11 @@ describe('refineService', () => {
           success: true,
           data: {
             item_count: 2,
-            sample_items: [{ title: 'A', url: 'https://example.com/1' }, { url: 'x' }],
+            sample_items: [
+              { title: 'A', url: 'https://example.com/1', published_at: '2024-01-05T10:00:00Z' },
+              { title: 'B', url: 'https://example.com/2', published_at: 'soon' },
+              { url: 'x' },
+            ],
             failure_kind: 'min_items',
           },
         });
@@ -82,7 +86,10 @@ describe('refineService', () => {
 
     expect(await previewSelectors('https://example.com/a', selectors, 'tok')).toEqual({
       itemCount: 2,
-      items: [{ title: 'A', url: 'https://example.com/1' }],
+      items: [
+        { title: 'A', url: 'https://example.com/1', publishedLabel: expect.stringContaining('2024') },
+        { title: 'B', url: 'https://example.com/2', publishedLabel: '' },
+      ],
       failureKind: 'min_items',
     });
   });
