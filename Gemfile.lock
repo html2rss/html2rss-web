@@ -1,7 +1,7 @@
 GIT
   remote: https://github.com/html2rss/html2rss
-  revision: d81ae766f887a14da1063f526097805b12508241
-  branch: feat/initial-response-cache
+  revision: 49b3f72c764c357801be08190973269178ee04a4
+  branch: master
   specs:
     html2rss (0.33.0)
       addressable (~> 2.7)
