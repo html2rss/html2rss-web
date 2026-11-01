@@ -83,6 +83,8 @@ export const COPY = {
   refineSuggesting: 'Finding items on the page',
   refineSuggestingBody: 'This can take up to a minute.',
   refineSuggestionsFailed: "We couldn't suggest anything for this page. Enter a custom selector, or go back.",
+  refineShowAll: (count: number) => `Show all ${count}`,
+  refineShowFewer: 'Show fewer',
   refineResultIdle: 'Waiting for your choices.',
   refineNone: "Don't include",
   refineCustom: 'Custom selector',

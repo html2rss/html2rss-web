@@ -104,6 +104,23 @@ describe('RefineWorkspace', () => {
     );
   });
 
+  it('lists ten items compactly and expands on request', async () => {
+    const items = Array.from({ length: 12 }, (_, index) => ({
+      title: `Post ${index + 1}`,
+      url: `https://example.com/posts/${index + 1}?utm=x`,
+      published_at: '2024-01-05T00:00:00Z',
+    }));
+    stub({ preview: { item_count: 12, sample_items: items } });
+    renderWorkspace();
+
+    expect(await screen.findByText('Post 10', undefined, SLOW)).toBeInTheDocument();
+    expect(screen.queryByText('Post 11')).not.toBeInTheDocument();
+    expect(screen.getAllByText('example.com/posts/1')).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: COPY.refineShowAll(12) }));
+    expect(screen.getByText('Post 12')).toBeInTheDocument();
+  });
+
   it('shows a clear loading panel instead of an empty form while reading the page', async () => {
     stub();
     renderWorkspace();

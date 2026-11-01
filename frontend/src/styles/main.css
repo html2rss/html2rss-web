@@ -647,6 +647,12 @@
   }
 }
 
+/* Refine is preview-first: widen the page frame for this view only, through the shared rail tokens. */
+.page-main:has(.refine-shell) {
+  --layout-page-max-width: 76rem;
+  --layout-rail-shell: 72rem;
+}
+
 .refine-shell {
   width: min(100%, var(--layout-rail-shell));
   margin: 0 auto;
@@ -679,6 +685,7 @@
 
 .refine-check .field-help {
   display: block;
+  text-align: start;
 }
 
 .refine-fields {
@@ -703,7 +710,7 @@
   .refine-grid {
     min-height: 28rem;
     align-content: start;
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
     grid-template-areas:
       "fields result"
       "actions result";

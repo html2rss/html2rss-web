@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Notice } from '../components/Notice';
 import { PreviewItem } from '../components/PreviewItem';
 import { COPY } from '../journey/copy';
-import { FIELD_LABELS, describeFailure, describeIssue, groupIssues } from './refineModel';
+import { FIELD_LABELS, compactUrl, describeFailure, describeIssue, groupIssues } from './refineModel';
 import type { RefineCandidate } from './refineService';
 import {
   REFINE_FIELDS,
@@ -15,6 +15,7 @@ import {
 import { useRefine } from './useRefine';
 
 const MAX_CHOICES = 5;
+const PREVIEW_ROWS = 10;
 const MAX_SAMPLE_LENGTH = 24;
 const CUSTOM = '__custom__';
 
@@ -132,6 +133,7 @@ export function RefineWorkspace({
     onAuthFailure,
   });
   const isLoading = suggestion.status === 'loading';
+  const [showAll, setShowAll] = useState(false);
   const sectionReference = useRef<HTMLElement>(null);
   const grouped = groupIssues(issues);
   const candidates = suggestion.status === 'ready' ? suggestion.candidates : undefined;
@@ -248,12 +250,28 @@ export function RefineWorkspace({
             <>
               <p class="ui-eyebrow">{COPY.previewItemCount(preview.preview.itemCount)}</p>
               <ul class="ui-item-list" role="list">
-                {preview.preview.items.map((item, index) => (
-                  <li key={index} class="ui-item">
-                    <PreviewItem title={item.title || COPY.refineUntitled} excerpt={item.url} />
-                  </li>
-                ))}
+                {(showAll ? preview.preview.items : preview.preview.items.slice(0, PREVIEW_ROWS)).map(
+                  (item, index) => (
+                    <li key={index} class="ui-item">
+                      <PreviewItem
+                        title={item.title || COPY.refineUntitled}
+                        url={item.url || undefined}
+                        excerpt={compactUrl(item.url)}
+                        publishedLabel={item.publishedLabel}
+                      />
+                    </li>
+                  )
+                )}
               </ul>
+              {preview.preview.items.length > PREVIEW_ROWS && (
+                <button
+                  type="button"
+                  class="btn btn--quiet btn--linkish"
+                  onClick={() => setShowAll(!showAll)}
+                >
+                  {showAll ? COPY.refineShowFewer : COPY.refineShowAll(preview.preview.items.length)}
+                </button>
+              )}
             </>
           )}
         </div>

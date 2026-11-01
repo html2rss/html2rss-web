@@ -29,6 +29,8 @@ export type RefineFailureKind = 'schema' | 'execution' | 'min_items' | 'quality'
 interface RefineSampleItem {
   readonly title: string;
   readonly url: string;
+  /** Locale date of `published_at`, empty when the item has none. */
+  readonly publishedLabel: string;
 }
 
 export interface RefinePreview {
@@ -110,13 +112,21 @@ function parseIssues(data: unknown): RefineIssue[] {
   });
 }
 
+function dateLabel(value: unknown): string {
+  const date = typeof value === 'string' ? new Date(value) : undefined;
+  return date && !Number.isNaN(date.getTime())
+    ? date.toLocaleDateString(undefined, { dateStyle: 'medium' })
+    : '';
+}
+
 function parsePreview(data: unknown): RefinePreview {
   const { item_count: itemCount, sample_items: samples, failure_kind: kind } = asRecord(data);
   return {
     itemCount: typeof itemCount === 'number' ? itemCount : 0,
     items: asList(samples).flatMap((sample) => {
-      const { title, url } = asRecord(sample);
-      return typeof title === 'string' ? [{ title, url: typeof url === 'string' ? url : '' }] : [];
+      const { title, url, published_at: publishedAt } = asRecord(sample);
+      if (typeof title !== 'string') return [];
+      return [{ title, url: typeof url === 'string' ? url : '', publishedLabel: dateLabel(publishedAt) }];
     }),
     failureKind:
       typeof kind === 'string' && FAILURE_KINDS.has(kind) ? (kind as RefineFailureKind) : undefined,

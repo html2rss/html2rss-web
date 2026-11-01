@@ -27,6 +27,16 @@ export function describeFailure(kind: RefineFailureKind): string {
   }
 }
 
+/** `host/path` without scheme, query or fragment: enough to recognise a page, short enough for one line. */
+export function compactUrl(url: string): string {
+  try {
+    const { host, pathname } = new URL(url);
+    return `${host}${pathname === '/' ? '' : pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 export function groupIssues(issues: readonly RefineIssue[]) {
   const groups: Partial<Record<'items' | RefineFieldId | 'other', RefineIssue[]>> = {};
   for (const issue of issues) {
