@@ -110,8 +110,7 @@ describe('RefineWorkspace', () => {
     stub({ preview: { item_count: 0, sample_items: [], failure_kind: 'min_items' } });
     renderWorkspace();
 
-    expect(await screen.findByText(COPY.refineFailureTitleMinItems, undefined, SLOW)).toBeInTheDocument();
-    expect(screen.getByText(COPY.refineFailureMinItems)).toBeInTheDocument();
+    expect(await screen.findByText(COPY.refineFailureMinItems, undefined, SLOW)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();
   });
 
@@ -121,9 +120,7 @@ describe('RefineWorkspace', () => {
     });
     renderWorkspace();
 
-    expect(
-      await screen.findByText(`${COPY.refineTitleLabel}: is blank`, undefined, SLOW)
-    ).toBeInTheDocument();
+    expect(await screen.findByText('is blank', undefined, SLOW)).toBeInTheDocument();
     expect(document.querySelector('#refine-title-problems')).toHaveTextContent('is blank');
     expect(previews).toHaveLength(0);
     expect(screen.getByRole('button', { name: COPY.createFeed })).toBeDisabled();

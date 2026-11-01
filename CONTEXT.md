@@ -17,5 +17,5 @@
 - **Observability:** Product telemetry (`event_name` + `outcome`: `auth.*`, `feed.*`, `request.error`, `cache.lifecycle`, `config.validation`). No IP or user-agent.
 - **Security Logging:** Audit channel (`event_name` with IP, user-agent, token hash for auth, rate-limit, token usage). Auth requires dual-emit with Observability.
 - **LogEvent:** Shared emit plumbing (`RequestContext`, `LogSanitizer`, `AppLogger` / Sentry) for Observability and Security Logging; not a public facade.
-- **Refine:** Correction loop on an almost-right result: a token holder validates, previews and signs hand-written selectors into the feed token. Gated by `REFINE_ENABLED`; selectors only, never channel, headers or strategy.
+- **Refine:** Correction loop on an almost-right result: a token holder validates, previews and signs hand-written selectors into the feed token. Gated by `REFINE_ENABLED`; selectors only, never channel, headers or strategy. Saving creates a new feed token; the UI says "item" for one repeating entry on the page and "selector" only in the manual option.
 - **Selectors Document:** `SelectorsDocument.parse` is the only gate for client-authored selectors, on create and again after the token signature verified. `Feeds::GeneratorInput.for_token` is the only owner of token-feed config expansion (serving and Refine preview share it).

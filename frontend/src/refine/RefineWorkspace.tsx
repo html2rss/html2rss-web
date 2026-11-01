@@ -2,11 +2,10 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Notice } from '../components/Notice';
 import { PreviewItem } from '../components/PreviewItem';
 import { COPY } from '../journey/copy';
-import { FIELD_LABELS, describeFailure, describeIssue, failureTitle, groupIssues } from './refineModel';
+import { FIELD_LABELS, describeFailure, describeIssue, groupIssues } from './refineModel';
 import type { RefineCandidate } from './refineService';
 import {
   REFINE_FIELDS,
-  isDraftComplete,
   selectorsFromDraft,
   withField,
   withItems,
@@ -157,11 +156,10 @@ export function RefineWorkspace({
       aria-busy={suggestion.status === 'loading'}
     >
       <header class="layout-stack layout-stack--tight">
-        <p class="ui-eyebrow">{COPY.refineEyebrow}</p>
         <h1 id="refine-heading" class="ui-display-title">
           {COPY.refineTitle}
         </h1>
-        <p class="field-help refine-url">{url}</p>
+        <p class="field-help refine-note">{COPY.refineHint}</p>
       </header>
 
       {suggestion.status === 'loading' && (
@@ -217,11 +215,7 @@ export function RefineWorkspace({
           </div>
 
           <div role="status" aria-live="polite" class="refine-result layout-stack layout-stack--tight">
-            {preview.status === 'idle' && (
-              <p class="field-help refine-note">
-                {isDraftComplete(draft) ? COPY.previewChecking : COPY.refineResultIdle}
-              </p>
-            )}
+            {preview.status === 'idle' && <p class="field-help refine-note">{COPY.refineResultIdle}</p>}
             {preview.status === 'loading' && <Notice state="loading" title={COPY.previewChecking} />}
             {preview.status === 'failed' && (
               <Notice tone="error" title={COPY.refinePreviewFailed} actions={retry}>
@@ -229,9 +223,11 @@ export function RefineWorkspace({
               </Notice>
             )}
             {preview.status === 'ready' && preview.preview.failureKind && (
-              <Notice tone="error" title={failureTitle(preview.preview.failureKind)} actions={retry}>
-                <p>{describeFailure(preview.preview.failureKind)}</p>
-              </Notice>
+              <Notice
+                tone="error"
+                title={describeFailure(preview.preview.failureKind)}
+                actions={preview.preview.failureKind === 'execution' ? undefined : retry}
+              />
             )}
             {preview.status === 'ready' && !preview.preview.failureKind && (
               <>

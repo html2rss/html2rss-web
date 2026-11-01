@@ -68,9 +68,9 @@ describe('refineModel', () => {
     }
   );
 
-  it('points an execution failure at blocking or browser rendering', () => {
+  it('points an execution failure at blocking', () => {
     expect(describeFailure('execution')).toBe(COPY.refineFailureExecution);
-    expect(COPY.refineFailureExecution).toMatch(/browser/);
+    expect(COPY.refineFailureExecution).toMatch(/block/);
   });
 
   it('groups issues by the control they belong to', () => {
@@ -81,10 +81,7 @@ describe('refineModel', () => {
     expect(groupIssues([items, title, other])).toEqual({ items: [items], title: [title], other: [other] });
   });
 
-  it('prefixes a placed issue with its field label', () => {
-    expect(describeIssue({ path: ['selectors', 'title', 'selector'], message: 'is blank' })).toBe(
-      `${COPY.refineTitleLabel}: is blank`
-    );
-    expect(describeIssue({ path: [], message: 'odd' })).toBe(`${COPY.refineSelectorsLabel}: odd`);
+  it('shows an issue as its message', () => {
+    expect(describeIssue({ path: ['selectors', 'title', 'selector'], message: 'is blank' })).toBe('is blank');
   });
 });
