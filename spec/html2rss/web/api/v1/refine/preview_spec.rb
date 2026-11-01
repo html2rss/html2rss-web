@@ -10,6 +10,7 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Preview do
     instance_double(
       Html2rss::Test::Result, item_count: 2, sample_items: [{ title: 'A' }],
                               quality_report: instance_double(Html2rss::Test::QualityReport, to_h: { score: 1 }),
+                              rss: nil,
                               failure_kind: :empty_extraction,
                               validation_issues: [double(to_h: { code: 'x' })]
     )
@@ -53,6 +54,28 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Preview do
       .to raise_error(Html2rss::Web::BadRequestError)
   end
 
+  it 'lists items from the generated RSS beyond the gem samples', :aggregate_failures do
+    entries = Array.new(120) do |index|
+      "<item><title> Post #{index} </title><link>https://example.com/#{index}</link>" \
+        '<pubDate>Fri, 05 Jan 2024 10:00:00 +0000</pubDate></item>'
+    end
+    allow(result).to receive(:rss).and_return("<rss><channel>#{entries.join}</channel></rss>")
+    items = described_class.call(refine_request({ url:, selectors: }))[:data][:sample_items]
+
+    expect(items.size).to eq(described_class::SAMPLE_LIMIT)
+    expect(items.first).to eq(title: 'Post 0', url: 'https://example.com/0', published_at: '2024-01-05T10:00:00+00:00')
+  end
+
+  it 'leaves published_at empty when the feed date is missing or invalid', :aggregate_failures do
+    allow(result).to receive(:rss).and_return(
+      '<rss><channel><item><title>A</title><link>u</link><pubDate>soon</pubDate></item>' \
+      '<item><title>B</title></item></channel></rss>'
+    )
+    items = described_class.call(refine_request({ url:, selectors: }))[:data][:sample_items]
+
+    expect(items.map { |item| item[:published_at] }).to eq([nil, nil])
+  end
+
   it 'selects result fields without the RSS document', :aggregate_failures do
     data = described_class.call(refine_request({ url:, selectors: }))[:data]
 
@@ -64,7 +87,7 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Preview do
 
   it 'tolerates a result without report, kind or issues' do
     bare = instance_double(Html2rss::Test::Result, item_count: 0, sample_items: [], quality_report: nil,
-                                                   failure_kind: nil, validation_issues: nil)
+                                                   rss: nil, failure_kind: nil, validation_issues: nil)
     allow(Html2rss).to receive(:test).and_return(bare)
 
     expect(described_class.call(refine_request({ url: }))[:data])
