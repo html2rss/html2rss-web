@@ -85,6 +85,24 @@ describe('RefineWorkspace', () => {
     });
   });
 
+  it('lets the person switch automatic details off and previews again', async () => {
+    const previews = stub();
+    const { onSave } = renderWorkspace();
+
+    const toggle = await screen.findByLabelText(COPY.refineEnhanceLabel, { exact: false }, SLOW);
+    expect(toggle).toBeChecked();
+    await screen.findByText('First post', undefined, SLOW);
+
+    fireEvent.click(toggle);
+    await waitFor(() => expect(previews).toHaveLength(2), SLOW);
+    await waitFor(() => expect(screen.getByRole('button', { name: COPY.createFeed })).toBeEnabled(), SLOW);
+    fireEvent.click(screen.getByRole('button', { name: COPY.createFeed }));
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ items: { selector: 'article', enhance: false } })
+    );
+  });
+
   it('shows a clear loading panel instead of an empty form while reading the page', async () => {
     stub();
     renderWorkspace();

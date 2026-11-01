@@ -26,6 +26,10 @@ export function withItems(draft: RefineDraft, items: string, enhance = draft.enh
   return { ...draft, items, enhance };
 }
 
+export function withEnhance(draft: RefineDraft, isEnhanced: boolean): RefineDraft {
+  return { ...draft, enhance: isEnhanced };
+}
+
 export function withField(draft: RefineDraft, field: RefineFieldId, selector: string): RefineDraft {
   return { ...draft, fields: { ...draft.fields, [field]: selector } };
 }

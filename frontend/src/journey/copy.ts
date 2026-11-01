@@ -94,6 +94,8 @@ export const COPY = {
   refineOffline: "Couldn't reach the server. Check your connection and try again.",
   refinePreviewFailed: "Couldn't update the preview",
   refineItemsLabel: 'Each item',
+  refineEnhanceLabel: 'Add missing details automatically',
+  refineEnhanceHint: 'Fills in description, image, date and categories it finds in each item.',
   refineTitleLabel: 'Title',
   refineLinkLabel: 'Link',
   refinePublishedLabel: 'Date (optional)',

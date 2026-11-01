@@ -7,6 +7,7 @@ import type { RefineCandidate } from './refineService';
 import {
   REFINE_FIELDS,
   selectorsFromDraft,
+  withEnhance,
   withField,
   withItems,
   type RefineSelectors,
@@ -188,6 +189,19 @@ export function RefineWorkspace({
               problems={problems('items')}
               onChange={(value, candidate) => setDraft(withItems(draft, value, candidate?.enhance))}
             />
+          )}
+          {!isLoading && (
+            <label class="refine-check">
+              <input
+                type="checkbox"
+                checked={draft.enhance}
+                onChange={(event) => setDraft(withEnhance(draft, event.currentTarget.checked))}
+              />
+              <span>
+                {COPY.refineEnhanceLabel}
+                <span class="field-help">{COPY.refineEnhanceHint}</span>
+              </span>
+            </label>
           )}
           {!isLoading &&
             REFINE_FIELDS.map((field) => (
