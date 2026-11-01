@@ -875,11 +875,14 @@ paths:
                   description: Selectors document, validated against the html2rss
                     config schema.
                   type: object
+                strategy:
+                  type: string
                 url:
                   type: string
               required:
               - url
               - selectors
+              - strategy
               type: object
       responses:
         '200':
@@ -1048,8 +1051,13 @@ paths:
                         anyOf:
                         - type: string
                         - type: 'null'
+                      strategy:
+                        anyOf:
+                        - type: string
+                        - type: 'null'
                     required:
                     - candidates
+                    - strategy
                     - segment_strategy
                     - admission_drops
                     type: object

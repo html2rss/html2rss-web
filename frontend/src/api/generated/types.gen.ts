@@ -433,6 +433,7 @@ export type PreviewRefineFeedData = {
     selectors: {
       [key: string]: unknown;
     };
+    strategy: string;
     url: string;
   };
   headers: {
@@ -516,6 +517,7 @@ export type SuggestRefineSelectorsResponses = {
         }>;
       };
       segment_strategy: string | null;
+      strategy: string | null;
     };
     success: boolean;
   };

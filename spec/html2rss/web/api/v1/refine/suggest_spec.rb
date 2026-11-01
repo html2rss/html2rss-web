@@ -11,6 +11,7 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Suggest do
   end
   let(:captured) do
     instance_double(Html2rss::Capture::CaptureResult, candidates:, segment_strategy: :dom,
+                                                      selected_strategy: :botasaurus,
                                                       admission_drops: { 'short' => 1 })
   end
 
@@ -40,15 +41,15 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Suggest do
       items: [{ selector: 'article', enhance: true, sample: 'Hi' }],
       title: [{ selector: 'h2', sample: 'Hi' }], link: [], published: []
     )
-    expect(data).to include(segment_strategy: 'dom', admission_drops: { 'short' => 1 })
+    expect(data).to include(strategy: 'botasaurus', segment_strategy: 'dom', admission_drops: { 'short' => 1 })
   end
 
   it 'is a successful response when the gem found nothing', :aggregate_failures do
-    allow(captured).to receive_messages(candidates: {}, segment_strategy: nil)
+    allow(captured).to receive_messages(candidates: {}, segment_strategy: nil, selected_strategy: nil)
     data = described_class.call(refine_request({ url: }))[:data]
 
     expect(data[:candidates]).to eq(items: [], title: [], link: [], published: [])
-    expect(data[:segment_strategy]).to be_nil
+    expect(data.values_at(:strategy, :segment_strategy)).to eq([nil, nil])
   end
 
   it 'passes a trimmed items selector hint, or none', :aggregate_failures do

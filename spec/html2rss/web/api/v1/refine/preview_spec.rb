@@ -40,6 +40,19 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Preview do
     expect(described_class.call(refine_request({ url: }))[:data][:failure_kind]).to eq(:blocked)
   end
 
+  it 'fetches with the strategy the person pinned', :aggregate_failures do
+    described_class.call(refine_request({ url:, selectors:, strategy: 'botasaurus' }))
+
+    expect(Html2rss).to have_received(:test) do |config, **|
+      expect(config[:strategy]).to eq(:botasaurus)
+    end
+  end
+
+  it 'rejects an unknown strategy' do
+    expect { described_class.call(refine_request({ url:, selectors:, strategy: 'nope' })) }
+      .to raise_error(Html2rss::Web::BadRequestError)
+  end
+
   it 'selects result fields without the RSS document', :aggregate_failures do
     data = described_class.call(refine_request({ url:, selectors: }))[:data]
 

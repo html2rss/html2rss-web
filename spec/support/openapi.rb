@@ -165,7 +165,7 @@ if ENV['OPENAPI']
                           })
       },
       '/refine/preview' => {
-        request: object.call({ 'url' => string, 'selectors' => selectors_ref }),
+        request: object.call({ 'url' => string, 'selectors' => selectors_ref, 'strategy' => string }),
         data: object.call({
                             'item_count' => { 'type' => 'integer' },
                             'sample_items' => list.call({ 'type' => 'object', 'additionalProperties' => true }),
@@ -178,6 +178,7 @@ if ENV['OPENAPI']
         request: object.call({ 'url' => string, 'items_selector' => string }, required: %w[url]),
         data: object.call({
                             'candidates' => object.call(candidate_buckets),
+                            'strategy' => nullable.call(string),
                             'segment_strategy' => nullable.call(string),
                             'admission_drops' => { 'type' => 'object',
                                                    'additionalProperties' => { 'type' => 'integer' } }

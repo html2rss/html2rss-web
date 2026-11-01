@@ -22,14 +22,21 @@ module Html2rss
                 url = Access.page_url!(body['url'], account)
                 captured = Html2rss.capture(url, strategy: :auto, items_selector: hint(body['items_selector']))
 
-                Response.success(response: request.response, data: {
-                                   candidates: BUCKETS.to_h { [it, entries(captured.candidates[it])] },
-                                   segment_strategy: captured.segment_strategy&.to_s,
-                                   admission_drops: captured.admission_drops
-                                 })
+                Response.success(response: request.response, data: fields(captured))
               end
 
               private
+
+              # @param captured [Html2rss::Capture::CaptureResult] the capture to publish
+              # @return [Hash{Symbol=>Object}] public candidate buckets plus the strategy that fetched the page
+              def fields(captured)
+                {
+                  candidates: BUCKETS.to_h { [it, entries(captured.candidates[it])] },
+                  strategy: captured.selected_strategy&.to_s,
+                  segment_strategy: captured.segment_strategy&.to_s,
+                  admission_drops: captured.admission_drops
+                }
+              end
 
               # @param raw [Object]
               # @return [String, nil]

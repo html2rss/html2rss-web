@@ -18,7 +18,8 @@ module Html2rss
                 account = Access.ensure_allowed!(request, live_fetch: true)
                 body = JsonBody.object(request)
                 url = Access.page_url!(body['url'], account)
-                config = Feeds::GeneratorInput.for_token(url:, selectors: SelectorsDocument.parse(body['selectors']))
+                config = Feeds::GeneratorInput.for_token(url:, strategy: body['strategy'],
+                                                         selectors: SelectorsDocument.parse(body['selectors']))
 
                 Response.success(response: request.response, data: fields(Html2rss.test(config, min_items: 1)))
               end

@@ -119,7 +119,7 @@ RSpec.describe 'api/v1 refine', openapi: { example_mode: :none }, type: :request
         Html2rss::Capture::CaptureResult,
         candidates: { items: [{ selector: 'article', enhance: true, sample: 'Hello', extra: 1 }],
                       title: [{ selector: 'h2', sample: 'Hello' }] },
-        segment_strategy: :dom, admission_drops: { 'short' => 1 }
+        segment_strategy: :dom, selected_strategy: :default, admission_drops: { 'short' => 1 }
       )
     end
 
@@ -134,7 +134,7 @@ RSpec.describe 'api/v1 refine', openapi: { example_mode: :none }, type: :request
           'items' => [{ 'selector' => 'article', 'enhance' => true, 'sample' => 'Hello' }],
           'title' => [{ 'selector' => 'h2', 'sample' => 'Hello' }], 'link' => [], 'published' => []
         },
-        'segment_strategy' => 'dom', 'admission_drops' => { 'short' => 1 }
+        'strategy' => 'default', 'segment_strategy' => 'dom', 'admission_drops' => { 'short' => 1 }
       )
     end
 
