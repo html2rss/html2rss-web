@@ -23,7 +23,9 @@ module Html2rss
                 config = Feeds::GeneratorInput.for_token(url:, strategy: body['strategy'],
                                                          selectors: SelectorsDocument.parse(body['selectors']))
 
-                Response.success(response: request.response, data: fields(Html2rss.test(config, min_items: 1)))
+                result = PageCache.within { Html2rss.test(config, min_items: 1) }
+
+                Response.success(response: request.response, data: fields(result))
               end
 
               private

@@ -28,6 +28,13 @@ RSpec.describe Html2rss::Web::Api::V1::Refine::Preview do
       .with(instance_of(Rack::Request), live_fetch: true)
   end
 
+  it 'fetches the page inside the refine page cache scope' do
+    allow(Html2rss::Web::Api::V1::Refine::PageCache).to receive(:within).and_call_original
+    described_class.call(refine_request({ url: }))
+
+    expect(Html2rss::Web::Api::V1::Refine::PageCache).to have_received(:within)
+  end
+
   it 'sets the JSON content type' do
     request = refine_request({ url: })
     described_class.call(request)

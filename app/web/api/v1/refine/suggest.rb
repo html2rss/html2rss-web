@@ -20,7 +20,9 @@ module Html2rss
                 account = Access.ensure_allowed!(request, live_fetch: true)
                 body = JsonBody.object(request)
                 url = Access.page_url!(body['url'], account)
-                captured = Html2rss.capture(url, strategy: :auto, items_selector: hint(body['items_selector']))
+                captured = PageCache.within do
+                  Html2rss.capture(url, strategy: :auto, items_selector: hint(body['items_selector']))
+                end
 
                 Response.success(response: request.response, data: fields(captured))
               end

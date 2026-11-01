@@ -4,8 +4,8 @@ source 'https://rubygems.org'
 
 git_source(:github) { |repo_name| "https://github.com/#{repo_name}" }
 
-gem 'html2rss', '~> 0.30'
-# gem 'html2rss', github: 'html2rss/html2rss', branch: 'master'
+# TEMPORARY: Refine uses RequestService::ResponseCache from html2rss PR #560; restore '~> 0.30' once it is released.
+gem 'html2rss', github: 'html2rss/html2rss', branch: 'feat/initial-response-cache'
 gem 'html2rss-configs', github: 'html2rss/html2rss-configs'
 
 # Use these instead of the two above (uncomment them) when developing locally:
