@@ -1,7 +1,7 @@
 # Single source of truth for toolchain versions: Dependabot bumps these two digest-pinned bases.
-FROM node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4 AS node
+FROM node:26-alpine@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS node
 
-FROM ruby:4.0.9-alpine3.24@sha256:50d04650231808a465271b4eedcb78634c2306afb0157b10e9d628373bd5d002 AS ruby
+FROM ruby:4.0.9-alpine3.24@sha256:f1e530793cc09e1093417a4c9956069407155e1883d02beb30bda35ae54a47a3 AS ruby
 
 LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 
