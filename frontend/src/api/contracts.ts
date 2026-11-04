@@ -75,6 +75,9 @@ export interface ApiMetadataRecord {
       enabled: boolean;
       access_token_required: boolean;
     };
+    refine?: {
+      enabled: boolean;
+    };
     catalog?: {
       enabled: boolean;
       url: string;

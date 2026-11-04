@@ -10,6 +10,7 @@ import type { AppRoute } from '../routes/appRoute';
 /** Closed UI journey kinds owned by Feed Flow. */
 export type AppViewModel =
   | { kind: 'create' }
+  | { kind: 'refine'; url: string }
   | { kind: 'submitting' }
   | { kind: 'token_prompt'; tokenError: string; error?: FeedCreationError }
   | {
@@ -34,6 +35,7 @@ export function decideJourney({
   creationError,
   feedFieldErrors,
   isCreating,
+  refineUrl,
   route,
   tokenError,
   result,
@@ -41,10 +43,14 @@ export function decideJourney({
   creationError?: FeedCreationError;
   feedFieldErrors: { url: string; form: string };
   isCreating: boolean;
+  /** URL being refined; set only while the Refine workspace is open. */
+  refineUrl?: string;
   route: AppRoute;
   tokenError: string;
   result?: CreatedFeedResult;
 }): AppViewModel {
+  if (refineUrl) return { kind: 'refine', url: refineUrl };
+
   if (route.kind === 'result' && result && result.feed.feed_token === route.feedToken) {
     return {
       kind: 'result',

@@ -492,6 +492,9 @@
 }
 
 .notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   margin-top: var(--space-3);
 }
 
@@ -641,5 +644,82 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Refine is preview-first: widen the page frame for this view only, through the shared rail tokens. */
+.page-main:has(.refine-shell) {
+  --layout-page-max-width: 76rem;
+  --layout-rail-shell: 72rem;
+}
+
+.refine-shell {
+  width: min(100%, var(--layout-rail-shell));
+  margin: 0 auto;
+}
+
+.refine-note {
+  text-align: start;
+}
+
+.refine-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-areas:
+    "fields"
+    "result"
+    "actions";
+}
+
+.refine-check {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  text-align: start;
+}
+
+.refine-check input {
+  margin-block-start: var(--space-1);
+  accent-color: var(--accent);
+}
+
+.refine-check .field-help {
+  display: block;
+  text-align: start;
+}
+
+.refine-fields {
+  grid-area: fields;
+}
+
+.refine-result[hidden] {
+  display: none;
+}
+
+.refine-result {
+  grid-area: result;
+  align-content: start;
+  min-height: 14rem;
+}
+
+.refine-actions {
+  grid-area: actions;
+}
+
+@media (width >= 48rem) {
+  .refine-grid {
+    min-height: 28rem;
+    align-content: start;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    grid-template-areas:
+      "fields result"
+      "actions result";
+    align-items: start;
+    column-gap: var(--space-5);
+  }
+
+  .refine-result {
+    position: sticky;
+    top: var(--space-4);
   }
 }

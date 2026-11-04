@@ -1,6 +1,28 @@
 import { expect, test } from '@playwright/test';
 import { COPY } from '../src/journey/copy';
 
+const json = (body: unknown, status = 200) => ({
+  status,
+  contentType: 'application/json',
+  body: JSON.stringify(body),
+});
+const feed = (token: string) => ({
+  success: true,
+  data: {
+    feed: {
+      id: token,
+      name: 'Example Feed',
+      url: 'https://example.com/articles',
+      feed_token: token,
+      public_url: `/api/v1/feeds/${token}`,
+      json_public_url: `/api/v1/feeds/${token}.json`,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+    },
+  },
+  meta: { created: true },
+});
+
 test.describe('frontend smoke', () => {
   test('loads create flow and inline access-token gate', async ({ page }) => {
     await page.route(/\/api\/v1$/, async (route) => {
@@ -207,5 +229,83 @@ test.describe('frontend smoke', () => {
     await expect(page.getByLabel(COPY.urlLabel)).toBeVisible();
     await expect(page.getByText('Saved result unavailable')).toHaveCount(0);
     await expect(page.locator('.result-recovery')).toHaveCount(0);
+  });
+
+  test('refines a ready result into a new feed, with the same frame and focus handling', async ({ page }) => {
+    const created: unknown[] = [];
+
+    await page.route(/\/api\/v1$/, (route) =>
+      route.fulfill(
+        json({
+          success: true,
+          data: {
+            api: {
+              name: 'html2rss-web API',
+              description: '',
+              openapi_url: 'https://example.test/openapi.yaml',
+            },
+            instance: {
+              feed_creation: { enabled: true, access_token_required: true },
+              refine: { enabled: true },
+              catalog: { enabled: true, url: '/api/v1/configs' },
+            },
+          },
+        })
+      )
+    );
+    await page.route(/\/api\/v1\/feeds\/[^/]+\.json$/, (route) =>
+      route.fulfill(json({ items: [{ title: 'Auto item', content_text: 'Text' }] }))
+    );
+    await page.route(/\/api\/v1\/feeds$/, async (route) => {
+      const body = route.request().postDataJSON();
+      created.push(body);
+      await route.fulfill(json(feed(body.selectors ? 'refined-token' : 'auto-token'), 201));
+    });
+    await page.route(/\/api\/v1\/refine\/suggest_selectors$/, (route) =>
+      route.fulfill(
+        json({
+          success: true,
+          data: {
+            candidates: {
+              items: [{ selector: 'article', enhance: false, sample: 'Hello' }],
+              title: [{ selector: 'h2', sample: 'Hello' }],
+              link: [],
+              published: [],
+            },
+          },
+        })
+      )
+    );
+    await page.route(/\/api\/v1\/refine\/validate$/, (route) =>
+      route.fulfill(json({ success: true, data: { report: { success: true, issues: [] } } }))
+    );
+    await page.route(/\/api\/v1\/refine\/preview$/, (route) =>
+      route.fulfill(
+        json({
+          success: true,
+          data: { item_count: 1, sample_items: [{ title: 'Refined item', url: 'https://example.com/1' }] },
+        })
+      )
+    );
+
+    await page.goto('/');
+    await page.getByLabel(COPY.urlLabel).fill('https://example.com/articles');
+    await page.getByRole('button', { name: COPY.createFeed }).click();
+    await page.getByRole('textbox', { name: COPY.tokenTitle }).fill('a-valid-access-token');
+    await page.getByRole('button', { name: COPY.saveAndContinue }).click();
+
+    await expect(page.getByText(COPY.feedReady)).toBeVisible();
+    await page.getByRole('button', { name: COPY.refineEntry }).click();
+
+    await expect(page.getByRole('heading', { name: COPY.refineTitle })).toBeVisible();
+    await expect(page.getByLabel(COPY.refineItemsLabel, { exact: true })).toBeFocused();
+    await expect(page.getByLabel(COPY.refineItemsLabel, { exact: true })).toHaveValue('article');
+    await expect(page.getByText('Refined item')).toBeVisible();
+
+    await page.getByRole('button', { name: COPY.createFeed }).click();
+
+    await expect(page).toHaveURL(/#\/result\/refined-token/);
+    await expect(page.getByText(COPY.feedReady)).toBeVisible();
+    expect(created.at(-1)).toMatchObject({ selectors: { items: { selector: 'article' } } });
   });
 });

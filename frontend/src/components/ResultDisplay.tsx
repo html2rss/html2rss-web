@@ -9,6 +9,8 @@ interface ResultDisplayProperties {
   viewModel: Extract<AppViewModel, { kind: 'result' }>;
   onCreateAnother: () => void;
   onRetryPreview: () => void;
+  /** Present only when Refine is available to this session. */
+  onRefine?: () => void;
 }
 
 interface PreviewSectionProperties {
@@ -26,7 +28,12 @@ function PreviewSection({ ariaLabel, eyebrow, children }: PreviewSectionProperti
   );
 }
 
-export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: ResultDisplayProperties) {
+export function ResultDisplay({
+  viewModel,
+  onCreateAnother,
+  onRetryPreview,
+  onRefine,
+}: ResultDisplayProperties) {
   const [copied, setCopied] = useState(false);
   const copyResetReference = useRef<ReturnType<typeof globalThis.setTimeout> | undefined>(undefined);
   const copyButtonReference = useRef<HTMLButtonElement>(null);
@@ -95,6 +102,11 @@ export function ResultDisplay({ viewModel, onCreateAnother, onRetryPreview }: Re
           <a href={subscribeUrl} class="btn btn--ghost">
             {COPY.openInFeedReader}
           </a>
+        )}
+        {onRefine && (
+          <button type="button" class="btn btn--quiet btn--linkish" onClick={onRefine}>
+            {COPY.refineEntry}
+          </button>
         )}
         <button type="button" class="btn btn--quiet btn--linkish" onClick={onCreateAnother}>
           {COPY.createAnother}

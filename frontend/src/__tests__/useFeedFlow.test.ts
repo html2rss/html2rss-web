@@ -317,4 +317,66 @@ describe('useFeedFlow', () => {
     rerender({ createEntryKey: 1, route: { kind: 'create' } });
     expect(result.current.tokenDraft).toBe('');
   });
+
+  describe('Refine', () => {
+    const selectors = { items: { selector: 'article', enhance: false } };
+
+    it('closes the workspace when the route changes underneath it', async () => {
+      const { result, rerender } = renderHook((properties: FeedFlowDependencies) => useFeedFlow(properties), {
+        initialProps: feedFlowProperties({ token: 'tok' }),
+      });
+
+      act(() => result.current.onOpenRefine('https://example.com/articles'));
+      expect(result.current.viewModel).toEqual({ kind: 'refine', url: 'https://example.com/articles' });
+
+      rerender(feedFlowProperties({ token: 'tok', route: { kind: 'token' } }));
+
+      await waitFor(() => expect(result.current.viewModel.kind).not.toBe('refine'));
+    });
+
+    it('closes on request', () => {
+      const { result } = renderHook(() => useFeedFlow(feedFlowProperties({ token: 'tok' })));
+
+      act(() => result.current.onOpenRefine('https://example.com/articles'));
+      act(() => result.current.onCloseRefine());
+
+      expect(result.current.viewModel.kind).toBe('create');
+    });
+
+    it('sends the rejected token back to the token prompt', async () => {
+      const { server, buildStructuredErrorResponse } = await import('./mocks/server');
+      const { http, HttpResponse } = await import('msw');
+      server.use(
+        http.post('/api/v1/feeds', () =>
+          HttpResponse.json(
+            buildStructuredErrorResponse({ kind: 'auth', code: 'UNAUTHORIZED', next_action: 'enter_token' }),
+            { status: 401 }
+          )
+        )
+      );
+      const { result } = renderHook(() => useFeedFlow(feedFlowProperties({ token: 'stale' })));
+
+      act(() => result.current.onOpenRefine('https://example.com/articles'));
+      await act(() => result.current.onRefineSave(selectors));
+
+      expect(mockClearToken).toHaveBeenCalled();
+      expect(mockNavigate).toHaveBeenCalledWith({
+        kind: 'token',
+        prefillUrl: 'https://example.com/articles',
+      });
+      expect(result.current.viewModel.kind).toBe('token_prompt');
+    });
+
+    it('keeps the workspace open with the failure message for other errors', async () => {
+      await stubFeedCreationFailure('Upstream failed');
+      const { result } = renderHook(() => useFeedFlow(feedFlowProperties({ token: 'tok' })));
+
+      act(() => result.current.onOpenRefine('https://example.com/articles'));
+      await act(() => result.current.onRefineSave(selectors));
+
+      expect(result.current.viewModel.kind).toBe('refine');
+      expect(result.current.refineSaveError).toBe('Upstream failed');
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
 });
