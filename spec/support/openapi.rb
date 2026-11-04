@@ -6,9 +6,8 @@ if ENV['OPENAPI']
   RSpec::OpenAPI.path = 'public/openapi.yaml'
   RSpec::OpenAPI.title = 'html2rss-web API'
   RSpec::OpenAPI.application_version = Html2rss::Web::VERSION
-  # Spectral `oas3-schema` validates OAS 3.0; pin so nullables use `nullable: true`
-  # instead of OAS 3.1+ `type: [..., null]` unions.
-  RSpec::OpenAPI.openapi_version = '3.0.3'
+  # 3.1 aligns with JSON Schema 2020-12; nullables become `type: [..., null]` unions.
+  RSpec::OpenAPI.openapi_version = '3.1.0'
   RSpec::OpenAPI.enable_example = false
   RSpec::OpenAPI.enable_example_summary = false
   RSpec::OpenAPI.example_types = [:request]
@@ -141,6 +140,52 @@ if ENV['OPENAPI']
       }.merge(token_feed_empty_examples.fetch('text/plain'))
     }.freeze
 
+    string = { 'type' => 'string' }
+    nullable = ->(schema) { { 'anyOf' => [schema, { 'type' => 'null' }] } }
+    object = lambda do |properties, required: properties.keys|
+      { 'type' => 'object', 'properties' => properties, 'required' => required.map(&:to_s) }
+    end
+    list = ->(item) { { 'type' => 'array', 'items' => item } }
+    envelope = ->(data) { object.call({ 'success' => { 'type' => 'boolean' }, 'data' => data }) }
+    selector_entry = object.call({ 'selector' => string, 'sample' => string, 'enhance' => { 'type' => 'boolean' } },
+                                 required: %w[selector])
+    issue = object.call({ 'path' => list.call(string), 'code' => string, 'message' => string,
+                          'expected' => {}, 'actual' => {} }, required: %w[path code message])
+    selectors_ref = { 'type' => 'object', 'additionalProperties' => true,
+                      'description' => 'Selectors document, validated against the html2rss config schema.' }
+    candidate_buckets = %w[items title link published].to_h { |bucket| [bucket, list.call(selector_entry)] }
+    refine_contracts = {
+      '/refine/validate' => {
+        request: object.call({ 'url' => string, 'selectors' => selectors_ref }, required: %w[selectors]),
+        data: object.call({
+                            'report' => object.call({ 'success' => { 'type' => 'boolean' },
+                                                      'issues' => list.call(issue) }),
+                            'selectors' => nullable.call(selectors_ref),
+                            'yaml' => nullable.call(string)
+                          })
+      },
+      '/refine/preview' => {
+        request: object.call({ 'url' => string, 'selectors' => selectors_ref, 'strategy' => string }),
+        data: object.call({
+                            'item_count' => { 'type' => 'integer' },
+                            'sample_items' => list.call({ 'type' => 'object', 'additionalProperties' => true }),
+                            'quality_report' => nullable.call({ 'type' => 'object', 'additionalProperties' => true }),
+                            'failure_kind' => nullable.call({ 'enum' => %w[schema execution min_items quality] }),
+                            'validation_issues' => nullable.call(list.call(issue))
+                          })
+      },
+      '/refine/suggest_selectors' => {
+        request: object.call({ 'url' => string, 'items_selector' => string }, required: %w[url]),
+        data: object.call({
+                            'candidates' => object.call(candidate_buckets),
+                            'strategy' => nullable.call(string),
+                            'segment_strategy' => nullable.call(string),
+                            'admission_drops' => { 'type' => 'object',
+                                                   'additionalProperties' => { 'type' => 'integer' } }
+                          })
+      }
+    }.freeze
+
     path_map = spec['paths'] || spec[:paths]
     next unless path_map.is_a?(Hash)
 
@@ -179,6 +224,15 @@ if ENV['OPENAPI']
             'selectors',
             { 'type' => 'object', 'additionalProperties' => true,
               'description' => 'Optional refine selectors, validated against the html2rss config schema.' }
+          )
+        end
+
+        # Recorded examples overfit these to one sample (null failure kinds, single-key selectors).
+        if (contract = refine_contracts[normalized])
+          operation = normalized_paths[normalized][verb]
+          operation.dig('requestBody', 'content', 'application/json')&.store('schema', contract.fetch(:request))
+          operation.dig('responses', '200', 'content', 'application/json')&.store(
+            'schema', envelope.call(contract.fetch(:data))
           )
         end
 
@@ -238,7 +292,8 @@ if ENV['OPENAPI']
       { 'name' => 'Catalog', 'description' => 'Public feed-directory catalog metadata.' },
       { 'name' => 'Health', 'description' => 'Health and readiness endpoints.' },
       { 'name' => 'Strategies', 'description' => 'Feed extraction strategy discovery.' },
-      { 'name' => 'Feeds', 'description' => 'Feed creation and feed rendering operations.' }
+      { 'name' => 'Feeds', 'description' => 'Feed creation and feed rendering operations.' },
+      { 'name' => 'Refine', 'description' => 'Selector validation, preview and suggestions (REFINE_ENABLED).' }
     ]
 
     if spec.key?('tags')

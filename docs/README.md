@@ -231,7 +231,7 @@ Stdout is one JSON object per line. Operators join app lines to proxy access log
 | `details.cache` | `hit` or `miss` on `feed.render` |
 | `duration_ms` | Whole-millisecond request age at emit time |
 | `request_id` | Correlation id; same value as `X-Request-Id` |
-| `route_group` | `health`, `catalog`, `feed_create`, `feed_render`, or `static` |
+| `route_group` | `health`, `catalog`, `feed_create`, `refine`, `feed_render`, or `static` |
 
 ### Sentry DSN separation
 

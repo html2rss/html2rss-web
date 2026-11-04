@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, type Options as Options2, type RequestResult, type TDataShape, urlSearchParamsBodySerializer } from './client';
 import { client } from './client.gen';
-import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses } from './types.gen';
+import type { CreateFeedData, CreateFeedErrors, CreateFeedResponses, GetApiMetadataData, GetApiMetadataResponses, GetConfigCatalogData, GetConfigCatalogErrors, GetConfigCatalogResponses, GetHealthStatusData, GetHealthStatusErrors, GetHealthStatusResponses, GetLivenessProbeData, GetLivenessProbeResponses, GetReadinessProbeData, GetReadinessProbeResponses, ListStrategiesData, ListStrategiesResponses, OptionsConfigCatalogData, OptionsConfigCatalogResponses, PreviewRefineFeedData, PreviewRefineFeedResponses, RenderFeedByTokenData, RenderFeedByTokenErrors, RenderFeedByTokenResponses, SuggestRefineSelectorsData, SuggestRefineSelectorsResponses, ValidateRefineSelectorsData, ValidateRefineSelectorsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
   /**
@@ -93,6 +93,51 @@ export const getLivenessProbe = <ThrowOnError extends boolean = false>(options?:
  * Readiness probe
  */
 export const getReadinessProbe = <ThrowOnError extends boolean = false>(options?: Options<GetReadinessProbeData, ThrowOnError>): RequestResult<GetReadinessProbeResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetReadinessProbeResponses, unknown, ThrowOnError>({ url: '/health/ready', ...options });
+
+/**
+ * Preview an extraction
+ *
+ * Preview an extraction
+ */
+export const previewRefineFeed = <ThrowOnError extends boolean = false>(options: Options<PreviewRefineFeedData, ThrowOnError>): RequestResult<PreviewRefineFeedResponses, unknown, ThrowOnError> => (options.client ?? client).post<PreviewRefineFeedResponses, unknown, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/refine/preview',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Suggest selectors
+ *
+ * Suggest selectors
+ */
+export const suggestRefineSelectors = <ThrowOnError extends boolean = false>(options: Options<SuggestRefineSelectorsData, ThrowOnError>): RequestResult<SuggestRefineSelectorsResponses, unknown, ThrowOnError> => (options.client ?? client).post<SuggestRefineSelectorsResponses, unknown, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/refine/suggest_selectors',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
+
+/**
+ * Validate refine selectors
+ *
+ * Validate refine selectors
+ */
+export const validateRefineSelectors = <ThrowOnError extends boolean = false>(options: Options<ValidateRefineSelectorsData, ThrowOnError>): RequestResult<ValidateRefineSelectorsResponses, unknown, ThrowOnError> => (options.client ?? client).post<ValidateRefineSelectorsResponses, unknown, ThrowOnError>({
+  security: [{ scheme: 'bearer', type: 'http' }],
+  url: '/refine/validate',
+  ...options,
+  headers: {
+    'Content-Type': 'application/json',
+    ...options.headers
+  }
+});
 
 /**
  * List extraction strategies

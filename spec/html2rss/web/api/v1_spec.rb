@@ -192,6 +192,12 @@ RSpec.describe 'api/v1', openapi: { example_mode: :none }, type: :request do
       )
     end
 
+    it 'returns refine capability', :aggregate_failures do
+      get '/api/v1'
+
+      expect(JSON.parse(last_response.body).dig('data', 'instance', 'refine')).to eq('enabled' => true)
+    end
+
     it 'returns catalog pointer metadata', :aggregate_failures do
       get '/api/v1'
 

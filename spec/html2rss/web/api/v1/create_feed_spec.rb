@@ -252,8 +252,38 @@ RSpec.describe Html2rss::Web::Api::V1::CreateFeed do
       expect(described_class.call(req)[:data][:feed][:url]).to eq('https://form.example.com/')
     end
 
+    describe 'selectors' do
+      let(:selectors) { { items: { selector: 'article' } } }
+      let(:body) { { url: 'https://example.com/news', selectors: } }
+
+      it 'signs validated selectors when refine is enabled' do
+        allow(Html2rss::Web::Flags).to receive(:refine_enabled?).and_return(true)
+        described_class.call(request)
+
+        expect(Html2rss::Web::FeedToken).to have_received(:generate)
+          .with('alice', 'https://example.com/news', selectors:)
+      end
+
+      it 'forbids selectors while refine is disabled', :aggregate_failures do
+        allow(Html2rss::Web::Flags).to receive(:refine_enabled?).and_return(false)
+
+        expect { described_class.call(request) }
+          .to raise_error(Html2rss::Web::ForbiddenError, 'Refine is disabled')
+        expect(Html2rss::Web::FeedToken).not_to have_received(:generate)
+      end
+
+      it 'does not consult the flag when no selectors are sent' do
+        allow(Html2rss::Web::Flags).to receive(:refine_enabled?).and_return(false)
+        req = Rack::Request.new(Rack::MockRequest.env_for('/', method: 'POST', input: { url: 'https://example.com/news' }.to_json,
+                                                               'CONTENT_TYPE' => 'application/json'))
+        req.define_singleton_method(:response) { @response ||= Rack::Response.new }
+
+        expect { described_class.call(req) }.not_to raise_error
+      end
+    end
+
     describe 'body limit' do
-      let(:limit) { Html2rss::Web::Api::V1::CreateFeed::Input::MAX_BODY_BYTES }
+      let(:limit) { Html2rss::Web::Api::V1::JsonBody::MAX_BYTES }
 
       def body_of(size)
         prefix = '{"url":"https://example.com/","pad":"'
