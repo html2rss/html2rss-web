@@ -231,7 +231,8 @@ RSpec.describe Html2rss::Web::App, :aggregate_failures do # rubocop:disable RSpe
         Html2rss::Web::FeedToken,
         url: feed_url,
         username: account[:username],
-        strategy: 'default'
+        strategy: 'default',
+        selectors: nil
       )
 
       allow(Html2rss::Web::FeedToken::Codec).to receive(:decode).with(raw_token).and_return(escaped_token_payload)

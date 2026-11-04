@@ -323,6 +323,11 @@ paths:
               properties:
                 name:
                   type: string
+                selectors:
+                  additionalProperties: true
+                  description: Optional refine selectors, validated against the html2rss
+                    config schema.
+                  type: object
                 url:
                   type: string
               required:

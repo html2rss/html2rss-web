@@ -48,8 +48,8 @@ module Html2rss
           end
 
           ##
-          # Feed create parameters contract.
-          CreateParams = Data.define(:url, :name)
+          # Feed create parameters contract; +selectors+ are validated, or nil for automatic extraction.
+          CreateParams = Data.define(:url, :name, :selectors)
 
           ##
           # Feed metadata contract used between creation services and API responses.
