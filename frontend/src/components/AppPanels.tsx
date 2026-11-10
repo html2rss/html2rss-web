@@ -18,7 +18,7 @@ export interface FeedFieldErrors {
   form: string;
 }
 
-type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' }>;
+type CreatePanelViewModel = Exclude<AppViewModel, { kind: 'result' | 'refine' }>;
 
 interface CreateFeedPanelProperties {
   focusComposerKey: number;
@@ -37,6 +37,8 @@ interface CreateFeedPanelProperties {
   onSaveToken: () => void;
   onCancelTokenPrompt: () => void;
   onRetryCreate: () => void;
+  /** Present only when Refine is available; offered after an empty extraction. */
+  onRefine?: () => void;
 }
 
 interface UrlEntrySectionProperties {
@@ -355,6 +357,7 @@ interface ActionFeedbackProperties {
   isCreating: boolean;
   isShowRetryButton: boolean;
   onRetryCreate: () => void;
+  onRefine?: () => void;
 }
 
 function ActionFeedback({
@@ -362,6 +365,7 @@ function ActionFeedback({
   isCreating,
   isShowRetryButton,
   onRetryCreate,
+  onRefine,
 }: ActionFeedbackProperties) {
   return (
     <>
@@ -371,10 +375,19 @@ function ActionFeedback({
           tone="error"
           title={isShowRetryButton ? COPY.createFailedRetryTitle : COPY.createFailedTitle}
           actions={
-            isShowRetryButton && (
-              <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
-                {COPY.tryAgain}
-              </button>
+            (isShowRetryButton || onRefine) && (
+              <>
+                {isShowRetryButton && (
+                  <button type="button" class="btn btn--primary" onClick={onRetryCreate}>
+                    {COPY.tryAgain}
+                  </button>
+                )}
+                {onRefine && (
+                  <button type="button" class="btn btn--ghost" onClick={onRefine}>
+                    {COPY.refineEntryEmpty}
+                  </button>
+                )}
+              </>
             )
           }
         >
@@ -404,6 +417,7 @@ export function CreateFeedPanel({
   onSaveToken,
   onCancelTokenPrompt,
   onRetryCreate,
+  onRefine,
 }: CreateFeedPanelProperties) {
   const urlInputReference = useRef<HTMLInputElement>(null);
   const tokenInputReference = useRef<HTMLInputElement>(null);
@@ -495,6 +509,7 @@ export function CreateFeedPanel({
           isCreating={isCreatingFeed}
           isShowRetryButton={isShowRetryButton}
           onRetryCreate={onRetryCreate}
+          onRefine={creationError?.code === 'EXTRACTION_EMPTY' ? onRefine : undefined}
         />
       </div>
       {isTokenPrompt ? (

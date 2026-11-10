@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { CreatedFeedResult, FeedCreationError } from '../api/contracts';
+import type { RefineSelectors } from '../refine';
 import {
   normalizeFeedCreationError,
   requestFeedCreation,
@@ -39,14 +40,14 @@ export function useFeedCreation() {
     []
   );
 
-  async function createFeed(normalizedUrl: string, token: string) {
+  async function createFeed(normalizedUrl: string, token: string, selectors?: RefineSelectors) {
     const requestId = requestIdReference.current + 1;
     requestIdReference.current = requestId;
     cancelPreview();
     setState((previous) => ({ ...previous, isCreating: true, error: undefined }));
 
     try {
-      const feed = await requestFeedCreation(normalizedUrl, token);
+      const feed = await requestFeedCreation(normalizedUrl, token, selectors);
       const result = buildCreatedFeedResult(feed);
       commitResult(result, requestId, setState, requestIdReference);
       void hydrateFeedPreview(feed, requestId, setState, requestIdReference, previewAbortControllerReference);
