@@ -53,6 +53,7 @@ module Html2rss
         case [http_method, path]
         in ['GET', '/api/v1/configs'] then 'catalog'
         in ['POST', '/api/v1/feeds'] then 'feed_create'
+        in ['POST', %r{\A/api/v1/refine/}] then 'refine'
         in ['GET', String] if feed_render_path?(path) then 'feed_render'
         else 'static'
         end

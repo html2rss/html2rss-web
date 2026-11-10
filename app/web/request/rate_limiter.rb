@@ -10,6 +10,14 @@ module Html2rss
     # Rack middleware providing IP-based rate limiting with fiber-native tracking,
     # automated pruning, and standardized 429 error formatting.
     class RateLimiter
+      # Routes that fetch a live page cost more than a static read.
+      LIVE_FETCH_COSTS = {
+        'POST /api/v1/feeds' => 5,
+        'POST /api/v1/refine/preview' => 5,
+        'POST /api/v1/refine/suggest_selectors' => 5
+      }.freeze
+      private_constant :LIVE_FETCH_COSTS
+
       ##
       # Encapsulates timestamp tracking and rate limit logic for a single client IP.
       class RequestTrack
@@ -26,8 +34,9 @@ module Html2rss
         # @param now [Integer]
         # @param window_seconds [Integer]
         # @param max_requests [Integer]
+        # @param cost [Integer] slots this request consumes; a budget of N may overrun by cost - 1
         # @return [Array<(Boolean, Integer)>] limit exceeded flag and retry_after seconds.
-        def record_and_check_limit(now, window_seconds, max_requests)
+        def record_and_check_limit(now, window_seconds, max_requests, cost: 1)
           window_start = now - window_seconds
           @timestamps.reject! { |t| t < window_start }
 
@@ -36,7 +45,7 @@ module Html2rss
             retry_after = [1, oldest + window_seconds - now].max
             [true, retry_after]
           else
-            @timestamps << now
+            @timestamps.concat([now] * cost)
             [false, 0]
           end
         end
@@ -79,7 +88,8 @@ module Html2rss
         limit_exceeded, retry_after = track.record_and_check_limit(
           now,
           Flags.rate_limit_window_seconds,
-          Flags.rate_limit_max_requests
+          Flags.rate_limit_max_requests,
+          cost: LIVE_FETCH_COSTS.fetch("#{request.request_method} #{path}", 1)
         )
 
         if limit_exceeded

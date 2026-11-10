@@ -31,6 +31,9 @@ export type GetApiMetadataResponses = {
           access_token_required: boolean;
           enabled: boolean;
         };
+        refine: {
+          enabled: boolean;
+        };
       };
     };
     success: boolean;
@@ -421,6 +424,151 @@ export type GetReadinessProbeResponses = {
 };
 
 export type GetReadinessProbeResponse = GetReadinessProbeResponses[keyof GetReadinessProbeResponses];
+
+export type PreviewRefineFeedData = {
+  body?: {
+    /**
+     * Selectors document, validated against the html2rss config schema.
+     */
+    selectors: {
+      [key: string]: unknown;
+    };
+    strategy: string;
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/preview';
+};
+
+export type PreviewRefineFeedResponses = {
+  /**
+   * previews with the expansion serving uses, without leaking the RSS
+   */
+  200: {
+    data: {
+      failure_kind: 'schema' | 'execution' | 'min_items' | 'quality' | null;
+      item_count: number;
+      quality_report: {
+        [key: string]: unknown;
+      } | null;
+      sample_items: Array<{
+        [key: string]: unknown;
+      }>;
+      validation_issues: Array<{
+        actual?: unknown;
+        code: string;
+        expected?: unknown;
+        message: string;
+        path: Array<string>;
+      }> | null;
+    };
+    success: boolean;
+  };
+};
+
+export type PreviewRefineFeedResponse = PreviewRefineFeedResponses[keyof PreviewRefineFeedResponses];
+
+export type SuggestRefineSelectorsData = {
+  body?: {
+    items_selector?: string;
+    url: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/suggest_selectors';
+};
+
+export type SuggestRefineSelectorsResponses = {
+  /**
+   * returns ranked buckets, empty when the gem found none
+   */
+  200: {
+    data: {
+      admission_drops: {
+        [key: string]: number;
+      };
+      candidates: {
+        items: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
+        link: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
+        published: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
+        title: Array<{
+          enhance?: boolean;
+          sample?: string;
+          selector: string;
+        }>;
+      };
+      segment_strategy: string | null;
+      strategy: string | null;
+    };
+    success: boolean;
+  };
+};
+
+export type SuggestRefineSelectorsResponse = SuggestRefineSelectorsResponses[keyof SuggestRefineSelectorsResponses];
+
+export type ValidateRefineSelectorsData = {
+  body?: {
+    /**
+     * Selectors document, validated against the html2rss config schema.
+     */
+    selectors: {
+      [key: string]: unknown;
+    };
+    url?: string;
+  };
+  headers: {
+    Authorization: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/refine/validate';
+};
+
+export type ValidateRefineSelectorsResponses = {
+  /**
+   * returns a successful report and exportable YAML
+   */
+  200: {
+    data: {
+      report: {
+        issues: Array<{
+          actual?: unknown;
+          code: string;
+          expected?: unknown;
+          message: string;
+          path: Array<string>;
+        }>;
+        success: boolean;
+      };
+      selectors: {
+        [key: string]: unknown;
+      } | null;
+      yaml: string | null;
+    };
+    success: boolean;
+  };
+};
+
+export type ValidateRefineSelectorsResponse = ValidateRefineSelectorsResponses[keyof ValidateRefineSelectorsResponses];
 
 export type ListStrategiesData = {
   body?: never;
