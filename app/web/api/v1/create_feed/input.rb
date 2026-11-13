@@ -27,7 +27,8 @@ module Html2rss
 
                 params = request_params(request)
                 FeedMetadata::CreateParams.new(url: validated_url(params['url'], account),
-                                               name: params['name'].to_s.strip.then { it unless it.empty? })
+                                               name: params['name'].to_s.strip.then { it unless it.empty? },
+                                               selectors: validated_selectors(params['selectors']))
               end
 
               private
@@ -65,6 +66,14 @@ module Html2rss
                 raise ForbiddenError, 'URL not allowed for this account' unless UrlValidator.url_allowed?(account, url)
 
                 url
+              end
+
+              # Selectors are authored through Refine, so the refine kill switch applies to them.
+              def validated_selectors(raw)
+                selectors = SelectorsDocument.parse(raw)
+                raise ForbiddenError, 'Refine is disabled' if selectors && !Flags.refine_enabled?
+
+                selectors
               end
 
               def normalized_input_url(raw_url)
