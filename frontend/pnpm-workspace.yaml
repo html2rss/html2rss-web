@@ -1,3 +1,5 @@
+# corepack pins pnpm via packageManager; skip pnpm self-pinning in the lockfile.
+pmOnFail: ignore
 allowBuilds:
   esbuild: true
   msw: true
