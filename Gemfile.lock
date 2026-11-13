@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: b84ca6d1a9ad37d4dc1dd74e9c6b9c060704334c
+  revision: f5f0f8f790796140f5bdb061f22cfb585b38558d
   specs:
     html2rss-configs (0.2.0)
-      html2rss (~> 0.31)
+      html2rss (~> 0.34)
 
 GEM
   remote: https://rubygems.org/
@@ -160,7 +160,7 @@ GEM
       webrick (~> 1.9)
       zeitwerk
     http-2 (1.3.0)
-    httpx (1.9.0)
+    httpx (1.9.1)
       http-2 (>= 1.2.0)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
@@ -455,7 +455,7 @@ CHECKSUMS
   html2rss (0.34.0) sha256=c85266759b91f5b76a7381cf33ada0786b382db04c3638c1f667d3e585197e5f
   html2rss-configs (0.2.0)
   http-2 (1.3.0) sha256=58fc8636c2b937b651853e9f6d9ada9fdaa8bf80b5a7d0333ce15653e5ca6ac1
-  httpx (1.9.0) sha256=ce6fb4bee1d23d311fb41414094f3423a0ad7b6ae68ea6d9619d1b6e411f18a9
+  httpx (1.9.1) sha256=06396e98dc99edfd37859910c77303c7eacd29d76f20d1f6b8b1bea3dfec99a9
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.9.5) sha256=83dd9bbf4c4680416629245b39cd4212eb5f4d9a4ea91804870c1f6b846414d5
   io-endpoint (0.19.0) sha256=547aaefe9a78bc57fe25f9f7661b460395ebdfda506f70fdf4cc71d2ae5ca578
