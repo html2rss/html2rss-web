@@ -8,9 +8,13 @@ LABEL maintainer="Gil Desmarais <html2rss-web-docker@desmarais.de>"
 # Frontend Build (arch-independent assets; native builder, not QEMU)
 FROM --platform=$BUILDPLATFORM node AS frontend-builder
 
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+  NPM_CONFIG_UPDATE_NOTIFIER=false \
+  PNPM_CONFIG_UPDATE_NOTIFIER=false
+
 WORKDIR /app/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
-RUN npm install -g --force corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
+RUN npm install -g corepack@0.36.0 && corepack enable && pnpm install --frozen-lockfile
 COPY frontend/ ./
 RUN pnpm run build
 
