@@ -21,7 +21,7 @@ When a task that should ship merges to `main`, ask whether to bump the app versi
 
 1. Wait until `html2rss/html2rss`'s `release gem` workflow for the tag is `success` (a merged version PR is not on RubyGems yet; `bundle update html2rss` keeps the old pin).
 2. `git fetch origin main` and branch from `origin/main`. Never continue a feature branch or commit the lockfile onto `main`.
-3. In the `dev` image, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless asked. Keep the Gemfile constraint `~> 0.30` unless resolution fails.
+3. In the `dev` image, run `bundle update html2rss`, then `make ready`. Do not run a full `bundle update` unless asked. Keep the Gemfile constraint `~> 0.34` unless resolution fails.
 4. Open a lockfile PR and watch required checks (`frontend`, `ruby`, `docker-test (false)`, `docker-test (true)`) with `gh pr checks <n> --watch`.
 5. Mergify queues only Dependabot. When asked to merge and checks are green, run `gh pr merge <n> --squash --delete-branch` (merge commits disabled).
 6. Stop and ask whether to bump the app version. Dispatch the version workflow only after the gem PR is on `main`.
