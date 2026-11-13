@@ -12,7 +12,6 @@ Canonical references:
 - **Quality gate:** Never push or open a PR without a green `dev`-image gate (`make ready` minimum, which includes `pnpm run format:check` via `lint-js`; `make ci-ready` before push/PR for frontend or API/OpenAPI contract changes). Never mark validation done or open a PR with "gate skipped / unavailable" — start the `dev` service and run the gate, or stop and report the blocker plus next command.
 - **Frontend verification:** With `make dev` running, verify touched paths in `chrome-devtools` MCP at `http://127.0.0.1:4001/`. Confirm affected states (guest/member/result) share the same frame, keep one primary task and one canonical control per outcome, and preserve autofocus/return-focus on load and transitions ([docs/design-system.md](docs/design-system.md)).
 - **Security & YARD:** No leaking secrets or insecure patterns ([docs/README.md#security--safety-rules](docs/README.md#security--safety-rules)). Every public Ruby method in `app/` requires a YARD docstring with typed `@param` and `@return` ([docs/README.md#architectural-constraints](docs/README.md#architectural-constraints)).
-- **Response format:** `Changes → Commands → Results → Next steps`, ending with a one-line summary.
 
 ## Ship follow-through
 
