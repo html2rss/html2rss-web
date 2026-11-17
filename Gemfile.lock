@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: f5f0f8f790796140f5bdb061f22cfb585b38558d
+  revision: abe68643064f93b313908d6c62021c66c2189708
   specs:
     html2rss-configs (0.2.0)
-      html2rss (~> 0.34)
+      html2rss (~> 0.34, >= 0.34.1)
 
 GEM
   remote: https://rubygems.org/
