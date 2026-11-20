@@ -83,10 +83,13 @@ export type GetConfigCatalogResponses = {
         parameters: {
           defaults: {
             blog?: string | null;
+            city?: string | null;
             id?: string | null;
+            r?: string | null;
             region?: string | null;
             repository?: string | null;
             section?: string | null;
+            sort?: string | null;
             user_id?: string | null;
             username?: string | null;
           };
@@ -94,7 +97,13 @@ export type GetConfigCatalogResponses = {
             blog?: {
               type: string;
             } | null;
+            city?: {
+              type: string;
+            } | null;
             id?: {
+              type: string;
+            } | null;
+            r?: {
               type: string;
             } | null;
             region?: {
@@ -104,6 +113,9 @@ export type GetConfigCatalogResponses = {
               type: string;
             } | null;
             section?: {
+              type: string;
+            } | null;
+            sort?: {
               type: string;
             } | null;
             user_id?: {
