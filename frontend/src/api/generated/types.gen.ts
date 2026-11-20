@@ -162,6 +162,12 @@ export type OptionsConfigCatalogResponse = OptionsConfigCatalogResponses[keyof O
 export type CreateFeedData = {
   body?: {
     name?: string;
+    /**
+     * Optional refine selectors, validated against the html2rss config schema.
+     */
+    selectors?: {
+      [key: string]: unknown;
+    };
     url: string;
   };
   headers: {
