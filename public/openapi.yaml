@@ -151,7 +151,13 @@ paths:
                                     blog:
                                       nullable: true
                                       type: string
+                                    city:
+                                      nullable: true
+                                      type: string
                                     id:
+                                      nullable: true
+                                      type: string
+                                    r:
                                       nullable: true
                                       type: string
                                     region:
@@ -161,6 +167,9 @@ paths:
                                       nullable: true
                                       type: string
                                     section:
+                                      nullable: true
+                                      type: string
+                                    sort:
                                       nullable: true
                                       type: string
                                     user_id:
@@ -180,7 +189,23 @@ paths:
                                       required:
                                       - type
                                       type: object
+                                    city:
+                                      nullable: true
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
                                     id:
+                                      nullable: true
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                    r:
                                       nullable: true
                                       properties:
                                         type:
@@ -205,6 +230,14 @@ paths:
                                       - type
                                       type: object
                                     section:
+                                      nullable: true
+                                      properties:
+                                        type:
+                                          type: string
+                                      required:
+                                      - type
+                                      type: object
+                                    sort:
                                       nullable: true
                                       properties:
                                         type:
