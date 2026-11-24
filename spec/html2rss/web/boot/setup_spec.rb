@@ -73,6 +73,60 @@ RSpec.describe Html2rss::Web::Boot::Setup do
     end
   end
 
+  describe 'documentation URL' do
+    let(:logger) { instance_double(Logger, info: nil, error: nil) }
+
+    before { allow(Html2rss::Web::AppLogger).to receive(:logger).and_return(logger) }
+
+    it 'logs the docs URL once at info level after the startup line', :aggregate_failures do
+      stub_environment_validation
+
+      ClimateControl.modify(boot_env) { described_class.call! }
+
+      expect(logger).to have_received(:info).with(a_string_including('"event_name":"app.start"')).ordered
+      expect(logger).to have_received(:info)
+        .with('{"component":"boot","event_name":"app.docs","docs_url":"https://html2rss.github.io"}').once.ordered
+    end
+
+    it 'logs the troubleshooting URL and re-raises the original error', :aggregate_failures do
+      failure = Class.new(StandardError)
+      allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_environment!).and_raise(failure, 'bad env')
+
+      ClimateControl.modify(boot_env) { expect { described_class.call! }.to raise_error(failure, 'bad env') }
+
+      expect(logger).to have_received(:error).with(
+        a_string_including(
+          '"event_name":"app.boot_failed"',
+          '"docs_url":"https://html2rss.github.io/troubleshooting/troubleshooting/"'
+        )
+      ).once
+      expect(logger).not_to have_received(:info).with(a_string_including('app.docs'))
+    end
+  end
+
+  describe 'documentation URL when logging the success line fails' do
+    it 'does not report a boot failure', :aggregate_failures do
+      logger = instance_double(Logger, error: nil)
+      allow(logger).to receive(:info) { |line| raise IOError, 'closed' if line.include?('app.docs') }
+      allow(Html2rss::Web::AppLogger).to receive(:logger).and_return(logger)
+      stub_environment_validation
+
+      ClimateControl.modify(boot_env) { expect { described_class.call! }.to raise_error(IOError) }
+      expect(logger).not_to have_received(:error)
+    end
+  end
+
+  describe 'documentation URL when a validator exits' do
+    it 'logs the troubleshooting URL and keeps the exit', :aggregate_failures do
+      logger = instance_double(Logger, info: nil, error: nil)
+      allow(Html2rss::Web::AppLogger).to receive(:logger).and_return(logger)
+      allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_environment!).and_raise(SystemExit.new(1))
+
+      expect { described_class.call! }.to raise_error(SystemExit)
+      expect(logger).to have_received(:error).with(a_string_including('"error_class":"SystemExit"')).once
+    end
+  end
+
   def stub_environment_validation
     allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_environment!)
     allow(Html2rss::Web::EnvironmentValidator).to receive(:validate_production_security!)
