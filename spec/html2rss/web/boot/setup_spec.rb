@@ -85,7 +85,10 @@ RSpec.describe Html2rss::Web::Boot::Setup do
 
       expect(logger).to have_received(:info).with(a_string_including('"event_name":"app.start"')).ordered
       expect(logger).to have_received(:info)
-        .with('{"component":"boot","event_name":"app.docs","docs_url":"https://html2rss.github.io"}').once.ordered
+        .with(a_string_including(
+                '"message":"html2rss-web is ready. Documentation and setup help: https://html2rss.github.io"',
+                '"event_name":"app.docs"', '"docs_url":"https://html2rss.github.io"'
+              )).once.ordered
     end
 
     it 'logs the troubleshooting URL and re-raises the original error', :aggregate_failures do
@@ -96,6 +99,7 @@ RSpec.describe Html2rss::Web::Boot::Setup do
 
       expect(logger).to have_received(:error).with(
         a_string_including(
+          '"message":"html2rss-web failed to start (',
           '"event_name":"app.boot_failed"',
           '"docs_url":"https://html2rss.github.io/troubleshooting/troubleshooting/"'
         )
