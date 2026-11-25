@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/html2rss/html2rss-configs
-  revision: bc395428ffe73027452b750425c849f3a19e2f84
+  revision: e549ee96dc8d5d21375eb15af8ad15b4a4c54a85
   specs:
     html2rss-configs (0.3.0)
       html2rss (~> 0.35)
@@ -161,7 +161,7 @@ GEM
       webrick (~> 1.9)
       zeitwerk
     http-2 (1.3.0)
-    httpx (1.9.1)
+    httpx (1.9.2)
       http-2 (>= 1.2.0)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
@@ -198,6 +198,7 @@ GEM
       logger
       mime-types-data (~> 3.2025, >= 3.2025.0507)
     mime-types-data (3.2026.1103)
+    mini_portile2 (2.8.9)
     minitest (6.1.0)
       drb (~> 2.0)
       prism (>= 1.5, < 3)
@@ -212,6 +213,9 @@ GEM
     mutant-rspec (0.17.1)
       mutant (= 0.17.1)
       rspec-core (>= 3.8.0, < 5.0.0)
+    nokogiri (1.19.7)
+      mini_portile2 (~> 2.8.2)
+      racc (~> 1.4)
     nokogiri (1.19.7-aarch64-linux-gnu)
       racc (~> 1.4)
     nokogiri (1.19.7-aarch64-linux-musl)
@@ -456,7 +460,7 @@ CHECKSUMS
   html2rss (0.36.0) sha256=3ce89f83d72299e1081d5bec0029fe4fcfa42bcf70d42c0b306dad3bea03806e
   html2rss-configs (0.3.0)
   http-2 (1.3.0) sha256=58fc8636c2b937b651853e9f6d9ada9fdaa8bf80b5a7d0333ce15653e5ca6ac1
-  httpx (1.9.1) sha256=06396e98dc99edfd37859910c77303c7eacd29d76f20d1f6b8b1bea3dfec99a9
+  httpx (1.9.2) sha256=5afa0ee69293c27b5c5b0acb2fe61ab8b521bc47f3ab1755d5b4fa9b05a16a9f
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   io-console (0.9.5) sha256=83dd9bbf4c4680416629245b39cd4212eb5f4d9a4ea91804870c1f6b846414d5
   io-endpoint (0.19.0) sha256=547aaefe9a78bc57fe25f9f7661b460395ebdfda506f70fdf4cc71d2ae5ca578
@@ -474,9 +478,11 @@ CHECKSUMS
   mcp (1.11.0) sha256=7384992da3f4d434a648e0524c75bbe4475aff00da5febd1ce5448cae7b66503
   mime-types (3.7.0) sha256=dcebf61c246f08e15a4de34e386ebe8233791e868564a470c3fe77c00eed5e56
   mime-types-data (3.2026.1103) sha256=cda7af94d895f1fd33e000acea800e6ed31e4c861e3d6c1a27c8b74f9e44dc64
+  mini_portile2 (2.8.9) sha256=0cd7c7f824e010c072e33f68bc02d85a00aeb6fce05bb4819c03dfd3c140c289
   minitest (6.1.0) sha256=ff373595aa8888631e8a5463986a76b3845346ae6d7fa46e139c1633d418076e
   mutant (0.17.1) sha256=24c7ceecae0b4efe550ab88ff06017a93828c73cd9569bda1b2689575b120e6c
   mutant-rspec (0.17.1) sha256=1be683271e0d7c0847b3340a3a49266bbb72d58a60991ce5725752706f086da5
+  nokogiri (1.19.7) sha256=abe94507c54cb18f872777b16bdca4aad32b1abdc4c52fe843f1c80fbdf992b8
   nokogiri (1.19.7-aarch64-linux-gnu) sha256=8f5e15d299602456406e1f03a9f3456cceb33a0722811e818d2ee2214eb4c84a
   nokogiri (1.19.7-aarch64-linux-musl) sha256=efe0c3602e6e54521bc21c681930ce5568e2d11203de17400710b2b3ca2e4cb4
   nokogiri (1.19.7-arm-linux-gnu) sha256=7fd1907125691aa89e838cc91161761c758b4e17bb32f0dd9b5515a82cc759af
