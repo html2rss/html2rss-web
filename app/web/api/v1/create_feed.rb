@@ -47,7 +47,7 @@ module Html2rss
             def create_feed(params, account)
               raise AutoSourceDisabledError unless Flags.auto_source_enabled?
 
-              feed_token = FeedToken.generate(account[:username], params.url)
+              feed_token = FeedToken.generate(account[:username], params.url, selectors: params.selectors)
               raise InternalServerError, 'Failed to create feed' unless feed_token
 
               result = Feeds::Service.call(resolved_source_for(feed_token))

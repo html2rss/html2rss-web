@@ -89,7 +89,8 @@ RSpec.describe Html2rss::Web::Feeds::SourceResolver do
           Html2rss::Web::FeedToken,
           username: 'admin',
           url: 'https://example.com/private',
-          strategy: 'default'
+          strategy: 'default',
+          selectors: nil
         )
       end
 
