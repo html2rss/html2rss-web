@@ -87,11 +87,9 @@ export type GetConfigCatalogResponses = {
             id?: string | null;
             r?: string | null;
             region?: string | null;
-            repository?: string | null;
             section?: string | null;
             sort?: string | null;
             user_id?: string | null;
-            username?: string | null;
           };
           schema: {
             blog?: {
@@ -109,9 +107,6 @@ export type GetConfigCatalogResponses = {
             region?: {
               type: string;
             } | null;
-            repository?: {
-              type: string;
-            } | null;
             section?: {
               type: string;
             } | null;
@@ -119,9 +114,6 @@ export type GetConfigCatalogResponses = {
               type: string;
             } | null;
             user_id?: {
-              type: string;
-            } | null;
-            username?: {
               type: string;
             } | null;
           };
